@@ -416,6 +416,31 @@ small {
   background: transparent;
   width: 125px;
 }
+.coffee-support {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 10px;
+  margin: 16px clamp(18px, 3vw, 39px) 0;
+  padding: 13px 16px;
+  border: 1px solid #d6e4ae;
+  border-radius: 12px;
+  background: #edf5d9;
+  color: #303c20;
+  font-size: 13px;
+  line-height: 1.5;
+  text-decoration: none;
+}
+.coffee-support:hover {
+  background: #e2efc4;
+}
+.coffee-support:focus-visible {
+  outline: 3px solid #799841;
+  outline-offset: 3px;
+}
+.coffee-support svg {
+  flex-shrink: 0;
+}
 main {
   padding: 39px 39px 18px;
   max-width: 1600px;

@@ -770,6 +770,16 @@ export default function App() {
             </label>
           </div>
         </header>
+        <a
+          className="coffee-support"
+          href="https://buymeacoffee.com/szymonrybka"
+          target="_blank"
+          rel="noopener noreferrer"
+        >
+          <Coffee size={20} aria-hidden="true" />
+          <span>Podoba Ci się Hiciarz? <strong>Postaw mi kawę</strong></span>
+          <ArrowUpRight size={18} aria-hidden="true" />
+        </a>
         <main>
           {mode === 'editor' ? (
             <>
