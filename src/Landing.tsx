@@ -87,8 +87,8 @@ export default function Landing({
         </button>
       </div>
       <p className="landing-footnote">
-        <Sparkles size={16} /> Kreator i przykłady działają bez logowania. Konto Spotify połączysz
-        dopiero, gdy wybierzesz import lub granie przez Spotify.
+        <Sparkles size={16} /> Połącz konto Spotify, aby importować swoje playlisty i sterować
+        muzyką na telefonie, komputerze lub głośniku.
       </p>
     </div>
   );
