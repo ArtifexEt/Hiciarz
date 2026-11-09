@@ -1,5 +1,7 @@
 # Hiciarz ✳
 
+[🎵 Otwórz aplikację](https://artifexet.github.io/Hiciarz/) · [☕ Postaw kawę](https://buymeacoffee.com/szymonrybka)
+
 Otwarte studio kart muzycznych. Kreator działa lokalnie w przeglądarce, telefon skanuje QR, a strona na laptopie odtwarza muzykę. Wyjście dźwięku (AirPlay, Bluetooth, USB, kabel) wybiera system operacyjny.
 
 ## Uruchomienie
