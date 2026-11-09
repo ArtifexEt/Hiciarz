@@ -1,126 +1,106 @@
-# Hiciarz ✳
+<p align="center">
+  <img src="docs/assets/readme-banner.svg" alt="Hiciarz — Twoja muzyka. Wasza gra." width="100%">
+</p>
 
-[🎵 Otwórz aplikację](https://artifexet.github.io/Hiciarz/) · [☕ Postaw kawę](https://buymeacoffee.com/szymonrybka)
+<p align="center">
+  Twórz własne karty muzyczne, skanuj je telefonem i zgaduj hity ze znajomymi.
+  <br>
+  <strong>Od ulubionej playlisty do wspólnego wieczoru.</strong>
+</p>
 
-Otwarte studio kart muzycznych. Kreator działa lokalnie w przeglądarce, telefon skanuje QR, a strona na laptopie odtwarza muzykę. Wyjście dźwięku (AirPlay, Bluetooth, USB, kabel) wybiera system operacyjny.
+<p align="center">
+  <a href="https://artifexet.github.io/Hiciarz/"><img src="https://img.shields.io/badge/Otw%C3%B3rz_aplikacj%C4%99-083935?style=for-the-badge&amp;logo=googlechrome&amp;logoColor=EDBD75" alt="Otwórz aplikację"></a>
+  <a href="#pierwsza-rozgrywka"><img src="https://img.shields.io/badge/Jak_zagra%C4%87-EDE8DC?style=for-the-badge&amp;logo=googledocs&amp;logoColor=253B34" alt="Jak zagrać"></a>
+  <a href="https://buymeacoffee.com/szymonrybka"><img src="https://img.shields.io/badge/Postaw_mi_kaw%C4%99-EDBD75?style=for-the-badge&amp;logo=buymeacoffee&amp;logoColor=253B34" alt="Wesprzyj autora — postaw mi kawę"></a>
+</p>
 
-## Uruchomienie
+<p align="center">
+  <a href="https://github.com/ArtifexEt/Hiciarz/actions/workflows/pages.yml"><img src="https://github.com/ArtifexEt/Hiciarz/actions/workflows/pages.yml/badge.svg" alt="Budowanie, testy i publikacja"></a>
+  &nbsp; Przeglądarka · Telefon · Własne talie · PDF do druku
+</p>
 
-Wymagane Node.js 22+ i pnpm 11.
+---
+
+## Twój zestaw do muzycznej zabawy
+
+Hiciarz łączy kreator kart, skaner QR i odtwarzacz w jednej aplikacji przeglądarkowej. Przygotuj swoją kolekcję piosenek, dobierz oprawę i wydrukuj talię. Podczas gry zeskanuj kartę, posłuchaj nagrania i spróbuj odgadnąć jego miejsce na muzycznej osi czasu.
+
+| Przygotuj                                                                                  | Nadaj charakter                                              | Zagraj                                                                              |
+| ------------------------------------------------------------------------------------------ | ------------------------------------------------------------ | ----------------------------------------------------------------------------------- |
+| Dodawaj i edytuj piosenki, wczytuj JSON lub CSV, korzystaj z przykładów i importu Spotify. | Wybierz motyw, wgraj własny rewers i pobierz dwustronny PDF. | Skanuj QR telefonem i steruj Spotify albo połącz się z odtwarzaczem w przeglądarce. |
+
+## Pierwsza rozgrywka
+
+1. **[Otwórz Hiciarza](https://artifexet.github.io/Hiciarz/).** Na telefonie aplikacja zaczyna od skanera; przycisk **Pełna aplikacja** prowadzi do kreatora.
+2. **Wybierz piosenki.** Zacznij od **Przykładowych playlist** lub przygotuj własną listę. Tytuł, wykonawcę i rok możesz poprawić przed drukiem.
+3. **Przygotuj karty.** Wybierz wygląd i pobierz PDF. Drukuj na A4 dwustronnie, w skali 100%. Najpierw wykonaj próbę kalibracyjną.
+4. **Wybierz sposób słuchania.** Połącz Spotify albo uruchom odtwarzacz na drugim urządzeniu — oba warianty opisano poniżej.
+5. **Skanuj i zgaduj.** QR z karty wskazuje nagranie i motyw. Jeśli aparat udostępnia zoom, przybliżysz obraz suwakiem lub przyciskami − / +.
+
+## Muzyka tam, gdzie gracie
+
+|                   | Spotify Connect                                                         | Odtwarzacz w przeglądarce                                                                                               |
+| ----------------- | ----------------------------------------------------------------------- | ----------------------------------------------------------------------------------------------------------------------- |
+| **Przygotowanie** | Wybierz **Graj przez Spotify**, zaloguj się i wskaż aktywne urządzenie. | Na urządzeniu do odtwarzania otwórz **Odtwarzacz → Na tym urządzeniu → Połącz skaner**.                                 |
+| **Skanowanie**    | Włącz aparat na telefonie i skanuj karty ze źródłem Spotify.            | Telefonem zeskanuj QR parowania, a następnie kody z kart.                                                               |
+| **Dźwięk**        | Muzyka gra na wybranym urządzeniu Spotify.                              | Spotify lub YouTube odtwarza na połączonym urządzeniu; wyjście dźwięku wybierasz w systemie.                            |
+| **Wymagania**     | Spotify Premium i urządzenie dostępne dla zalogowanego konta.           | Nagranie dostępne do osadzenia. Spotify może odtwarzać tylko podgląd; przeglądarka może wymagać kliknięcia odtwarzania. |
+
+## Świąteczny wieczór na start
+
+W kreatorze czeka przykład **Świąteczne hity**: 151 piosenek z [polecanej playlisty Spotify](https://open.spotify.com/playlist/7wfTeAa7cxhA3qNE05XPKk), zapisanych 9 listopada 2026, z motywem **Rybki świąteczne**.
+
+Wczytaj go **bez logowania**, jako nową talię lub dopisując utwory do obecnej. Własną kopię możesz dowolnie edytować. Lata pochodzą z wydań Spotify i są oznaczone do sprawdzenia przed drukiem.
+
+**[Przeglądaj przykłady i dodaj własny →](examples/playlists/README.md)**
+
+## Karty w Waszym stylu
+
+- **Pięć motywów:** Klasyczny, Minimalistyczny, Świąteczna noc, Zimowa opowieść i autorskie Rybki świąteczne.
+- **Spójna oprawa gry:** zeskanowana karta przełącza wygląd aplikacji na swój motyw.
+- **Kolorowe awersy:** różne odcienie kart, ozdobne akcenty oraz czytelny rok, tytuł i wykonawca.
+- **Własne rewersy:** wgraj grafikę lub wybierz gotowy preset.
+- **Laser — lekki kolor:** białe tło, ciemny tekst i oszczędne kolorowe akcenty do drukarki laserowej.
+
+PDF mieści 12 kart o wymiarach **60 × 60 mm** na stronie A4. Ustawienia druku obejmują krawędź obrotu, przesunięcia kalibracyjne i znaczniki cięcia.
+
+## Playlisty i zapis
+
+Import pyta, czy dopisać nowe utwory na końcu, czy zastąpić listę. Dopisywanie zachowuje ręczne poprawki i pomija duplikaty rozpoznane po źródle nagrania. Projekt zapiszesz jako JSON, a listę utworów również jako CSV.
+
+> **Import Spotify:** obecna integracja odczytuje playlisty, których jesteś właścicielem lub współtwórcą. Spotify nie udostępnia jej zawartości pozostałych playlist, także publicznych. Gotowe przykłady można wczytać niezależnie od tego ograniczenia.
+
+Talie i grafiki są zapisywane w Twojej przeglądarce. **Zapisz projekt do pliku**, aby mieć kopię lub przenieść talię na inne urządzenie. Aktualizacja aplikacji zachowuje lokalny zapis; w stopce znajdziesz wersję i przycisk **Sprawdź aktualizacje**.
+
+## Rozwijaj Hiciarza
+
+Wymagane: **Node.js 22+** i **pnpm 11**.
 
 ```sh
 pnpm install
 pnpm dev
+```
+
+Serwer poda lokalny adres z końcówką `/Hiciarz/`. Pozostałe polecenia:
+
+```sh
 pnpm test
 pnpm build
 ```
 
-Otwórz adres wypisany przez Vite z końcówką `/Hiciarz/`. Dla telefonu użyj publikacji HTTPS: dostęp do aparatu wymaga bezpiecznego kontekstu. Sam adres HTTP komputera w sieci lokalnej zwykle nie wystarczy. `localhost` jest wyjątkiem wyłącznie na tym samym urządzeniu.
+| Dokumentacja                                          | Co znajdziesz                                                                            |
+| ----------------------------------------------------- | ---------------------------------------------------------------------------------------- |
+| [Konfiguracja i publikacja](docs/configuration.md)    | GitHub Pages, Spotify PKCE, zmienne Actions, parowanie, dane lokalne i zasoby graficzne. |
+| [Przykładowe playlisty](examples/playlists/README.md) | Gotowe projekty oraz instrukcja dodawania kolejnych przykładów.                          |
+| [Przygotowanie listy utworów](docs/playlist-guide.md) | Format JSON/CSV i sposób przygotowania playlisty z pomocą AI.                            |
+| [Gotowy prompt](docs/playlist-prompt.txt)             | Treść do skopiowania przy tworzeniu własnej listy.                                       |
 
-## GitHub Pages
+Konfiguracja Spotify korzysta z **Client ID dodawanego podczas budowania** i logowania PKCE. Client ID jest publiczny w gotowej aplikacji. **Client Secret nie jest używany i nie powinien trafiać do frontendu.**
 
-Workflow `.github/workflows/pages.yml` testuje, buduje i publikuje gałąź `main`. W Settings → Pages wybierz źródło **GitHub Actions**. Własny fork używa nazwy swojego repozytorium jako ścieżki bazowej. Dla hostingu w katalogu głównym ustaw `BASE_PATH=/` podczas budowania.
+---
 
-Nie wpisuj sekretu Spotify do kodu ani zmiennych frontendu. Zmienne budowania trafiające do strony są publiczne.
+## Podoba Ci się Hiciarz?
 
-## Jak grać
+Jeśli aplikacja uprzyjemniła Wam wieczór, możesz [postawić autorowi kawę](https://buymeacoffee.com/szymonrybka). Dzięki za wsparcie kolejnych muzycznych spotkań.
 
-1. W kreatorze wybierz **Przykładowe playlisty**, dodaj własne piosenki, wczytaj JSON/CSV albo zaimportuj playlistę po skonfigurowaniu integracji. Sprawdź rok konkretnego nagrania.
-2. Wybierz motyw. Pojedyncza piosenka może mieć własny motyw, np. Rybki świąteczne. Własne zdjęcie jest kadrowane centralnie do kwadratu.
-3. Pobierz PDF, wydrukuj A4 w skali 100%, dwustronnie. Najpierw wykonaj próbę kalibracyjną. Domyślne karty mają 60 × 60 mm, 3 kolumny i 4 wiersze.
-4. Na laptopie otwórz Odtwarzacz → Połącz telefon. W systemie wybierz wyjście dźwięku.
-5. Na telefonie otwórz Skaner → Włącz aparat. Zeskanuj QR parowania z laptopa, następnie kody na kartach.
-6. Jeśli przeglądarka zablokuje automatyczny start, kliknij odtwarzanie na laptopie. Wybierz inne źródło, gdy materiał jest niedostępny.
-
-Nie ma ręcznego wpisywania ani wklejania kodów do skanera. Kody kart zawierają źródła i motyw, nie potrzebują centralnej bazy ani wcześniejszego importu talii na laptopie. Bezpieczeństwo sesji opiera się na losowym identyfikatorze i tokenie z QR; nie publikuj QR aktywnej sesji. Zakończenie sesji lub nowy kod unieważnia poprzednie połączenie. Polecenia nie są kolejkowane offline.
-
-Po włączeniu aparatu pojawią się suwak przybliżenia i przyciski **− / +**, jeśli urządzenie i przeglądarka udostępniają sterowanie zoomem. Przybliżenie zmienia strumień obrazu odczytywany przez skaner QR. Na urządzeniach bez tej funkcji sterowanie nie jest wyświetlane.
-
-## Parowanie i sieć
-
-Połączenie danych: PeerJS/WebRTC. Domyślnie używamy publicznego PeerServer do sygnalizacji oraz serwerów ICE dostarczanych w konfiguracji PeerJS. To nie jest rozwiązanie całkowicie offline ani gwarantowany transport wyłącznie po LAN. Muzyka nie przechodzi przez połączenie telefon–laptop. Zapory i izolacja klientów Wi-Fi mogą uniemożliwić połączenie.
-
-Własny PeerServer (HTTPS/WSS) można wskazać publicznymi zmiennymi GitHub Actions:
-
-- `PEER_HOST` → `VITE_PEER_HOST`
-- `PEER_PORT` → `VITE_PEER_PORT`, domyślnie 443
-- `PEER_PATH` → `VITE_PEER_PATH`, domyślnie `/`
-
-## Spotify i YouTube
-
-Odtwarzacz korzysta z oficjalnych, widocznych embedów Spotify i YouTube. Nie wymaga naszego Spotify Client ID do osadzenia. Pełna długość, automatyczny start, logowanie w ramce i dostępność zależą od dostawcy, konta i przeglądarki. Niektóre nagrania blokują osadzanie; Spotify może odtwarzać tylko podgląd. Nie traktujemy ogólnego błędu jako dowodu usunięcia piosenki.
-
-**Import playlist jest osobny od odtwarzania widgetu.** Administrator ustawia sekret repozytorium Actions `SPOTIFY_CLIENT_ID`. Adres powrotu w Spotify Developer Dashboard musi być dokładnie adresem strony, np. `https://artifexet.github.io/Hiciarz/` (sprawdź wielkość liter w faktycznym adresie). Logowanie używa PKCE; Client Secret nie występuje. Token jest w sessionStorage i znika po zakończeniu sesji przeglądarki. Import pyta o dopisanie na końcu lub zastąpienie listy. Pobiera strony playlisty do 2000 utworów. Zakres playlist i dostęp kont zależą od uprawnień integracji Spotify.
-
-Przy dopisywaniu zachowujemy istniejące rekordy i poprawki. Duplikaty identyfikujemy po źródle Spotify albo YouTube. Utwory z różnych serwisów bez wspólnego identyfikatora mogą wymagać ręcznego uporządkowania. Rok z albumu Spotify jest oznaczany do sprawdzenia.
-
-Obecna integracja w trybie deweloperskim Spotify pobiera zawartość playlist, których zalogowana osoba jest właścicielem lub współtwórcą. Inne playlisty, nawet publiczne, nie udostępniają jej listy utworów. Samo zapisanie playlisty w Bibliotece tego nie zmienia. [Zasady dostępu Spotify](https://developer.spotify.com/documentation/web-api/tutorials/february-2026-migration-guide).
-
-Sprawdzenie linków przez oEmbed potwierdza dostępność metadanych, nie gwarantuje odtwarzania ani dostępności w konkretnym regionie. Brak odpowiedzi może wynikać z CORS, limitów lub sieci.
-
-## Pliki dla AI
-
-[Instrukcja przygotowania playlisty](docs/playlist-guide.md) i [gotowy prompt do skopiowania](docs/playlist-prompt.txt) są dostępne w repozytorium. Prompt można też skopiować przyciskiem w kreatorze.
-
-Minimalna lista JSON:
-
-```json
-[
-  {
-    "title": "Last Christmas",
-    "artist": "Wham!",
-    "year": 1984,
-    "theme": "fish",
-    "sources": {
-      "spotify": "2FRnf9qhLbvw8fu4IBXx78",
-      "youtube": "E8gmARGvPlI"
-    }
-  }
-]
-```
-
-Pola `title`, `artist`, `year` i przynajmniej jedno poprawne źródło są wymagane. `id` i `theme` opcjonalne. Motywy: `classic`, `minimal`, `christmas`, `winter`, `fish`. Źródła przyjmują identyfikatory lub linki HTTPS odpowiedniego serwisu. Maksymalnie 2000 utworów.
-
-CSV: `id,title,artist,year,theme,spotify,youtube`. Pola zawierające przecinki lub nowe linie muszą być poprawnie cytowane. Przycisk Zapisz projekt eksportuje pełny JSON wersji 1 z grafiką, motywem i ustawieniami wydruku. Wczytanie pełnego projektu jako nowej talii nie usuwa obecnej talii. Kopie przykładowe można pobrać przez „Jak to działa?”.
-
-Instrukcja dla AI: „Przygotuj tablicę JSON według powyższego schematu. Rok ma dotyczyć pierwszego wydania wskazanego nagrania, nie składanki. Nie wymyślaj identyfikatorów Spotify ani YouTube. Zweryfikuj linki. Nie dodawaj komentarzy ani Markdown wewnątrz pliku.”
-
-## Dane lokalne i PWA
-
-Pierwsze uruchomienie zaczyna się od pustej talii. Możesz skorzystać z jednorazowej propozycji wczytania świątecznego przykładu albo ją pominąć. Przykłady zawsze znajdziesz też w kreatorze pod **Przykładowe playlisty**. Na telefonie otwórz **Pełna aplikacja**, żeby przejść ze skanera do kreatora, a zapisane talie przełączaj polem **Twoje talie**.
-
-Gotowe listy znajdują się w folderze [examples/playlists](examples/playlists/README.md). Przykład **Świąteczne hity** zawiera statyczny zapis wszystkich 151 utworów z [polecanej playlisty](https://open.spotify.com/playlist/7wfTeAa7cxhA3qNE05XPKk) z 9 listopada 2026 i motyw Rybki świąteczne. Wczytasz go bez logowania do Spotify, jako nową talię lub dopisując utwory do obecnej. Lata wydań oznaczono do sprawdzenia przed drukiem. Możesz edytować własną kopię; przykład w repozytorium nie zmienia się razem z nią. Listy są dołączone do aplikacji i dostępne również po zapisaniu jej do pracy offline; odtwarzanie muzyki wymaga sieci.
-
-Gdy nowa wersja aplikacji jest gotowa, pojawi się przycisk **Wczytaj nową wersję**. Przed odświeżeniem aplikacja zapisuje talie. W stopce znajdziesz numer wersji i **Sprawdź aktualizacje**. Aktualizacja nie wymaga czyszczenia danych strony.
-
-Talie i zdjęcia: IndexedDB. Preferencje wyglądu: localStorage. Dane sesji OAuth: sessionStorage. Eksporty nie zawierają tokenów. Czyszczenie danych strony usuwa lokalne talie — zapisuj JSON. Przy awarii zapisu aplikacja wyświetla komunikat. Kreator i eksport PDF korzystają z zasobów lokalnych po zapisaniu ich przez service worker; muzyka, API i parowanie wymagają sieci.
-
-Nie ma kont Hiciarza, analityki ani backendu przechowującego talie. Po wybraniu źródła przeglądarka kontaktuje się z tym dostawcą; parowanie kontaktuje się z usługami PeerJS/ICE.
-
-## Grafiki i czcionki
-
-`public/themes/fish.webp`: autorska ilustracja wygenerowana narzędziem GPT Image. Prompt zapisany w `docs/image-prompt.txt`. Pozostałe presety są grafikami SVG projektu. Noto Sans w `public/fonts` na licencji dołączonej w tym katalogu.
-
-## Tryby odtwarzania
-
-Najkrótsza droga do gry: na stronie głównej wybierz **Graj przez Spotify**, zaloguj się i wybierz urządzenie. Gdy pojawi się „Gotowe”, włącz aparat i skanuj karty. Logowanie umożliwia zarówno import playlist, jak i sterowanie muzyką. Po zalogowaniu wrócisz do rozpoczętego trybu.
-
-- **Na tym komputerze**: Spotify i YouTube odtwarzają na stronie. Wyjście dźwięku wybierasz w systemie, np. AirPlay na Macu.
-- **Spotify Connect**: połącz konto i wybierz aktywne urządzenie Spotify. Skanowane karty uruchamiają na nim piosenki przez API. Możesz używać telefonu samodzielnie albo sparować skaner z laptopem. Karta musi zawierać źródło Spotify.
-
-Sterowanie API wymaga Spotify Premium. Urządzenie musi być dostępne dla zalogowanego konta; otwórz Spotify i uruchom dowolny utwór, jeśli nie pojawia się na liście.
-
-## Konfiguracja Spotify przez GitHub Actions
-
-1. W panelu Spotify ustaw dokładny Redirect URI strony, np. `https://artifexet.github.io/Hiciarz/`.
-2. W repozytorium otwórz Settings → Secrets and variables → Actions → New repository secret.
-3. Utwórz sekret **SPOTIFY_CLIENT_ID** z wartością Client ID. Nie dodawaj pliku z identyfikatorem do repozytorium.
-4. Uruchom ponownie workflow **Build, test and publish Pages** na gałęzi main.
-
-Client ID jest dołączany do gotowego frontendu podczas budowania. Client Secret nie jest potrzebny: logowanie używa PKCE. Nigdy nie przekazuj Client Secret do zmiennych VITE ani do plików strony.
-
-## Preset Laser — lekki kolor
-
-W kreatorze wybierz **Ustawienia druku → Laser — lekki kolor**. Obie strony mają białe tło, ciemny tekst i niewielkie akcenty w dwóch kolorach: stonowanej zieleni oraz ciepłej terakoty. Konturowe rybki-bombki i linie w PDF są wektorowe. Preset pomija pełne ilustracje i własne tło, zachowując je w projekcie na później. QR pozostaje czarno-biały.
-
-Ustawienie dotyczy wyłącznie wyglądu wydruku. Motyw zapisany w QR nie zmienia się — karta świąteczna nadal przełącza aplikację na odpowiednią skórkę. Aby wrócić do ilustracji, wybierz **Pełna grafika motywu**.
+Pomysły i zgłoszenia błędów zbieramy w [Issues](https://github.com/ArtifexEt/Hiciarz/issues).

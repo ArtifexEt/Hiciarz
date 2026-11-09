@@ -1,0 +1,16 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="1200" height="360" viewBox="0 0 1200 360" role="img" aria-labelledby="title desc">
+  <title id="title">Hiciarz — Twoja muzyka. Wasza gra.</title>
+  <desc id="desc">Zielony baner z nazwą Hiciarz i trzema kolorowymi kartami muzycznymi.</desc>
+  <defs><linearGradient id="bg" x2="1" y2="1"><stop stop-color="#083935"/><stop offset="1" stop-color="#142c2a"/></linearGradient><pattern id="dots" width="28" height="28" patternUnits="userSpaceOnUse"><circle cx="1" cy="1" r="1" fill="#ffffff" opacity=".08"/></pattern></defs>
+  <rect width="1200" height="360" rx="24" fill="url(#bg)"/><rect width="1200" height="360" rx="24" fill="url(#dots)"/>
+  <circle cx="1090" cy="28" r="200" fill="#edbd75" opacity=".05"/>
+  <g font-family="Arial, Helvetica, sans-serif">
+    <text x="60" y="75" fill="#edbd75" font-size="13" letter-spacing="4">ZESKANUJ. POSŁUCHAJ. ZGADNIJ.</text>
+    <text x="56" y="175" fill="#faf7ed" font-size="82" font-weight="700" letter-spacing="-4">hiciarz<tspan fill="#edbd75" font-size="72"> ✳</tspan></text>
+    <text x="60" y="225" fill="#faf7ed" font-size="28">Twoja muzyka. Wasza gra.</text>
+    <text x="60" y="288" fill="#b5c9c1" font-size="17">Własne playlisty · Karty do druku · Skaner QR</text>
+    <g transform="translate(714 79) rotate(-12 80 104)"><rect width="160" height="208" rx="16" fill="#c4d5c2"/><rect x="9" y="9" width="142" height="190" rx="10" fill="none" stroke="#315849"/><text x="22" y="38" fill="#315849" font-size="11" letter-spacing="2">HICIARZ</text><text x="20" y="119" fill="#234136" font-size="44" font-weight="700">1978</text><text x="22" y="163" fill="#315849" font-size="14">Dobry rytm.</text><text x="22" y="183" fill="#315849" font-size="14">Dobre wspomnienia.</text></g>
+    <g transform="translate(858 58) rotate(5 80 104)"><rect width="160" height="208" rx="16" fill="#edbd75"/><rect x="9" y="9" width="142" height="190" rx="10" fill="none" stroke="#6a4b27"/><text x="22" y="38" fill="#6a4b27" font-size="11" letter-spacing="2">HICIARZ</text><text x="20" y="119" fill="#513b24" font-size="44" font-weight="700">1984</text><text x="22" y="164" fill="#6a4b27" font-size="14">Wasz kolejny hit.</text><text x="22" y="185" fill="#6a4b27" font-size="20">♪</text></g>
+    <g transform="translate(1014 101) rotate(14 64 88)"><rect width="128" height="176" rx="14" fill="#dac9e5"/><rect x="9" y="9" width="110" height="158" rx="8" fill="none" stroke="#675576"/><text x="19" y="35" fill="#675576" font-size="10" letter-spacing="2">HICIARZ</text><text x="18" y="103" fill="#574763" font-size="36" font-weight="700">2001</text><text x="20" y="148" fill="#675576" font-size="25">♫</text></g>
+  </g>
+</svg>
