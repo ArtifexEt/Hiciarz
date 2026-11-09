@@ -170,6 +170,12 @@ small {
   flex-direction: column;
   padding: 35px 23px 22px;
   z-index: 20;
+  overflow-y: auto;
+  overscroll-behavior-y: contain;
+  scrollbar-width: thin;
+}
+.sidebar > * {
+  flex-shrink: 0;
 }
 .brand {
   display: flex;
@@ -1792,6 +1798,18 @@ main {
 .modal select {
   font-size: 12px;
 }
+label.check-line {
+  flex-direction: row;
+  align-items: center;
+  gap: 10px;
+  min-height: 44px;
+  margin: 16px 0;
+  line-height: 1.5;
+  cursor: pointer;
+}
+.check-line input[type='checkbox'] {
+  margin: 0;
+}
 .modal-actions {
   display: flex;
   gap: 10px;
@@ -1955,6 +1973,46 @@ main {
 }
 .camera-wrap {
   margin-top: 17px;
+}
+.camera-zoom {
+  padding: 12px 4px 4px;
+}
+.camera-zoom-heading {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: 12px;
+  font-size: 12px;
+}
+.camera-zoom-heading label {
+  margin: 0;
+  font-weight: 400;
+}
+.camera-zoom-heading output {
+  font-variant-numeric: tabular-nums;
+  font-weight: 600;
+}
+.camera-zoom-controls {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  margin-top: 4px;
+}
+.camera-zoom-controls .icon {
+  width: 44px;
+  height: 44px;
+  flex-shrink: 0;
+  display: grid;
+  place-items: center;
+  background: var(--soft);
+  border-radius: 8px;
+}
+.camera-zoom-controls input[type='range'] {
+  flex: 1;
+  min-width: 0;
+  height: 44px;
+  margin: 0;
+  accent-color: #667e37;
 }
 .camera-view {
   position: relative;
@@ -3773,13 +3831,18 @@ main {
   box-shadow: 0 12px 40px #18202024;
   display: grid;
   gap: 8px;
+  max-height: calc(100dvh - 80px);
+  overflow-y: auto;
+  overscroll-behavior-y: contain;
 }
 .mobile-app-menu > button {
   display: flex;
   align-items: center;
   gap: 10px;
-  padding: 12px;
+  padding: 10px 12px;
   min-height: 44px;
+  font-size: 16px;
+  line-height: 1.35;
   background: var(--soft);
   color: inherit;
   border-radius: 8px;
@@ -3790,6 +3853,10 @@ main {
 }
 .mobile-app-menu select {
   font-size: 16px;
+  font-weight: 400;
+  height: 44px;
+  padding: 10px 12px;
+  line-height: 1.35;
 }
 .scanner-app-actions {
   display: flex;

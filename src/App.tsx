@@ -2397,8 +2397,8 @@ export default function App() {
                 setShowCoffee(e.target.checked);
                 localStorage.setItem('hiciarz-hide-coffee', e.target.checked ? '0' : '1');
               }}
-            />{' '}
-            Pokazuj baner „Postaw mi kawę”
+            />
+            <span>Pokazuj baner „Postaw mi kawę”</span>
           </label>
           <p className="hint">
             Twoje talie są zapisane w tej przeglądarce. Pobierz plik projektu, aby mieć kopię lub

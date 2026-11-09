@@ -34,6 +34,8 @@ Nie wpisuj sekretu Spotify do kodu ani zmiennych frontendu. Zmienne budowania tr
 
 Nie ma ręcznego wpisywania ani wklejania kodów do skanera. Kody kart zawierają źródła i motyw, nie potrzebują centralnej bazy ani wcześniejszego importu talii na laptopie. Bezpieczeństwo sesji opiera się na losowym identyfikatorze i tokenie z QR; nie publikuj QR aktywnej sesji. Zakończenie sesji lub nowy kod unieważnia poprzednie połączenie. Polecenia nie są kolejkowane offline.
 
+Po włączeniu aparatu pojawią się suwak przybliżenia i przyciski **− / +**, jeśli urządzenie i przeglądarka udostępniają sterowanie zoomem. Przybliżenie zmienia strumień obrazu odczytywany przez skaner QR. Na urządzeniach bez tej funkcji sterowanie nie jest wyświetlane.
+
 ## Parowanie i sieć
 
 Połączenie danych: PeerJS/WebRTC. Domyślnie używamy publicznego PeerServer do sygnalizacji oraz serwerów ICE dostarczanych w konfiguracji PeerJS. To nie jest rozwiązanie całkowicie offline ani gwarantowany transport wyłącznie po LAN. Muzyka nie przechodzi przez połączenie telefon–laptop. Zapory i izolacja klientów Wi-Fi mogą uniemożliwić połączenie.

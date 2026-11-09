@@ -1,6 +1,7 @@
 import { useEffect, useRef, useState } from 'react';
 import { BrowserQRCodeReader, type IScannerControls } from '@zxing/browser';
 import { Camera as CameraIcon, CameraOff, ScanLine } from 'lucide-react';
+import CameraZoom from './CameraZoom';
 export default function Camera({
   onScan,
   pairingRequired = true,
@@ -17,6 +18,7 @@ export default function Camera({
   handler.current = onScan;
   const [active, setActive] = useState(false),
     [error, setError] = useState('');
+  const [track, setTrack] = useState<MediaStreamTrack | null>(null);
   useEffect(() => {
     if (!ready) setActive(false);
   }, [ready]);
@@ -49,7 +51,11 @@ export default function Camera({
       )
       .then((c) => {
         if (cancelled) c.stop();
-        else controls.current = c;
+        else {
+          controls.current = c;
+          const stream = video.current?.srcObject as MediaStream | null;
+          setTrack(stream?.getVideoTracks()[0] || null);
+        }
       })
       .catch((e: DOMException) => {
         if (cancelled) return;
@@ -66,6 +72,7 @@ export default function Camera({
       cancelled = true;
       controls.current?.stop();
       controls.current = null;
+      setTrack(null);
       const stream = video.current?.srcObject as MediaStream | null;
       stream?.getTracks().forEach((t) => t.stop());
     };
@@ -113,6 +120,7 @@ export default function Camera({
           </div>
         )}
       </div>
+      {active && track && <CameraZoom track={track} />}
       {error && (
         <p className="error" role="alert">
           {error}
