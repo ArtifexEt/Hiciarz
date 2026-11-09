@@ -138,7 +138,7 @@ export function useConnection(onCard: (c: Card) => void, onCommand: (c: Command)
     peer.current = p;
     p.on('error', () => {
       setConnected(false);
-      setStatus('Nie udało się zestawić połączenia. Sprawdź internet i sieć Wi-Fi.');
+      setStatus('Nie udało się połączyć urządzeń. Sprawdź internet i spróbuj ponownie.');
     });
     p.on('disconnected', () => {
       if (!connection.current?.open) setStatus('Brak połączenia z usługą parowania.');
@@ -152,7 +152,7 @@ export function useConnection(onCard: (c: Card) => void, onCommand: (c: Command)
     const p = createPeer();
     p.on('open', (id) => {
       setPairUrl(location.origin + location.pathname + `#pair=${id}&token=${token.current}`);
-      setStatus('Czekam na telefon');
+      setStatus('Czekam na skaner');
     });
     p.on('connection', (conn) => {
       if (conn.metadata?.token !== token.current || connection.current?.open) {
@@ -170,7 +170,7 @@ export function useConnection(onCard: (c: Card) => void, onCommand: (c: Command)
     const p = createPeer();
     timer.current = setTimeout(() => {
       clear();
-      setStatus('Nie udało się połączyć. Wygeneruj nowy QR na laptopie.');
+      setStatus('Nie udało się połączyć. Wygeneruj nowy QR w odtwarzaczu.');
     }, 20000);
     p.on('open', () => {
       const conn = p.connect(id, { reliable: true, metadata: { token: secret } });
@@ -180,7 +180,7 @@ export function useConnection(onCard: (c: Card) => void, onCommand: (c: Command)
   }
   function send(card?: Card, command?: Command) {
     if (!connection.current?.open) {
-      setStatus('Najpierw zeskanuj QR parowania z laptopa.');
+      setStatus('Najpierw zeskanuj QR parowania z odtwarzacza.');
       return false;
     }
     setAck('Wysyłam polecenie…');

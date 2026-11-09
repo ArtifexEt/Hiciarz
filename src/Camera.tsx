@@ -88,7 +88,7 @@ export default function Camera({
             <p>
               {pairingRequired ? (
                 <>
-                  Najpierw QR parowania z laptopa,
+                  Najpierw QR parowania z odtwarzacza,
                   <br />
                   potem QR z muzycznej karty.
                 </>

@@ -92,7 +92,7 @@ export function useSpotifyRemote(
     }
     if (!card.sources.spotify) {
       callback.current(
-        'Ta karta nie ma źródła Spotify. Użyj trybu „Na tym komputerze”, aby odtworzyć YouTube.',
+        'Ta karta nie ma źródła Spotify. Użyj trybu „Na tym urządzeniu”, aby odtworzyć YouTube.',
       );
       return;
     }
@@ -188,7 +188,7 @@ export function SpotifyRemotePanel({ remote }: { remote: ReturnType<typeof useSp
         <div className="notice">
           <p>
             Połączenie ze Spotify nie jest jeszcze dostępne na tej stronie. Możesz użyć trybu „Na
-            tym komputerze” z odtwarzaczem Spotify lub YouTube.
+            tym urządzeniu” z odtwarzaczem Spotify lub YouTube.
           </p>
         </div>
       ) : !remote.linked ? (
@@ -279,10 +279,6 @@ export function SpotifyRemotePanel({ remote }: { remote: ReturnType<typeof useSp
           {remote.error}
         </p>
       )}
-      <p className="hint">
-        W tym trybie wyjściem steruje Spotify Connect. Systemowe AirPlay dotyczy trybu „Na tym
-        komputerze”.
-      </p>
     </div>
   );
 }

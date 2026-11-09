@@ -156,7 +156,7 @@ export default function Players({
                   );
               },
               onAutoplayBlocked: () => {
-                if (!dead) callback.current('Kliknij Odtwórz na laptopie, aby zezwolić na dźwięk.');
+                if (!dead) callback.current('Kliknij Odtwórz w odtwarzaczu, aby włączyć dźwięk.');
               },
               onError: (e: any) => {
                 clearTimeout(timeout);

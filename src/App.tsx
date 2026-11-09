@@ -22,6 +22,7 @@ import {
   FileJson,
   FolderOpen,
   Headphones,
+  Info,
   LayoutGrid,
   Link2,
   LoaderCircle,
@@ -367,8 +368,8 @@ function SpotifyImport({
           <div>
             <strong>Import Spotify czeka na konfigurację</strong>
             <p>
-              Administrator strony musi ustawić identyfikator integracji. Teraz możesz wczytać plik
-              JSON lub CSV albo dodać utwory ręcznie.
+              Import ze Spotify nie jest obecnie dostępny. Możesz wczytać listę z pliku JSON lub CSV
+              albo dodać utwory ręcznie.
             </p>
           </div>
         </div>
@@ -445,6 +446,7 @@ function SpotifyImport({
   );
 }
 export default function App() {
+  const [showCoffee, setShowCoffee] = useState(localStorage.getItem('hiciarz-hide-coffee') !== '1');
   const [showDemoOffer, setShowDemoOffer] = useState(false);
   const updateAvailable = useSyncExternalStore(subscribeToUpdates, updateIsReady);
   const [updating, setUpdating] = useState(false);
@@ -454,7 +456,7 @@ export default function App() {
     [mode, setMode] = useState<Mode>('editor'),
     [tab, setTab] = useState<'songs' | 'design' | 'print'>('songs');
   const [modal, setModal] = useState<
-      'song' | 'spotify' | 'file' | 'help' | 'delete' | 'check' | 'prompt' | null
+      'song' | 'spotify' | 'file' | 'help' | 'about' | 'delete' | 'check' | 'prompt' | null
     >(null),
     [editSong, setEditSong] = useState<Song>(),
     [filter, setFilter] = useState(''),
@@ -634,7 +636,7 @@ export default function App() {
       if (q.kind === 'pair') {
         setOutput('browser');
         room.join(q.peer, q.token);
-        notify('Łączę z laptopem…');
+        notify('Łączę z odtwarzaczem…');
         return;
       }
       const now = Date.now();
@@ -647,7 +649,7 @@ export default function App() {
         lastScan.current = { id: q.card.id, time: now };
         setUiTheme(q.card.theme);
         notify('Karta zeskanowana. Polecenie wysłane.');
-      } else notify('Najpierw zeskanuj QR parowania wyświetlony na laptopie.');
+      } else notify('Najpierw zeskanuj QR parowania z ekranu odtwarzacza.');
     } catch (e) {
       notify((e as Error).message);
     }
@@ -815,6 +817,14 @@ export default function App() {
                 ))}
               </select>
             </label>
+            <button
+              className="icon about-button"
+              aria-label="O aplikacji"
+              title="O aplikacji"
+              onClick={() => setModal('about')}
+            >
+              <Info size={20} />
+            </button>
           </div>
         </header>
         {updateAvailable && (
@@ -844,18 +854,32 @@ export default function App() {
             </button>
           </div>
         )}
-        <a
-          className="coffee-support"
-          href="https://buymeacoffee.com/szymonrybka"
-          target="_blank"
-          rel="noopener noreferrer"
-        >
-          <Coffee size={20} aria-hidden="true" />
-          <span>
-            Podoba Ci się Hiciarz? <strong>Postaw mi kawę</strong>
-          </span>
-          <ArrowUpRight size={18} aria-hidden="true" />
-        </a>
+        {showCoffee && (
+          <div className="coffee-support">
+            <a
+              href="https://buymeacoffee.com/szymonrybka"
+              target="_blank"
+              rel="noopener noreferrer"
+            >
+              <Coffee size={20} aria-hidden="true" />
+              <span>
+                Podoba Ci się Hiciarz? <strong>Postaw mi kawę</strong>
+              </span>
+              <ArrowUpRight size={18} aria-hidden="true" />
+            </a>
+            <button
+              className="icon"
+              aria-label="Ukryj baner kawy"
+              title="Ukryj baner kawy"
+              onClick={() => {
+                setShowCoffee(false);
+                localStorage.setItem('hiciarz-hide-coffee', '1');
+              }}
+            >
+              <X size={18} />
+            </button>
+          </div>
+        )}
         <main>
           {mode === 'editor' ? (
             <>
@@ -1633,11 +1657,11 @@ export default function App() {
             <>
               <section className="page-heading">
                 <div>
-                  <div className="eyebrow">TELEFON JEST TWOIM PILOTEM</div>
+                  <div className="eyebrow">JEDEN SKAN. KOLEJNY HIT.</div>
                   <h1>
                     Skanuj. Słuchaj<span className="heading-star">✳</span>
                   </h1>
-                  <p>Wybierz Spotify Connect albo połącz telefon z odtwarzaczem na laptopie.</p>
+                  <p>Wybierz urządzenie Spotify albo połącz skaner ze zdalnym odtwarzaczem.</p>
                 </div>
               </section>
               <div className="play-layout">
@@ -1647,7 +1671,7 @@ export default function App() {
                       className={output === 'browser' ? 'active' : ''}
                       onClick={() => setOutput('browser')}
                     >
-                      Pilot laptopa
+                      Zdalny odtwarzacz
                     </button>
                     <button
                       className={output === 'spotify' ? 'active' : ''}
@@ -1667,7 +1691,7 @@ export default function App() {
                     <strong>
                       {output === 'spotify'
                         ? spotifyRemote.linked
-                          ? 'Sterowanie Spotify z tego telefonu'
+                          ? 'Konto Spotify połączone'
                           : 'Połącz konto Spotify'
                         : room.status}
                     </strong>
@@ -1730,14 +1754,14 @@ export default function App() {
                       <span className="mini-icon">
                         <Music2 size={23} />
                       </span>
-                      <h2>Twoja wieża. Twoje hity.</h2>
+                      <h2>Twoje urządzenie. Twoje hity.</h2>
                       <p>
                         Po połączeniu konta i wybraniu urządzenia włącz aparat. Skanuj karty
                         pojedynczo — muzyka zagra tam, gdzie wybierzesz.
                       </p>
                       <p className="hint">
-                        Nie potrzebujesz laptopa ani kodu parowania. Karty muszą zawierać utwory ze
-                        Spotify.
+                        Przy odtwarzaniu przez Spotify nie potrzebujesz drugiego urządzenia ani kodu
+                        parowania. Karty muszą zawierać utwory ze Spotify.
                       </p>
                     </>
                   ) : (
@@ -1752,27 +1776,30 @@ export default function App() {
                       </h2>
                       <ol>
                         <li>
-                          <strong>Otwórz odtwarzacz na laptopie</strong>
+                          <strong>Otwórz odtwarzacz</strong>
                           <p>Na tej samej stronie wybierz „Odtwarzacz”.</p>
                         </li>
                         <li>
                           <strong>Zeskanuj QR parowania</strong>
                           <p>
-                            Kliknij na laptopie „Połącz telefon”, potem skieruj tu aparat na
-                            wyświetlony kod.
+                            W odtwarzaczu wybierz „Połącz skaner”, a następnie zeskanuj wyświetlony
+                            kod.
                           </p>
                         </li>
                         <li>
                           <strong>Skanuj muzyczne karty</strong>
                           <p>
-                            Telefon wysyła polecenia. Laptop odtwarza muzykę. Źródło i tytuł
-                            pozostają poza ekranem skanera.
+                            Skaner wysyła polecenia, a połączony odtwarzacz uruchamia muzykę. Tytuł
+                            pozostaje ukryty na ekranie skanera.
                           </p>
                         </li>
                       </ol>
                       <div className="hint-box">
                         <Wifi size={18} />
-                        <span>Użyj wspólnej sieci Wi-Fi i pozostaw obie strony otwarte.</span>
+                        <span>
+                          Oba urządzenia potrzebują internetu. Pozostaw skaner i odtwarzacz otwarte
+                          podczas gry.
+                        </span>
                       </div>
                     </>
                   )}
@@ -1790,11 +1817,11 @@ export default function App() {
                   <p>
                     {output === 'spotify'
                       ? 'Zaloguj się i wybierz urządzenie Spotify Connect.'
-                      : 'Sparuj telefon. Wyjście dźwięku wybierz w ustawieniach swojego systemu.'}
+                      : 'Połącz skaner i odtwarzaj muzykę na tym urządzeniu.'}
                   </p>
                 </div>
                 <button className="primary" onClick={room.host}>
-                  <Smartphone size={18} /> {room.pairUrl ? 'Nowy kod parowania' : 'Połącz telefon'}
+                  <Smartphone size={18} /> {room.pairUrl ? 'Nowy kod parowania' : 'Połącz skaner'}
                 </button>
               </section>
               <div className="play-layout">
@@ -1804,7 +1831,7 @@ export default function App() {
                       className={output === 'browser' ? 'active' : ''}
                       onClick={() => setOutput('browser')}
                     >
-                      Na tym komputerze
+                      Na tym urządzeniu
                     </button>
                     <button
                       className={output === 'spotify' ? 'active' : ''}
@@ -1906,14 +1933,15 @@ export default function App() {
                   <span className="mini-icon">
                     <ScanLine />
                   </span>
-                  <h2>{room.connected ? 'Telefon połączony.' : 'Twój telefon.\nTwój pilot.'}</h2>
+                  <h2>{room.connected ? 'Skaner połączony.' : 'Połącz skaner.\nZacznij grać.'}</h2>
                   {room.pairUrl ? (
                     <>
                       <div className="pair-qr">
                         <QR value={room.pairUrl} />
                       </div>
                       <p>
-                        Otwórz skaner na telefonie i zeskanuj kod. Kod daje dostęp do tej sesji.
+                        Otwórz Skaner kart na drugim urządzeniu i zeskanuj kod, aby dołączyć do tej
+                        sesji.
                       </p>
                       <button className="secondary full" onClick={room.disconnect}>
                         Zakończ sesję
@@ -1922,7 +1950,7 @@ export default function App() {
                   ) : (
                     <>
                       <p>
-                        Kliknij „Połącz telefon”, aby wyświetlić kod QR. Nie potrzebujesz konta
+                        Kliknij „Połącz skaner”, aby wyświetlić kod QR. Nie potrzebujesz konta
                         Hiciarza.
                       </p>
                       <button className="secondary full" onClick={room.host}>
@@ -1930,17 +1958,14 @@ export default function App() {
                       </button>
                     </>
                   )}
-                  <div className="hint-box">
-                    <Headphones size={19} />
-                    <span>
-                      Na Macu wybierz wieżę w Ustawienia → Dźwięk → Wyjście. AirPlay obsługuje
-                      system.
-                    </span>
-                  </div>
-                  <p className="hint">
-                    Parowanie korzysta z usługi sygnalizacyjnej PeerJS. Polecenia płyną przez
-                    WebRTC; nie wysyłamy przez to połączenie muzyki.
-                  </p>
+                  <details className="audio-help">
+                    <summary>Jak wybrać głośnik?</summary>
+                    <p>
+                      W trybie Spotify wybierz urządzenie z listy. W trybie „Na tym urządzeniu”
+                      dźwiękiem zarządza przeglądarka i ustawienia tego urządzenia. Dostępne sposoby
+                      połączenia z głośnikiem zależą od używanego sprzętu.
+                    </p>
+                  </details>
                 </aside>
               </div>
             </>
@@ -1948,6 +1973,9 @@ export default function App() {
         </main>
         <footer className="workspace-footer">
           <span>Stworzone dla muzyki. I dobrego towarzystwa.</span>
+          <button className="text-button" onClick={() => setModal('about')}>
+            O aplikacji
+          </button>
           <button
             className="text-button version-check"
             onClick={async () => {
@@ -2172,6 +2200,51 @@ export default function App() {
           </label>
         </Modal>
       )}
+      {modal === 'about' && (
+        <Modal title="Hiciarz — muzyka nas łączy" onClose={() => setModal(null)}>
+          <p>
+            Twoje piosenki, Twoje karty, Wasz dobry wieczór. Twórz talie, drukuj karty i odkrywaj
+            muzykę ze znajomymi.
+          </p>
+          <div className="about-links">
+            <a
+              className="primary"
+              href="https://buymeacoffee.com/szymonrybka"
+              target="_blank"
+              rel="noopener noreferrer"
+            >
+              <Coffee size={18} /> Postaw mi kawę <ArrowUpRight size={16} />
+            </a>
+            <a
+              className="secondary"
+              href="https://github.com/ArtifexEt/Hiciarz"
+              target="_blank"
+              rel="noopener noreferrer"
+            >
+              <FileJson size={18} /> Repozytorium projektu <ArrowUpRight size={16} />
+            </a>
+            <button className="secondary" onClick={() => setModal('help')}>
+              Jak grać i przygotować talię?
+            </button>
+          </div>
+          <label className="check-line">
+            <input
+              type="checkbox"
+              checked={showCoffee}
+              onChange={(e) => {
+                setShowCoffee(e.target.checked);
+                localStorage.setItem('hiciarz-hide-coffee', e.target.checked ? '0' : '1');
+              }}
+            />{' '}
+            Pokazuj baner „Postaw mi kawę”
+          </label>
+          <p className="hint">
+            Twoje talie są zapisane w tej przeglądarce. Pobierz plik projektu, aby mieć kopię lub
+            przenieść go na inne urządzenie.
+          </p>
+          <small>Wersja {appVersion}</small>
+        </Modal>
+      )}
       {modal === 'help' && (
         <Modal title="Od playlisty do dobrego wieczoru" onClose={() => setModal(null)} wide>
           <div className="help-grid">
@@ -2195,8 +2268,8 @@ export default function App() {
               <span>03</span>
               <h3>Połącz i skanuj</h3>
               <p>
-                Na laptopie otwórz odtwarzacz i wygeneruj QR parowania. Zeskanuj go telefonem, potem
-                skanuj karty.
+                Połącz konto Spotify i wybierz urządzenie albo sparuj skaner ze zdalnym odtwarzaczem
+                przez QR. Następnie skanuj muzyczne karty.
               </p>
             </div>
           </div>
@@ -2234,9 +2307,9 @@ export default function App() {
             </div>
           </div>
           <p className="hint">
-            Projekty i własne tła zapisujemy lokalnie w IndexedDB. Czyszczenie danych strony usuwa
-            lokalne talie. Gotowe pliki PDF nie zawierają muzyki ani danych logowania. Wydrukowany
-            QR zawiera źródła i motyw, więc działa bez wczytywania talii na laptopie.
+            Projekty i własne tła są zapisane w tej przeglądarce. Pobierz plik projektu, żeby mieć
+            kopię. PDF nie zawiera muzyki ani danych logowania. Karty można skanować bez wczytywania
+            talii do odtwarzacza.
           </p>
         </Modal>
       )}

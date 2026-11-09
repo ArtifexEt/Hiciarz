@@ -10,30 +10,30 @@ export function GameGuide({ onStart }: { onStart: (route: 'spotify' | 'laptop') 
   const steps = laptop
     ? [
         [
-          'Na laptopie',
-          'Otwórz Odtwarzacz, wybierz „Na tym komputerze” i kliknij „Połącz telefon”. Pojawi się kod QR.',
+          'Uruchom odtwarzacz',
+          'Na urządzeniu, które ma odtwarzać muzykę, otwórz Odtwarzacz → Na tym urządzeniu → Połącz skaner. Pojawi się kod QR.',
         ],
         [
-          'Na telefonie',
-          'Otwórz tę samą stronę → Skaner kart → Pilot laptopa → Włącz aparat. Zeskanuj kod parowania z ekranu laptopa.',
+          'Połącz skaner',
+          'Na drugim urządzeniu otwórz Skaner kart → Zdalny odtwarzacz → Włącz aparat. Zeskanuj kod z ekranu odtwarzacza.',
         ],
         [
           'Zeskanuj kartę',
-          'Teraz skanuj QR z wydrukowanych kart. Piosenka uruchomi się na laptopie. Jeśli pojawi się prośba, kliknij odtwarzanie na jego ekranie.',
+          'Skanuj kody QR z kart. Muzyka uruchomi się na połączonym odtwarzaczu. Jeśli przeglądarka poprosi o zgodę na dźwięk, kliknij odtwarzanie na jego ekranie.',
         ],
       ]
     : [
         [
           'Przygotuj Spotify',
-          'Otwórz Spotify na wieży, komputerze lub telefonie i uruchom dowolny utwór, żeby urządzenie było dostępne.',
+          'Otwórz Spotify na wybranym urządzeniu i uruchom dowolny utwór, żeby pojawiło się na liście.',
         ],
         [
           'Połącz konto',
-          'Na telefonie otwórz Skaner kart → Spotify Connect. Zaloguj się do Spotify i wybierz urządzenie, na którym ma grać muzyka.',
+          'Wybierz Graj przez Spotify, zaloguj się i wskaż urządzenie, na którym ma grać muzyka.',
         ],
         [
           'Zeskanuj kartę',
-          'Włącz aparat i zeskanuj QR z wydrukowanej karty. Utwór zagra na wybranym urządzeniu Spotify. Laptop nie jest potrzebny.',
+          'Włącz aparat i zeskanuj QR z karty. Utwór zagra na wybranym urządzeniu Spotify. Skanerem i odtwarzaczem może być to samo urządzenie.',
         ],
       ];
   return (
@@ -41,7 +41,7 @@ export function GameGuide({ onStart }: { onStart: (route: 'spotify' | 'laptop') 
       <div className="game-guide-heading">
         <div>
           <span className="eyebrow">PIERWSZY RAZ? ZACZNIJ TUTAJ</span>
-          <h2 id="game-guide-title">Telefon skanuje. Muzyka gra.</h2>
+          <h2 id="game-guide-title">Skanuj karty. Odkrywaj muzykę.</h2>
           <p>Przygotuj i wydrukuj talię w kreatorze poniżej. Potem wybierz, jak chcesz słuchać.</p>
         </div>
         <div className="guide-device-art" aria-hidden="true">
@@ -58,7 +58,7 @@ export function GameGuide({ onStart }: { onStart: (route: 'spotify' | 'laptop') 
           aria-controls="guide-steps"
           onClick={() => setRoute('laptop')}
         >
-          <Monitor size={17} /> Przez laptop · Spotify / YouTube
+          <Monitor size={17} /> Przez odtwarzacz · Spotify / YouTube
         </button>
         <button
           id="guide-spotify"
@@ -87,8 +87,8 @@ export function GameGuide({ onStart }: { onStart: (route: 'spotify' | 'laptop') 
         <div className="guide-bottom">
           <p>
             {laptop
-              ? 'Chcesz słuchać na wieży? Wybierz wyjście dźwięku w systemie laptopa, np. AirPlay na Macu, Bluetooth lub kabel. Strona odtwarza muzykę, telefon działa jako pilot.'
-              : 'Potrzebujesz Spotify Premium i karty ze źródłem Spotify. Jeśli logowanie nie jest jeszcze dostępne, wybierz wariant z laptopem.'}
+              ? 'Dźwięk odtwarza połączone urządzenie. Jeśli chcesz użyć zewnętrznego głośnika, połącz go z tym urządzeniem w jego ustawieniach dźwięku.'
+              : 'Potrzebujesz Spotify Premium i kart ze źródłem Spotify. Wybierz swój odtwarzacz z listy — kolejne karty będą grały właśnie tam.'}
           </p>
           <button className="secondary" onClick={() => onStart(route)}>
             {laptop ? <Monitor size={17} /> : <ScanLine size={17} />}
