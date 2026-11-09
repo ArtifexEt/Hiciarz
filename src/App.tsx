@@ -1123,7 +1123,7 @@ export default function App() {
                       <div className="file-drop">
                         <FileJson size={22} />
                         <div>
-                          <strong>Masz listę od AI?</strong>
+                          <strong>Masz gotową listę utworów?</strong>
                           <span>Wczytaj JSON lub CSV i dopracuj swoją talię.</span>
                         </div>
                         <button className="text-button" onClick={() => fileRef.current?.click()}>
@@ -1949,7 +1949,7 @@ export default function App() {
           <div className="notice">
             <FileJson size={22} />
             <div>
-              <strong>Lista przygotowana przez AI</strong>
+              <strong>Wczytaj listę utworów z pliku</strong>
               <p>
                 JSON: tablica obiektów z polami title, artist, year, sources.spotify i/lub
                 sources.youtube. Motyw theme jest opcjonalny. CSV: title, artist, year, spotify,
