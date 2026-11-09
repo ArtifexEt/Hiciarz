@@ -38,6 +38,7 @@ import {
   X,
 } from 'lucide-react';
 import { qrImage } from './qr';
+import { GameGuide } from './GameGuide';
 import {
   type Card,
   type Deck,
@@ -805,6 +806,12 @@ export default function App() {
                   Pobierz PDF <span className="button-key">↗</span>
                 </button>
               </section>
+              <GameGuide
+                onStart={(route) => {
+                  setOutput(route === 'spotify' ? 'spotify' : 'browser');
+                  changeMode(route === 'spotify' ? 'scanner' : 'player');
+                }}
+              />
               {storageError && (
                 <div className="notice error" role="alert">
                   {storageError}
@@ -1446,7 +1453,7 @@ export default function App() {
                   <h1>
                     Skanuj. Słuchaj<span className="heading-star">✳</span>
                   </h1>
-                  <p>Połącz się z laptopem i daj się zaskoczyć kolejnej piosence.</p>
+                  <p>Wybierz Spotify Connect albo połącz telefon z odtwarzaczem na laptopie.</p>
                 </div>
               </section>
               <div className="play-layout">
