@@ -1,6 +1,7 @@
 import { jsPDF } from 'jspdf';
 import { qrImage } from './qr';
 import { drawFront } from './front';
+import { fitPrintText } from './print-text';
 import { type Deck, type Song, backPosition, cardUrl } from './model';
 import { asset, themeArt, themeColors } from './themes';
 let fontPromise: Promise<string> | undefined;
@@ -30,19 +31,36 @@ async function raster(url: string): Promise<string> {
     image.src = url;
   });
 }
-function textFit(doc: jsPDF, text: string, x: number, y: number, width: number, max = 13, min = 7) {
-  let size = max;
-  let lines: string[] = [];
-  do {
-    doc.setFontSize(size);
-    lines = doc.splitTextToSize(text, width);
-    if (lines.length <= 2) break;
-    size -= 0.5;
-  } while (size >= min);
-  if (lines.length > 2)
-    throw new Error('Tekst na karcie jest zbyt długi do wydruku. Skróć tytuł lub wykonawcę.');
-  doc.text(lines, x, y, { align: 'center', lineHeightFactor: 1.2 });
+function textFit(
+  doc: jsPDF,
+  text: string,
+  x: number,
+  top: number,
+  height: number,
+  max: number,
+  min: number,
+) {
+  const layout = fitPrintText(doc, text, 50, height, max, min);
+  doc.setFontSize(layout.size);
+  doc.text(layout.lines, x, top + (height - layout.lines.length * layout.lineHeight) / 2, {
+    align: 'center',
+    baseline: 'top',
+    lineHeightFactor: 1.15,
+  });
+  return layout.shortened;
 }
+export type PDFProgress = {
+  phase: 'preparing' | 'fronts' | 'backs' | 'saving';
+  completed: number;
+  total: number;
+  percent: number;
+};
+type PDFOptions = {
+  onProgress?: (progress: PDFProgress) => void;
+  onTextShortened?: (song: Song) => void;
+  signal?: AbortSignal;
+};
+export const yieldForPDF = () => new Promise<void>((resolve) => setTimeout(resolve, 0));
 function cuts(doc: jsPDF, x: number, y: number) {
   doc.setDrawColor('#a0a0a0');
   doc.setLineWidth(0.15);
@@ -52,15 +70,33 @@ function cuts(doc: jsPDF, x: number, y: number) {
       doc.line(x + dx, y + dy - 2, x + dx, y + dy + 2);
     }
 }
-export async function buildPDF(deck: Deck, songs: Song[], base: string): Promise<jsPDF> {
+export async function buildPDF(
+  deck: Deck,
+  songs: Song[],
+  base: string,
+  options: PDFOptions = {},
+): Promise<jsPDF> {
   if (!songs.length) throw new Error('Wybierz co najmniej jedną kartę.');
+  const checkAbort = () => options.signal?.throwIfAborted();
+  const report = (phase: PDFProgress['phase'], completed: number, sides: number) =>
+    options.onProgress?.({
+      phase,
+      completed,
+      total: songs.length,
+      percent: 5 + Math.floor((sides / (songs.length * 2)) * 90),
+    });
+  checkAbort();
+  options.onProgress?.({ phase: 'preparing', completed: 0, total: songs.length, percent: 0 });
+  await yieldForPDF();
   const doc = new jsPDF({ unit: 'mm', format: 'a4', compress: true });
   doc.addFileToVFS('NotoSans.ttf', await font());
+  checkAbort();
   doc.addFont('NotoSans.ttf', 'NotoSans', 'normal');
   doc.setFont('NotoSans');
   const arts = new Map<string, string>();
   const laser = deck.print.style === 'laser';
   for (const s of laser ? [] : songs) {
+    checkAbort();
     const url = deck.back || themeArt(s.theme || deck.theme);
     if (!arts.has(url)) arts.set(url, await raster(url));
   }
@@ -71,6 +107,7 @@ export async function buildPDF(deck: Deck, songs: Song[], base: string): Promise
     doc.setTextColor('#777777');
     doc.text(`${deck.name} / odpowiedzi / arkusz ${Math.floor(start / 12) + 1}`, 15, 15);
     for (let i = 0; i < sheet.length; i++) {
+      checkAbort();
       const s = sheet[i],
         x = 15 + (i % 3) * 60,
         y = 28 + Math.floor(i / 3) * 60;
@@ -79,11 +116,14 @@ export async function buildPDF(deck: Deck, songs: Song[], base: string): Promise
       doc.text('HICIARZ', x + 7, y + 8, { charSpace: 0.4 });
       doc.setFontSize(34);
       doc.text(String(s.year), x + 30, y + 22, { align: 'center' });
-      textFit(doc, s.title, x + 30, y + 34, 50, 12);
-      textFit(doc, s.artist, x + 30, y + 47, 50, 9);
+      const shortTitle = textFit(doc, s.title, x + 30, y + 27, 14, 12, 7);
+      const shortArtist = textFit(doc, s.artist, x + 30, y + 42, 8.5, 9, 6.5);
+      if (shortTitle || shortArtist) options.onTextShortened?.(s);
       doc.setFontSize(5);
       doc.text(s.id.slice(0, 12), x + 30, y + 54.8, { align: 'center' });
       if (deck.print.cuts) cuts(doc, x, y);
+      report('fronts', start, start * 2 + i + 1);
+      await yieldForPDF();
     }
     doc.addPage();
     doc.setFontSize(8);
@@ -94,6 +134,7 @@ export async function buildPDF(deck: Deck, songs: Song[], base: string): Promise
       15,
     );
     for (let i = 0; i < sheet.length; i++) {
+      checkAbort();
       const s = sheet[i],
         pos = backPosition(i, deck.print.edge),
         x = 15 + pos.col * 60 + deck.print.offsetX,
@@ -128,16 +169,20 @@ export async function buildPDF(deck: Deck, songs: Song[], base: string): Promise
       doc.setDrawColor(laser ? '#b56e58' : colors.accent);
       doc.setLineWidth(0.3);
       doc.roundedRect(x + 9, y + 10, 42, 42, 3, 3, 'S');
-      const qr = qrImage(cardUrl(s, deck.theme, base));
-      doc.addImage(qr, 'PNG', x + 10, y + 11, 40, 40);
+      const qr = qrImage(cardUrl(s, deck.theme, base), 8);
+      doc.addImage(qr, 'PNG', x + 10, y + 11, 40, 40, undefined, 'FAST');
       doc.setFillColor(laser ? '#ffffff' : colors.dark);
       doc.roundedRect(x + 9, y + 52.5, 42, 4, 1, 1, 'F');
       doc.setTextColor(laser ? '#26332e' : '#ffffff');
       doc.setFontSize(4.5);
       doc.text('ZESKANUJ · POSŁUCHAJ · ZGADNIJ', x + 30, y + 55.2, { align: 'center' });
       if (deck.print.cuts) cuts(doc, x, y);
+      report('backs', start + i + 1, start * 2 + sheet.length + i + 1);
+      await yieldForPDF();
     }
   }
+  checkAbort();
+  report('saving', songs.length, songs.length * 2);
   return doc;
 }
 export async function calibrationPDF(edge: 'long' | 'short') {

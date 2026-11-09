@@ -1,10 +1,9 @@
 import QRCode from 'qrcode';
 
 /** Rounded modules with intact finder patterns and a four-module quiet zone. */
-export function qrImage(value: string): string {
+export function qrImage(value: string, unit = 12): string {
   const { modules } = QRCode.create(value, { errorCorrectionLevel: 'M' });
   const margin = 4;
-  const unit = 12;
   const canvas = document.createElement('canvas');
   canvas.width = canvas.height = (modules.size + margin * 2) * unit;
   const ctx = canvas.getContext('2d')!;

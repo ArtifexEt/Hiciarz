@@ -31,7 +31,6 @@ import {
   Music2,
   Menu,
   Palette,
-  Pause,
   Play,
   Plus,
   Printer,
@@ -43,7 +42,6 @@ import {
   Shuffle,
   Smartphone,
   Sparkles,
-  Square,
   Trash2,
   Upload,
   Wifi,
@@ -52,6 +50,8 @@ import {
 import { qrImage } from './qr';
 import Landing from './Landing';
 import SpotifyAccount from './SpotifyAccount';
+import PlayingCard from './PlayingCard';
+import type { PlaybackState } from './playback';
 import PlaylistExamples from './PlaylistExamples';
 import { createExampleDeck } from './examples';
 import playlistPrompt from '../docs/playlist-prompt.txt?raw';
@@ -80,6 +80,7 @@ import {
   validateSong,
 } from './model';
 import { imageData, loadDecks, saveDecks } from './storage';
+import PDFExportProgress, { setPDFProgress } from './PDFExportProgress';
 import { asset, themeArt } from './themes';
 import type { SourceCheck } from './availability';
 import { useConnection, type Command } from './connection';
@@ -506,6 +507,11 @@ export default function App() {
     [preferred, setPreferred] = useState<'spotify' | 'youtube'>('spotify'),
     [playState, setPlayState] = useState('Przygotuj połączenie i zeskanuj kartę.'),
     [command, setCommand] = useState<{ type: Command; seq: number } | null>(null);
+  const [playbackState, setPlaybackState] = useState<PlaybackState>('paused');
+  const reportPlayback = useCallback((text: string, state?: PlaybackState) => {
+    setPlayState(text);
+    if (state) setPlaybackState(state);
+  }, []);
   const [output, setOutputState] = useState<'browser' | 'spotify'>(() =>
     localStorage.getItem('hiciarz-output') === 'spotify' ||
     (!localStorage.getItem('hiciarz-output') && spotifyConfigured())
@@ -520,7 +526,7 @@ export default function App() {
     card,
     command,
     output === 'spotify' && (mode === 'scanner' || mode === 'player'),
-    setPlayState,
+    reportPlayback,
     mode === 'scanner' ? 'scanner' : 'player',
   );
   const outputRef = useRef(output);
@@ -533,6 +539,7 @@ export default function App() {
   const [checks, setChecks] = useState<SourceCheck[]>([]),
     [checking, setChecking] = useState(false),
     [checkProgress, setCheckProgress] = useState(0);
+  const pdfAbort = useRef<AbortController | null>(null);
   const deck = decks.find((d) => d.id === activeId) || decks[0];
   const notify = useCallback((s: string) => {
     setMessage(s);
@@ -540,19 +547,73 @@ export default function App() {
     toastTimer.current = setTimeout(() => setMessage(''), 6000);
   }, []);
   function receive(c: Card) {
+    setMessage('');
     setCard(c);
+    setCommand(null);
     setUiTheme(c.theme);
     setSource(c.sources[preferred] ? preferred : c.sources.spotify ? 'spotify' : 'youtube');
     setPlayState('Wczytuję utwór z karty…');
+    setPlaybackState('loading');
   }
   function playerCommand(c: Command) {
     setCommand({ type: c, seq: Date.now() });
-    if (c === 'stop') {
-      setCard(null);
-      setPlayState('Zatrzymano. Czekam na kolejną kartę.');
-    }
+    setPlaybackState('loading');
   }
-  const room = useConnection(receive, playerCommand);
+  const room = useConnection(receive, playerCommand, (feedback) => {
+    if (mode === 'scanner' && output === 'browser' && feedback.cardId === card?.id)
+      reportPlayback(feedback.message, feedback.state);
+  });
+  useEffect(() => {
+    if (mode === 'player' && card && room.connected)
+      room.reportPlayback({ cardId: card.id, state: playbackState, message: playState });
+  }, [mode, card, room.connected, playbackState, playState]);
+  const gameReady = output === 'spotify' ? spotifyRemote.ready : room.connected;
+  useEffect(() => {
+    window.scrollTo({ top: 0, behavior: 'auto' });
+  }, [mode, card?.id]);
+  useEffect(() => {
+    if (mode === 'scanner' && output === 'browser' && card && !room.connected) {
+      setCard(null);
+      setCommand(null);
+      setPlayState('Połączenie z odtwarzaczem zostało przerwane. Zeskanuj ponownie QR parowania.');
+    }
+  }, [mode, output, card, room.connected]);
+  useEffect(() => {
+    if (mode !== 'scanner' || output !== 'browser' || !card || playbackState !== 'loading') return;
+    const timeout = setTimeout(
+      () =>
+        reportPlayback(
+          'Odtwarzacz nie potwierdził odtwarzania. Sprawdź drugi ekran i spróbuj ponownie.',
+          'error',
+        ),
+      22000,
+    );
+    return () => clearTimeout(timeout);
+  }, [mode, output, card, playbackState, reportPlayback]);
+  const cardDeck = card ? decks.find((d) => d.songs.some((s) => s.id === card.id)) : undefined;
+  const playingBack = cardDeck?.print.style === 'laser' ? themeArt('laser') : cardDeck?.back;
+  function nextCard() {
+    setCard(null);
+    setCommand(null);
+    lastScan.current = { id: '', time: 0 };
+    setPlaybackState('paused');
+  }
+  function togglePlayback() {
+    if (!card) return;
+    if (playbackState === 'error') {
+      if (mode === 'scanner' && output === 'browser') {
+        if (room.send(card)) reportPlayback('Czekam na odtwarzacz…', 'loading');
+      } else receive({ ...card });
+      return;
+    }
+    const action = playbackState === 'playing' ? 'pause' : 'resume';
+    sendPlaybackCommand(action);
+  }
+  function sendPlaybackCommand(action: Command) {
+    if (mode === 'scanner' && output === 'browser') {
+      if (room.send(undefined, action)) reportPlayback('Czekam na odtwarzacz…', 'loading');
+    } else playerCommand(action);
+  }
   useEffect(() => {
     const query = window.matchMedia('(max-width: 700px)');
     const resized = () => setIsMobile(query.matches);
@@ -662,7 +723,7 @@ export default function App() {
         } else if (outputRef.current === 'spotify') {
           receive(q.card);
         } else if (room.send(q.card)) {
-          setUiTheme(q.card.theme);
+          receive(q.card);
         } else incomingCard.current = q.card;
         history.replaceState(null, '', location.pathname + location.search);
       } catch {
@@ -679,7 +740,7 @@ export default function App() {
   useEffect(() => {
     if (room.connected && incomingCard.current) {
       room.send(incomingCard.current);
-      setUiTheme(incomingCard.current.theme);
+      receive(incomingCard.current);
       incomingCard.current = null;
     }
   }, [room.connected]);
@@ -726,11 +787,9 @@ export default function App() {
       if (output === 'spotify') {
         lastScan.current = { id: q.card.id, time: now };
         receive(q.card);
-        notify('Karta zeskanowana. Wysyłam do Spotify.');
       } else if (room.send(q.card)) {
         lastScan.current = { id: q.card.id, time: now };
-        setUiTheme(q.card.theme);
-        notify('Karta zeskanowana. Polecenie wysłane.');
+        receive(q.card);
       } else notify('Najpierw zeskanuj QR parowania z ekranu odtwarzacza.');
     } catch (e) {
       notify((e as Error).message);
@@ -751,23 +810,43 @@ export default function App() {
     }
   }
   async function exportPDF() {
+    if (pdfAbort.current) return;
+    const controller = new AbortController();
+    pdfAbort.current = controller;
     setBusy(true);
+    const songs = selected.size ? deck.songs.filter((s) => selected.has(s.id)) : deck.songs;
+    setPDFProgress({ phase: 'preparing', completed: 0, total: songs.length, percent: 0 });
     try {
-      const { buildPDF } = await import('./pdf');
-      const songs = selected.size ? deck.songs.filter((s) => selected.has(s.id)) : deck.songs;
+      const { buildPDF, yieldForPDF } = await import('./pdf');
       songs.forEach(validateSong);
-      const doc = await buildPDF(deck, songs, location.origin + location.pathname);
-      doc.save(`${deck.name.replace(/[^\p{L}\p{N} -]/gu, '') || 'hiciarz'}.pdf`);
-      notify('PDF gotowy. Drukuj w skali 100%, bez dopasowania do strony.');
+      const shortened = new Set<string>();
+      const doc = await buildPDF(deck, songs, location.origin + location.pathname, {
+        signal: controller.signal,
+        onProgress: setPDFProgress,
+        onTextShortened: (song) => shortened.add(song.id),
+      });
+      await yieldForPDF();
+      controller.signal.throwIfAborted();
+      await doc.save(`${deck.name.replace(/[^\p{L}\p{N} -]/gu, '') || 'hiciarz'}.pdf`, {
+        returnPromise: true,
+      });
+      notify(
+        shortened.size
+          ? `PDF gotowy. Bardzo długie nazwy skróciliśmy na ${shortened.size} kartach; pełne dane zostały w talii. Drukuj w skali 100%.`
+          : 'PDF gotowy. Drukuj w skali 100%, bez dopasowania do strony.',
+      );
     } catch (e) {
-      notify((e as Error).message);
+      notify(controller.signal.aborted ? 'Anulowano generowanie PDF.' : (e as Error).message);
     } finally {
+      pdfAbort.current = null;
+      setPDFProgress(undefined);
       setBusy(false);
     }
   }
   function changeMode(next: Mode) {
     setAppMenuOpen(false);
     if (next !== mode) {
+      if (room.connected || room.pairUrl) room.disconnect();
       setCard(null);
       setCommand(null);
       incomingCard.current = null;
@@ -790,7 +869,14 @@ export default function App() {
       </div>
     );
   return (
-    <div className={'app-shell mode-' + mode + (focusedScanner ? ' focused-scanner' : '')}>
+    <div
+      className={
+        'app-shell mode-' +
+        mode +
+        (focusedScanner ? ' focused-scanner' : '') +
+        ((mode === 'scanner' || mode === 'player') && card ? ' playback-active' : '')
+      }
+    >
       <aside className="sidebar">
         <a className="brand" href={import.meta.env.BASE_URL} aria-label="Hiciarz — strona główna">
           <span className="brand-icon">
@@ -878,27 +964,32 @@ export default function App() {
       <div className="workspace">
         <header className="topbar">
           <div className="breadcrumb">
-            <button
-              className="start-link"
-              onClick={() => changeMode('home')}
-              aria-label="Wróć do startu"
-            >
-              <ChevronLeft size={16} />
-              {mode === 'home' ? 'hiciarz ✳' : 'Start'}
-            </button>
-            {mode !== 'home' && <ChevronRight size={13} />}
-            <strong>
-              {mode === 'editor'
-                ? 'Kreator kart'
-                : mode === 'scanner'
-                  ? 'Skaner kart'
-                  : mode === 'player'
-                    ? 'Odtwarzacz'
-                    : ''}
-            </strong>
+            {mode === 'home' ? (
+              <span className="start-brand">
+                hiciarz <span aria-hidden="true">✳</span>
+              </span>
+            ) : (
+              <>
+                <button
+                  className="start-link"
+                  onClick={() => changeMode('home')}
+                  aria-label="Wróć do startu"
+                >
+                  <ChevronLeft size={16} />
+                  Start
+                </button>
+                <ChevronRight size={13} />
+                <strong>
+                  {mode === 'editor'
+                    ? 'Kreator kart'
+                    : mode === 'scanner'
+                      ? 'Skaner kart'
+                      : 'Odtwarzacz'}
+                </strong>
+              </>
+            )}
           </div>
           <div className="topbar-right">
-            <SpotifyAccount />
             <span className="save-status">
               <span className={storageError ? 'warn-dot' : 'live-dot'} />
               {storageError ? 'Zapis niedostępny' : 'Zapis lokalny'}
@@ -934,6 +1025,7 @@ export default function App() {
             >
               <Menu size={21} />
             </button>
+            <SpotifyAccount />
           </div>
           {appMenuOpen && (
             <nav
@@ -959,7 +1051,7 @@ export default function App() {
               </button>
               <button
                 onClick={() => {
-                  setMode('scanner');
+                  changeMode('scanner');
                   setAppMenuOpen(false);
                 }}
               >
@@ -1840,148 +1932,159 @@ export default function App() {
                 <div>
                   <div className="eyebrow">JEDEN SKAN. KOLEJNY HIT.</div>
                   <h1>
-                    Skanuj i graj<span className="heading-star">✳</span>
+                    {card ? 'Słuchaj i zgaduj' : 'Skanuj i graj'}
+                    <span className="heading-star">✳</span>
                   </h1>
-                  <p>Najpierw wybierz, skąd ma grać muzyka. Potem włącz aparat i skanuj karty.</p>
+                  {!card && (
+                    <p>
+                      {gameReady
+                        ? 'Połączenie gotowe. Włącz aparat i zeskanuj kartę.'
+                        : 'Najpierw wybierz, skąd ma grać muzyka. Potem włącz aparat i skanuj karty.'}
+                    </p>
+                  )}
                 </div>
               </section>
-              <div className="play-layout">
+              <div className={'play-layout' + (gameReady ? ' game-ready' : '')}>
                 <section className="surface scan-surface">
-                  <div className="output-switch" role="group" aria-label="Sposób odtwarzania">
-                    <button
-                      className={output === 'browser' ? 'active' : ''}
-                      onClick={() => setOutput('browser')}
-                    >
-                      Drugi ekran
-                    </button>
-                    <button
-                      className={output === 'spotify' ? 'active' : ''}
-                      onClick={() => setOutput('spotify')}
-                    >
-                      Moje Spotify
-                    </button>
-                  </div>
                   <details
-                    className="mode-help"
-                    key={output}
-                    open={
-                      !(
-                        (output === 'spotify' && spotifyRemote.ready) ||
-                        (output === 'browser' && room.connected)
-                      )
-                    }
+                    className="playback-setup"
+                    open={!gameReady || Boolean(spotifyRemote.error && output === 'spotify')}
                   >
                     <summary>
-                      {output === 'spotify'
-                        ? 'Jak zagrać przez Spotify?'
-                        : 'Jak połączyć drugi ekran?'}
+                      <span className={gameReady ? 'live-dot' : 'warn-dot'} />
+                      {gameReady
+                        ? output === 'spotify'
+                          ? `Gramy na: ${spotifyRemote.devices.find((d) => d.id === spotifyRemote.device)?.name || 'Spotify'}`
+                          : 'Połączono z odtwarzaczem'
+                        : 'Przygotuj odtwarzanie'}
+                      <Settings2 size={16} />
                     </summary>
-                    {output === 'spotify' ? (
-                      <>
-                        <ol>
-                          <li>Otwórz Spotify na urządzeniu, na którym ma grać muzyka.</li>
-                          <li>Zaloguj się poniżej i wybierz to urządzenie z listy.</li>
-                          <li>Włącz aparat. Każdy QR z karty uruchomi kolejną piosenkę.</li>
-                        </ol>
-                        <p>
-                          Potrzebujesz Spotify Premium. Jeśli konto jest już połączone w tej karcie
-                          przeglądarki, użyj tej samej sesji.
-                        </p>
-                      </>
-                    ) : (
-                      <>
-                        <ol>
-                          <li>
-                            Na urządzeniu do odtwarzania otwórz Hiciarza i wybierz „Otwórz
-                            odtwarzacz”.
-                          </li>
-                          <li>Kliknij tam „Połącz skaner”, żeby wyświetlić QR parowania.</li>
-                          <li>
-                            Tutaj włącz aparat: zeskanuj QR z ekranu, a potem kody z muzycznych
-                            kart.
-                          </li>
-                        </ol>
-                        <p>
-                          Do parowania nie potrzeba logowania. Oba urządzenia muszą pozostać otwarte
-                          i mieć internet.
-                        </p>
-                      </>
-                    )}
-                  </details>
-                  <div className="status-bar">
-                    <span
-                      className={
-                        (output === 'spotify' ? spotifyRemote.linked : room.connected)
-                          ? 'live-dot'
-                          : 'warn-dot'
+                    <div className="output-switch" role="group" aria-label="Sposób odtwarzania">
+                      <button
+                        className={output === 'browser' ? 'active' : ''}
+                        onClick={() => setOutput('browser')}
+                      >
+                        Drugi ekran
+                      </button>
+                      <button
+                        className={output === 'spotify' ? 'active' : ''}
+                        onClick={() => setOutput('spotify')}
+                      >
+                        Moje Spotify
+                      </button>
+                    </div>
+                    <details
+                      className="mode-help"
+                      key={output}
+                      open={
+                        !(
+                          (output === 'spotify' && spotifyRemote.ready) ||
+                          (output === 'browser' && room.connected)
+                        )
                       }
-                    />
-                    <strong>
-                      {output === 'spotify'
-                        ? spotifyRemote.linked
-                          ? 'Konto Spotify połączone'
-                          : 'Połącz konto Spotify'
-                        : room.status}
-                    </strong>
-                    {output === 'browser' && room.connected && (
-                      <button className="text-button" onClick={room.disconnect}>
-                        Rozłącz
+                    >
+                      <summary>
+                        {output === 'spotify'
+                          ? 'Jak zagrać przez Spotify?'
+                          : 'Jak połączyć drugi ekran?'}
+                      </summary>
+                      {output === 'spotify' ? (
+                        <>
+                          <ol>
+                            <li>Otwórz Spotify na urządzeniu, na którym ma grać muzyka.</li>
+                            <li>Zaloguj się poniżej i wybierz to urządzenie z listy.</li>
+                            <li>Włącz aparat. Każdy QR z karty uruchomi kolejną piosenkę.</li>
+                          </ol>
+                          <p>
+                            Potrzebujesz Spotify Premium. Jeśli konto jest już połączone w tej
+                            karcie przeglądarki, użyj tej samej sesji.
+                          </p>
+                        </>
+                      ) : (
+                        <>
+                          <ol>
+                            <li>
+                              Na urządzeniu do odtwarzania otwórz Hiciarza i wybierz „Otwórz
+                              odtwarzacz”.
+                            </li>
+                            <li>Kliknij tam „Połącz skaner”, żeby wyświetlić QR parowania.</li>
+                            <li>
+                              Tutaj włącz aparat: zeskanuj QR z ekranu, a potem kody z muzycznych
+                              kart.
+                            </li>
+                          </ol>
+                          <p>
+                            Do parowania nie potrzeba logowania. Oba urządzenia muszą pozostać
+                            otwarte i mieć internet.
+                          </p>
+                        </>
+                      )}
+                    </details>
+                    <div className="status-bar">
+                      <span
+                        className={
+                          (output === 'spotify' ? spotifyRemote.linked : room.connected)
+                            ? 'live-dot'
+                            : 'warn-dot'
+                        }
+                      />
+                      <strong>
+                        {output === 'spotify'
+                          ? spotifyRemote.linked
+                            ? 'Konto Spotify połączone'
+                            : 'Połącz konto Spotify'
+                          : room.status}
+                      </strong>
+                      {output === 'browser' && room.connected && (
+                        <button className="text-button" onClick={room.disconnect}>
+                          Rozłącz
+                        </button>
+                      )}
+                    </div>
+                    {output === 'spotify' && <SpotifyRemotePanel remote={spotifyRemote} />}
+                    {card && (
+                      <button
+                        className="quiet"
+                        disabled={!gameReady}
+                        onClick={() => sendPlaybackCommand('stop')}
+                      >
+                        Zatrzymaj odtwarzanie
                       </button>
                     )}
-                  </div>
-                  {output === 'spotify' && <SpotifyRemotePanel remote={spotifyRemote} />}
-                  <Suspense fallback={<p className="hint">Przygotowuję skaner…</p>}>
-                    <Camera
-                      onScan={handleScan}
-                      onStart={() => {
-                        lastScan.current = { id: '', time: 0 };
-                      }}
-                      pairingRequired={output === 'browser'}
-                      paired={room.connected}
-                      ready={output === 'browser' || spotifyRemote.ready}
+                  </details>
+                  {card ? (
+                    <PlayingCard
+                      card={card}
+                      back={playingBack}
+                      state={playbackState}
+                      message={playState}
+                      disabled={!gameReady}
+                      onToggle={togglePlayback}
+                      onNext={nextCard}
                     />
-                  </Suspense>
-                  <div className="scanner-controls">
-                    <button
-                      className="secondary"
-                      disabled={output === 'spotify' ? !spotifyRemote.ready : !room.connected}
-                      onClick={() =>
-                        output === 'spotify'
-                          ? playerCommand('pause')
-                          : room.send(undefined, 'pause')
-                      }
-                    >
-                      <Pause size={19} /> Pauza
-                    </button>
-                    <button
-                      className="primary"
-                      disabled={output === 'spotify' ? !spotifyRemote.ready : !room.connected}
-                      onClick={() =>
-                        output === 'spotify'
-                          ? playerCommand('resume')
-                          : room.send(undefined, 'resume')
-                      }
-                    >
-                      <Play size={19} /> Wznów
-                    </button>
-                    <button
-                      className="secondary"
-                      disabled={output === 'spotify' ? !spotifyRemote.ready : !room.connected}
-                      onClick={() =>
-                        output === 'spotify' ? playerCommand('stop') : room.send(undefined, 'stop')
-                      }
-                    >
-                      <Square size={17} /> Zatrzymaj
-                    </button>
-                  </div>
-                  <p className="ack" aria-live="polite">
-                    {output === 'spotify'
-                      ? playState
-                      : room.ack ||
-                        (room.connected
-                          ? 'Połączono. Zeskanuj muzyczną kartę.'
-                          : 'Sterowanie będzie dostępne po sparowaniu urządzeń.')}
-                  </p>
+                  ) : (
+                    <Suspense fallback={<p className="hint">Przygotowuję skaner…</p>}>
+                      <Camera
+                        onScan={handleScan}
+                        onStart={() => {
+                          lastScan.current = { id: '', time: 0 };
+                        }}
+                        pairingRequired={output === 'browser'}
+                        paired={room.connected}
+                        ready={output === 'browser' || spotifyRemote.ready}
+                      />
+                    </Suspense>
+                  )}
+                  {!card && (
+                    <p className="ack" aria-live="polite">
+                      {output === 'spotify'
+                        ? playState
+                        : room.ack ||
+                          (room.connected
+                            ? 'Połączono. Zeskanuj muzyczną kartę.'
+                            : 'Sterowanie będzie dostępne po sparowaniu urządzeń.')}
+                    </p>
+                  )}
                 </section>
                 <aside className="surface instructions">
                   {output === 'spotify' ? (
@@ -2059,7 +2162,7 @@ export default function App() {
                   <Smartphone size={18} /> {room.pairUrl ? 'Nowy kod parowania' : 'Połącz skaner'}
                 </button>
               </section>
-              <div className="play-layout">
+              <div className={'play-layout' + (card && gameReady ? ' game-ready' : '')}>
                 <section className="surface player-surface">
                   <details className="mode-help">
                     <summary>Inny sposób odtwarzania</summary>
@@ -2077,6 +2180,16 @@ export default function App() {
                         Moje Spotify
                       </button>
                     </div>
+                    {card && output === 'browser' && (
+                      <button className="quiet" onClick={() => sendPlaybackCommand('stop')}>
+                        Zatrzymaj odtwarzanie
+                      </button>
+                    )}
+                    {room.connected && (
+                      <button className="quiet" onClick={room.disconnect}>
+                        Rozłącz skaner
+                      </button>
+                    )}
                   </details>
                   <div className="player-top">
                     <div className="status-bar">
@@ -2115,16 +2228,60 @@ export default function App() {
                     )}
                   </div>
                   {output === 'spotify' ? (
-                    <SpotifyRemotePanel remote={spotifyRemote} />
+                    <details
+                      className="playback-setup"
+                      open={!spotifyRemote.ready || Boolean(spotifyRemote.error)}
+                    >
+                      <summary>
+                        <span className={spotifyRemote.ready ? 'live-dot' : 'warn-dot'} />
+                        Urządzenie Spotify
+                        <Settings2 size={16} />
+                      </summary>
+                      <SpotifyRemotePanel remote={spotifyRemote} />
+                      {card && (
+                        <button
+                          className="quiet"
+                          disabled={!spotifyRemote.ready}
+                          onClick={() => sendPlaybackCommand('stop')}
+                        >
+                          Zatrzymaj odtwarzanie
+                        </button>
+                      )}
+                    </details>
                   ) : (
-                    <Players card={card} source={source} command={command} onState={setPlayState} />
+                    !card && (
+                      <Players
+                        card={null}
+                        source={source}
+                        command={command}
+                        onState={reportPlayback}
+                      />
+                    )
                   )}
-                  <div className="play-state" role="status">
-                    <Radio size={17} />
-                    {playState}
-                  </div>
+                  {!card && (
+                    <div className="play-state" role="status">
+                      <Radio size={17} />
+                      {playState}
+                    </div>
+                  )}
                   {card && (
                     <>
+                      <PlayingCard
+                        card={card}
+                        back={playingBack}
+                        state={playbackState}
+                        message={playState}
+                        disabled={output === 'spotify' && !spotifyRemote.ready}
+                        onToggle={togglePlayback}
+                      />
+                      {output === 'browser' && (
+                        <Players
+                          card={card}
+                          source={source}
+                          command={command}
+                          onState={reportPlayback}
+                        />
+                      )}
                       {output === 'browser' && (
                         <div className="source-buttons">
                           {(['spotify', 'youtube'] as const).map((s) => (
@@ -2140,30 +2297,6 @@ export default function App() {
                           ))}
                         </div>
                       )}
-                      <div className="scanner-controls">
-                        <button className="secondary" onClick={() => playerCommand('pause')}>
-                          <Pause size={18} /> Pauza
-                        </button>
-                        <button className="primary" onClick={() => playerCommand('resume')}>
-                          <Play size={18} /> Odtwórz
-                        </button>
-                        <button className="secondary" onClick={() => playerCommand('stop')}>
-                          <Square size={17} /> Zatrzymaj
-                        </button>
-                      </div>
-                      <button
-                        className="quiet"
-                        onClick={() => {
-                          setCard({ ...card });
-                          setPlayState('Ponawiam próbę…');
-                        }}
-                      >
-                        Ponów próbę odtwarzania
-                      </button>
-                      <p className="hint">
-                        Jeśli materiał jest niedostępny, wybierz inne źródło lub popraw kartę w
-                        kreatorze i wydrukuj ją ponownie.
-                      </p>
                     </>
                   )}
                 </section>
@@ -2263,6 +2396,7 @@ export default function App() {
           </button>
         </div>
       )}
+      <PDFExportProgress onCancel={() => pdfAbort.current?.abort()} />
       {modal === 'song' && (
         <SongForm
           song={editSong}

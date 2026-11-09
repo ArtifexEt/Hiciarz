@@ -1,16 +1,22 @@
 import { useEffect, useRef, useState } from 'react';
 import Peer, { type DataConnection } from 'peerjs';
 import { readQR, type Card } from './model';
+import { validPlaybackFeedback, type PlaybackFeedback } from './playback';
 export type Command = 'pause' | 'resume' | 'stop';
 type Packet = {
   v: 1;
-  type: 'card' | 'command' | 'ack' | 'ping' | 'pong';
+  type: 'card' | 'command' | 'ack' | 'ping' | 'pong' | 'playback';
   token: string;
   id: string;
   card?: Card;
   command?: Command;
+  playback?: PlaybackFeedback;
 };
-export function useConnection(onCard: (c: Card) => void, onCommand: (c: Command) => void) {
+export function useConnection(
+  onCard: (c: Card) => void,
+  onCommand: (c: Command) => void,
+  onPlayback?: (feedback: PlaybackFeedback) => void,
+) {
   const [status, setStatus] = useState('Rozłączono'),
     [connected, setConnected] = useState(false),
     [pairUrl, setPairUrl] = useState(''),
@@ -21,8 +27,8 @@ export function useConnection(onCard: (c: Card) => void, onCommand: (c: Command)
     seen = useRef(new Set<string>()),
     timer = useRef<ReturnType<typeof setTimeout> | undefined>(undefined),
     lastPong = useRef(0);
-  const handlers = useRef({ onCard, onCommand });
-  handlers.current = { onCard, onCommand };
+  const handlers = useRef({ onCard, onCommand, onPlayback });
+  handlers.current = { onCard, onCommand, onPlayback };
   function clear() {
     clearTimeout(timer.current);
     connection.current?.close();
@@ -100,6 +106,10 @@ export function useConnection(onCard: (c: Card) => void, onCommand: (c: Command)
         return;
       }
       if (p.type === 'pong') return;
+      if (p.type === 'playback') {
+        if (validPlaybackFeedback(p.playback)) handlers.current.onPlayback?.(p.playback);
+        return;
+      }
       if (p.type === 'ack') {
         setAck('Polecenie dotarło do odtwarzacza');
         return;
@@ -194,5 +204,15 @@ export function useConnection(onCard: (c: Card) => void, onCommand: (c: Command)
     });
     return true;
   }
-  return { status, connected, pairUrl, ack, host, join, disconnect, send };
+  function reportPlayback(playback: PlaybackFeedback) {
+    if (connection.current?.open && validPlaybackFeedback(playback))
+      connection.current.send({
+        v: 1,
+        type: 'playback',
+        token: token.current,
+        id: crypto.randomUUID(),
+        playback,
+      });
+  }
+  return { status, connected, pairUrl, ack, host, join, disconnect, send, reportPlayback };
 }

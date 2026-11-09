@@ -2,6 +2,7 @@ import { useEffect, useRef, useState } from 'react';
 import { Check, Headphones, LoaderCircle, RefreshCw, LogOut, ExternalLink } from 'lucide-react';
 import type { Card } from './model';
 import type { Command } from './connection';
+import type { PlaybackState } from './playback';
 import {
   authorizeSpotify,
   disconnectSpotify,
@@ -18,7 +19,7 @@ export function useSpotifyRemote(
   card: Card | null,
   command: { type: Command; seq: number } | null,
   enabled: boolean,
-  onState: (s: string) => void,
+  onState: (s: string, state?: PlaybackState) => void,
   returnTo: 'editor' | 'scanner' | 'player' = 'player',
 ) {
   const [devices, setDevices] = useState<SpotifyDevice[]>([]),
@@ -107,21 +108,22 @@ export function useSpotifyRemote(
     const seq = ++generation.current;
     if (!enabled || !card) return;
     if (!linked) {
-      callback.current('Połącz Spotify, aby uruchamiać utwory na swoich urządzeniach.');
+      callback.current('Połącz Spotify, aby uruchamiać utwory na swoich urządzeniach.', 'error');
       return;
     }
     if (!device) {
-      callback.current('Wybierz urządzenie Spotify.');
+      callback.current('Wybierz urządzenie Spotify.', 'error');
       return;
     }
     if (!card.sources.spotify) {
       callback.current(
         'Ta karta nie ma źródła Spotify. Użyj trybu „Na tym urządzeniu”, aby odtworzyć YouTube.',
+        'error',
       );
       return;
     }
     const track = card.sources.spotify;
-    callback.current('Wysyłam polecenie do Spotify…');
+    callback.current('Wysyłam polecenie do Spotify…', 'loading');
     queue.current = queue.current
       .catch(() => {})
       .then(async () => {
@@ -130,13 +132,16 @@ export function useSpotifyRemote(
           await playSpotifyTrack(track, device);
           if (seq === generation.current) {
             setError('');
-            callback.current('Spotify przyjął polecenie odtwarzania na wybranym urządzeniu.');
+            callback.current(
+              'Spotify przyjął polecenie odtwarzania na wybranym urządzeniu.',
+              'playing',
+            );
           }
         } catch (e) {
           if (seq === generation.current) {
             setError((e as Error).message);
             setLinked(spotifyConnected('player'));
-            callback.current((e as Error).message);
+            callback.current((e as Error).message, 'error');
           }
         }
       });
@@ -157,12 +162,13 @@ export function useSpotifyRemote(
             command.type === 'resume'
               ? 'Wznowiono w Spotify.'
               : 'Wstrzymano odtwarzanie w Spotify.',
+            command.type === 'resume' ? 'playing' : command.type === 'stop' ? 'stopped' : 'paused',
           );
         } catch (e) {
           if (session !== generation.current) return;
           setError((e as Error).message);
           setLinked(spotifyConnected('player'));
-          callback.current((e as Error).message);
+          callback.current((e as Error).message, 'error');
         }
       });
   }, [command, enabled, linked, device]);
@@ -173,7 +179,7 @@ export function useSpotifyRemote(
     setDevices([]);
     setDevice('');
     setError('');
-    callback.current('Odłączono konto Spotify.');
+    callback.current('Odłączono konto Spotify.', 'error');
   }
   const ready = enabled && linked && Boolean(device) && devices.some((d) => d.id === device);
   return {

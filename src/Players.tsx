@@ -1,6 +1,7 @@
 import { useEffect, useRef } from 'react';
 import type { Card } from './model';
 import type { Command } from './connection';
+import type { PlaybackState } from './playback';
 declare global {
   interface Window {
     onSpotifyIframeApiReady?: (api: any) => void;
@@ -46,7 +47,7 @@ export default function Players({
   card: Card | null;
   source: 'spotify' | 'youtube';
   command: { type: Command; seq: number } | null;
-  onState: (text: string) => void;
+  onState: (text: string, state?: PlaybackState) => void;
 }) {
   const container = useRef<HTMLDivElement>(null),
     controller = useRef<any>(null),
@@ -60,10 +61,10 @@ export default function Players({
     if (!card) return;
     const id = card.sources[source];
     if (!id) {
-      callback.current('Ta karta nie ma wybranego źródła. Wybierz dostępne źródło.');
+      callback.current('Ta karta nie ma wybranego źródła. Wybierz dostępne źródło.', 'error');
       return;
     }
-    callback.current('Ładowanie utworu…');
+    callback.current('Ładowanie utworu…', 'loading');
     if (source === 'youtube') c.loadVideoById(id);
     else {
       if (c.loadEntity) c.loadEntity('spotify:track:' + id);
@@ -79,10 +80,13 @@ export default function Players({
     const mount = document.createElement('div');
     container.current.replaceChildren(mount);
     controller.current = null;
-    callback.current('Ładowanie odtwarzacza…');
+    callback.current('Ładowanie odtwarzacza…', 'loading');
     timeout = setTimeout(() => {
       if (!dead)
-        callback.current('Odtwarzacz nie odpowiada. Sprawdź internet albo wybierz inne źródło.');
+        callback.current(
+          'Odtwarzacz nie odpowiada. Sprawdź internet albo wybierz inne źródło.',
+          'error',
+        );
     }, 20000);
     if (source === 'spotify' && current.current.card?.sources.spotify) {
       spotify()
@@ -102,7 +106,7 @@ export default function Players({
                 clearTimeout(timeout);
                 if (dead) return;
                 controller.current = c;
-                callback.current('Gotowy. Jeśli muzyka nie ruszy, kliknij Odtwórz.');
+                callback.current('Gotowy. Jeśli muzyka nie ruszy, kliknij Wznów.', 'paused');
                 if (current.current.card?.sources.spotify !== initialId) load(c);
                 else c.play();
               });
@@ -114,13 +118,14 @@ export default function Players({
                       : e.data.isPaused
                         ? 'Pauza / gotowy do odtwarzania'
                         : 'Odtwarzanie',
+                    e.data.isBuffering ? 'loading' : e.data.isPaused ? 'paused' : 'playing',
                   );
               });
             },
           );
         })
         .catch((e) => {
-          if (!dead) callback.current(e.message);
+          if (!dead) callback.current(e.message, 'error');
         });
     } else if (source === 'youtube' && current.current.card?.sources.youtube) {
       youtube()
@@ -153,10 +158,18 @@ export default function Players({
                         5: 'Gotowy do odtwarzania',
                       } as Record<number, string>
                     )[e.data] || 'Kliknij Odtwórz w odtwarzaczu.',
+                    e.data === 1
+                      ? 'playing'
+                      : e.data === 3
+                        ? 'loading'
+                        : e.data === 0
+                          ? 'stopped'
+                          : 'paused',
                   );
               },
               onAutoplayBlocked: () => {
-                if (!dead) callback.current('Kliknij Odtwórz w odtwarzaczu, aby włączyć dźwięk.');
+                if (!dead)
+                  callback.current('Kliknij Odtwórz w odtwarzaczu, aby włączyć dźwięk.', 'paused');
               },
               onError: (e: any) => {
                 clearTimeout(timeout);
@@ -167,6 +180,7 @@ export default function Players({
                       : e.data === 153
                         ? 'YouTube nie potwierdził strony odtwarzacza. Odśwież stronę i sprawdź blokady prywatności.'
                         : 'Nie udało się odtworzyć materiału. Sprawdź połączenie lub wybierz inne źródło.',
+                    'error',
                   );
               },
             },
@@ -174,11 +188,11 @@ export default function Players({
           instance = c;
         })
         .catch((e) => {
-          if (!dead) callback.current(e.message);
+          if (!dead) callback.current(e.message, 'error');
         });
     } else {
       clearTimeout(timeout);
-      callback.current('Ta karta nie ma wybranego źródła. Wybierz dostępne źródło.');
+      callback.current('Ta karta nie ma wybranego źródła. Wybierz dostępne źródło.', 'error');
     }
     return () => {
       dead = true;
@@ -204,9 +218,16 @@ export default function Players({
         if (command.type === 'resume') c.resume();
         else c.pause();
       }
-      if (command.type === 'stop') callback.current('Zatrzymano');
+      callback.current(
+        command.type === 'resume'
+          ? 'Wznawiam odtwarzanie…'
+          : command.type === 'stop'
+            ? 'Zatrzymano'
+            : 'Pauza',
+        command.type === 'resume' ? 'playing' : command.type === 'stop' ? 'stopped' : 'paused',
+      );
     } catch {
-      callback.current('Polecenie nie zostało wykonane. Użyj przycisków odtwarzacza.');
+      callback.current('Polecenie nie zostało wykonane. Użyj przycisków odtwarzacza.', 'error');
     }
   }, [command]);
   return (
