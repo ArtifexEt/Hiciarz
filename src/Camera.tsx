@@ -37,8 +37,9 @@ export default function Camera({
           audio: false,
           video: {
             facingMode: { ideal: 'environment' },
+            aspectRatio: { ideal: 1 },
             width: { ideal: 1280 },
-            height: { ideal: 720 },
+            height: { ideal: 1280 },
           },
         },
         video.current!,

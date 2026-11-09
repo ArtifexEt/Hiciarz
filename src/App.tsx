@@ -52,6 +52,7 @@ import Landing from './Landing';
 import SpotifyAccount from './SpotifyAccount';
 import PlayingCard from './PlayingCard';
 import type { PlaybackState } from './playback';
+import { vibrateOnScan } from './scan-feedback';
 import PlaylistExamples from './PlaylistExamples';
 import { createExampleDeck } from './examples';
 import playlistPrompt from '../docs/playlist-prompt.txt?raw';
@@ -508,6 +509,7 @@ export default function App() {
     [playState, setPlayState] = useState('Przygotuj połączenie i zeskanuj kartę.'),
     [command, setCommand] = useState<{ type: Command; seq: number } | null>(null);
   const [playbackState, setPlaybackState] = useState<PlaybackState>('paused');
+  const [scanFeedback, setScanFeedback] = useState<{ sequence: number; kind: 'card' | 'pair' }>();
   const reportPlayback = useCallback((text: string, state?: PlaybackState) => {
     setPlayState(text);
     if (state) setPlaybackState(state);
@@ -535,7 +537,9 @@ export default function App() {
     lastScan = useRef({ id: '', time: 0 }),
     incomingCard = useRef<Card | null>(null),
     saveQueue = useRef(Promise.resolve()),
-    toastTimer = useRef<ReturnType<typeof setTimeout> | undefined>(undefined);
+    toastTimer = useRef<ReturnType<typeof setTimeout> | undefined>(undefined),
+    scanFeedbackTimer = useRef<ReturnType<typeof setTimeout> | undefined>(undefined),
+    scanSequence = useRef(0);
   const [checks, setChecks] = useState<SourceCheck[]>([]),
     [checking, setChecking] = useState(false),
     [checkProgress, setCheckProgress] = useState(0);
@@ -546,6 +550,16 @@ export default function App() {
     clearTimeout(toastTimer.current);
     toastTimer.current = setTimeout(() => setMessage(''), 6000);
   }, []);
+  function clearScanFeedback() {
+    clearTimeout(scanFeedbackTimer.current);
+    setScanFeedback(undefined);
+  }
+  function confirmScan(kind: 'card' | 'pair') {
+    clearTimeout(scanFeedbackTimer.current);
+    setScanFeedback({ sequence: ++scanSequence.current, kind });
+    scanFeedbackTimer.current = setTimeout(() => setScanFeedback(undefined), 2400);
+    vibrateOnScan();
+  }
   function receive(c: Card) {
     setMessage('');
     setCard(c);
@@ -593,6 +607,7 @@ export default function App() {
   const cardDeck = card ? decks.find((d) => d.songs.some((s) => s.id === card.id)) : undefined;
   const playingBack = cardDeck?.print.style === 'laser' ? themeArt('laser') : cardDeck?.back;
   function nextCard() {
+    clearScanFeedback();
     setCard(null);
     setCommand(null);
     lastScan.current = { id: '', time: 0 };
@@ -652,6 +667,7 @@ export default function App() {
     return () => {
       live = false;
       clearTimeout(toastTimer.current);
+      clearTimeout(scanFeedbackTimer.current);
     };
   }, []);
   useEffect(() => {
@@ -776,20 +792,24 @@ export default function App() {
   function handleScan(raw: string) {
     try {
       const q = readQR(raw);
+      const now = Date.now();
+      const scanId = q.kind === 'pair' ? 'pair:' + q.peer : q.card.id;
+      if (lastScan.current.id === scanId && now - lastScan.current.time < 7000) return;
       if (q.kind === 'pair') {
+        lastScan.current = { id: scanId, time: now };
         setOutput('browser');
         room.join(q.peer, q.token);
-        notify('Łączę z odtwarzaczem…');
+        confirmScan('pair');
         return;
       }
-      const now = Date.now();
-      if (lastScan.current.id === q.card.id && now - lastScan.current.time < 7000) return;
       if (output === 'spotify') {
         lastScan.current = { id: q.card.id, time: now };
         receive(q.card);
+        confirmScan('card');
       } else if (room.send(q.card)) {
         lastScan.current = { id: q.card.id, time: now };
         receive(q.card);
+        confirmScan('card');
       } else notify('Najpierw zeskanuj QR parowania z ekranu odtwarzacza.');
     } catch (e) {
       notify((e as Error).message);
@@ -846,6 +866,7 @@ export default function App() {
   function changeMode(next: Mode) {
     setAppMenuOpen(false);
     if (next !== mode) {
+      clearScanFeedback();
       if (room.connected || room.pairUrl) room.disconnect();
       setCard(null);
       setCommand(null);
@@ -2067,6 +2088,7 @@ export default function App() {
                       <Camera
                         onScan={handleScan}
                         onStart={() => {
+                          clearScanFeedback();
                           lastScan.current = { id: '', time: 0 };
                         }}
                         pairingRequired={output === 'browser'}
@@ -2388,6 +2410,23 @@ export default function App() {
           e.target.value = '';
         }}
       />
+      <div
+        className="scan-announcement"
+        role="status"
+        aria-label="Potwierdzenie skanowania"
+        aria-atomic="true"
+      >
+        {mode === 'scanner' && scanFeedback && (
+          <div className="scan-confirmation" key={scanFeedback.sequence}>
+            <span className="scan-confirmation-icon" aria-hidden="true">
+              <Check size={18} />
+            </span>
+            <span>
+              {scanFeedback.kind === 'card' ? 'Karta zeskanowana' : 'Kod parowania odczytany'}
+            </span>
+          </div>
+        )}
+      </div>
       {message && (
         <div className="toast" role="status">
           <span>{message}</span>

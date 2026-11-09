@@ -1972,7 +1972,8 @@ label.check-line {
   margin-left: auto;
 }
 .camera-wrap {
-  margin-top: 17px;
+  max-width: 480px;
+  margin: 17px auto 0;
 }
 .camera-zoom {
   padding: 12px 4px 4px;
@@ -2016,19 +2017,22 @@ label.check-line {
 }
 .camera-view {
   position: relative;
-  aspect-ratio: 4/3;
+  aspect-ratio: 1;
   background: #1b2224;
   border-radius: 12px;
   overflow: hidden;
 }
 .camera-view video {
+  position: absolute;
+  inset: 0;
+  display: block;
   width: 100%;
   height: 100%;
   object-fit: cover;
 }
 .scan-frame {
   position: absolute;
-  inset: 18% 21%;
+  inset: 15%;
   pointer-events: none;
 }
 .scan-frame > i {
@@ -2095,20 +2099,79 @@ label.check-line {
   background: #1b2224;
   color: #f2f3e9;
   text-align: center;
-  padding: 20px;
+  gap: 12px;
+  padding: clamp(14px, 4vw, 24px);
 }
 .camera-start > svg {
   color: var(--accent);
-  margin-bottom: 20px;
+  width: clamp(28px, 8vw, 44px);
+  height: clamp(28px, 8vw, 44px);
+  flex-shrink: 0;
 }
 .camera-start h3 {
-  font-size: 20px;
+  font-size: clamp(16px, 4.5vw, 20px);
   letter-spacing: -0.6px;
 }
 .camera-start p {
   font-size: 11px;
   color: #a5ada2;
-  margin: 12px 0 24px;
+  max-width: 260px;
+  line-height: 1.5;
+  margin: 0;
+}
+.camera-start > button {
+  min-height: 44px;
+  flex-shrink: 0;
+}
+.scan-announcement {
+  position: fixed;
+  z-index: 120;
+  top: calc(90px + env(safe-area-inset-top, 0px));
+  left: 50%;
+  transform: translateX(-50%);
+  width: max-content;
+  max-width: calc(100vw - 32px);
+  pointer-events: none;
+}
+.scan-confirmation {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  min-height: 48px;
+  padding: 11px 18px 11px 12px;
+  border: 1px solid #b7d6ac;
+  border-radius: 16px;
+  background: #eff8eb;
+  color: #285333;
+  box-shadow: 0 6px 24px #16351b22;
+  font-size: 14px;
+  font-weight: 600;
+  animation: scan-confirmed 180ms ease-out;
+}
+.scan-confirmation-icon {
+  display: grid;
+  place-items: center;
+  width: 28px;
+  height: 28px;
+  flex-shrink: 0;
+  border-radius: 50%;
+  background: #367443;
+  color: #fff;
+}
+@keyframes scan-confirmed {
+  from {
+    opacity: 0;
+    transform: translateY(-6px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+@media (max-width: 700px) {
+  .scan-announcement {
+    top: calc(72px + env(safe-area-inset-top, 0px));
+  }
 }
 .scanner-controls {
   display: flex;
@@ -2715,9 +2778,6 @@ label.check-line {
     left: calc(50% + 37px);
     max-width: calc(100% - 115px);
   }
-  .camera-view {
-    aspect-ratio: 16/10;
-  }
   .instructions ol {
     display: grid;
     grid-template-columns: repeat(3, 1fr);
@@ -3277,17 +3337,11 @@ label.check-line {
   .surface {
     padding: 15px;
   }
-  .camera-view {
-    aspect-ratio: 3/4;
-  }
   .camera-start h3 {
     font-size: 19px;
   }
   .camera-start p {
     font-size: 10px;
-  }
-  .camera-start > svg {
-    margin-bottom: 20px;
   }
   .scanner-controls {
     gap: 7px;
