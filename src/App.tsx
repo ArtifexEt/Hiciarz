@@ -37,7 +37,7 @@ import {
   Wifi,
   X,
 } from 'lucide-react';
-import QRCode from 'qrcode';
+import { qrImage } from './qr';
 import {
   type Card,
   type Deck,
@@ -109,9 +109,8 @@ export function QR({ value, className = '' }: { value: string; className?: strin
   const [url, setUrl] = useState('');
   useEffect(() => {
     let live = true;
-    QRCode.toDataURL(value, { width: 600, margin: 2, errorCorrectionLevel: 'M' }).then((s) => {
-      if (live) setUrl(s);
-    });
+    const image = qrImage(value);
+    if (live) setUrl(image);
     return () => {
       live = false;
     };
@@ -777,7 +776,9 @@ export default function App() {
           rel="noopener noreferrer"
         >
           <Coffee size={20} aria-hidden="true" />
-          <span>Podoba Ci się Hiciarz? <strong>Postaw mi kawę</strong></span>
+          <span>
+            Podoba Ci się Hiciarz? <strong>Postaw mi kawę</strong>
+          </span>
           <ArrowUpRight size={18} aria-hidden="true" />
         </a>
         <main>

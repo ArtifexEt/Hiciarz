@@ -1,5 +1,5 @@
 import { jsPDF } from 'jspdf';
-import QRCode from 'qrcode';
+import { qrImage } from './qr';
 import { type Deck, type Song, backPosition, cardUrl } from './model';
 import { asset, themeArt, themeColors } from './themes';
 let fontPromise: Promise<string> | undefined;
@@ -108,10 +108,6 @@ export async function buildPDF(deck: Deck, songs: Song[], base: string): Promise
       if (laser) {
         doc.setDrawColor('#638876');
         doc.setLineWidth(0.22);
-        doc.line(x + 2, y + 14, x + 2, y + 2);
-        doc.line(x + 2, y + 2, x + 17, y + 2);
-        doc.line(x + 43, y + 58, x + 58, y + 58);
-        doc.line(x + 58, y + 58, x + 58, y + 46);
         doc.line(x + 4.4, y + 2.4, x + 4.4, y + 7.2);
         doc.ellipse(x + 5.8, y + 8.4, 1.7, 1.1, 'S');
         doc.triangle(x + 7.5, y + 8.4, x + 8.6, y + 7.5, x + 8.6, y + 9.3, 'S');
@@ -123,17 +119,29 @@ export async function buildPDF(deck: Deck, songs: Song[], base: string): Promise
         doc.circle(x + 54.9, y + 51.3, 0.15, 'S');
       } else
         doc.addImage(arts.get(deck.back || themeArt(s.theme || deck.theme))!, 'JPEG', x, y, 60, 60);
-      doc.setFillColor('#ffffff');
-      doc.roundedRect(x + 11, y + 11, 38, 38, 2, 2, 'F');
-      const qr = await QRCode.toDataURL(cardUrl(s, deck.theme, base), {
-        errorCorrectionLevel: 'M',
-        margin: 2,
-        width: 600,
-      });
-      doc.addImage(qr, 'PNG', x + 12, y + 12, 36, 36);
-      doc.setTextColor(laser ? '#26332e' : '#ffffff');
+      const colors = themeColors[laser ? 'laser' : s.theme || deck.theme];
+      doc.setDrawColor(laser ? '#638876' : colors.accent);
+      doc.setLineWidth(0.4);
+      doc.roundedRect(x + 2.5, y + 2.5, 55, 55, 3, 3, 'S');
+      doc.setLineWidth(0.15);
+      doc.roundedRect(x + 3.7, y + 3.7, 52.6, 52.6, 2.3, 2.3, 'S');
+      doc.setFillColor(laser ? '#ffffff' : colors.dark);
+      doc.roundedRect(x + 18, y + 3, 24, 6.5, 2, 2, 'F');
+      doc.setTextColor(laser ? '#26332e' : colors.accent);
       doc.setFontSize(7);
-      doc.text('HICIARZ', x + 30, y + 55, { align: 'center' });
+      doc.text('HICIARZ', x + 30, y + 7.5, { align: 'center', charSpace: 0.8 });
+      doc.setFillColor('#ffffff');
+      doc.roundedRect(x + 9, y + 10, 42, 42, 3, 3, 'F');
+      doc.setDrawColor(laser ? '#b56e58' : colors.accent);
+      doc.setLineWidth(0.3);
+      doc.roundedRect(x + 9, y + 10, 42, 42, 3, 3, 'S');
+      const qr = qrImage(cardUrl(s, deck.theme, base));
+      doc.addImage(qr, 'PNG', x + 10, y + 11, 40, 40);
+      doc.setFillColor(laser ? '#ffffff' : colors.dark);
+      doc.roundedRect(x + 9, y + 52.5, 42, 4, 1, 1, 'F');
+      doc.setTextColor(laser ? '#26332e' : '#ffffff');
+      doc.setFontSize(4.5);
+      doc.text('ZESKANUJ · POSŁUCHAJ · ZGADNIJ', x + 30, y + 55.2, { align: 'center' });
       if (deck.print.cuts) cuts(doc, x, y);
     }
   }

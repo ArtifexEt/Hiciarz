@@ -1079,6 +1079,29 @@ main {
   justify-content: space-between;
   color: #fff;
   padding: 21px;
+  position: relative;
+  isolation: isolate;
+}
+.music-card.back::before {
+  content: '';
+  position: absolute;
+  inset: 4%;
+  border: 3px double #dfc68a;
+  border-radius: 14px;
+  pointer-events: none;
+  z-index: -1;
+}
+.music-card.card-laser.back::before {
+  border-color: #638876;
+}
+.music-card.back .card-qr {
+  border: 1px solid #dfc68a;
+  border-radius: 14px;
+  box-shadow: 0 3px 12px #0002;
+}
+.music-card.card-laser.back .card-qr {
+  border-color: #b56e58;
+  box-shadow: none;
 }
 .card-wordmark {
   font-size: 17px;
