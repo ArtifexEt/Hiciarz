@@ -1,6 +1,7 @@
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import {
   authorizeSpotify,
+  importPlaylist,
   playSpotifyTrack,
   spotifyDevices,
   spotifyPlaybackCommand,
@@ -27,6 +28,10 @@ afterEach(() => {
   vi.unstubAllEnvs();
 });
 describe('Spotify Connect requests', () => {
+  it('explains denied playlist access without pretending a public playlist is empty', async () => {
+    vi.stubGlobal('fetch', vi.fn().mockResolvedValue(new Response('{}', { status: 403 })));
+    await expect(importPlaylist('7wfTeAa7cxhA3qNE05XPKk')).rejects.toThrow('współtworzonych');
+  });
   it('targets the selected device and exact track, starting from zero', async () => {
     const request = vi
       .fn()

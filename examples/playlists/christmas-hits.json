@@ -1,0 +1,1535 @@
+{
+  "version": 1,
+  "id": "example-christmas-2026",
+  "name": "Świąteczne hity",
+  "theme": "fish",
+  "songs": [
+    {
+      "id": "christmas-2EjXfH91m7f8HiJN1yQg97",
+      "title": "Rockin' Around The Christmas Tree",
+      "artist": "Brenda Lee",
+      "year": 1964,
+      "sources": {
+        "spotify": "2EjXfH91m7f8HiJN1yQg97"
+      },
+      "review": true
+    },
+    {
+      "id": "christmas-7vQbuQcyTflfCIOu3Uzzya",
+      "title": "Jingle Bell Rock",
+      "artist": "Bobby Helms",
+      "year": 1957,
+      "sources": {
+        "spotify": "7vQbuQcyTflfCIOu3Uzzya"
+      },
+      "review": true
+    },
+    {
+      "id": "christmas-0lizgQ7Qw35od7CYaoMBZb",
+      "title": "Santa Tell Me",
+      "artist": "Ariana Grande",
+      "year": 2014,
+      "sources": {
+        "spotify": "0lizgQ7Qw35od7CYaoMBZb"
+      },
+      "review": true
+    },
+    {
+      "id": "christmas-1IUtgwxLYzDVd41EgbKUjX",
+      "title": "All I Want For Christmas Is You (SuperFestive!) Duet with Mariah Carey",
+      "artist": "Justin Bieber, Mariah Carey",
+      "year": 2011,
+      "sources": {
+        "spotify": "1IUtgwxLYzDVd41EgbKUjX"
+      },
+      "review": true
+    },
+    {
+      "id": "christmas-4BDOQm0sODJ7Rw338bwfX0",
+      "title": "Last Christmas - Single Version",
+      "artist": "Wham!",
+      "year": 2013,
+      "sources": {
+        "spotify": "4BDOQm0sODJ7Rw338bwfX0"
+      },
+      "review": true
+    },
+    {
+      "id": "christmas-2uFaJJtFpPDc5Pa95XzTvg",
+      "title": "Let It Snow! Let It Snow! Let It Snow!",
+      "artist": "Dean Martin",
+      "year": 1959,
+      "sources": {
+        "spotify": "2uFaJJtFpPDc5Pa95XzTvg"
+      },
+      "review": true
+    },
+    {
+      "id": "christmas-77khP2fIVhSW23NwxrRluh",
+      "title": "A Holly Jolly Christmas",
+      "artist": "Burl Ives",
+      "year": 1965,
+      "sources": {
+        "spotify": "77khP2fIVhSW23NwxrRluh"
+      },
+      "review": true
+    },
+    {
+      "id": "christmas-7xapw9Oy21WpfEcib2ErSA",
+      "title": "Mistletoe",
+      "artist": "Justin Bieber",
+      "year": 2011,
+      "sources": {
+        "spotify": "7xapw9Oy21WpfEcib2ErSA"
+      },
+      "review": true
+    },
+    {
+      "id": "christmas-79zboNyiXj6TevMdvoN0Zl",
+      "title": "It's Beginning To Look A Lot Like Christmas",
+      "artist": "Michael Bublé",
+      "year": 2021,
+      "sources": {
+        "spotify": "79zboNyiXj6TevMdvoN0Zl"
+      },
+      "review": true
+    },
+    {
+      "id": "christmas-27RYrbL6S02LNVhDWVl38b",
+      "title": "Happy Xmas (War Is Over) - Remastered 2010",
+      "artist": "John Lennon, Yoko Ono",
+      "year": 2010,
+      "sources": {
+        "spotify": "27RYrbL6S02LNVhDWVl38b"
+      },
+      "review": true
+    },
+    {
+      "id": "christmas-1SV1fxF65n9NhRHp3KlBuu",
+      "title": "Wonderful Christmastime - Edited Version / Remastered 2011",
+      "artist": "Paul McCartney",
+      "year": 1980,
+      "sources": {
+        "spotify": "1SV1fxF65n9NhRHp3KlBuu"
+      },
+      "review": true
+    },
+    {
+      "id": "christmas-4HEOgBHRCExyYVeTyrXsnL",
+      "title": "Jingle Bells - Remastered 1999",
+      "artist": "Frank Sinatra",
+      "year": 1957,
+      "sources": {
+        "spotify": "4HEOgBHRCExyYVeTyrXsnL"
+      },
+      "review": true
+    },
+    {
+      "id": "christmas-4WRb5qAPnvMbUIrnjLaggC",
+      "title": "The Christmas Song",
+      "artist": "Olivia Dean",
+      "year": 2021,
+      "sources": {
+        "spotify": "4WRb5qAPnvMbUIrnjLaggC"
+      },
+      "review": true
+    },
+    {
+      "id": "christmas-2L9QLAhrvtP4EYg1lY0Tnw",
+      "title": "Rudolph The Red-Nosed Reindeer",
+      "artist": "Dean Martin",
+      "year": 1959,
+      "sources": {
+        "spotify": "2L9QLAhrvtP4EYg1lY0Tnw"
+      },
+      "review": true
+    },
+    {
+      "id": "christmas-7uoFMmxln0GPXQ0AcCBXRq",
+      "title": "Snowman",
+      "artist": "Sia",
+      "year": 2018,
+      "sources": {
+        "spotify": "7uoFMmxln0GPXQ0AcCBXRq"
+      },
+      "review": true
+    },
+    {
+      "id": "christmas-7LoFMtL7hxP9tr5HYyyUrJ",
+      "title": "Christmas Time",
+      "artist": "Bryan Adams",
+      "year": 2019,
+      "sources": {
+        "spotify": "7LoFMtL7hxP9tr5HYyyUrJ"
+      },
+      "review": true
+    },
+    {
+      "id": "christmas-6sBWmE23q6xQHlnEZ8jYPT",
+      "title": "Step Into Christmas - Remastered 1995",
+      "artist": "Elton John",
+      "year": 1973,
+      "sources": {
+        "spotify": "6sBWmE23q6xQHlnEZ8jYPT"
+      },
+      "review": true
+    },
+    {
+      "id": "christmas-4UjYZS6Jbt3lee27qmiNOu",
+      "title": "take me home (4 christmas)",
+      "artist": "Olivia Rodrigo",
+      "year": 2026,
+      "sources": {
+        "spotify": "4UjYZS6Jbt3lee27qmiNOu"
+      },
+      "review": true
+    },
+    {
+      "id": "christmas-3nAp4IvdMPPWEH9uuXFFV5",
+      "title": "Underneath the Tree",
+      "artist": "Kelly Clarkson",
+      "year": 2013,
+      "sources": {
+        "spotify": "3nAp4IvdMPPWEH9uuXFFV5"
+      },
+      "review": true
+    },
+    {
+      "id": "christmas-27qAMKrDdKEs8HDXcvR24R",
+      "title": "Driving Home for Christmas - 2019 Remaster",
+      "artist": "Chris Rea",
+      "year": 1987,
+      "sources": {
+        "spotify": "27qAMKrDdKEs8HDXcvR24R"
+      },
+      "review": true
+    },
+    {
+      "id": "christmas-0SvD6EdetxVtXei2JhkV4B",
+      "title": "Wonderful Dream (Holidays Are Coming) - Radio Version",
+      "artist": "Melanie Thornton",
+      "year": 2001,
+      "sources": {
+        "spotify": "0SvD6EdetxVtXei2JhkV4B"
+      },
+      "review": true
+    },
+    {
+      "id": "christmas-6nOcWMatiwbx6M18FJRtRl",
+      "title": "Feliz Navidad",
+      "artist": "José Feliciano",
+      "year": 2018,
+      "sources": {
+        "spotify": "6nOcWMatiwbx6M18FJRtRl"
+      },
+      "review": true
+    },
+    {
+      "id": "christmas-5qm1iVBChx5JJSmPuHdepP",
+      "title": "White Christmas",
+      "artist": "Bing Crosby, Michael Bublé",
+      "year": 2024,
+      "sources": {
+        "spotify": "5qm1iVBChx5JJSmPuHdepP"
+      },
+      "review": true
+    },
+    {
+      "id": "christmas-5hslUAKq9I9CG2bAulFkHN",
+      "title": "It's the Most Wonderful Time of the Year",
+      "artist": "Andy Williams",
+      "year": 1963,
+      "sources": {
+        "spotify": "5hslUAKq9I9CG2bAulFkHN"
+      },
+      "review": true
+    },
+    {
+      "id": "christmas-1OjmlSFuzYflWjSMTCyTJv",
+      "title": "Like It's Christmas",
+      "artist": "Jonas Brothers",
+      "year": 2019,
+      "sources": {
+        "spotify": "1OjmlSFuzYflWjSMTCyTJv"
+      },
+      "review": true
+    },
+    {
+      "id": "christmas-2DVmysS5JXqtrNyL5buBR0",
+      "title": "Merry Christmas Everyone - Single Version - Re-mastered 2004",
+      "artist": "Shakin' Stevens",
+      "year": 2005,
+      "sources": {
+        "spotify": "2DVmysS5JXqtrNyL5buBR0"
+      },
+      "review": true
+    },
+    {
+      "id": "christmas-2FPfeYlrbSBR8PwCU0zaqq",
+      "title": "Have Yourself A Merry Little Christmas - Remastered 1999",
+      "artist": "Frank Sinatra",
+      "year": 1957,
+      "sources": {
+        "spotify": "2FPfeYlrbSBR8PwCU0zaqq"
+      },
+      "review": true
+    },
+    {
+      "id": "christmas-4ukUoXLuFzMixyZyabSGc4",
+      "title": "Sleigh Ride",
+      "artist": "Ella Fitzgerald",
+      "year": 1960,
+      "sources": {
+        "spotify": "4ukUoXLuFzMixyZyabSGc4"
+      },
+      "review": true
+    },
+    {
+      "id": "christmas-2OQ6a4CfUeYskpTTgyawyJ",
+      "title": "You Make It Feel Like Christmas (feat. Blake Shelton)",
+      "artist": "Gwen Stefani, Blake Shelton",
+      "year": 2017,
+      "sources": {
+        "spotify": "2OQ6a4CfUeYskpTTgyawyJ"
+      },
+      "review": true
+    },
+    {
+      "id": "christmas-02FaKXXL7KUtRc7K0k54tL",
+      "title": "Cozy Little Christmas",
+      "artist": "Katy Perry",
+      "year": 2018,
+      "sources": {
+        "spotify": "02FaKXXL7KUtRc7K0k54tL"
+      },
+      "review": true
+    },
+    {
+      "id": "christmas-359h3brFjcorgReFRjS6bx",
+      "title": "I’ll Be Home For Christmas",
+      "artist": "Matthew Ifield",
+      "year": 2024,
+      "sources": {
+        "spotify": "359h3brFjcorgReFRjS6bx"
+      },
+      "review": true
+    },
+    {
+      "id": "christmas-6syO6UTl8QiiWADJy3Uy2d",
+      "title": "Santa Claus Is Coming To Town",
+      "artist": "Frank Sinatra",
+      "year": 2017,
+      "sources": {
+        "spotify": "6syO6UTl8QiiWADJy3Uy2d"
+      },
+      "review": true
+    },
+    {
+      "id": "christmas-73ye7F9Ub51dQ3CrnCHFhr",
+      "title": "A Nonsense Christmas",
+      "artist": "Sabrina Carpenter",
+      "year": 2023,
+      "sources": {
+        "spotify": "73ye7F9Ub51dQ3CrnCHFhr"
+      },
+      "review": true
+    },
+    {
+      "id": "christmas-0rHToGels2lt8Y0mCYoF90",
+      "title": "Deck The Hall",
+      "artist": "Nat King Cole",
+      "year": 2018,
+      "sources": {
+        "spotify": "0rHToGels2lt8Y0mCYoF90"
+      },
+      "review": true
+    },
+    {
+      "id": "christmas-341h4Vfj9HJMm2tNDX3ARw",
+      "title": "Thank God It's Christmas - 2011 Remaster",
+      "artist": "Queen",
+      "year": 2011,
+      "sources": {
+        "spotify": "341h4Vfj9HJMm2tNDX3ARw"
+      },
+      "review": true
+    },
+    {
+      "id": "christmas-6zhR2wbiqSEZwjP28aHEDY",
+      "title": "You Can't Always Get What You Want",
+      "artist": "Sam Fender",
+      "year": 2026,
+      "sources": {
+        "spotify": "6zhR2wbiqSEZwjP28aHEDY"
+      },
+      "review": true
+    },
+    {
+      "id": "christmas-22JmmXbczVXHvD6hwkj0zQ",
+      "title": "I Wish You Were Here",
+      "artist": "Rea Garvey",
+      "year": 2026,
+      "sources": {
+        "spotify": "22JmmXbczVXHvD6hwkj0zQ"
+      },
+      "review": true
+    },
+    {
+      "id": "christmas-0YWUHZPJVg4iujddsJDwhM",
+      "title": "My Only Wish (This Year)",
+      "artist": "Britney Spears",
+      "year": 2000,
+      "sources": {
+        "spotify": "0YWUHZPJVg4iujddsJDwhM"
+      },
+      "review": true
+    },
+    {
+      "id": "christmas-2QpN1ZVw8eJO5f7WcvUA1k",
+      "title": "Santa Claus Is Coming To Town",
+      "artist": "The Jackson 5",
+      "year": 1970,
+      "sources": {
+        "spotify": "2QpN1ZVw8eJO5f7WcvUA1k"
+      },
+      "review": true
+    },
+    {
+      "id": "christmas-65irrLqfCMRiO3p87P4C0D",
+      "title": "Frosty The Snowman",
+      "artist": "Ella Fitzgerald",
+      "year": 1960,
+      "sources": {
+        "spotify": "65irrLqfCMRiO3p87P4C0D"
+      },
+      "review": true
+    },
+    {
+      "id": "christmas-2IuUMx3uxxJAHcH41aYtn0",
+      "title": "Winter Wonderland - Remastered 2006",
+      "artist": "Bing Crosby",
+      "year": 2006,
+      "sources": {
+        "spotify": "2IuUMx3uxxJAHcH41aYtn0"
+      },
+      "review": true
+    },
+    {
+      "id": "christmas-5ASM6Qjiav2xPe7gRkQMsQ",
+      "title": "Sleigh Ride",
+      "artist": "The Ronettes",
+      "year": 1963,
+      "sources": {
+        "spotify": "5ASM6Qjiav2xPe7gRkQMsQ"
+      },
+      "review": true
+    },
+    {
+      "id": "christmas-5mi0HQrZMhRb2MRdFiUP6v",
+      "title": "santa doesn’t know you like i do",
+      "artist": "Sabrina Carpenter",
+      "year": 2023,
+      "sources": {
+        "spotify": "5mi0HQrZMhRb2MRdFiUP6v"
+      },
+      "review": true
+    },
+    {
+      "id": "christmas-5zqzV32ifPJ9XhqfyjYrBy",
+      "title": "Dear Santa",
+      "artist": "OneRepublic",
+      "year": 2023,
+      "sources": {
+        "spotify": "5zqzV32ifPJ9XhqfyjYrBy"
+      },
+      "review": true
+    },
+    {
+      "id": "christmas-550rQQCGkrTzvp4SfpOPzx",
+      "title": "Hallelujah",
+      "artist": "Pentatonix",
+      "year": 2016,
+      "sources": {
+        "spotify": "550rQQCGkrTzvp4SfpOPzx"
+      },
+      "review": true
+    },
+    {
+      "id": "christmas-13pKT5tXxW9M1xIC9sqF3t",
+      "title": "Let It Snow! Let It Snow! Let It Snow!",
+      "artist": "Sofia Camara",
+      "year": 2023,
+      "sources": {
+        "spotify": "13pKT5tXxW9M1xIC9sqF3t"
+      },
+      "review": true
+    },
+    {
+      "id": "christmas-4fzyvSu73BhGvi96p2zwjL",
+      "title": "Christmas Lights",
+      "artist": "Coldplay",
+      "year": 2010,
+      "sources": {
+        "spotify": "4fzyvSu73BhGvi96p2zwjL"
+      },
+      "review": true
+    },
+    {
+      "id": "christmas-03qftRowv8aPZnNZbILxUR",
+      "title": "Ring Out The Bells",
+      "artist": "Sarah Connor",
+      "year": 2022,
+      "sources": {
+        "spotify": "03qftRowv8aPZnNZbILxUR"
+      },
+      "review": true
+    },
+    {
+      "id": "christmas-1SVW8R5t2eSlnUVJefp0NZ",
+      "title": "Blue Christmas",
+      "artist": "Elvis Presley",
+      "year": 2013,
+      "sources": {
+        "spotify": "1SVW8R5t2eSlnUVJefp0NZ"
+      },
+      "review": true
+    },
+    {
+      "id": "christmas-0fMmYtXIMTTN5U2PqRHDLO",
+      "title": "Naughty List",
+      "artist": "Liam Payne, Dixie D’Amelio",
+      "year": 2024,
+      "sources": {
+        "spotify": "0fMmYtXIMTTN5U2PqRHDLO"
+      },
+      "review": true
+    },
+    {
+      "id": "christmas-06dtlr6FzTH8Ssy8BBmt7W",
+      "title": "Little Things",
+      "artist": "ABBA",
+      "year": 2021,
+      "sources": {
+        "spotify": "06dtlr6FzTH8Ssy8BBmt7W"
+      },
+      "review": true
+    },
+    {
+      "id": "christmas-5WinrM87TaUBLxOOCeACBi",
+      "title": "Coming Home This Christmas - From \"A Very Jonas Christmas Movie\"",
+      "artist": "Jonas Brothers, Disney, Kenny G",
+      "year": 2025,
+      "sources": {
+        "spotify": "5WinrM87TaUBLxOOCeACBi"
+      },
+      "review": true
+    },
+    {
+      "id": "christmas-4kSKacywUJHdhyst4PL6pl",
+      "title": "Somethin' Stupid",
+      "artist": "Robbie Williams, Nicole Kidman",
+      "year": 2001,
+      "sources": {
+        "spotify": "4kSKacywUJHdhyst4PL6pl"
+      },
+      "review": true
+    },
+    {
+      "id": "christmas-1fzIMn5fBCUIQuSYqc7VCw",
+      "title": "The Christmas Song (Merry Christmas To You) - Remastered 1999",
+      "artist": "Nat King Cole",
+      "year": 2025,
+      "sources": {
+        "spotify": "1fzIMn5fBCUIQuSYqc7VCw"
+      },
+      "review": true
+    },
+    {
+      "id": "christmas-2R90q5Nk8LcclHrcGYlZKn",
+      "title": "Carol Of The Bells",
+      "artist": "Mykola Dmytrovych Leontovych, Vienna Boys' Choir, Gerald Wirth",
+      "year": 2020,
+      "sources": {
+        "spotify": "2R90q5Nk8LcclHrcGYlZKn"
+      },
+      "review": true
+    },
+    {
+      "id": "christmas-5PuKlCjfEVIXl0ZBp5ZW9g",
+      "title": "Holly Jolly Christmas",
+      "artist": "Michael Bublé",
+      "year": 2012,
+      "sources": {
+        "spotify": "5PuKlCjfEVIXl0ZBp5ZW9g"
+      },
+      "review": true
+    },
+    {
+      "id": "christmas-3bH2Eu9A9ymI4UnGHRmoXg",
+      "title": "Merry Christmas",
+      "artist": "Ed Sheeran, Elton John",
+      "year": 2021,
+      "sources": {
+        "spotify": "3bH2Eu9A9ymI4UnGHRmoXg"
+      },
+      "review": true
+    },
+    {
+      "id": "christmas-2NkKDtph6GZ0ZL0dnJSRpX",
+      "title": "It's Christmas",
+      "artist": "Jamie Cullum",
+      "year": 2020,
+      "sources": {
+        "spotify": "2NkKDtph6GZ0ZL0dnJSRpX"
+      },
+      "review": true
+    },
+    {
+      "id": "christmas-5sZR7OC7uHArUWvNyunS3T",
+      "title": "Christmas Lights",
+      "artist": "Sofia Camara",
+      "year": 2025,
+      "sources": {
+        "spotify": "5sZR7OC7uHArUWvNyunS3T"
+      },
+      "review": true
+    },
+    {
+      "id": "christmas-2mvabkN1i2gLnGAPUVdwek",
+      "title": "Christmas Tree Farm",
+      "artist": "Taylor Swift",
+      "year": 2019,
+      "sources": {
+        "spotify": "2mvabkN1i2gLnGAPUVdwek"
+      },
+      "review": true
+    },
+    {
+      "id": "christmas-7B9SFykXtlvM2YCjKwyULL",
+      "title": "Santa, Can’t You Hear Me",
+      "artist": "Kelly Clarkson, Ariana Grande",
+      "year": 2021,
+      "sources": {
+        "spotify": "7B9SFykXtlvM2YCjKwyULL"
+      },
+      "review": true
+    },
+    {
+      "id": "christmas-0NSAlbl5xcKOu7BKDbVk7I",
+      "title": "Winter Wonderland",
+      "artist": "Rod Stewart, Michael Bublé",
+      "year": 2012,
+      "sources": {
+        "spotify": "0NSAlbl5xcKOu7BKDbVk7I"
+      },
+      "review": true
+    },
+    {
+      "id": "christmas-1QLZKzC2pjP4ySf4ALrNhm",
+      "title": "Christmas Without You",
+      "artist": "Ava Max",
+      "year": 2020,
+      "sources": {
+        "spotify": "1QLZKzC2pjP4ySf4ALrNhm"
+      },
+      "review": true
+    },
+    {
+      "id": "christmas-0YupMLYOYz6lZDbN3kRt7A",
+      "title": "I'll Be Home",
+      "artist": "Meghan Trainor",
+      "year": 2020,
+      "sources": {
+        "spotify": "0YupMLYOYz6lZDbN3kRt7A"
+      },
+      "review": true
+    },
+    {
+      "id": "christmas-71c1qn8GR6xhx7pFjWWcks",
+      "title": "Meet Me Next Christmas",
+      "artist": "Pentatonix",
+      "year": 2024,
+      "sources": {
+        "spotify": "71c1qn8GR6xhx7pFjWWcks"
+      },
+      "review": true
+    },
+    {
+      "id": "christmas-3yQc2rppzvwopGQEyQIwvI",
+      "title": "Happy Christmas",
+      "artist": "Rea Garvey",
+      "year": 2025,
+      "sources": {
+        "spotify": "3yQc2rppzvwopGQEyQIwvI"
+      },
+      "review": true
+    },
+    {
+      "id": "christmas-3QIoEi8Enr9uHffwInGIsC",
+      "title": "Please Come Home for Christmas - 2013 Remaster",
+      "artist": "Eagles",
+      "year": 1978,
+      "sources": {
+        "spotify": "3QIoEi8Enr9uHffwInGIsC"
+      },
+      "review": true
+    },
+    {
+      "id": "christmas-4DNlJ7Dscux6y2wgLbffUE",
+      "title": "Tchaikovsky: The Nutcracker, Op. 71, TH 14 / Act 1: No. 2 March - Live at Walt Disney Concert Hall, Los Angeles / 2013",
+      "artist": "Los Angeles Philharmonic, Gustavo Dudamel",
+      "year": 2024,
+      "sources": {
+        "spotify": "4DNlJ7Dscux6y2wgLbffUE"
+      },
+      "review": true
+    },
+    {
+      "id": "christmas-2SzCyHPryooDmTKM3l4MMq",
+      "title": "It’s Always Christmas With You",
+      "artist": "Elysia Biro",
+      "year": 2026,
+      "sources": {
+        "spotify": "2SzCyHPryooDmTKM3l4MMq"
+      },
+      "review": true
+    },
+    {
+      "id": "christmas-3VTNVsTTu05dmTsVFrmGpK",
+      "title": "Fairytale of New York (feat. Kirsty MacColl)",
+      "artist": "The Pogues, Kirsty MacColl",
+      "year": 1988,
+      "sources": {
+        "spotify": "3VTNVsTTu05dmTsVFrmGpK"
+      },
+      "review": true
+    },
+    {
+      "id": "christmas-2qqZ5fOGuNvYVzgPFDLQ4l",
+      "title": "Mary's Boy Child / Oh My Lord",
+      "artist": "Boney M.",
+      "year": 2017,
+      "sources": {
+        "spotify": "2qqZ5fOGuNvYVzgPFDLQ4l"
+      },
+      "review": true
+    },
+    {
+      "id": "christmas-2SBr3MK1sdMs8IxdRcN6qz",
+      "title": "Santa Baby",
+      "artist": "Kylie Minogue",
+      "year": 2015,
+      "sources": {
+        "spotify": "2SBr3MK1sdMs8IxdRcN6qz"
+      },
+      "review": true
+    },
+    {
+      "id": "christmas-3b0ts5b6VuCNWAqNu50UzQ",
+      "title": "Baby, It's Cold Outside",
+      "artist": "Dean Martin",
+      "year": 2023,
+      "sources": {
+        "spotify": "3b0ts5b6VuCNWAqNu50UzQ"
+      },
+      "review": true
+    },
+    {
+      "id": "christmas-1N627P6Ih9KIrUJz3g6qF2",
+      "title": "I'll Be Home For Christmas",
+      "artist": "Mabel",
+      "year": 2020,
+      "sources": {
+        "spotify": "1N627P6Ih9KIrUJz3g6qF2"
+      },
+      "review": true
+    },
+    {
+      "id": "christmas-2pZrwtPLHkxTLU4IeO5Q1V",
+      "title": "The Power Of Love",
+      "artist": "Frankie Goes To Hollywood",
+      "year": 2023,
+      "sources": {
+        "spotify": "2pZrwtPLHkxTLU4IeO5Q1V"
+      },
+      "review": true
+    },
+    {
+      "id": "christmas-6gDqTTjSav4gA7U3g0nNV9",
+      "title": "Christmas In My Heart",
+      "artist": "Sarah Connor",
+      "year": 2006,
+      "sources": {
+        "spotify": "6gDqTTjSav4gA7U3g0nNV9"
+      },
+      "review": true
+    },
+    {
+      "id": "christmas-6bMgrX5WNGOs2gLVKHPzsF",
+      "title": "A Little Love",
+      "artist": "Celeste",
+      "year": 2021,
+      "sources": {
+        "spotify": "6bMgrX5WNGOs2gLVKHPzsF"
+      },
+      "review": true
+    },
+    {
+      "id": "christmas-0viGbbEJ9xV6qNJsTaXruz",
+      "title": "I Need You Christmas",
+      "artist": "Jonas Brothers",
+      "year": 2020,
+      "sources": {
+        "spotify": "0viGbbEJ9xV6qNJsTaXruz"
+      },
+      "review": true
+    },
+    {
+      "id": "christmas-5DoGwwQAlYumpSSlDNMOwY",
+      "title": "It's Not Christmas 'Til You Come Home - Recorded At Spotify Studios NYC",
+      "artist": "Norah Jones",
+      "year": 2017,
+      "sources": {
+        "spotify": "5DoGwwQAlYumpSSlDNMOwY"
+      },
+      "review": true
+    },
+    {
+      "id": "christmas-7gcVSJvQaEuM3LP5EAYUiU",
+      "title": "Adeste Fideles",
+      "artist": "Wiener Sängerknaben, Schubert-Akademie, Gerald Wirth",
+      "year": 2024,
+      "sources": {
+        "spotify": "7gcVSJvQaEuM3LP5EAYUiU"
+      },
+      "review": true
+    },
+    {
+      "id": "christmas-4L2e8D5a0mEQfb8HvHEfyL",
+      "title": "All I Want (For Christmas)",
+      "artist": "Liam Payne",
+      "year": 2024,
+      "sources": {
+        "spotify": "4L2e8D5a0mEQfb8HvHEfyL"
+      },
+      "review": true
+    },
+    {
+      "id": "christmas-4zDgrcaNDUAwpf9vnmrOTa",
+      "title": "Last Christmas",
+      "artist": "Ariana Grande",
+      "year": 2021,
+      "sources": {
+        "spotify": "4zDgrcaNDUAwpf9vnmrOTa"
+      },
+      "review": true
+    },
+    {
+      "id": "christmas-0XpApJu5havzspIyIVe2ut",
+      "title": "Calling It Christmas - Radio Edit",
+      "artist": "Elton John, Joss Stone",
+      "year": 2004,
+      "sources": {
+        "spotify": "0XpApJu5havzspIyIVe2ut"
+      },
+      "review": true
+    },
+    {
+      "id": "christmas-30SNjazZhzunhAWCjhdyyD",
+      "title": "Christmas All Over Again",
+      "artist": "Tom Petty and the Heartbreakers",
+      "year": 1992,
+      "sources": {
+        "spotify": "30SNjazZhzunhAWCjhdyyD"
+      },
+      "review": true
+    },
+    {
+      "id": "christmas-6FnSfAaElIHimUbnGdMdlM",
+      "title": "Christmas Child",
+      "artist": "Burl Ives",
+      "year": 2024,
+      "sources": {
+        "spotify": "6FnSfAaElIHimUbnGdMdlM"
+      },
+      "review": true
+    },
+    {
+      "id": "christmas-5aDoUmxBsbdpS16alksb5Z",
+      "title": "Do You Hear What I Hear? - Remastered 2006",
+      "artist": "Bing Crosby",
+      "year": 2006,
+      "sources": {
+        "spotify": "5aDoUmxBsbdpS16alksb5Z"
+      },
+      "review": true
+    },
+    {
+      "id": "christmas-6iGU74CwXuT4XVepjc9Emf",
+      "title": "God Only Knows - Mono",
+      "artist": "The Beach Boys",
+      "year": 1966,
+      "sources": {
+        "spotify": "6iGU74CwXuT4XVepjc9Emf"
+      },
+      "review": true
+    },
+    {
+      "id": "christmas-4dFtIGQBrYjiskk7fN5Wmx",
+      "title": "Glittery - From The Kacey Musgraves Christmas Show",
+      "artist": "Kacey Musgraves, Troye Sivan",
+      "year": 2019,
+      "sources": {
+        "spotify": "4dFtIGQBrYjiskk7fN5Wmx"
+      },
+      "review": true
+    },
+    {
+      "id": "christmas-3B5VId2UpYKko9c550MKB9",
+      "title": "The Christmas List",
+      "artist": "Peggy Lee",
+      "year": 2024,
+      "sources": {
+        "spotify": "3B5VId2UpYKko9c550MKB9"
+      },
+      "review": true
+    },
+    {
+      "id": "christmas-2X3ibsXEeZ6cJdRRKJPoqO",
+      "title": "The Christmas Song (Chestnuts Roasting On An Open Fire)",
+      "artist": "Justin Bieber, USHER",
+      "year": 2011,
+      "sources": {
+        "spotify": "2X3ibsXEeZ6cJdRRKJPoqO"
+      },
+      "review": true
+    },
+    {
+      "id": "christmas-2BLwLAc1swTc4TC7K3J506",
+      "title": "Hark! The Herald Angels Sing - Remastered 1999",
+      "artist": "Frank Sinatra",
+      "year": 1957,
+      "sources": {
+        "spotify": "2BLwLAc1swTc4TC7K3J506"
+      },
+      "review": true
+    },
+    {
+      "id": "christmas-2iZUvZ55w6SbchNUotueHr",
+      "title": "The Christmas Waltz",
+      "artist": "Peggy Lee",
+      "year": 2024,
+      "sources": {
+        "spotify": "2iZUvZ55w6SbchNUotueHr"
+      },
+      "review": true
+    },
+    {
+      "id": "christmas-29CBVW5Wn5aVSBovC1FnkC",
+      "title": "Christmas Wish",
+      "artist": "Gregory Porter",
+      "year": 2024,
+      "sources": {
+        "spotify": "29CBVW5Wn5aVSBovC1FnkC"
+      },
+      "review": true
+    },
+    {
+      "id": "christmas-566ZpRhOr86K5Y6qJTKWtT",
+      "title": "Do You Hear What I Hear?",
+      "artist": "Mary J. Blige, Jessie J",
+      "year": 2024,
+      "sources": {
+        "spotify": "566ZpRhOr86K5Y6qJTKWtT"
+      },
+      "review": true
+    },
+    {
+      "id": "christmas-2pGB7DHohPSO1lGWlcsqMR",
+      "title": "Hallelujah - From \"Sing\" Original Motion Picture Soundtrack",
+      "artist": "Tori Kelly",
+      "year": 2020,
+      "sources": {
+        "spotify": "2pGB7DHohPSO1lGWlcsqMR"
+      },
+      "review": true
+    },
+    {
+      "id": "christmas-7r67rQBcHfzgrkNOZwTtek",
+      "title": "Have Yourself A Merry Little Christmas",
+      "artist": "Sam Smith",
+      "year": 2024,
+      "sources": {
+        "spotify": "7r67rQBcHfzgrkNOZwTtek"
+      },
+      "review": true
+    },
+    {
+      "id": "christmas-7otcIpdgneCdTaiRe0LC0f",
+      "title": "Here Comes Santa Claus (Right Down Santa Claus Lane) - Single Version",
+      "artist": "Bing Crosby, The Andrews Sisters",
+      "year": 2024,
+      "sources": {
+        "spotify": "7otcIpdgneCdTaiRe0LC0f"
+      },
+      "review": true
+    },
+    {
+      "id": "christmas-35kYq1lSwDNUCDlkjjfxx6",
+      "title": "I Saw Mommy Kissing Santa Claus",
+      "artist": "The Jackson 5",
+      "year": 2024,
+      "sources": {
+        "spotify": "35kYq1lSwDNUCDlkjjfxx6"
+      },
+      "review": true
+    },
+    {
+      "id": "christmas-18J9Wt6fBBFjkQciPsxa3g",
+      "title": "It's Not Christmas Till Somebody Cries",
+      "artist": "Carly Rae Jepsen",
+      "year": 2020,
+      "sources": {
+        "spotify": "18J9Wt6fBBFjkQciPsxa3g"
+      },
+      "review": true
+    },
+    {
+      "id": "christmas-65YvxGS3GVnqDFjLCt5HUV",
+      "title": "Joy To The World - Remastered 1999",
+      "artist": "Nat King Cole",
+      "year": 2025,
+      "sources": {
+        "spotify": "65YvxGS3GVnqDFjLCt5HUV"
+      },
+      "review": true
+    },
+    {
+      "id": "christmas-2WUVQQAsWvScEdBVilRYaR",
+      "title": "The Lighthouse Keeper",
+      "artist": "Sam Smith",
+      "year": 2020,
+      "sources": {
+        "spotify": "2WUVQQAsWvScEdBVilRYaR"
+      },
+      "review": true
+    },
+    {
+      "id": "christmas-10GtpjYhElaGXMKVPEsMwf",
+      "title": "The Little Drummer Boy - Remastered 2006",
+      "artist": "Bing Crosby",
+      "year": 2023,
+      "sources": {
+        "spotify": "10GtpjYhElaGXMKVPEsMwf"
+      },
+      "review": true
+    },
+    {
+      "id": "christmas-2rfKc0Cax07d0NAeYwjMWT",
+      "title": "Little Jack Frost Get Lost",
+      "artist": "Seth MacFarlane, Norah Jones",
+      "year": 2023,
+      "sources": {
+        "spotify": "2rfKc0Cax07d0NAeYwjMWT"
+      },
+      "review": true
+    },
+    {
+      "id": "christmas-18LnU4Owy3CICJJVSPyTuE",
+      "title": "Little Saint Nick - 1991 Remix",
+      "artist": "The Beach Boys",
+      "year": 2024,
+      "sources": {
+        "spotify": "18LnU4Owy3CICJJVSPyTuE"
+      },
+      "review": true
+    },
+    {
+      "id": "christmas-7eJUQlXInmblWxAbLZzktR",
+      "title": "Loneliest Time Of Year",
+      "artist": "Mabel",
+      "year": 2022,
+      "sources": {
+        "spotify": "7eJUQlXInmblWxAbLZzktR"
+      },
+      "review": true
+    },
+    {
+      "id": "christmas-5DMItYJluCFc7YtFdP4aXo",
+      "title": "Lonely This Christmas",
+      "artist": "Mud",
+      "year": 2004,
+      "sources": {
+        "spotify": "5DMItYJluCFc7YtFdP4aXo"
+      },
+      "review": true
+    },
+    {
+      "id": "christmas-6RS6rcjnWrdfVuu2U2W2dj",
+      "title": "Make It To Christmas",
+      "artist": "Alessia Cara",
+      "year": 2019,
+      "sources": {
+        "spotify": "6RS6rcjnWrdfVuu2U2W2dj"
+      },
+      "review": true
+    },
+    {
+      "id": "christmas-06658zAJBWJoCIlT28o8Sv",
+      "title": "A Marshmallow World",
+      "artist": "Seth MacFarlane",
+      "year": 2024,
+      "sources": {
+        "spotify": "06658zAJBWJoCIlT28o8Sv"
+      },
+      "review": true
+    },
+    {
+      "id": "christmas-7kWOXlOJif4pXT9xjUaiKp",
+      "title": "Mele Kalikimaka - Single Version",
+      "artist": "Bing Crosby, The Andrews Sisters",
+      "year": 2024,
+      "sources": {
+        "spotify": "7kWOXlOJif4pXT9xjUaiKp"
+      },
+      "review": true
+    },
+    {
+      "id": "christmas-4rWyiEmrGS3sM5QPzQhv7d",
+      "title": "It's Beginning To Look A Lot Like Christmas",
+      "artist": "Bing Crosby",
+      "year": 2023,
+      "sources": {
+        "spotify": "4rWyiEmrGS3sM5QPzQhv7d"
+      },
+      "review": true
+    },
+    {
+      "id": "christmas-3AgiRs3oxc2dFh0CPUHXJs",
+      "title": "Mistletoe and Wine",
+      "artist": "Cliff Richard",
+      "year": 1991,
+      "sources": {
+        "spotify": "3AgiRs3oxc2dFh0CPUHXJs"
+      },
+      "review": true
+    },
+    {
+      "id": "christmas-01bfItHhkRgcjC26yJigm2",
+      "title": "O Come All Ye Faithful - Remastered 1999",
+      "artist": "Nat King Cole",
+      "year": 2024,
+      "sources": {
+        "spotify": "01bfItHhkRgcjC26yJigm2"
+      },
+      "review": true
+    },
+    {
+      "id": "christmas-68xuvScsyY1WBKcFA3xxVn",
+      "title": "This Christmas",
+      "artist": "Oh Wonder",
+      "year": 2024,
+      "sources": {
+        "spotify": "68xuvScsyY1WBKcFA3xxVn"
+      },
+      "review": true
+    },
+    {
+      "id": "christmas-5JzLXHMGetURQzlaekO2kl",
+      "title": "O Holy Night",
+      "artist": "Ellie Goulding",
+      "year": 2024,
+      "sources": {
+        "spotify": "5JzLXHMGetURQzlaekO2kl"
+      },
+      "review": true
+    },
+    {
+      "id": "christmas-4eXL9ici1ddorTRr5jJQvm",
+      "title": "Oh Santa!",
+      "artist": "Mariah Carey",
+      "year": 2010,
+      "sources": {
+        "spotify": "4eXL9ici1ddorTRr5jJQvm"
+      },
+      "review": true
+    },
+    {
+      "id": "christmas-3qon5trn9JHqbnXMTWhw8t",
+      "title": "One Little Christmas Tree",
+      "artist": "Stevie Wonder",
+      "year": 2024,
+      "sources": {
+        "spotify": "3qon5trn9JHqbnXMTWhw8t"
+      },
+      "review": true
+    },
+    {
+      "id": "christmas-6EHt0F5hYO9HODSyeKjDcy",
+      "title": "Please Come Home For Christmas",
+      "artist": "Jon Bon Jovi",
+      "year": 2013,
+      "sources": {
+        "spotify": "6EHt0F5hYO9HODSyeKjDcy"
+      },
+      "review": true
+    },
+    {
+      "id": "christmas-4rbY8256y3jknhU3lvOYM5",
+      "title": "Run Rudolph Run",
+      "artist": "Chuck Berry",
+      "year": 2024,
+      "sources": {
+        "spotify": "4rbY8256y3jknhU3lvOYM5"
+      },
+      "review": true
+    },
+    {
+      "id": "christmas-2Jaa4hkzxvSFM7hg2FqJAT",
+      "title": "It's Beginning To Look A Lot Like Christmas",
+      "artist": "Matthew Ifield",
+      "year": 2024,
+      "sources": {
+        "spotify": "2Jaa4hkzxvSFM7hg2FqJAT"
+      },
+      "review": true
+    },
+    {
+      "id": "christmas-6YJdPrH3i2POzu7hdHIRrb",
+      "title": "Santa Baby",
+      "artist": "Ariana Grande, Liz Gillies",
+      "year": 2013,
+      "sources": {
+        "spotify": "6YJdPrH3i2POzu7hdHIRrb"
+      },
+      "review": true
+    },
+    {
+      "id": "christmas-1X2uFHf6EehQ6bLRl9uDvB",
+      "title": "Show Me The Magic",
+      "artist": "Jamie Cullum",
+      "year": 2021,
+      "sources": {
+        "spotify": "1X2uFHf6EehQ6bLRl9uDvB"
+      },
+      "review": true
+    },
+    {
+      "id": "christmas-7xxUMqg2zsGb17yi1CnUrD",
+      "title": "Silent Night",
+      "artist": "Carpenters",
+      "year": 2024,
+      "sources": {
+        "spotify": "7xxUMqg2zsGb17yi1CnUrD"
+      },
+      "review": true
+    },
+    {
+      "id": "christmas-5Qik0N4QuJW7FpGz6ULqtI",
+      "title": "O Tannenbaum - 2022 Mix",
+      "artist": "Vince Guaraldi Trio",
+      "year": 2022,
+      "sources": {
+        "spotify": "5Qik0N4QuJW7FpGz6ULqtI"
+      },
+      "review": true
+    },
+    {
+      "id": "christmas-1m8Hjf4vpONSttRaCSRh2M",
+      "title": "Silver Bells",
+      "artist": "Stevie Wonder",
+      "year": 2004,
+      "sources": {
+        "spotify": "1m8Hjf4vpONSttRaCSRh2M"
+      },
+      "review": true
+    },
+    {
+      "id": "christmas-7nQw41fm2yDw57L0JssjxX",
+      "title": "Someday At Christmas",
+      "artist": "Stevie Wonder",
+      "year": 2024,
+      "sources": {
+        "spotify": "7nQw41fm2yDw57L0JssjxX"
+      },
+      "review": true
+    },
+    {
+      "id": "christmas-3IVa01b4vkSgibhCudTjYM",
+      "title": "Stop The Cavalry",
+      "artist": "Jona Lewie",
+      "year": 2024,
+      "sources": {
+        "spotify": "3IVa01b4vkSgibhCudTjYM"
+      },
+      "review": true
+    },
+    {
+      "id": "christmas-1V0qqWBbIWt8hlAjxTZedR",
+      "title": "What Christmas Means To Me",
+      "artist": "Stevie Wonder",
+      "year": 2019,
+      "sources": {
+        "spotify": "1V0qqWBbIWt8hlAjxTZedR"
+      },
+      "review": true
+    },
+    {
+      "id": "christmas-0dCFYpvLdVhhNI1BwVmKZ2",
+      "title": "A Winter's Tale",
+      "artist": "David Essex",
+      "year": 1991,
+      "sources": {
+        "spotify": "0dCFYpvLdVhhNI1BwVmKZ2"
+      },
+      "review": true
+    },
+    {
+      "id": "christmas-1UtueeOGGwBY0Rh49e6Llx",
+      "title": "Winter Things",
+      "artist": "Ariana Grande",
+      "year": 2018,
+      "sources": {
+        "spotify": "1UtueeOGGwBY0Rh49e6Llx"
+      },
+      "review": true
+    },
+    {
+      "id": "christmas-6ZgigeSB0XUMqc0jjzaq6d",
+      "title": "You're A Mean One, Mr. Grinch",
+      "artist": "Thurl Ravenscroft",
+      "year": 1966,
+      "sources": {
+        "spotify": "6ZgigeSB0XUMqc0jjzaq6d"
+      },
+      "review": true
+    },
+    {
+      "id": "christmas-4j07TtZe0KKS4YgcJvc97I",
+      "title": "Christmas Tree",
+      "artist": "Lady Gaga, Space Cowboy",
+      "year": 2022,
+      "sources": {
+        "spotify": "4j07TtZe0KKS4YgcJvc97I"
+      },
+      "review": true
+    },
+    {
+      "id": "christmas-5XM67HdnPub0nMDqJEUPdy",
+      "title": "The Best Side Of Life",
+      "artist": "Sarah Connor",
+      "year": 2006,
+      "sources": {
+        "spotify": "5XM67HdnPub0nMDqJEUPdy"
+      },
+      "review": true
+    },
+    {
+      "id": "christmas-3i2qrGDUbSqCEhMemtbS3x",
+      "title": "Night Before Christmas",
+      "artist": "Sam Smith",
+      "year": 2022,
+      "sources": {
+        "spotify": "3i2qrGDUbSqCEhMemtbS3x"
+      },
+      "review": true
+    },
+    {
+      "id": "christmas-4gWpUjTbcwASiRVkJM319B",
+      "title": "Christmas Without You",
+      "artist": "OneRepublic",
+      "year": 2011,
+      "sources": {
+        "spotify": "4gWpUjTbcwASiRVkJM319B"
+      },
+      "review": true
+    },
+    {
+      "id": "christmas-1QGGUzL78YknkEtVrPnoqV",
+      "title": "Man With The Bag",
+      "artist": "Jessie J",
+      "year": 2022,
+      "sources": {
+        "spotify": "1QGGUzL78YknkEtVrPnoqV"
+      },
+      "review": true
+    },
+    {
+      "id": "christmas-2nB8nWRz9yPJaT9iSoWQE9",
+      "title": "Angel (Holiday)",
+      "artist": "Jack Johnson",
+      "year": 2023,
+      "sources": {
+        "spotify": "2nB8nWRz9yPJaT9iSoWQE9"
+      },
+      "review": true
+    },
+    {
+      "id": "christmas-47ohYW8e7dxCYn9qbUMBCI",
+      "title": "Christmas (Baby Please Come Home)",
+      "artist": "Darlene Love",
+      "year": 2020,
+      "sources": {
+        "spotify": "47ohYW8e7dxCYn9qbUMBCI"
+      },
+      "review": true
+    },
+    {
+      "id": "christmas-43hPyoE1vsz3VnvBDupq5B",
+      "title": "Christmas Calling (Jolly Jones)",
+      "artist": "Norah Jones",
+      "year": 2022,
+      "sources": {
+        "spotify": "43hPyoE1vsz3VnvBDupq5B"
+      },
+      "review": true
+    },
+    {
+      "id": "christmas-4lkdPxoZNx1LfxXpNIQFD0",
+      "title": "Cool Yule",
+      "artist": "Louis Armstrong, The Commanders",
+      "year": 2024,
+      "sources": {
+        "spotify": "4lkdPxoZNx1LfxXpNIQFD0"
+      },
+      "review": true
+    },
+    {
+      "id": "christmas-6AdXfBorZ6AM5DlBIcesxf",
+      "title": "Do They Know It's Christmas? - 1984 Version",
+      "artist": "Band Aid",
+      "year": 2024,
+      "sources": {
+        "spotify": "6AdXfBorZ6AM5DlBIcesxf"
+      },
+      "review": true
+    },
+    {
+      "id": "christmas-7azp0ySqPkkXHi9M9aeg3T",
+      "title": "(Everybody's Waitin' For) The Man With The Bag",
+      "artist": "Kay Starr",
+      "year": 2016,
+      "sources": {
+        "spotify": "7azp0ySqPkkXHi9M9aeg3T"
+      },
+      "review": true
+    },
+    {
+      "id": "christmas-5GMaaILYpTiAo1SAhvvBKi",
+      "title": "A Hand For Mrs. Claus",
+      "artist": "Idina Menzel, Ariana Grande",
+      "year": 2019,
+      "sources": {
+        "spotify": "5GMaaILYpTiAo1SAhvvBKi"
+      },
+      "review": true
+    },
+    {
+      "id": "christmas-5MPd7GzOkGRoFBaSqmqiSL",
+      "title": "What Christmas Means To Me",
+      "artist": "Hanson",
+      "year": 1997,
+      "sources": {
+        "spotify": "5MPd7GzOkGRoFBaSqmqiSL"
+      },
+      "review": true
+    },
+    {
+      "id": "christmas-6ijwkMKLUVjVPVZVU13a8q",
+      "title": "Hey Santa Claus",
+      "artist": "The Moonglows",
+      "year": 2024,
+      "sources": {
+        "spotify": "6ijwkMKLUVjVPVZVU13a8q"
+      },
+      "review": true
+    },
+    {
+      "id": "christmas-4RiINa41WouNtcUp2xpElz",
+      "title": "Mistletoe And Holly - Remastered 1999",
+      "artist": "Frank Sinatra",
+      "year": 2024,
+      "sources": {
+        "spotify": "4RiINa41WouNtcUp2xpElz"
+      },
+      "review": true
+    },
+    {
+      "id": "christmas-1MssPn74cGaKrEv3or8qNT",
+      "title": "Rudolph The Red-Nosed Reindeer",
+      "artist": "Helene Fischer",
+      "year": 2022,
+      "sources": {
+        "spotify": "1MssPn74cGaKrEv3or8qNT"
+      },
+      "review": true
+    },
+    {
+      "id": "christmas-14qzig8cvFMvUVeCxbaO38",
+      "title": "We Wish You a Merry Christmas",
+      "artist": "The Disney Holiday Chorus",
+      "year": 2003,
+      "sources": {
+        "spotify": "14qzig8cvFMvUVeCxbaO38"
+      },
+      "review": true
+    },
+    {
+      "id": "christmas-3bMfUUpzUzqWp9II00yRhE",
+      "title": "Christmas Time Is Here",
+      "artist": "Vince Guaraldi Trio",
+      "year": 1998,
+      "sources": {
+        "spotify": "3bMfUUpzUzqWp9II00yRhE"
+      },
+      "review": true
+    },
+    {
+      "id": "christmas-5kPu4qgd0a1e5e6kveFnNr",
+      "title": "We Wish You The Merriest",
+      "artist": "Seth MacFarlane, Liz Gillies",
+      "year": 2023,
+      "sources": {
+        "spotify": "5kPu4qgd0a1e5e6kveFnNr"
+      },
+      "review": true
+    },
+    {
+      "id": "christmas-3RH9idbxUAMcUldet2ormp",
+      "title": "Christmas Love",
+      "artist": "Justin Bieber",
+      "year": 2011,
+      "sources": {
+        "spotify": "3RH9idbxUAMcUldet2ormp"
+      },
+      "review": true
+    },
+    {
+      "id": "christmas-1XDZ5RUSAuYjBsMWKVZerp",
+      "title": "Show Me The Magic",
+      "artist": "Jamie Cullum",
+      "year": 2020,
+      "sources": {
+        "spotify": "1XDZ5RUSAuYjBsMWKVZerp"
+      },
+      "review": true
+    }
+  ],
+  "print": {
+    "style": "theme",
+    "frontColors": "varied",
+    "edge": "long",
+    "offsetX": 0,
+    "offsetY": 0,
+    "cuts": true
+  },
+  "example": {
+    "id": "christmas-hits",
+    "description": "151 świątecznych piosenek z polecanej playlisty. Klasyki i nowsze nagrania w oprawie Rybek świątecznych.",
+    "sourceUrl": "https://open.spotify.com/playlist/7wfTeAa7cxhA3qNE05XPKk",
+    "sourceName": "Best Christmas Songs 2026 🎄 Holiday Hits & Greatest Classics ✨",
+    "sourceOwner": "Best Christmas Playlists 🎄",
+    "snapshotDate": "2026-11-09",
+    "yearNote": "Lata pochodzą z wydań dostępnych w Spotify. Mogą dotyczyć składanki lub reedycji, dlatego są oznaczone do sprawdzenia przed drukiem."
+  }
+}

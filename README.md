@@ -25,7 +25,7 @@ Nie wpisuj sekretu Spotify do kodu ani zmiennych frontendu. Zmienne budowania tr
 
 ## Jak grać
 
-1. W kreatorze dodaj piosenki, wczytaj JSON/CSV albo zaimportuj playlistę po skonfigurowaniu integracji. Sprawdź rok konkretnego nagrania.
+1. W kreatorze wybierz **Przykładowe playlisty**, dodaj własne piosenki, wczytaj JSON/CSV albo zaimportuj playlistę po skonfigurowaniu integracji. Sprawdź rok konkretnego nagrania.
 2. Wybierz motyw. Pojedyncza piosenka może mieć własny motyw, np. Rybki świąteczne. Własne zdjęcie jest kadrowane centralnie do kwadratu.
 3. Pobierz PDF, wydrukuj A4 w skali 100%, dwustronnie. Najpierw wykonaj próbę kalibracyjną. Domyślne karty mają 60 × 60 mm, 3 kolumny i 4 wiersze.
 4. Na laptopie otwórz Odtwarzacz → Połącz telefon. W systemie wybierz wyjście dźwięku.
@@ -51,6 +51,8 @@ Odtwarzacz korzysta z oficjalnych, widocznych embedów Spotify i YouTube. Nie wy
 **Import playlist jest osobny od odtwarzania widgetu.** Administrator ustawia sekret repozytorium Actions `SPOTIFY_CLIENT_ID`. Adres powrotu w Spotify Developer Dashboard musi być dokładnie adresem strony, np. `https://artifexet.github.io/Hiciarz/` (sprawdź wielkość liter w faktycznym adresie). Logowanie używa PKCE; Client Secret nie występuje. Token jest w sessionStorage i znika po zakończeniu sesji przeglądarki. Import pyta o dopisanie na końcu lub zastąpienie listy. Pobiera strony playlisty do 2000 utworów. Zakres playlist i dostęp kont zależą od uprawnień integracji Spotify.
 
 Przy dopisywaniu zachowujemy istniejące rekordy i poprawki. Duplikaty identyfikujemy po źródle Spotify albo YouTube. Utwory z różnych serwisów bez wspólnego identyfikatora mogą wymagać ręcznego uporządkowania. Rok z albumu Spotify jest oznaczany do sprawdzenia.
+
+Obecna integracja w trybie deweloperskim Spotify pobiera zawartość playlist, których zalogowana osoba jest właścicielem lub współtwórcą. Inne playlisty, nawet publiczne, nie udostępniają jej listy utworów. Samo zapisanie playlisty w Bibliotece tego nie zmienia. [Zasady dostępu Spotify](https://developer.spotify.com/documentation/web-api/tutorials/february-2026-migration-guide).
 
 Sprawdzenie linków przez oEmbed potwierdza dostępność metadanych, nie gwarantuje odtwarzania ani dostępności w konkretnym regionie. Brak odpowiedzi może wynikać z CORS, limitów lub sieci.
 
@@ -83,7 +85,9 @@ Instrukcja dla AI: „Przygotuj tablicę JSON według powyższego schematu. Rok 
 
 ## Dane lokalne i PWA
 
-Pierwsze uruchomienie zaczyna się od pustej talii. Możesz skorzystać z jednorazowej propozycji utworzenia świątecznej talii z polecanej playlisty Spotify albo ją pominąć. Utwory są pobierane dopiero po wybraniu importu i zalogowaniu konta; gotowa talia zostaje w Twojej przeglądarce. Na telefonie przełączasz zapisane talie polem **Twoje talie** w kreatorze.
+Pierwsze uruchomienie zaczyna się od pustej talii. Możesz skorzystać z jednorazowej propozycji wczytania świątecznego przykładu albo ją pominąć. Przykłady zawsze znajdziesz też w kreatorze pod **Przykładowe playlisty**. Na telefonie otwórz **Pełna aplikacja**, żeby przejść ze skanera do kreatora, a zapisane talie przełączaj polem **Twoje talie**.
+
+Gotowe listy znajdują się w folderze [examples/playlists](examples/playlists/README.md). Przykład **Świąteczne hity** zawiera statyczny zapis wszystkich 151 utworów z [polecanej playlisty](https://open.spotify.com/playlist/7wfTeAa7cxhA3qNE05XPKk) z 9 listopada 2026 i motyw Rybki świąteczne. Wczytasz go bez logowania do Spotify, jako nową talię lub dopisując utwory do obecnej. Lata wydań oznaczono do sprawdzenia przed drukiem. Możesz edytować własną kopię; przykład w repozytorium nie zmienia się razem z nią. Listy są dołączone do aplikacji i dostępne również po zapisaniu jej do pracy offline; odtwarzanie muzyki wymaga sieci.
 
 Gdy nowa wersja aplikacji jest gotowa, pojawi się przycisk **Wczytaj nową wersję**. Przed odświeżeniem aplikacja zapisuje talie. W stopce znajdziesz numer wersji i **Sprawdź aktualizacje**. Aktualizacja nie wymaga czyszczenia danych strony.
 

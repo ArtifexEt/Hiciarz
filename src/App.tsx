@@ -29,6 +29,7 @@ import {
   Monitor,
   MoreHorizontal,
   Music2,
+  Menu,
   Palette,
   Pause,
   Play,
@@ -50,6 +51,8 @@ import {
 } from 'lucide-react';
 import { qrImage } from './qr';
 import { GameGuide } from './GameGuide';
+import PlaylistExamples from './PlaylistExamples';
+import { createExampleDeck } from './examples';
 import playlistPrompt from '../docs/playlist-prompt.txt?raw';
 import { frontDesign, frontImage } from './front';
 import {
@@ -333,10 +336,12 @@ function SpotifyImport({
   onImport,
   onClose,
   initialPlaylist,
+  onExamples,
 }: {
   onImport: (songs: Song[], mode: 'append' | 'replace', note: string) => void;
   onClose: () => void;
   initialPlaylist: string;
+  onExamples: () => void;
 }) {
   const [mode, setMode] = useState<'append' | 'replace'>(() =>
       sessionStorage.getItem('spotify-import-mode') === 'replace' ? 'replace' : 'append',
@@ -345,6 +350,19 @@ function SpotifyImport({
     [error, setError] = useState('');
   return (
     <Modal title="Importuj playlistę ze Spotify" onClose={onClose}>
+      <div className="notice spotify-import-access">
+        <Info size={22} aria-hidden="true" />
+        <div>
+          <strong>Jakie playlisty możesz wczytać?</strong>
+          <p>
+            Własne oraz te, które współtworzysz. Spotify nie udostępnia tej aplikacji utworów z
+            pozostałych playlist — również publicznych.
+          </p>
+          <button className="text-button" onClick={onExamples}>
+            Wybierz przykład bez logowania <ArrowUpRight size={14} />
+          </button>
+        </div>
+      </div>
       <p className="muted">Wybierz, co zrobić z obecną listą utworów.</p>
       <div className="choice-list">
         <label>
@@ -446,6 +464,9 @@ function SpotifyImport({
   );
 }
 export default function App() {
+  const [isMobile, setIsMobile] = useState(() => window.matchMedia('(max-width: 700px)').matches);
+  const [fullMobileApp, setFullMobileApp] = useState(false);
+  const [appMenuOpen, setAppMenuOpen] = useState(false);
   const [showCoffee, setShowCoffee] = useState(localStorage.getItem('hiciarz-hide-coffee') !== '1');
   const [showDemoOffer, setShowDemoOffer] = useState(false);
   const updateAvailable = useSyncExternalStore(subscribeToUpdates, updateIsReady);
@@ -453,10 +474,22 @@ export default function App() {
   const [decks, setDecks] = useState<Deck[]>([]),
     [loaded, setLoaded] = useState(false),
     [activeId, setActiveId] = useState(''),
-    [mode, setMode] = useState<Mode>('editor'),
+    [mode, setMode] = useState<Mode>(() =>
+      window.matchMedia('(max-width: 700px)').matches ? 'scanner' : 'editor',
+    ),
     [tab, setTab] = useState<'songs' | 'design' | 'print'>('songs');
+  const focusedScanner = isMobile && !fullMobileApp && mode === 'scanner';
   const [modal, setModal] = useState<
-      'song' | 'spotify' | 'file' | 'help' | 'about' | 'delete' | 'check' | 'prompt' | null
+      | 'song'
+      | 'spotify'
+      | 'examples'
+      | 'file'
+      | 'help'
+      | 'about'
+      | 'delete'
+      | 'check'
+      | 'prompt'
+      | null
     >(null),
     [editSong, setEditSong] = useState<Song>(),
     [filter, setFilter] = useState(''),
@@ -517,6 +550,21 @@ export default function App() {
     }
   }
   const room = useConnection(receive, playerCommand);
+  useEffect(() => {
+    const query = window.matchMedia('(max-width: 700px)');
+    const resized = () => setIsMobile(query.matches);
+    query.addEventListener('change', resized);
+    return () => query.removeEventListener('change', resized);
+  }, []);
+  useEffect(() => {
+    if (!appMenuOpen) return;
+    const dismiss = (e: PointerEvent) => {
+      if (!(e.target as Element).closest('.mobile-app-menu, .mobile-menu-toggle'))
+        setAppMenuOpen(false);
+    };
+    document.addEventListener('pointerdown', dismiss);
+    return () => document.removeEventListener('pointerdown', dismiss);
+  }, [appMenuOpen]);
   useEffect(() => {
     let live = true;
     loadDecks()
@@ -627,8 +675,26 @@ export default function App() {
     updateDeck({ songs: r.songs });
     setSelected(new Set());
     notify(
-      `Wczytano ${songs.length} utworów.${r.skipped ? ' Pominięto duplikaty: ' + r.skipped + '.' : ''} ${note}`,
+      `Talia ma teraz ${r.songs.length} utworów.${r.skipped ? ' Pominięto duplikaty: ' + r.skipped + '.' : ''} ${note}`,
     );
+  }
+  function chooseExample(id: string, destination: 'new' | 'append' = 'new') {
+    const example = createExampleDeck(id);
+    if (destination === 'new') {
+      setDecks((ds) => [...ds, example]);
+      setActiveId(example.id);
+      setUiTheme(example.theme);
+      notify(
+        `Utworzono „${example.name}”: ${example.songs.length} utworów. Sprawdź lata przed drukiem.`,
+      );
+    } else importSongs(example.songs, 'append', 'Sprawdź lata przed drukiem.');
+    setFilter('');
+    setSelected(new Set());
+    setPreviewIndex(0);
+    setTab('songs');
+    setShowDemoOffer(false);
+    localStorage.setItem('hiciarz-demo-offer-v1', 'accepted');
+    setModal(null);
   }
   function handleScan(raw: string) {
     try {
@@ -701,7 +767,7 @@ export default function App() {
       </div>
     );
   return (
-    <div className="app-shell">
+    <div className={'app-shell' + (focusedScanner ? ' focused-scanner' : '')}>
       <aside className="sidebar">
         <a className="brand" href={import.meta.env.BASE_URL} aria-label="Hiciarz — strona główna">
           <span className="brand-icon">
@@ -825,7 +891,86 @@ export default function App() {
             >
               <Info size={20} />
             </button>
+            <button
+              className="icon mobile-menu-toggle"
+              aria-label="Menu aplikacji"
+              aria-expanded={appMenuOpen}
+              aria-controls="mobile-app-menu"
+              onClick={() => setAppMenuOpen(!appMenuOpen)}
+            >
+              <Menu size={21} />
+            </button>
           </div>
+          {appMenuOpen && (
+            <nav
+              id="mobile-app-menu"
+              className="mobile-app-menu"
+              aria-label="Menu aplikacji"
+              onKeyDown={(e) => {
+                if (e.key === 'Escape') setAppMenuOpen(false);
+              }}
+            >
+              <div className="label-row">
+                <strong>Hiciarz</strong>
+                <button
+                  className="icon"
+                  aria-label="Zamknij menu"
+                  onClick={() => setAppMenuOpen(false)}
+                >
+                  <X size={18} />
+                </button>
+              </div>
+              <button
+                onClick={() => {
+                  setFullMobileApp(false);
+                  setMode('scanner');
+                  setAppMenuOpen(false);
+                }}
+              >
+                <ScanLine size={18} /> Tryb skanera
+              </button>
+              <button
+                onClick={() => {
+                  setFullMobileApp(true);
+                  changeMode('editor');
+                  setAppMenuOpen(false);
+                }}
+              >
+                <LayoutGrid size={18} /> Pełna aplikacja i kreator
+              </button>
+              <button
+                onClick={() => {
+                  setFullMobileApp(true);
+                  changeMode('player');
+                  setAppMenuOpen(false);
+                }}
+              >
+                <Headphones size={18} /> Odtwarzacz
+              </button>
+              <label>
+                Wygląd
+                <select
+                  aria-label="Motyw w menu"
+                  value={uiTheme}
+                  onChange={(e) => setUiTheme(e.target.value as Theme)}
+                >
+                  {themes.map((t) => (
+                    <option key={t} value={t}>
+                      {themeNames[t]}
+                    </option>
+                  ))}
+                </select>
+              </label>
+              <button
+                onClick={() => {
+                  setModal('about');
+                  setAppMenuOpen(false);
+                }}
+              >
+                <Info size={18} /> O aplikacji
+              </button>
+            </nav>
+          )}
         </header>
         {updateAvailable && (
           <div className="update-banner" role="status">
@@ -854,7 +999,7 @@ export default function App() {
             </button>
           </div>
         )}
-        {showCoffee && (
+        {showCoffee && !focusedScanner && (
           <div className="coffee-support">
             <a
               href="https://buymeacoffee.com/szymonrybka"
@@ -881,6 +1026,20 @@ export default function App() {
           </div>
         )}
         <main>
+          {focusedScanner && (
+            <div className="scanner-app-actions">
+              <span>Gotowy na kolejny hit?</span>
+              <button
+                className="text-button"
+                onClick={() => {
+                  setFullMobileApp(true);
+                  changeMode('editor');
+                }}
+              >
+                <LayoutGrid size={16} /> Pełna aplikacja
+              </button>
+            </div>
+          )}
           {mode === 'editor' ? (
             <>
               <section className="page-heading">
@@ -923,8 +1082,8 @@ export default function App() {
                     <span className="eyebrow">NA DOBRY POCZĄTEK</span>
                     <h2 id="demo-offer-title">Świąteczna talia na pierwszy wieczór?</h2>
                     <p>
-                      Utwórz własną talię z polecanej playlisty Spotify i motywem „Rybki
-                      świąteczne”. Utwory pobierzemy po połączeniu Twojego konta.
+                      Gotowa lista 151 piosenek i motyw „Rybki świąteczne”. Wczytaj przykład bez
+                      logowania i dopasuj go do Waszego wieczoru.
                     </p>
                     <a href={christmasPlaylist} target="_blank" rel="noopener noreferrer">
                       Zobacz playlistę w Spotify <ArrowUpRight size={14} />
@@ -934,18 +1093,7 @@ export default function App() {
                     <button
                       className="primary"
                       onClick={() => {
-                        const demo = {
-                          ...newDeck(),
-                          name: 'Świąteczna talia',
-                          theme: 'fish' as Theme,
-                        };
-                        setDecks([...decks, demo]);
-                        setActiveId(demo.id);
-                        setUiTheme('fish');
-                        sessionStorage.setItem('spotify-import-playlist', christmasPlaylist);
-                        localStorage.setItem('hiciarz-demo-offer-v1', 'accepted');
-                        setShowDemoOffer(false);
-                        setModal('spotify');
+                        chooseExample('christmas-hits');
                       }}
                     >
                       <Sparkles size={18} /> Utwórz świąteczną talię
@@ -1042,11 +1190,11 @@ export default function App() {
                     <Download size={17} /> Zapisz projekt
                   </button>
                   <button
-                    className="icon"
+                    className="secondary delete-deck-button"
                     aria-label="Usuń talię"
                     onClick={() => setModal('delete')}
                   >
-                    <Trash2 size={17} />
+                    <Trash2 size={17} /> Usuń talię
                   </button>
                 </div>
               </section>
@@ -1094,12 +1242,20 @@ export default function App() {
                         <span className="spotify-mark">≋</span>
                         <div>
                           <strong>Twoja playlista. Wasza talia.</strong>
-                          <p>Przenieś ulubione piosenki ze Spotify.</p>
+                          <p>Wczytaj własną lub współtworzoną playlistę ze Spotify.</p>
                         </div>
                         <button onClick={() => setModal('spotify')}>
                           Importuj playlistę <ArrowUpRight size={17} />
                         </button>
                       </div>
+                      <button className="example-entry" onClick={() => setModal('examples')}>
+                        <Sparkles size={20} aria-hidden="true" />
+                        <span>
+                          <strong>Przykładowe playlisty</strong>
+                          <small>Gotowa talia świąteczna — bez logowania</small>
+                        </span>
+                        <ChevronRight size={18} aria-hidden="true" />
+                      </button>
                       <div className="table-tools">
                         <label className="search">
                           <Search size={17} />
@@ -2043,7 +2199,13 @@ export default function App() {
           initialPlaylist={sessionStorage.getItem('spotify-import-playlist') || ''}
           onClose={() => setModal(null)}
           onImport={importSongs}
+          onExamples={() => setModal('examples')}
         />
+      )}
+      {modal === 'examples' && (
+        <Modal title="Przykładowe playlisty" onClose={() => setModal(null)}>
+          <PlaylistExamples onChoose={chooseExample} />
+        </Modal>
       )}
       {modal === 'file' && pending && (
         <Modal title="Wczytaj plik" onClose={() => setModal(null)}>

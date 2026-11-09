@@ -105,7 +105,7 @@ async function api(url: string) {
   if (!r.ok)
     throw new Error(
       r.status === 403
-        ? 'Brak dostępu do playlisty. Sprawdź uprawnienia konta i własność playlisty.'
+        ? 'Spotify odmówił dostępu. Ta integracja pobiera utwory tylko z Twoich własnych lub współtworzonych playlist. Inne publiczne playlisty nie są dostępne. Jeśli to Twoja playlista, połącz konto ponownie i sprawdź jego dostęp do integracji.'
         : r.status === 404
           ? 'Nie znaleziono playlisty lub nie jest dostępna dla tego konta.'
           : r.status === 429
