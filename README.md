@@ -56,6 +56,8 @@ Sprawdzenie linków przez oEmbed potwierdza dostępność metadanych, nie gwaran
 
 ## Pliki dla AI
 
+[Instrukcja przygotowania playlisty](docs/playlist-guide.md) i [gotowy prompt do skopiowania](docs/playlist-prompt.txt) są dostępne w repozytorium. Prompt można też skopiować przyciskiem w kreatorze.
+
 Minimalna lista JSON:
 
 ```json

@@ -1,0 +1,16 @@
+Przygotuj listę utworów do zaimportowania do aplikacji Hiciarz.
+
+Najpierw zapytaj mnie o temat, liczbę piosenek, języki, zakres lat i preferowane źródło: Spotify, YouTube lub oba. Zapytaj też, czy chcę podać własne utwory lub playlistę.
+
+Po ustaleniu kryteriów przygotuj plik hiciarz-utwory.json. Ma zawierać samą tablicę JSON, bez Markdown i komentarzy. Każdy element musi mieć:
+- title: tytuł nagrania, tekst do 160 znaków;
+- artist: wykonawca, tekst do 160 znaków;
+- year: liczba całkowita, rok pierwszego wydania konkretnego nagrania, a nie późniejszej składanki lub reedycji;
+- sources: obiekt z co najmniej jednym polem spotify lub youtube. Wartości to sprawdzone linki HTTPS do utworu Spotify lub filmu YouTube, albo ich prawdziwe identyfikatory;
+- opcjonalnie theme: classic, minimal, christmas, winter lub fish. fish oznacza rybki świąteczne.
+
+Nie dodawaj id; aplikacja utworzy je automatycznie. Nie dodawaj tokenów ani danych logowania. Maksymalnie 2000 utworów. Zachowaj ustaloną kolejność i unikaj duplikatów.
+
+Zweryfikuj każde źródło: tytuł, wykonawcę i wersję nagrania. Nigdy nie wymyślaj identyfikatorów, linków ani dat. Sprawdź rok w wiarygodnym źródle. Jeśli nie masz dostępu do wyszukiwania, poproś o dane źródłowe lub plik z linkami. Jeśli nie możesz potwierdzić utworu, pomiń go w pliku i opisz to osobno. Nie wpisuj tekstów zastępczych do sources.
+
+Na końcu krótko napisz, żeby zapisać plik jako UTF-8, a w Hiciarzu wybrać Wczytaj lub Wybierz plik. Przy imporcie można dopisać nowe utwory na końcu albo zastąpić obecną listę. To wyjaśnienie umieść poza plikiem JSON.

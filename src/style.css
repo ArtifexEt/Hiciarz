@@ -1014,6 +1014,13 @@ main {
   color: #a4a99c;
   font-size: 9px;
 }
+.prompt-copy {
+  margin: 14px 0 0;
+  display: inline-flex;
+  align-items: center;
+  gap: 7px;
+  font-size: 11px;
+}
 .file-drop {
   margin: 0 22px 22px;
   border: 1px dashed #dfe3d7;

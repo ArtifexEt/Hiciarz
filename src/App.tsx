@@ -8,6 +8,7 @@ import {
   ChevronLeft,
   ChevronRight,
   Coffee,
+  Copy,
   Download,
   FileJson,
   FolderOpen,
@@ -39,6 +40,7 @@ import {
 } from 'lucide-react';
 import { qrImage } from './qr';
 import { GameGuide } from './GameGuide';
+import playlistPrompt from '../docs/playlist-prompt.txt?raw';
 import {
   type Card,
   type Deck,
@@ -418,7 +420,7 @@ export default function App() {
     [mode, setMode] = useState<Mode>('editor'),
     [tab, setTab] = useState<'songs' | 'design' | 'print'>('songs');
   const [modal, setModal] = useState<
-      'song' | 'spotify' | 'file' | 'help' | 'delete' | 'check' | null
+      'song' | 'spotify' | 'file' | 'help' | 'delete' | 'check' | 'prompt' | null
     >(null),
     [editSong, setEditSong] = useState<Song>(),
     [filter, setFilter] = useState(''),
@@ -1130,6 +1132,19 @@ export default function App() {
                           Wybierz plik <ArrowUpRight size={15} />
                         </button>
                       </div>
+                      <button
+                        className="text-button prompt-copy"
+                        onClick={async () => {
+                          try {
+                            await navigator.clipboard.writeText(playlistPrompt);
+                            notify('Prompt skopiowany. Wklej go do wybranego asystenta.');
+                          } catch {
+                            setModal('prompt');
+                          }
+                        }}
+                      >
+                        <Copy size={16} /> Skopiuj prompt do swojego AI
+                      </button>
                     </>
                   ) : tab === 'design' ? (
                     <div className="design-content">
@@ -1916,6 +1931,23 @@ export default function App() {
               Zamknij
             </button>
           </div>
+        </Modal>
+      )}
+      {modal === 'prompt' && (
+        <Modal title="Prompt do przygotowania listy" onClose={() => setModal(null)} wide>
+          <p>
+            Schowek jest niedostępny. Zaznacz i skopiuj tekst, a następnie wklej go do wybranego
+            asystenta.
+          </p>
+          <label>
+            Treść promptu
+            <textarea
+              rows={16}
+              readOnly
+              value={playlistPrompt}
+              onFocus={(e) => e.currentTarget.select()}
+            />
+          </label>
         </Modal>
       )}
       {modal === 'help' && (
