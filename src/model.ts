@@ -19,6 +19,7 @@ export type Song = {
   review?: boolean;
 };
 export type PrintSettings = {
+  style: 'theme' | 'laser';
   edge: 'long' | 'short';
   offsetX: number;
   offsetY: number;
@@ -34,7 +35,13 @@ export type Deck = {
   print: PrintSettings;
 };
 export type Card = { v: 1; id: string; theme: Theme; sources: Sources };
-export const defaultPrint: PrintSettings = { edge: 'long', offsetX: 0, offsetY: 0, cuts: true };
+export const defaultPrint: PrintSettings = {
+  style: 'theme',
+  edge: 'long',
+  offsetX: 0,
+  offsetY: 0,
+  cuts: true,
+};
 export const newDeck = (): Deck => ({
   version: 1,
   id: crypto.randomUUID(),
@@ -176,6 +183,7 @@ export function validateDeck(raw: unknown): Deck {
     back: r.back,
     songs,
     print: {
+      style: p.style === 'laser' ? 'laser' : 'theme',
       edge: p.edge === 'short' ? 'short' : 'long',
       offsetX: Math.min(10, Math.max(-10, Number(p.offsetX) || 0)),
       offsetY: Math.min(10, Math.max(-10, Number(p.offsetY) || 0)),

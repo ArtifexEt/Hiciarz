@@ -6,3 +6,4 @@ dist/
 tmp/
 output/
 *.tsbuildinfo
+TODO.local.md

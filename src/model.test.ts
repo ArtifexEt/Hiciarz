@@ -37,6 +37,15 @@ describe('duplex imposition', () => {
   });
 });
 describe('portable projects and imports', () => {
+  it('keeps the QR theme when the low toner print preset is selected', () => {
+    const deck = demoDeck();
+    deck.theme = 'fish';
+    deck.print.style = 'laser';
+    const restored = validateDeck(JSON.parse(JSON.stringify(deck)));
+    expect(restored.print.style).toBe('laser');
+    const qr = readQR(cardUrl(restored.songs[0], restored.theme, 'https://example.com/'));
+    expect(qr.kind === 'card' && qr.card.theme).toBe('fish');
+  });
   it('round trips Polish CSV with commas and line breaks', () => {
     const s = { ...demoDeck().songs[0], title: 'Żółć, „piosenka”\nczęść 2' };
     const result = parseImport(csvExport([s]), 'songs.csv');

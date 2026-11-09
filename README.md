@@ -46,7 +46,7 @@ Własny PeerServer (HTTPS/WSS) można wskazać publicznymi zmiennymi GitHub Acti
 
 Odtwarzacz korzysta z oficjalnych, widocznych embedów Spotify i YouTube. Nie wymaga naszego Spotify Client ID do osadzenia. Pełna długość, automatyczny start, logowanie w ramce i dostępność zależą od dostawcy, konta i przeglądarki. Niektóre nagrania blokują osadzanie; Spotify może odtwarzać tylko podgląd. Nie traktujemy ogólnego błędu jako dowodu usunięcia piosenki.
 
-**Import playlist jest osobny od odtwarzania widgetu.** Administrator ustawia publiczną zmienną Actions `SPOTIFY_CLIENT_ID`. Adres powrotu w Spotify Developer Dashboard musi być dokładnie adresem strony, np. `https://artifexet.github.io/Hiciarz/` (sprawdź wielkość liter w faktycznym adresie). Logowanie używa PKCE; Client Secret nie występuje. Token jest w sessionStorage i znika po zakończeniu sesji przeglądarki. Import pyta o dopisanie na końcu lub zastąpienie listy. Pobiera strony playlisty do 2000 utworów. Zakres playlist i dostęp kont zależą od uprawnień integracji Spotify.
+**Import playlist jest osobny od odtwarzania widgetu.** Administrator ustawia sekret repozytorium Actions `SPOTIFY_CLIENT_ID`. Adres powrotu w Spotify Developer Dashboard musi być dokładnie adresem strony, np. `https://artifexet.github.io/Hiciarz/` (sprawdź wielkość liter w faktycznym adresie). Logowanie używa PKCE; Client Secret nie występuje. Token jest w sessionStorage i znika po zakończeniu sesji przeglądarki. Import pyta o dopisanie na końcu lub zastąpienie listy. Pobiera strony playlisty do 2000 utworów. Zakres playlist i dostęp kont zależą od uprawnień integracji Spotify.
 
 Przy dopisywaniu zachowujemy istniejące rekordy i poprawki. Duplikaty identyfikujemy po źródle Spotify albo YouTube. Utwory z różnych serwisów bez wspólnego identyfikatora mogą wymagać ręcznego uporządkowania. Rok z albumu Spotify jest oznaczany do sprawdzenia.
 
@@ -87,6 +87,24 @@ Nie ma kont Hiciarza, analityki ani backendu przechowującego talie. Po wybraniu
 
 `public/themes/fish.webp`: autorska ilustracja wygenerowana narzędziem GPT Image. Prompt zapisany w `docs/image-prompt.txt`. Pozostałe presety są grafikami SVG projektu. Noto Sans w `public/fonts` na licencji dołączonej w tym katalogu.
 
-## Weryfikacja i granice pierwszego wydania
+## Tryby odtwarzania
 
-Testy obejmują walidację plików, polskie CSV, zachowanie ręcznych poprawek, QR i lustrzane pozycje duplex. Potrzebne są również próby na fizycznym telefonie i drukarce. Emulacja dwóch kart przeglądarki nie potwierdza zachowania aparatu, sieci Wi-Fi ani AirPlay na Macu. Pierwsza wersja obsługuje własne karty Hiciarza; oryginalne karty innych gier nie są rozpoznawane.
+- **Na tym komputerze**: Spotify i YouTube odtwarzają na stronie. Wyjście dźwięku wybierasz w systemie, np. AirPlay na Macu.
+- **Spotify Connect**: połącz konto i wybierz aktywne urządzenie Spotify. Skanowane karty uruchamiają na nim piosenki przez API. Możesz używać telefonu samodzielnie albo sparować skaner z laptopem. Karta musi zawierać źródło Spotify.
+
+Sterowanie API wymaga Spotify Premium. Urządzenie musi być dostępne dla zalogowanego konta; otwórz Spotify i uruchom dowolny utwór, jeśli nie pojawia się na liście.
+
+## Konfiguracja Spotify przez GitHub Actions
+
+1. W panelu Spotify ustaw dokładny Redirect URI strony, np. `https://artifexet.github.io/Hiciarz/`.
+2. W repozytorium otwórz Settings → Secrets and variables → Actions → New repository secret.
+3. Utwórz sekret **SPOTIFY_CLIENT_ID** z wartością Client ID. Nie dodawaj pliku z identyfikatorem do repozytorium.
+4. Uruchom ponownie workflow **Build, test and publish Pages** na gałęzi main.
+
+Client ID jest dołączany do gotowego frontendu podczas budowania. Client Secret nie jest potrzebny: logowanie używa PKCE. Nigdy nie przekazuj Client Secret do zmiennych VITE ani do plików strony.
+
+## Preset Laser — lekki kolor
+
+W kreatorze wybierz **Ustawienia druku → Laser — lekki kolor**. Obie strony mają białe tło, ciemny tekst i niewielkie akcenty w dwóch kolorach: stonowanej zieleni oraz ciepłej terakoty. Konturowe rybki-bombki i linie w PDF są wektorowe. Preset pomija pełne ilustracje i własne tło, zachowując je w projekcie na później. QR pozostaje czarno-biały.
+
+Ustawienie dotyczy wyłącznie wyglądu wydruku. Motyw zapisany w QR nie zmienia się — karta świąteczna nadal przełącza aplikację na odpowiednią skórkę. Aby wrócić do ilustracji, wybierz **Pełna grafika motywu**.

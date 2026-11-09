@@ -16,8 +16,6 @@ jobs:
     steps:
       - uses: actions/checkout@v4
       - uses: pnpm/action-setup@v4
-        with:
-          version: 11
       - uses: actions/setup-node@v4
         with:
           node-version: 22
@@ -27,7 +25,7 @@ jobs:
       - run: pnpm build
         env:
           BASE_PATH: /${{ github.event.repository.name }}/
-          VITE_SPOTIFY_CLIENT_ID: ${{ vars.SPOTIFY_CLIENT_ID }}
+          VITE_SPOTIFY_CLIENT_ID: ${{ secrets.SPOTIFY_CLIENT_ID }}
           VITE_PEER_HOST: ${{ vars.PEER_HOST }}
           VITE_PEER_PORT: ${{ vars.PEER_PORT }}
           VITE_PEER_PATH: ${{ vars.PEER_PATH }}

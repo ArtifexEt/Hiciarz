@@ -58,7 +58,8 @@ export async function buildPDF(deck: Deck, songs: Song[], base: string): Promise
   doc.addFont('NotoSans.ttf', 'NotoSans', 'normal');
   doc.setFont('NotoSans');
   const arts = new Map<string, string>();
-  for (const s of songs) {
+  const laser = deck.print.style === 'laser';
+  for (const s of laser ? [] : songs) {
     const url = deck.back || themeArt(s.theme || deck.theme);
     if (!arts.has(url)) arts.set(url, await raster(url));
   }
@@ -72,10 +73,17 @@ export async function buildPDF(deck: Deck, songs: Song[], base: string): Promise
       const s = sheet[i],
         x = 15 + (i % 3) * 60,
         y = 28 + Math.floor(i / 3) * 60,
-        c = themeColors[s.theme || deck.theme];
+        c = themeColors[laser ? 'laser' : s.theme || deck.theme];
       doc.setFillColor(c.light);
       doc.rect(x, y, 60, 60, 'F');
       doc.setTextColor(c.dark);
+      if (laser) {
+        doc.setDrawColor('#638876');
+        doc.setLineWidth(0.25);
+        doc.line(x + 5, y + 5, x + 15, y + 5);
+        doc.setDrawColor('#b56e58');
+        doc.line(x + 45, y + 55, x + 55, y + 55);
+      }
       doc.setFontSize(34);
       doc.text(String(s.year), x + 30, y + 22, { align: 'center' });
       textFit(doc, s.title, x + 30, y + 34, 50, 12);
@@ -97,7 +105,24 @@ export async function buildPDF(deck: Deck, songs: Song[], base: string): Promise
         pos = backPosition(i, deck.print.edge),
         x = 15 + pos.col * 60 + deck.print.offsetX,
         y = 28 + pos.row * 60 + deck.print.offsetY;
-      doc.addImage(arts.get(deck.back || themeArt(s.theme || deck.theme))!, 'JPEG', x, y, 60, 60);
+      if (laser) {
+        doc.setDrawColor('#638876');
+        doc.setLineWidth(0.22);
+        doc.line(x + 2, y + 14, x + 2, y + 2);
+        doc.line(x + 2, y + 2, x + 17, y + 2);
+        doc.line(x + 43, y + 58, x + 58, y + 58);
+        doc.line(x + 58, y + 58, x + 58, y + 46);
+        doc.line(x + 4.4, y + 2.4, x + 4.4, y + 7.2);
+        doc.ellipse(x + 5.8, y + 8.4, 1.7, 1.1, 'S');
+        doc.triangle(x + 7.5, y + 8.4, x + 8.6, y + 7.5, x + 8.6, y + 9.3, 'S');
+        doc.line(x + 55.6, y + 57.6, x + 55.6, y + 52.8);
+        doc.ellipse(x + 54.2, y + 51.6, 1.7, 1.1, 'S');
+        doc.triangle(x + 52.5, y + 51.6, x + 51.4, y + 50.7, x + 51.4, y + 52.5, 'S');
+        doc.setDrawColor('#b56e58');
+        doc.circle(x + 5.1, y + 8.1, 0.15, 'S');
+        doc.circle(x + 54.9, y + 51.3, 0.15, 'S');
+      } else
+        doc.addImage(arts.get(deck.back || themeArt(s.theme || deck.theme))!, 'JPEG', x, y, 60, 60);
       doc.setFillColor('#ffffff');
       doc.roundedRect(x + 11, y + 11, 38, 38, 2, 2, 'F');
       const qr = await QRCode.toDataURL(cardUrl(s, deck.theme, base), {
@@ -106,7 +131,7 @@ export async function buildPDF(deck: Deck, songs: Song[], base: string): Promise
         width: 600,
       });
       doc.addImage(qr, 'PNG', x + 12, y + 12, 36, 36);
-      doc.setTextColor('#ffffff');
+      doc.setTextColor(laser ? '#26332e' : '#ffffff');
       doc.setFontSize(7);
       doc.text('HICIARZ', x + 30, y + 55, { align: 'center' });
       if (deck.print.cuts) cuts(doc, x, y);

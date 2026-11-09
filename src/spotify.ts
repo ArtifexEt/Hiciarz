@@ -7,9 +7,15 @@ const b64 = (buffer: ArrayBuffer) =>
     .replace(/\//g, '_')
     .replace(/=+$/, '');
 export const spotifyConfigured = () => Boolean(id());
-export function spotifyConnected() {
+export function spotifyConnected(purpose: 'import' | 'player' = 'import') {
   try {
-    return Boolean(JSON.parse(sessionStorage.getItem('spotify-token') || 'null')?.access_token);
+    const t = JSON.parse(sessionStorage.getItem('spotify-token') || 'null');
+    return Boolean(
+      t?.access_token &&
+        (t.scope || '')
+          .split(' ')
+          .includes(purpose === 'player' ? 'user-modify-playback-state' : 'playlist-read-private'),
+    );
   } catch {
     return false;
   }
@@ -18,20 +24,25 @@ export function disconnectSpotify() {
   sessionStorage.removeItem('spotify-token');
   sessionStorage.removeItem('spotify-oauth');
 }
-export async function authorizeSpotify() {
-  if (!id())
-    throw new Error(
-      'Import Spotify nie jest skonfigurowany dla tej strony. Możesz zaimportować JSON lub CSV.',
-    );
+export async function authorizeSpotify(purpose: 'import' | 'player' = 'import') {
+  if (!id()) throw new Error('Połączenie Spotify nie jest skonfigurowane dla tej strony.');
   const verifier = b64(crypto.getRandomValues(new Uint8Array(48)).buffer),
     state = crypto.randomUUID();
-  sessionStorage.setItem('spotify-oauth', JSON.stringify({ verifier, state }));
+  sessionStorage.setItem('spotify-oauth', JSON.stringify({ verifier, state, purpose }));
+  const existing = JSON.parse(sessionStorage.getItem('spotify-token') || 'null');
+  const required =
+    purpose === 'player'
+      ? 'user-read-playback-state user-modify-playback-state'
+      : 'playlist-read-private playlist-read-collaborative';
+  const scope = [
+    ...new Set([...required.split(' '), ...(existing?.scope || '').split(' ').filter(Boolean)]),
+  ].join(' ');
   const challenge = b64(await crypto.subtle.digest('SHA-256', new TextEncoder().encode(verifier)));
   const q = new URLSearchParams({
     client_id: id(),
     response_type: 'code',
     redirect_uri: redirect(),
-    scope: 'playlist-read-private playlist-read-collaborative',
+    scope,
     code_challenge_method: 'S256',
     code_challenge: challenge,
     state,
@@ -63,7 +74,7 @@ export async function finishSpotify() {
     'spotify-token',
     JSON.stringify({ ...(await r.json()), expires: Date.now() + 3500000 }),
   );
-  return true;
+  return saved.purpose === 'player' ? ('player' as const) : ('import' as const);
 }
 async function token() {
   let t = JSON.parse(sessionStorage.getItem('spotify-token') || 'null');
@@ -142,4 +153,79 @@ export async function importPlaylist(
     url = page.next || '';
   }
   return { songs, skipped, name: meta.name || 'Playlista Spotify' };
+}
+
+export type SpotifyDevice = {
+  id: string;
+  name: string;
+  type: string;
+  is_active: boolean;
+  is_restricted: boolean;
+};
+async function playerRequest(path: string, method = 'GET', body?: unknown): Promise<any> {
+  const response = await fetch('https://api.spotify.com/v1/' + path, {
+    method,
+    headers: {
+      Authorization: 'Bearer ' + (await token()),
+      ...(body ? { 'Content-Type': 'application/json' } : {}),
+    },
+    body: body ? JSON.stringify(body) : undefined,
+    signal: AbortSignal.timeout(15000),
+  });
+  if (response.status === 204) return null;
+  let data: any = null;
+  try {
+    data = await response.json();
+  } catch {}
+  if (!response.ok) {
+    if (response.status === 401) {
+      disconnectSpotify();
+      throw new Error('Sesja Spotify wygasła. Połącz konto ponownie.');
+    }
+    if (response.status === 403)
+      throw new Error(
+        'Spotify odmówił sterowania. Sprawdź Premium i uprawnienia konta w integracji.',
+      );
+    if (response.status === 404 && path.startsWith('me/player'))
+      throw new Error(
+        'Urządzenie nie jest aktywne. Otwórz Spotify, uruchom utwór i odśwież listę urządzeń.',
+      );
+    if (response.status === 429)
+      throw new Error('Spotify ograniczył zapytania. Odczekaj chwilę i spróbuj ponownie.');
+    if (response.status === 404 && path.startsWith('tracks/'))
+      throw new Error(
+        'Nie znaleziono utworu. Wybierz inne nagranie w kreatorze i wydrukuj kartę ponownie.',
+      );
+    throw new Error(
+      'Nie udało się wykonać polecenia Spotify. Sprawdź połączenie i spróbuj ponownie.',
+    );
+  }
+  return data;
+}
+export async function spotifyDevices(): Promise<SpotifyDevice[]> {
+  const d = await playerRequest('me/player/devices');
+  return (d?.devices || []).filter((x: SpotifyDevice) => Boolean(x.id) && !x.is_restricted);
+}
+export async function playSpotifyTrack(track: string, device: string) {
+  if (!device) throw new Error('Wybierz urządzenie Spotify.');
+  const valid = spotifyId(track);
+  const info = await playerRequest('tracks/' + valid);
+  if (info?.is_playable === false || info?.restrictions?.reason === 'market')
+    throw new Error(
+      'Utwór jest niedostępny dla tego konta lub regionu. Popraw źródło w kreatorze i wydrukuj kartę ponownie.',
+    );
+  await playerRequest('me/player/play?device_id=' + encodeURIComponent(device), 'PUT', {
+    uris: ['spotify:track:' + valid],
+    position_ms: 0,
+  });
+}
+export async function spotifyPlaybackCommand(command: 'pause' | 'resume' | 'stop', device: string) {
+  if (!device) throw new Error('Wybierz urządzenie Spotify.');
+  await playerRequest(
+    'me/player/' +
+      (command === 'resume' ? 'play' : 'pause') +
+      '?device_id=' +
+      encodeURIComponent(device),
+    'PUT',
+  );
 }
