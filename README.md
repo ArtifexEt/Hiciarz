@@ -31,7 +31,7 @@ Hiciarz łączy kreator kart, skaner QR i odtwarzacz w jednej aplikacji przeglą
 
 ## Pierwsza rozgrywka
 
-1. **[Otwórz Hiciarza](https://artifexet.github.io/Hiciarz/).** Na telefonie aplikacja zaczyna od skanera; przycisk **Pełna aplikacja** prowadzi do kreatora.
+1. **[Otwórz Hiciarza](https://artifexet.github.io/Hiciarz/).** Na ekranie startowym wybierz **Skanuj i graj** albo **Twórz karty**.
 2. **Wybierz piosenki.** Zacznij od **Przykładowych playlist** lub przygotuj własną listę. Tytuł, wykonawcę i rok możesz poprawić przed drukiem.
 3. **Przygotuj karty.** Wybierz wygląd i pobierz PDF. Drukuj na A4 dwustronnie, w skali 100%. Najpierw wykonaj próbę kalibracyjną.
 4. **Wybierz sposób słuchania.** Połącz Spotify albo uruchom odtwarzacz na drugim urządzeniu — oba warianty opisano poniżej.
@@ -39,12 +39,12 @@ Hiciarz łączy kreator kart, skaner QR i odtwarzacz w jednej aplikacji przeglą
 
 ## Muzyka tam, gdzie gracie
 
-|                   | Spotify Connect                                                         | Odtwarzacz w przeglądarce                                                                                               |
-| ----------------- | ----------------------------------------------------------------------- | ----------------------------------------------------------------------------------------------------------------------- |
-| **Przygotowanie** | Wybierz **Graj przez Spotify**, zaloguj się i wskaż aktywne urządzenie. | Na urządzeniu do odtwarzania otwórz **Odtwarzacz → Na tym urządzeniu → Połącz skaner**.                                 |
-| **Skanowanie**    | Włącz aparat na telefonie i skanuj karty ze źródłem Spotify.            | Telefonem zeskanuj QR parowania, a następnie kody z kart.                                                               |
-| **Dźwięk**        | Muzyka gra na wybranym urządzeniu Spotify.                              | Spotify lub YouTube odtwarza na połączonym urządzeniu; wyjście dźwięku wybierasz w systemie.                            |
-| **Wymagania**     | Spotify Premium i urządzenie dostępne dla zalogowanego konta.           | Nagranie dostępne do osadzenia. Spotify może odtwarzać tylko podgląd; przeglądarka może wymagać kliknięcia odtwarzania. |
+|                   | Spotify Connect                                                                   | Odtwarzacz w przeglądarce                                                                                               |
+| ----------------- | --------------------------------------------------------------------------------- | ----------------------------------------------------------------------------------------------------------------------- |
+| **Przygotowanie** | Wybierz **Skanuj i graj → Moje Spotify**, zaloguj się i wskaż aktywne urządzenie. | Na urządzeniu do odtwarzania otwórz **Odtwarzacz → Na tym urządzeniu → Połącz skaner**.                                 |
+| **Skanowanie**    | Włącz aparat na telefonie i skanuj karty ze źródłem Spotify.                      | Telefonem zeskanuj QR parowania, a następnie kody z kart.                                                               |
+| **Dźwięk**        | Muzyka gra na wybranym urządzeniu Spotify.                                        | Spotify lub YouTube odtwarza na połączonym urządzeniu; wyjście dźwięku wybierasz w systemie.                            |
+| **Wymagania**     | Spotify Premium i urządzenie dostępne dla zalogowanego konta.                     | Nagranie dostępne do osadzenia. Spotify może odtwarzać tylko podgląd; przeglądarka może wymagać kliknięcia odtwarzania. |
 
 ## Świąteczny wieczór na start
 

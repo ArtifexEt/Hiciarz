@@ -5,10 +5,14 @@ import CameraZoom from './CameraZoom';
 export default function Camera({
   onScan,
   pairingRequired = true,
+  paired = false,
+  onStart,
   ready = true,
 }: {
   onScan: (text: string) => void;
   pairingRequired?: boolean;
+  paired?: boolean;
+  onStart?: () => void;
   ready?: boolean;
 }) {
   const video = useRef<HTMLVideoElement>(null),
@@ -24,6 +28,7 @@ export default function Camera({
   }, [ready]);
   useEffect(() => {
     if (!active) return;
+    last.current = { text: '', time: 0 };
     let cancelled = false;
     const reader = new BrowserQRCodeReader();
     reader
@@ -91,9 +96,15 @@ export default function Camera({
         {!active && (
           <div className="camera-start">
             <ScanLine size={52} />
-            <h3>Przyłóż kartę do aparatu</h3>
+            <h3>
+              {ready && (!pairingRequired || paired)
+                ? 'Zeskanuj muzyczną kartę'
+                : 'Przygotuj skaner'}
+            </h3>
             <p>
-              {pairingRequired ? (
+              {ready && (!pairingRequired || paired) ? (
+                'Skieruj aparat na QR z karty. Muzyka zagra automatycznie.'
+              ) : pairingRequired ? (
                 <>
                   Najpierw QR parowania z odtwarzacza,
                   <br />
@@ -112,6 +123,7 @@ export default function Camera({
               disabled={!ready}
               onClick={() => {
                 setError('');
+                onStart?.();
                 setActive(true);
               }}
             >

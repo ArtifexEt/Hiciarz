@@ -2,6 +2,10 @@ import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import {
   authorizeSpotify,
   importPlaylist,
+  disconnectSpotify,
+  finishSpotify,
+  spotifyAccountEvent,
+  spotifyProfile,
   playSpotifyTrack,
   spotifyDevices,
   spotifyPlaybackCommand,
@@ -28,6 +32,70 @@ afterEach(() => {
   vi.unstubAllEnvs();
 });
 describe('Spotify Connect requests', () => {
+  it('announces a completed OAuth session after saving the token so devices can refresh immediately', async () => {
+    const events = new EventTarget();
+    const connected = vi.fn(() => expect(data.get('spotify-token')).toContain('new-token'));
+    events.addEventListener(spotifyAccountEvent, connected);
+    vi.stubGlobal('window', events);
+    vi.stubGlobal('location', {
+      origin: 'https://example.com',
+      pathname: '/Hiciarz/',
+      search: '?code=test-code&state=state',
+    });
+    vi.stubGlobal('history', { replaceState: vi.fn() });
+    data.set(
+      'spotify-oauth',
+      JSON.stringify({ state: 'state', verifier: 'test-verifier', purpose: 'player' }),
+    );
+    vi.stubGlobal(
+      'fetch',
+      vi
+        .fn()
+        .mockResolvedValue(
+          new Response(
+            JSON.stringify({ access_token: 'new-token', scope: 'user-modify-playback-state' }),
+          ),
+        ),
+    );
+    await expect(finishSpotify()).resolves.toBe('player');
+    expect(connected).toHaveBeenCalledOnce();
+    expect(data.has('spotify-oauth')).toBe(false);
+  });
+  it('announces logout and clears the session', () => {
+    const events = new EventTarget(),
+      changed = vi.fn();
+    events.addEventListener(spotifyAccountEvent, changed);
+    vi.stubGlobal('window', events);
+    disconnectSpotify();
+    expect(changed).toHaveBeenCalledOnce();
+    expect(data.has('spotify-token')).toBe(false);
+  });
+  it('distinguishes denied account access from an empty device list and a network failure', async () => {
+    vi.stubGlobal('fetch', vi.fn().mockResolvedValue(new Response('{}', { status: 403 })));
+    await expect(spotifyDevices()).rejects.toThrow('Users Management');
+    vi.stubGlobal('fetch', vi.fn().mockRejectedValue(new TypeError('Failed to fetch')));
+    await expect(spotifyDevices()).rejects.toThrow('Sprawdź internet');
+  });
+  it('only exposes the display name and a safe avatar URL from the profile', async () => {
+    vi.stubGlobal(
+      'fetch',
+      vi
+        .fn()
+        .mockResolvedValue(
+          new Response(
+            JSON.stringify({
+              display_name: 'Szymon',
+              email: 'not-exposed@example.com',
+              images: [{ url: 'javascript:bad' }, { url: 'https://i.scdn.co/image/avatar' }],
+            }),
+          ),
+        ),
+    );
+    await expect(spotifyProfile()).resolves.toEqual({
+      name: 'Szymon',
+      avatar: 'https://i.scdn.co/image/avatar',
+    });
+  });
   it('explains denied playlist access without pretending a public playlist is empty', async () => {
     vi.stubGlobal('fetch', vi.fn().mockResolvedValue(new Response('{}', { status: 403 })));
     await expect(importPlaylist('7wfTeAa7cxhA3qNE05XPKk')).rejects.toThrow('współtworzonych');

@@ -50,7 +50,8 @@ import {
   X,
 } from 'lucide-react';
 import { qrImage } from './qr';
-import { GameGuide } from './GameGuide';
+import Landing from './Landing';
+import SpotifyAccount from './SpotifyAccount';
 import PlaylistExamples from './PlaylistExamples';
 import { createExampleDeck } from './examples';
 import playlistPrompt from '../docs/playlist-prompt.txt?raw';
@@ -93,8 +94,9 @@ import {
   importPlaylist,
   spotifyConfigured,
   spotifyConnected,
+  spotifyLoginPurpose,
 } from './spotify';
-type Mode = 'editor' | 'scanner' | 'player';
+type Mode = 'home' | 'editor' | 'scanner' | 'player';
 function Modal({
   title,
   children,
@@ -196,14 +198,12 @@ function CardPreview({ song, deck, back = false }: { song: Song; deck: Deck; bac
         <>
           <div className="card-topline">
             <span>HICIARZ</span>
-            <span>♪</span>
           </div>
           <strong className="card-year">{song.year}</strong>
           <h3>{song.title}</h3>
           <p>{song.artist}</p>
           <div className="card-bottomline">
-            <span>MUZYKA ŁĄCZY POKOLENIA</span>
-            <span>✳</span>
+            <span>{song.id.slice(0, 12)}</span>
           </div>
         </>
       )}
@@ -465,7 +465,6 @@ function SpotifyImport({
 }
 export default function App() {
   const [isMobile, setIsMobile] = useState(() => window.matchMedia('(max-width: 700px)').matches);
-  const [fullMobileApp, setFullMobileApp] = useState(false);
   const [appMenuOpen, setAppMenuOpen] = useState(false);
   const [showCoffee, setShowCoffee] = useState(localStorage.getItem('hiciarz-hide-coffee') !== '1');
   const [showDemoOffer, setShowDemoOffer] = useState(false);
@@ -474,11 +473,9 @@ export default function App() {
   const [decks, setDecks] = useState<Deck[]>([]),
     [loaded, setLoaded] = useState(false),
     [activeId, setActiveId] = useState(''),
-    [mode, setMode] = useState<Mode>(() =>
-      window.matchMedia('(max-width: 700px)').matches ? 'scanner' : 'editor',
-    ),
+    [mode, setMode] = useState<Mode>('home'),
     [tab, setTab] = useState<'songs' | 'design' | 'print'>('songs');
-  const focusedScanner = isMobile && !fullMobileApp && mode === 'scanner';
+  const focusedScanner = isMobile && mode === 'scanner';
   const [modal, setModal] = useState<
       | 'song'
       | 'spotify'
@@ -519,7 +516,13 @@ export default function App() {
     setOutputState(value);
     localStorage.setItem('hiciarz-output', value);
   };
-  const spotifyRemote = useSpotifyRemote(card, command, output === 'spotify', setPlayState, mode);
+  const spotifyRemote = useSpotifyRemote(
+    card,
+    command,
+    output === 'spotify' && (mode === 'scanner' || mode === 'player'),
+    setPlayState,
+    mode === 'scanner' ? 'scanner' : 'player',
+  );
   const outputRef = useRef(output);
   outputRef.current = output;
   const fileRef = useRef<HTMLInputElement>(null),
@@ -614,6 +617,7 @@ export default function App() {
   useEffect(() => {
     if (oauthStarted.current) return;
     oauthStarted.current = true;
+    const purpose = spotifyLoginPurpose();
     finishSpotify()
       .then((done) => {
         if (done) {
@@ -627,12 +631,24 @@ export default function App() {
             sessionStorage.removeItem('hiciarz-spotify-return-mode');
             notify('Połączono Spotify. Wybierz urządzenie odtwarzania.');
           } else {
+            setMode('editor');
             notify('Połączono Spotify. Wybierz playlistę do importu.');
             setModal('spotify');
           }
         }
       })
-      .catch((e) => notify(e.message));
+      .catch((e) => {
+        if (purpose === 'import') {
+          setMode('editor');
+          setModal('spotify');
+        } else if (purpose === 'player')
+          setMode(
+            sessionStorage.getItem('hiciarz-spotify-return-mode') === 'scanner'
+              ? 'scanner'
+              : 'player',
+          );
+        notify(e.message);
+      });
   }, []);
   useEffect(() => {
     function route() {
@@ -750,7 +766,14 @@ export default function App() {
     }
   }
   function changeMode(next: Mode) {
+    setAppMenuOpen(false);
+    if (next !== mode) {
+      setCard(null);
+      setCommand(null);
+      incomingCard.current = null;
+    }
     setMode(next);
+    if (next === 'player') setOutput('browser');
     if (next === 'editor' && deck) setUiTheme(deck.theme);
   }
   const filtered =
@@ -767,7 +790,7 @@ export default function App() {
       </div>
     );
   return (
-    <div className={'app-shell' + (focusedScanner ? ' focused-scanner' : '')}>
+    <div className={'app-shell mode-' + mode + (focusedScanner ? ' focused-scanner' : '')}>
       <aside className="sidebar">
         <a className="brand" href={import.meta.env.BASE_URL} aria-label="Hiciarz — strona główna">
           <span className="brand-icon">
@@ -847,7 +870,7 @@ export default function App() {
             <FileJson size={17} /> Otwarty kod źródłowy <ArrowUpRight size={14} />
           </a>
           <button className="help-link" onClick={() => setModal('help')}>
-            Jak to działa?
+            <Info size={17} /> Jak to działa?
           </button>
           <span className="version">HICIARZ / STUDIO 01</span>
         </div>
@@ -855,16 +878,27 @@ export default function App() {
       <div className="workspace">
         <header className="topbar">
           <div className="breadcrumb">
-            Twoje studio <ChevronRight size={13} />
+            <button
+              className="start-link"
+              onClick={() => changeMode('home')}
+              aria-label="Wróć do startu"
+            >
+              <ChevronLeft size={16} />
+              {mode === 'home' ? 'hiciarz ✳' : 'Start'}
+            </button>
+            {mode !== 'home' && <ChevronRight size={13} />}
             <strong>
               {mode === 'editor'
                 ? 'Kreator kart'
                 : mode === 'scanner'
                   ? 'Skaner kart'
-                  : 'Odtwarzacz'}
+                  : mode === 'player'
+                    ? 'Odtwarzacz'
+                    : ''}
             </strong>
           </div>
           <div className="topbar-right">
+            <SpotifyAccount />
             <span className="save-status">
               <span className={storageError ? 'warn-dot' : 'live-dot'} />
               {storageError ? 'Zapis niedostępny' : 'Zapis lokalny'}
@@ -920,27 +954,27 @@ export default function App() {
                   <X size={18} />
                 </button>
               </div>
+              <button onClick={() => changeMode('home')}>
+                <Music2 size={18} /> Strona startowa
+              </button>
               <button
                 onClick={() => {
-                  setFullMobileApp(false);
                   setMode('scanner');
                   setAppMenuOpen(false);
                 }}
               >
-                <ScanLine size={18} /> Tryb skanera
+                <ScanLine size={18} /> Skanuj i graj
               </button>
               <button
                 onClick={() => {
-                  setFullMobileApp(true);
                   changeMode('editor');
                   setAppMenuOpen(false);
                 }}
               >
-                <LayoutGrid size={18} /> Pełna aplikacja i kreator
+                <LayoutGrid size={18} /> Twórz karty
               </button>
               <button
                 onClick={() => {
-                  setFullMobileApp(true);
                   changeMode('player');
                   setAppMenuOpen(false);
                 }}
@@ -999,7 +1033,7 @@ export default function App() {
             </button>
           </div>
         )}
-        {showCoffee && !focusedScanner && (
+        {showCoffee && mode === 'editor' && (
           <div className="coffee-support">
             <a
               href="https://buymeacoffee.com/szymonrybka"
@@ -1026,21 +1060,9 @@ export default function App() {
           </div>
         )}
         <main>
-          {focusedScanner && (
-            <div className="scanner-app-actions">
-              <span>Gotowy na kolejny hit?</span>
-              <button
-                className="text-button"
-                onClick={() => {
-                  setFullMobileApp(true);
-                  changeMode('editor');
-                }}
-              >
-                <LayoutGrid size={16} /> Pełna aplikacja
-              </button>
-            </div>
-          )}
-          {mode === 'editor' ? (
+          {mode === 'home' ? (
+            <Landing onChoose={changeMode} />
+          ) : mode === 'editor' ? (
             <>
               <section className="page-heading">
                 <div>
@@ -1048,24 +1070,12 @@ export default function App() {
                     <span className="tiny-line" /> ZRÓB Z MUZYKI DOBRY WIECZÓR
                   </div>
                   <h1>
-                    Twoje hity.
-                    <br className="mobile-break" /> Wasza gra
+                    Twórz własne karty
                     <span className="heading-star">✳</span>
                   </h1>
                   <p>Wybierz piosenki, nadaj im charakter i wydrukuj swoją talię.</p>
                 </div>
                 <div className="heading-actions">
-                  {spotifyConfigured() && (
-                    <button
-                      className="primary"
-                      onClick={() => {
-                        setOutput('spotify');
-                        changeMode('scanner');
-                      }}
-                    >
-                      <Play size={18} /> Graj przez Spotify
-                    </button>
-                  )}
                   <button
                     className={spotifyConfigured() ? 'secondary' : 'primary'}
                     disabled={!deck.songs.length || busy}
@@ -1076,7 +1086,7 @@ export default function App() {
                   </button>
                 </div>
               </section>
-              {showDemoOffer && (
+              {showDemoOffer && deck.songs.length === 0 && decks.length === 1 && (
                 <section className="demo-offer" aria-labelledby="demo-offer-title">
                   <div>
                     <span className="eyebrow">NA DOBRY POCZĄTEK</span>
@@ -1110,12 +1120,27 @@ export default function App() {
                   </div>
                 </section>
               )}
-              <GameGuide
-                onStart={(route) => {
-                  setOutput(route === 'spotify' ? 'spotify' : 'browser');
-                  changeMode(route === 'spotify' ? 'scanner' : 'player');
-                }}
-              />
+              <details className="mode-help creator-help">
+                <summary>Premiera Twojej talii w trzech krokach</summary>
+                <ol>
+                  <li>
+                    <strong>Utwory:</strong> dodaj piosenki, wczytaj plik lub gotowy przykład.
+                    Spotify połączysz tylko, jeśli wybierzesz import playlisty.
+                  </li>
+                  <li>
+                    <strong>Wygląd kart:</strong> wybierz motyw i rewers. Możesz wgrać własną
+                    grafikę.
+                  </li>
+                  <li>
+                    <strong>Druk:</strong> sprawdź lata, wybierz ustawienia i pobierz dwustronny
+                    PDF.
+                  </li>
+                </ol>
+                <p>
+                  Nie potrzebujesz konta Hiciarza. Projekt zapisuje się w tej przeglądarce;
+                  przyciskiem „Zapisz projekt” pobierzesz kopię.
+                </p>
+              </details>
               {storageError && (
                 <div className="notice error" role="alert">
                   {storageError}
@@ -1815,9 +1840,9 @@ export default function App() {
                 <div>
                   <div className="eyebrow">JEDEN SKAN. KOLEJNY HIT.</div>
                   <h1>
-                    Skanuj. Słuchaj<span className="heading-star">✳</span>
+                    Skanuj i graj<span className="heading-star">✳</span>
                   </h1>
-                  <p>Wybierz urządzenie Spotify albo połącz skaner ze zdalnym odtwarzaczem.</p>
+                  <p>Najpierw wybierz, skąd ma grać muzyka. Potem włącz aparat i skanuj karty.</p>
                 </div>
               </section>
               <div className="play-layout">
@@ -1827,15 +1852,62 @@ export default function App() {
                       className={output === 'browser' ? 'active' : ''}
                       onClick={() => setOutput('browser')}
                     >
-                      Zdalny odtwarzacz
+                      Drugi ekran
                     </button>
                     <button
                       className={output === 'spotify' ? 'active' : ''}
                       onClick={() => setOutput('spotify')}
                     >
-                      Spotify Connect
+                      Moje Spotify
                     </button>
                   </div>
+                  <details
+                    className="mode-help"
+                    key={output}
+                    open={
+                      !(
+                        (output === 'spotify' && spotifyRemote.ready) ||
+                        (output === 'browser' && room.connected)
+                      )
+                    }
+                  >
+                    <summary>
+                      {output === 'spotify'
+                        ? 'Jak zagrać przez Spotify?'
+                        : 'Jak połączyć drugi ekran?'}
+                    </summary>
+                    {output === 'spotify' ? (
+                      <>
+                        <ol>
+                          <li>Otwórz Spotify na urządzeniu, na którym ma grać muzyka.</li>
+                          <li>Zaloguj się poniżej i wybierz to urządzenie z listy.</li>
+                          <li>Włącz aparat. Każdy QR z karty uruchomi kolejną piosenkę.</li>
+                        </ol>
+                        <p>
+                          Potrzebujesz Spotify Premium. Jeśli konto jest już połączone w tej karcie
+                          przeglądarki, użyj tej samej sesji.
+                        </p>
+                      </>
+                    ) : (
+                      <>
+                        <ol>
+                          <li>
+                            Na urządzeniu do odtwarzania otwórz Hiciarza i wybierz „Otwórz
+                            odtwarzacz”.
+                          </li>
+                          <li>Kliknij tam „Połącz skaner”, żeby wyświetlić QR parowania.</li>
+                          <li>
+                            Tutaj włącz aparat: zeskanuj QR z ekranu, a potem kody z muzycznych
+                            kart.
+                          </li>
+                        </ol>
+                        <p>
+                          Do parowania nie potrzeba logowania. Oba urządzenia muszą pozostać otwarte
+                          i mieć internet.
+                        </p>
+                      </>
+                    )}
+                  </details>
                   <div className="status-bar">
                     <span
                       className={
@@ -1861,7 +1933,11 @@ export default function App() {
                   <Suspense fallback={<p className="hint">Przygotowuję skaner…</p>}>
                     <Camera
                       onScan={handleScan}
+                      onStart={() => {
+                        lastScan.current = { id: '', time: 0 };
+                      }}
                       pairingRequired={output === 'browser'}
+                      paired={room.connected}
                       ready={output === 'browser' || spotifyRemote.ready}
                     />
                   </Suspense>
@@ -1901,7 +1977,10 @@ export default function App() {
                   <p className="ack" aria-live="polite">
                     {output === 'spotify'
                       ? playState
-                      : room.ack || 'Sterowanie będzie dostępne po sparowaniu urządzeń.'}
+                      : room.ack ||
+                        (room.connected
+                          ? 'Połączono. Zeskanuj muzyczną kartę.'
+                          : 'Sterowanie będzie dostępne po sparowaniu urządzeń.')}
                   </p>
                 </section>
                 <aside className="surface instructions">
@@ -1968,7 +2047,7 @@ export default function App() {
                 <div>
                   <div className="eyebrow">DOBRE BRZMIENIE ZACZYNA SIĘ TUTAJ</div>
                   <h1>
-                    Niech gra<span className="heading-star">✳</span>
+                    Odtwarzacz<span className="heading-star">✳</span>
                   </h1>
                   <p>
                     {output === 'spotify'
@@ -1982,20 +2061,23 @@ export default function App() {
               </section>
               <div className="play-layout">
                 <section className="surface player-surface">
-                  <div className="output-switch" role="group" aria-label="Miejsce odtwarzania">
-                    <button
-                      className={output === 'browser' ? 'active' : ''}
-                      onClick={() => setOutput('browser')}
-                    >
-                      Na tym urządzeniu
-                    </button>
-                    <button
-                      className={output === 'spotify' ? 'active' : ''}
-                      onClick={() => setOutput('spotify')}
-                    >
-                      Spotify Connect
-                    </button>
-                  </div>
+                  <details className="mode-help">
+                    <summary>Inny sposób odtwarzania</summary>
+                    <div className="output-switch" role="group" aria-label="Miejsce odtwarzania">
+                      <button
+                        className={output === 'browser' ? 'active' : ''}
+                        onClick={() => setOutput('browser')}
+                      >
+                        Na tym urządzeniu
+                      </button>
+                      <button
+                        className={output === 'spotify' ? 'active' : ''}
+                        onClick={() => setOutput('spotify')}
+                      >
+                        Moje Spotify
+                      </button>
+                    </div>
+                  </details>
                   <div className="player-top">
                     <div className="status-bar">
                       <span

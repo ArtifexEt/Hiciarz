@@ -81,7 +81,7 @@ Instrukcja dla AI: „Przygotuj tablicę JSON według powyższego schematu. Rok 
 
 ## Dane lokalne i PWA
 
-Pierwsze uruchomienie zaczyna się od pustej talii. Możesz skorzystać z jednorazowej propozycji wczytania świątecznego przykładu albo ją pominąć. Przykłady zawsze znajdziesz też w kreatorze pod **Przykładowe playlisty**. Na telefonie otwórz **Pełna aplikacja**, żeby przejść ze skanera do kreatora, a zapisane talie przełączaj polem **Twoje talie**.
+Pierwsze uruchomienie zaczyna się od pustej talii. Możesz skorzystać z jednorazowej propozycji wczytania świątecznego przykładu albo ją pominąć. Przykłady zawsze znajdziesz też w kreatorze pod **Przykładowe playlisty**. Na ekranie startowym wybierz **Twórz karty**, a zapisane talie przełączaj polem **Twoje talie**. Z każdego trybu wrócisz przyciskiem **Start**.
 
 Gotowe listy znajdują się w folderze [examples/playlists](../examples/playlists/README.md). Przykład **Świąteczne hity** zawiera statyczny zapis wszystkich 151 utworów z [polecanej playlisty](https://open.spotify.com/playlist/7wfTeAa7cxhA3qNE05XPKk) z 9 listopada 2026 i motyw Rybki świąteczne. Wczytasz go bez logowania do Spotify, jako nową talię lub dopisując utwory do obecnej. Lata wydań oznaczono do sprawdzenia przed drukiem. Możesz edytować własną kopię; przykład w repozytorium nie zmienia się razem z nią. Listy są dołączone do aplikacji i dostępne również po zapisaniu jej do pracy offline; odtwarzanie muzyki wymaga sieci.
 

@@ -1,12 +1,31 @@
 import { spotifyId, type Song } from './model';
 const id = () => import.meta.env.VITE_SPOTIFY_CLIENT_ID || '';
 const redirect = () => location.origin + location.pathname;
+async function spotifyFetch(url: string, options: RequestInit): Promise<Response> {
+  try {
+    return await fetch(url, options);
+  } catch {
+    throw new Error('Nie można połączyć się ze Spotify. Sprawdź internet i spróbuj ponownie.');
+  }
+}
 const b64 = (buffer: ArrayBuffer) =>
   btoa(String.fromCharCode(...new Uint8Array(buffer)))
     .replace(/\+/g, '-')
     .replace(/\//g, '_')
     .replace(/=+$/, '');
 export const spotifyConfigured = () => Boolean(id());
+export const spotifyAccountEvent = 'hiciarz-spotify-account';
+export function spotifyLoginPurpose(): 'import' | 'player' | null {
+  try {
+    const purpose = JSON.parse(sessionStorage.getItem('spotify-oauth') || 'null')?.purpose;
+    return purpose === 'import' || purpose === 'player' ? purpose : null;
+  } catch {
+    return null;
+  }
+}
+function accountChanged() {
+  if (typeof window !== 'undefined') window.dispatchEvent(new Event(spotifyAccountEvent));
+}
 export function spotifyConnected(purpose: 'import' | 'player' = 'import') {
   try {
     const t = JSON.parse(sessionStorage.getItem('spotify-token') || 'null');
@@ -23,6 +42,7 @@ export function spotifyConnected(purpose: 'import' | 'player' = 'import') {
 export function disconnectSpotify() {
   sessionStorage.removeItem('spotify-token');
   sessionStorage.removeItem('spotify-oauth');
+  accountChanged();
 }
 export async function authorizeSpotify(purpose: 'import' | 'player' = 'import') {
   if (!id()) throw new Error('Połączenie Spotify nie jest skonfigurowane dla tej strony.');
@@ -31,7 +51,7 @@ export async function authorizeSpotify(purpose: 'import' | 'player' = 'import') 
   sessionStorage.setItem('spotify-oauth', JSON.stringify({ verifier, state, purpose }));
   const existing = JSON.parse(sessionStorage.getItem('spotify-token') || 'null');
   const required =
-    'user-read-playback-state user-modify-playback-state playlist-read-private playlist-read-collaborative';
+    'user-read-playback-state user-modify-playback-state playlist-read-private playlist-read-collaborative user-read-private';
   const scope = [
     ...new Set([...required.split(' '), ...(existing?.scope || '').split(' ').filter(Boolean)]),
   ].join(' ');
@@ -56,7 +76,7 @@ export async function finishSpotify() {
   if (q.has('error')) throw new Error('Logowanie Spotify zostało anulowane.');
   if (!saved || q.get('state') !== saved.state)
     throw new Error('Sesja logowania wygasła. Połącz Spotify ponownie.');
-  const r = await fetch('https://accounts.spotify.com/api/token', {
+  const r = await spotifyFetch('https://accounts.spotify.com/api/token', {
     method: 'POST',
     headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
     body: new URLSearchParams({
@@ -72,13 +92,14 @@ export async function finishSpotify() {
     'spotify-token',
     JSON.stringify({ ...(await r.json()), expires: Date.now() + 3500000 }),
   );
+  accountChanged();
   return saved.purpose === 'player' ? ('player' as const) : ('import' as const);
 }
 async function token() {
   let t = JSON.parse(sessionStorage.getItem('spotify-token') || 'null');
   if (!t) throw new Error('Najpierw połącz Spotify.');
   if (t.expires < Date.now()) {
-    const r = await fetch('https://accounts.spotify.com/api/token', {
+    const r = await spotifyFetch('https://accounts.spotify.com/api/token', {
       method: 'POST',
       headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
       body: new URLSearchParams({
@@ -98,7 +119,7 @@ async function token() {
 }
 async function api(url: string) {
   if (!url.startsWith('https://api.spotify.com/v1/')) throw new Error('Nieprawidłowy adres API.');
-  const r = await fetch(url, {
+  const r = await spotifyFetch(url, {
     headers: { Authorization: 'Bearer ' + (await token()) },
     signal: AbortSignal.timeout(20000),
   });
@@ -160,8 +181,15 @@ export type SpotifyDevice = {
   is_active: boolean;
   is_restricted: boolean;
 };
+export async function spotifyProfile(): Promise<{ name: string; avatar?: string }> {
+  const profile = await playerRequest('me');
+  const avatar = profile?.images?.find(
+    (image: { url?: string }) => typeof image.url === 'string' && image.url.startsWith('https://'),
+  )?.url;
+  return { name: profile?.display_name || 'Konto Spotify', avatar };
+}
 async function playerRequest(path: string, method = 'GET', body?: unknown): Promise<any> {
-  const response = await fetch('https://api.spotify.com/v1/' + path, {
+  const response = await spotifyFetch('https://api.spotify.com/v1/' + path, {
     method,
     headers: {
       Authorization: 'Bearer ' + (await token()),
@@ -182,7 +210,9 @@ async function playerRequest(path: string, method = 'GET', body?: unknown): Prom
     }
     if (response.status === 403)
       throw new Error(
-        'Spotify odmówił sterowania. Sprawdź Premium i uprawnienia konta w integracji.',
+        path === 'me/player/devices' || path === 'me'
+          ? 'Spotify odmówił dostępu do urządzeń (403). To nie jest pusta lista. Sprawdź, czy zalogowane konto ma dostęp w Users Management aplikacji Spotify, i połącz je ponownie.'
+          : 'Spotify odmówił sterowania (403). Sprawdź Premium i dostęp konta w Users Management aplikacji Spotify.',
       );
     if (response.status === 404 && path.startsWith('me/player'))
       throw new Error(

@@ -10,6 +10,7 @@ import {
   spotifyConfigured,
   spotifyDevices,
   spotifyPlaybackCommand,
+  spotifyAccountEvent,
   type SpotifyDevice,
 } from './spotify';
 
@@ -29,6 +30,7 @@ export function useSpotifyRemote(
   const callback = useRef(onState);
   callback.current = onState;
   const queue = useRef(Promise.resolve()),
+    refreshGeneration = useRef(0),
     generation = useRef(0),
     lastCommand = useRef(0);
   const setDevice = (value: string) => {
@@ -36,19 +38,24 @@ export function useSpotifyRemote(
     localStorage.setItem('hiciarz-spotify-device', value);
   };
   async function refresh() {
+    const request = ++refreshGeneration.current;
     setLoading(true);
     setError('');
     try {
       const ds = await spotifyDevices();
+      if (request !== refreshGeneration.current) return;
       setDevices(ds);
-      if (!ds.some((d) => d.id === device))
+      const selected = localStorage.getItem('hiciarz-spotify-device') || '';
+      if (!ds.some((d) => d.id === selected))
         setDevice(ds.find((d) => d.is_active)?.id || ds[0]?.id || '');
       setLinked(spotifyConnected('player'));
     } catch (e) {
+      if (request !== refreshGeneration.current) return;
+      setDevices([]);
       setError((e as Error).message);
       setLinked(spotifyConnected('player'));
     } finally {
-      setLoading(false);
+      if (request === refreshGeneration.current) setLoading(false);
     }
   }
   async function connect() {
@@ -70,7 +77,24 @@ export function useSpotifyRemote(
       setLinked(true);
       refresh();
     }
+    return () => {
+      refreshGeneration.current++;
+    };
   }, [enabled, returnTo]);
+  useEffect(() => {
+    const changed = () => {
+      generation.current++;
+      refreshGeneration.current++;
+      const connected = spotifyConnected('player');
+      setLinked(connected);
+      setDevices([]);
+      setError('');
+      setLoading(false);
+      if (connected && enabled) void refresh();
+    };
+    window.addEventListener(spotifyAccountEvent, changed);
+    return () => window.removeEventListener(spotifyAccountEvent, changed);
+  }, [enabled]);
   useEffect(() => {
     if (!enabled || !linked) return;
     const onFocus = () => {
@@ -120,11 +144,14 @@ export function useSpotifyRemote(
   useEffect(() => {
     if (!enabled || !linked || !command || command.seq === lastCommand.current) return;
     lastCommand.current = command.seq;
+    const session = generation.current;
     queue.current = queue.current
       .catch(() => {})
       .then(async () => {
+        if (session !== generation.current) return;
         try {
           await spotifyPlaybackCommand(command.type, device);
+          if (session !== generation.current) return;
           setError('');
           callback.current(
             command.type === 'resume'
@@ -132,6 +159,7 @@ export function useSpotifyRemote(
               : 'Wstrzymano odtwarzanie w Spotify.',
           );
         } catch (e) {
+          if (session !== generation.current) return;
           setError((e as Error).message);
           setLinked(spotifyConnected('player'));
           callback.current((e as Error).message);
@@ -147,7 +175,7 @@ export function useSpotifyRemote(
     setError('');
     callback.current('Odłączono konto Spotify.');
   }
-  const ready = linked && Boolean(device) && devices.some((d) => d.id === device);
+  const ready = enabled && linked && Boolean(device) && devices.some((d) => d.id === device);
   return {
     devices,
     device,
@@ -168,22 +196,32 @@ export function SpotifyRemotePanel({ remote }: { remote: ReturnType<typeof useSp
       <span className="mini-icon">
         <Headphones size={23} />
       </span>
-      <h2>Połącz Spotify. Wybierz, gdzie gramy.</h2>
-      <p>
-        Zaloguj się raz, wybierz telefon, komputer lub wieżę, a potem skanuj karty. Potrzebujesz
-        konta Spotify Premium.
-      </p>
-      <ol className="spotify-setup-steps" aria-label="Przygotowanie Spotify">
-        <li className={remote.linked ? 'done' : 'current'}>
-          <span>{remote.linked ? <Check size={14} /> : '1'}</span>Połącz konto
-        </li>
-        <li className={remote.ready ? 'done' : remote.linked ? 'current' : ''}>
-          <span>{remote.ready ? <Check size={14} /> : '2'}</span>Wybierz urządzenie
-        </li>
-        <li className={remote.ready ? 'current' : ''}>
-          <span>3</span>Skanuj i graj
-        </li>
-      </ol>
+      <h2>
+        {remote.ready
+          ? 'Muzyka gotowa. Czas na karty.'
+          : remote.linked
+            ? 'Wybierz, gdzie gramy.'
+            : 'Połącz Spotify, żeby zagrać.'}
+      </h2>
+      {!remote.ready && (
+        <p>
+          Zaloguj się raz, wybierz telefon, komputer lub wieżę, a potem skanuj karty. Potrzebujesz
+          konta Spotify Premium.
+        </p>
+      )}
+      {!remote.ready && (
+        <ol className="spotify-setup-steps" aria-label="Przygotowanie Spotify">
+          <li className={remote.linked ? 'done' : 'current'}>
+            <span>{remote.linked ? <Check size={14} /> : '1'}</span>Połącz konto
+          </li>
+          <li className={remote.ready ? 'done' : remote.linked ? 'current' : ''}>
+            <span>{remote.ready ? <Check size={14} /> : '2'}</span>Wybierz urządzenie
+          </li>
+          <li className={remote.ready ? 'current' : ''}>
+            <span>3</span>Skanuj i graj
+          </li>
+        </ol>
+      )}
       {!spotifyConfigured() ? (
         <div className="notice">
           <p>
@@ -202,8 +240,8 @@ export function SpotifyRemotePanel({ remote }: { remote: ReturnType<typeof useSp
             {remote.connecting ? 'Otwieram Spotify…' : 'Zaloguj się do Spotify'}
           </button>
           <p className="hint">
-            Spotify poprosi o dostęp do playlist i sterowania muzyką. Hasło wpisujesz wyłącznie na
-            stronie Spotify.
+            Spotify poprosi o dostęp do profilu, playlist i sterowania muzyką. Hasło wpisujesz
+            wyłącznie na stronie Spotify.
           </p>
         </>
       ) : (
@@ -238,7 +276,7 @@ export function SpotifyRemotePanel({ remote }: { remote: ReturnType<typeof useSp
               )}
             </button>
           </div>
-          {!remote.devices.length && !remote.loading && (
+          {!remote.devices.length && !remote.loading && !remote.error && (
             <div className="spotify-device-help">
               <strong>Nie widzisz swojego urządzenia?</strong>
               <p>Otwórz na nim Spotify i uruchom dowolny utwór. Wróć tutaj i odśwież listę.</p>
