@@ -475,13 +475,16 @@ export default function App() {
     [playState, setPlayState] = useState('Przygotuj połączenie i zeskanuj kartę.'),
     [command, setCommand] = useState<{ type: Command; seq: number } | null>(null);
   const [output, setOutputState] = useState<'browser' | 'spotify'>(() =>
-    localStorage.getItem('hiciarz-output') === 'spotify' ? 'spotify' : 'browser',
+    localStorage.getItem('hiciarz-output') === 'spotify' ||
+    (!localStorage.getItem('hiciarz-output') && spotifyConfigured())
+      ? 'spotify'
+      : 'browser',
   );
   const setOutput = (value: 'browser' | 'spotify') => {
     setOutputState(value);
     localStorage.setItem('hiciarz-output', value);
   };
-  const spotifyRemote = useSpotifyRemote(card, command, output === 'spotify', setPlayState);
+  const spotifyRemote = useSpotifyRemote(card, command, output === 'spotify', setPlayState, mode);
   const outputRef = useRef(output);
   outputRef.current = output;
   const fileRef = useRef<HTMLInputElement>(null),
@@ -566,7 +569,12 @@ export default function App() {
         if (done) {
           if (done === 'player') {
             setOutput('spotify');
-            setMode('player');
+            setMode(
+              sessionStorage.getItem('hiciarz-spotify-return-mode') === 'scanner'
+                ? 'scanner'
+                : 'player',
+            );
+            sessionStorage.removeItem('hiciarz-spotify-return-mode');
             notify('Połączono Spotify. Wybierz urządzenie odtwarzania.');
           } else {
             notify('Połączono Spotify. Wybierz playlistę do importu.');
@@ -863,14 +871,27 @@ export default function App() {
                   </h1>
                   <p>Wybierz piosenki, nadaj im charakter i wydrukuj swoją talię.</p>
                 </div>
-                <button
-                  className="primary"
-                  disabled={!deck.songs.length || busy}
-                  onClick={exportPDF}
-                >
-                  {busy ? <LoaderCircle size={18} className="spin" /> : <Download size={18} />}{' '}
-                  Pobierz PDF <span className="button-key">↗</span>
-                </button>
+                <div className="heading-actions">
+                  {spotifyConfigured() && (
+                    <button
+                      className="primary"
+                      onClick={() => {
+                        setOutput('spotify');
+                        changeMode('scanner');
+                      }}
+                    >
+                      <Play size={18} /> Graj przez Spotify
+                    </button>
+                  )}
+                  <button
+                    className={spotifyConfigured() ? 'secondary' : 'primary'}
+                    disabled={!deck.songs.length || busy}
+                    onClick={exportPDF}
+                  >
+                    {busy ? <LoaderCircle size={18} className="spin" /> : <Download size={18} />}{' '}
+                    Pobierz PDF <span className="button-key">↗</span>
+                  </button>
+                </div>
               </section>
               {showDemoOffer && (
                 <section className="demo-offer" aria-labelledby="demo-offer-title">
@@ -1656,13 +1677,18 @@ export default function App() {
                       </button>
                     )}
                   </div>
+                  {output === 'spotify' && <SpotifyRemotePanel remote={spotifyRemote} />}
                   <Suspense fallback={<p className="hint">Przygotowuję skaner…</p>}>
-                    <Camera onScan={handleScan} pairingRequired={output === 'browser'} />
+                    <Camera
+                      onScan={handleScan}
+                      pairingRequired={output === 'browser'}
+                      ready={output === 'browser' || spotifyRemote.ready}
+                    />
                   </Suspense>
                   <div className="scanner-controls">
                     <button
                       className="secondary"
-                      disabled={output === 'spotify' ? !spotifyRemote.linked : !room.connected}
+                      disabled={output === 'spotify' ? !spotifyRemote.ready : !room.connected}
                       onClick={() =>
                         output === 'spotify'
                           ? playerCommand('pause')
@@ -1673,7 +1699,7 @@ export default function App() {
                     </button>
                     <button
                       className="primary"
-                      disabled={output === 'spotify' ? !spotifyRemote.linked : !room.connected}
+                      disabled={output === 'spotify' ? !spotifyRemote.ready : !room.connected}
                       onClick={() =>
                         output === 'spotify'
                           ? playerCommand('resume')
@@ -1684,7 +1710,7 @@ export default function App() {
                     </button>
                     <button
                       className="secondary"
-                      disabled={output === 'spotify' ? !spotifyRemote.linked : !room.connected}
+                      disabled={output === 'spotify' ? !spotifyRemote.ready : !room.connected}
                       onClick={() =>
                         output === 'spotify' ? playerCommand('stop') : room.send(undefined, 'stop')
                       }
@@ -1700,7 +1726,20 @@ export default function App() {
                 </section>
                 <aside className="surface instructions">
                   {output === 'spotify' ? (
-                    <SpotifyRemotePanel remote={spotifyRemote} />
+                    <>
+                      <span className="mini-icon">
+                        <Music2 size={23} />
+                      </span>
+                      <h2>Twoja wieża. Twoje hity.</h2>
+                      <p>
+                        Po połączeniu konta i wybraniu urządzenia włącz aparat. Skanuj karty
+                        pojedynczo — muzyka zagra tam, gdzie wybierzesz.
+                      </p>
+                      <p className="hint">
+                        Nie potrzebujesz laptopa ani kodu parowania. Karty muszą zawierać utwory ze
+                        Spotify.
+                      </p>
+                    </>
                   ) : (
                     <>
                       <span className="mini-icon">
@@ -1776,8 +1815,22 @@ export default function App() {
                   </div>
                   <div className="player-top">
                     <div className="status-bar">
-                      <span className={room.connected ? 'live-dot' : 'warn-dot'} />
-                      <strong>{room.status}</strong>
+                      <span
+                        className={
+                          (output === 'spotify' ? spotifyRemote.ready : room.connected)
+                            ? 'live-dot'
+                            : 'warn-dot'
+                        }
+                      />
+                      <strong>
+                        {output === 'spotify'
+                          ? spotifyRemote.ready
+                            ? 'Spotify gotowe do gry'
+                            : spotifyRemote.linked
+                              ? 'Wybierz urządzenie Spotify'
+                              : 'Połącz konto Spotify'
+                          : room.status}
+                      </strong>
                     </div>
                     {output === 'browser' && (
                       <label className="source-picker">

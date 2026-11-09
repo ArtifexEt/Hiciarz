@@ -4,9 +4,11 @@ import { Camera as CameraIcon, CameraOff, ScanLine } from 'lucide-react';
 export default function Camera({
   onScan,
   pairingRequired = true,
+  ready = true,
 }: {
   onScan: (text: string) => void;
   pairingRequired?: boolean;
+  ready?: boolean;
 }) {
   const video = useRef<HTMLVideoElement>(null),
     controls = useRef<IScannerControls | null>(null),
@@ -15,6 +17,9 @@ export default function Camera({
   handler.current = onScan;
   const [active, setActive] = useState(false),
     [error, setError] = useState('');
+  useEffect(() => {
+    if (!ready) setActive(false);
+  }, [ready]);
   useEffect(() => {
     if (!active) return;
     let cancelled = false;
@@ -97,12 +102,13 @@ export default function Camera({
             </p>
             <button
               className="primary"
+              disabled={!ready}
               onClick={() => {
                 setError('');
                 setActive(true);
               }}
             >
-              <CameraIcon size={18} /> Włącz aparat
+              <CameraIcon size={18} /> {ready ? 'Włącz aparat' : 'Najpierw przygotuj Spotify'}
             </button>
           </div>
         )}

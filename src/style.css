@@ -3367,6 +3367,99 @@ main {
   box-shadow: 0 0 0 1px #8fa375;
   background: #f7faf3;
 }
+.heading-actions {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 10px;
+}
+.spotify-setup-steps {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 10px 16px;
+  list-style: none;
+  padding: 0;
+  margin: 20px 0;
+}
+.spotify-setup-steps li {
+  display: flex;
+  align-items: center;
+  gap: 7px;
+  font-size: 11px;
+  color: var(--muted);
+}
+.spotify-setup-steps span {
+  display: inline-grid;
+  place-items: center;
+  width: 26px;
+  height: 26px;
+  border: 1px solid var(--line);
+  border-radius: 50%;
+}
+.spotify-setup-steps .done span,
+.spotify-setup-steps .current span {
+  background: var(--accent);
+  color: #26311e;
+  border-color: transparent;
+}
+.spotify-setup-steps .current {
+  color: var(--ink);
+  font-weight: 600;
+}
+.scan-surface .spotify-remote {
+  padding: 20px;
+  border: 1px solid var(--line);
+  border-radius: 12px;
+  margin-bottom: 22px;
+  background: var(--soft);
+}
+.spotify-device-help {
+  border: 1px solid var(--line);
+  border-radius: 10px;
+  padding: 16px;
+  margin: 16px 0;
+  font-size: 13px;
+}
+.spotify-device-help p {
+  margin: 7px 0 12px;
+}
+.spotify-device-help .inline-actions {
+  flex-wrap: wrap;
+}
+.spotify-device-help a {
+  text-decoration: none;
+}
+.spotify-remote > .spotify-ready {
+  display: flex;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 6px;
+  margin: 14px 0;
+  padding: 12px;
+  background: #e8f3d8;
+  color: #28451c;
+  border-radius: 10px;
+  font-size: 13px;
+}
+.spotify-remote .device-selection button {
+  min-width: 44px;
+  min-height: 44px;
+}
+.device-selection label,
+.device-selection select {
+  min-width: 0;
+}
+@media (max-width: 520px) {
+  .scan-surface .spotify-remote {
+    padding: 16px;
+  }
+  .spotify-remote select {
+    font-size: 16px;
+  }
+  .heading-actions {
+    width: 100%;
+  }
+}
 .output-switch {
   display: flex;
   gap: 4px;

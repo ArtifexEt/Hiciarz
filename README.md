@@ -97,6 +97,8 @@ Nie ma kont Hiciarza, analityki ani backendu przechowującego talie. Po wybraniu
 
 ## Tryby odtwarzania
 
+Najkrótsza droga do gry: na stronie głównej wybierz **Graj przez Spotify**, zaloguj się i wybierz urządzenie. Gdy pojawi się „Gotowe”, włącz aparat i skanuj karty. Logowanie umożliwia zarówno import playlist, jak i sterowanie muzyką. Po zalogowaniu wrócisz do rozpoczętego trybu.
+
 - **Na tym komputerze**: Spotify i YouTube odtwarzają na stronie. Wyjście dźwięku wybierasz w systemie, np. AirPlay na Macu.
 - **Spotify Connect**: połącz konto i wybierz aktywne urządzenie Spotify. Skanowane karty uruchamiają na nim piosenki przez API. Możesz używać telefonu samodzielnie albo sparować skaner z laptopem. Karta musi zawierać źródło Spotify.
 

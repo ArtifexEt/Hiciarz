@@ -1,8 +1,11 @@
 import { useState } from 'react';
 import { ArrowUpRight, Monitor, Radio, ScanLine, Smartphone } from 'lucide-react';
+import { spotifyConfigured } from './spotify';
 
 export function GameGuide({ onStart }: { onStart: (route: 'spotify' | 'laptop') => void }) {
-  const [route, setRoute] = useState<'spotify' | 'laptop'>('laptop');
+  const [route, setRoute] = useState<'spotify' | 'laptop'>(
+    spotifyConfigured() ? 'spotify' : 'laptop',
+  );
   const laptop = route === 'laptop';
   const steps = laptop
     ? [

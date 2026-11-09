@@ -88,6 +88,8 @@ describe('Spotify Connect requests', () => {
     expect(url.searchParams.get('code_challenge_method')).toBe('S256');
     expect(url.searchParams.has('client_secret')).toBe(false);
     expect(url.searchParams.get('scope')).toContain('user-modify-playback-state');
+    expect(url.searchParams.get('scope')).toContain('playlist-read-private');
+    expect(url.searchParams.get('scope')).toContain('playlist-read-collaborative');
     expect(JSON.parse(data.get('spotify-oauth')!).purpose).toBe('player');
   });
 });

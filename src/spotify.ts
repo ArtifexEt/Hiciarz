@@ -31,9 +31,7 @@ export async function authorizeSpotify(purpose: 'import' | 'player' = 'import') 
   sessionStorage.setItem('spotify-oauth', JSON.stringify({ verifier, state, purpose }));
   const existing = JSON.parse(sessionStorage.getItem('spotify-token') || 'null');
   const required =
-    purpose === 'player'
-      ? 'user-read-playback-state user-modify-playback-state'
-      : 'playlist-read-private playlist-read-collaborative';
+    'user-read-playback-state user-modify-playback-state playlist-read-private playlist-read-collaborative';
   const scope = [
     ...new Set([...required.split(' '), ...(existing?.scope || '').split(' ').filter(Boolean)]),
   ].join(' ');
