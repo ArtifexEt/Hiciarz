@@ -20,6 +20,7 @@ export type Song = {
 };
 export type PrintSettings = {
   style: 'theme' | 'laser';
+  frontColors?: 'varied' | 'theme';
   edge: 'long' | 'short';
   offsetX: number;
   offsetY: number;
@@ -37,6 +38,7 @@ export type Deck = {
 export type Card = { v: 1; id: string; theme: Theme; sources: Sources };
 export const defaultPrint: PrintSettings = {
   style: 'theme',
+  frontColors: 'varied',
   edge: 'long',
   offsetX: 0,
   offsetY: 0,
@@ -184,6 +186,7 @@ export function validateDeck(raw: unknown): Deck {
     songs,
     print: {
       style: p.style === 'laser' ? 'laser' : 'theme',
+      frontColors: p.frontColors === 'theme' ? 'theme' : 'varied',
       edge: p.edge === 'short' ? 'short' : 'long',
       offsetX: Math.min(10, Math.max(-10, Number(p.offsetX) || 0)),
       offsetY: Math.min(10, Math.max(-10, Number(p.offsetY) || 0)),

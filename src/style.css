@@ -1127,6 +1127,8 @@ main {
 .music-card.front {
   background: #eee4f4;
   color: #42334f;
+  background-size: cover;
+  background-position: center;
 }
 .card-topline,
 .card-bottomline {
@@ -1199,14 +1201,14 @@ main {
   background: #f8e9ce;
   color: #12483e;
 }
-.music-card.card-fish.front:before {
-  content: '✳';
-  position: absolute;
-  right: 12px;
-  top: 56px;
-  font-size: 25px;
-  color: #c59b56;
-  opacity: 0.5;
+.front-color-choice {
+  margin: 24px 0;
+}
+.front-color-choice small {
+  font-size: 11px;
+  font-weight: 400;
+  line-height: 1.6;
+  color: var(--muted, #73796f);
 }
 .music-card.back {
   background-size: cover;

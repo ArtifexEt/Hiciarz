@@ -1,5 +1,6 @@
 import { jsPDF } from 'jspdf';
 import { qrImage } from './qr';
+import { drawFront } from './front';
 import { type Deck, type Song, backPosition, cardUrl } from './model';
 import { asset, themeArt, themeColors } from './themes';
 let fontPromise: Promise<string> | undefined;
@@ -72,24 +73,16 @@ export async function buildPDF(deck: Deck, songs: Song[], base: string): Promise
     for (let i = 0; i < sheet.length; i++) {
       const s = sheet[i],
         x = 15 + (i % 3) * 60,
-        y = 28 + Math.floor(i / 3) * 60,
-        c = themeColors[laser ? 'laser' : s.theme || deck.theme];
-      doc.setFillColor(c.light);
-      doc.rect(x, y, 60, 60, 'F');
-      doc.setTextColor(c.dark);
-      if (laser) {
-        doc.setDrawColor('#638876');
-        doc.setLineWidth(0.25);
-        doc.line(x + 5, y + 5, x + 15, y + 5);
-        doc.setDrawColor('#b56e58');
-        doc.line(x + 45, y + 55, x + 55, y + 55);
-      }
+        y = 28 + Math.floor(i / 3) * 60;
+      drawFront(doc, s, deck, x, y);
+      doc.setFontSize(5);
+      doc.text('HICIARZ', x + 7, y + 8, { charSpace: 0.4 });
       doc.setFontSize(34);
       doc.text(String(s.year), x + 30, y + 22, { align: 'center' });
       textFit(doc, s.title, x + 30, y + 34, 50, 12);
       textFit(doc, s.artist, x + 30, y + 47, 50, 9);
       doc.setFontSize(5);
-      doc.text(s.id.slice(0, 12), x + 30, y + 56, { align: 'center' });
+      doc.text(s.id.slice(0, 12), x + 30, y + 54.8, { align: 'center' });
       if (deck.print.cuts) cuts(doc, x, y);
     }
     doc.addPage();

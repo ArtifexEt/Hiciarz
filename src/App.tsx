@@ -41,6 +41,7 @@ import {
 import { qrImage } from './qr';
 import { GameGuide } from './GameGuide';
 import playlistPrompt from '../docs/playlist-prompt.txt?raw';
+import { frontDesign, frontImage } from './front';
 import {
   type Card,
   type Deck,
@@ -153,7 +154,12 @@ function CardPreview({ song, deck, back = false }: { song: Song; deck: Deck; bac
           ? {
               backgroundImage: `url("${theme === 'laser' ? themeArt('laser') : deck.back || themeArt(theme)}")`,
             }
-          : undefined
+          : {
+              backgroundImage: `url("${frontImage(song, deck)}")`,
+              backgroundSize: 'cover',
+              backgroundRepeat: 'no-repeat',
+              color: frontDesign(song, deck).ink,
+            }
       }
     >
       {back ? (
@@ -1161,6 +1167,27 @@ export default function App() {
                           setUiTheme(theme);
                         }}
                       />
+                      <label className="front-color-choice">
+                        Kolory strony z odpowiedzią
+                        <select
+                          value={deck.print.frontColors || 'varied'}
+                          onChange={(e) =>
+                            updateDeck({
+                              print: {
+                                ...deck.print,
+                                frontColors: e.target.value as 'varied' | 'theme',
+                              },
+                            })
+                          }
+                        >
+                          <option value="varied">Różne odcienie dla poszczególnych kart</option>
+                          <option value="theme">Jednolity kolor motywu</option>
+                        </select>
+                        <small>
+                          Odcień karty pozostaje taki sam po zmianie kolejności. Preset laserowy
+                          zachowuje białe tło i kolorowe kontury.
+                        </small>
+                      </label>
                       <div
                         className="fish-callout"
                         style={{
