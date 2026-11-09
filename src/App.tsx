@@ -768,7 +768,6 @@ export default function App() {
                 ))}
               </select>
             </label>
-            <span className="avatar">H</span>
           </div>
         </header>
         <main>

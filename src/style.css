@@ -416,17 +416,6 @@ small {
   background: transparent;
   width: 125px;
 }
-.avatar {
-  width: 28px;
-  height: 28px;
-  border: 1px solid #d4d9cf;
-  border-radius: 50%;
-  display: grid;
-  place-items: center;
-  font-size: 10px;
-  background: #eceee7;
-  color: #5b6455;
-}
 main {
   padding: 39px 39px 18px;
   max-width: 1600px;
@@ -2500,9 +2489,6 @@ main {
   }
   .topbar-right {
     gap: 10px;
-  }
-  .avatar {
-    display: none;
   }
   .theme-select select {
     width: 110px;
