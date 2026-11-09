@@ -1174,7 +1174,7 @@ export default function App() {
         )}
         <main>
           {mode === 'home' ? (
-            <Landing onChoose={changeMode} />
+            <Landing onChoose={changeMode} theme={uiTheme} />
           ) : mode === 'editor' ? (
             <>
               <section className="page-heading">
@@ -1648,29 +1648,6 @@ export default function App() {
                           zachowuje białe tło i kolorowe kontury.
                         </small>
                       </label>
-                      <div
-                        className="fish-callout"
-                        style={{
-                          backgroundImage: `linear-gradient(90deg,rgba(4,36,36,.96),rgba(4,36,36,.2)),url("${themeArt('fish')}")`,
-                        }}
-                      >
-                        <Sparkles size={25} />
-                        <h3>Święta z charakterem.</h3>
-                        <p>
-                          Rybki-bombki, gałązki i odrobina magii.
-                          <br />
-                          Autorska kolekcja „Rybki świąteczne”.
-                        </p>
-                        <button
-                          className="secondary"
-                          onClick={() => {
-                            updateDeck({ theme: 'fish', back: undefined });
-                            setUiTheme('fish');
-                          }}
-                        >
-                          Wybierz rybki <ArrowUpRight size={16} />
-                        </button>
-                      </div>
                       <div className="upload-panel">
                         <Upload size={23} />
                         <div>
