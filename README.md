@@ -83,6 +83,10 @@ Instrukcja dla AI: „Przygotuj tablicę JSON według powyższego schematu. Rok 
 
 ## Dane lokalne i PWA
 
+Pierwsze uruchomienie zaczyna się od pustej talii. Możesz skorzystać z jednorazowej propozycji utworzenia świątecznej talii z polecanej playlisty Spotify albo ją pominąć. Utwory są pobierane dopiero po wybraniu importu i zalogowaniu konta; gotowa talia zostaje w Twojej przeglądarce. Na telefonie przełączasz zapisane talie polem **Twoje talie** w kreatorze.
+
+Gdy nowa wersja aplikacji jest gotowa, pojawi się przycisk **Wczytaj nową wersję**. Przed odświeżeniem aplikacja zapisuje talie. W stopce znajdziesz numer wersji i **Sprawdź aktualizacje**. Aktualizacja nie wymaga czyszczenia danych strony.
+
 Talie i zdjęcia: IndexedDB. Preferencje wyglądu: localStorage. Dane sesji OAuth: sessionStorage. Eksporty nie zawierają tokenów. Czyszczenie danych strony usuwa lokalne talie — zapisuj JSON. Przy awarii zapisu aplikacja wyświetla komunikat. Kreator i eksport PDF korzystają z zasobów lokalnych po zapisaniu ich przez service worker; muzyka, API i parowanie wymagają sieci.
 
 Nie ma kont Hiciarza, analityki ani backendu przechowującego talie. Po wybraniu źródła przeglądarka kontaktuje się z tym dostawcą; parowanie kontaktuje się z usługami PeerJS/ICE.

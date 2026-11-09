@@ -1,7 +1,13 @@
 import { useEffect, useRef, useState } from 'react';
 import { BrowserQRCodeReader, type IScannerControls } from '@zxing/browser';
 import { Camera as CameraIcon, CameraOff, ScanLine } from 'lucide-react';
-export default function Camera({ onScan }: { onScan: (text: string) => void }) {
+export default function Camera({
+  onScan,
+  pairingRequired = true,
+}: {
+  onScan: (text: string) => void;
+  pairingRequired?: boolean;
+}) {
   const video = useRef<HTMLVideoElement>(null),
     controls = useRef<IScannerControls | null>(null),
     handler = useRef(onScan),
@@ -75,9 +81,19 @@ export default function Camera({ onScan }: { onScan: (text: string) => void }) {
             <ScanLine size={52} />
             <h3>Przyłóż kartę do aparatu</h3>
             <p>
-              Najpierw QR parowania z laptopa,
-              <br />
-              potem QR z muzycznej karty.
+              {pairingRequired ? (
+                <>
+                  Najpierw QR parowania z laptopa,
+                  <br />
+                  potem QR z muzycznej karty.
+                </>
+              ) : (
+                <>
+                  Połącz konto Spotify i wybierz urządzenie,
+                  <br />
+                  potem zeskanuj QR z muzycznej karty.
+                </>
+              )}
             </p>
             <button
               className="primary"

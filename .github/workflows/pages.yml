@@ -25,6 +25,7 @@ jobs:
       - run: pnpm build
         env:
           BASE_PATH: /${{ github.event.repository.name }}/
+          VITE_APP_VERSION: ${{ github.sha }}
           VITE_SPOTIFY_CLIENT_ID: ${{ secrets.SPOTIFY_CLIENT_ID }}
           VITE_PEER_HOST: ${{ vars.PEER_HOST }}
           VITE_PEER_PORT: ${{ vars.PEER_PORT }}

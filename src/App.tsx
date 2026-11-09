@@ -1,4 +1,13 @@
-import { useCallback, useEffect, useRef, useState, type ReactNode, Suspense, lazy } from 'react';
+import {
+  useCallback,
+  useEffect,
+  useRef,
+  useState,
+  useSyncExternalStore,
+  type ReactNode,
+  Suspense,
+  lazy,
+} from 'react';
 import {
   ArrowDown,
   ArrowUp,
@@ -43,13 +52,19 @@ import { GameGuide } from './GameGuide';
 import playlistPrompt from '../docs/playlist-prompt.txt?raw';
 import { frontDesign, frontImage } from './front';
 import {
+  appVersion,
+  applyUpdate,
+  checkForUpdates,
+  subscribeToUpdates,
+  updateIsReady,
+} from './updates';
+import {
   type Card,
   type Deck,
   type Song,
   type Theme,
   cardUrl,
   csvExport,
-  demoDeck,
   download,
   mergeSongs,
   newDeck,
@@ -64,6 +79,7 @@ import { asset, themeArt } from './themes';
 import type { SourceCheck } from './availability';
 import { useConnection, type Command } from './connection';
 const Camera = lazy(() => import('./Camera'));
+const christmasPlaylist = 'https://open.spotify.com/playlist/7wfTeAa7cxhA3qNE05XPKk';
 import Players from './Players';
 import { SpotifyRemotePanel, useSpotifyRemote } from './SpotifyRemote';
 import {
@@ -315,9 +331,11 @@ function SongForm({
 function SpotifyImport({
   onImport,
   onClose,
+  initialPlaylist,
 }: {
   onImport: (songs: Song[], mode: 'append' | 'replace', note: string) => void;
   onClose: () => void;
+  initialPlaylist: string;
 }) {
   const [mode, setMode] = useState<'append' | 'replace'>(() =>
       sessionStorage.getItem('spotify-import-mode') === 'replace' ? 'replace' : 'append',
@@ -359,6 +377,7 @@ function SpotifyImport({
           className="primary full"
           onClick={() => {
             sessionStorage.setItem('spotify-import-mode', mode);
+            sessionStorage.setItem('spotify-import-playlist', initialPlaylist);
             authorizeSpotify().catch((e) => setError(e.message));
           }}
         >
@@ -380,6 +399,7 @@ function SpotifyImport({
                 mode,
                 `${r.name}. ${r.skipped ? 'Pominięte pozycje: ' + r.skipped + '. ' : ''}Sprawdź lata wydania.`,
               );
+              sessionStorage.removeItem('spotify-import-playlist');
               onClose();
             } catch (e) {
               setError((e as Error).message);
@@ -390,7 +410,12 @@ function SpotifyImport({
         >
           <label>
             Link do playlisty
-            <input name="playlist" required placeholder="https://open.spotify.com/playlist/…" />
+            <input
+              name="playlist"
+              required
+              defaultValue={initialPlaylist}
+              placeholder="https://open.spotify.com/playlist/…"
+            />
           </label>
           <p className="hint">
             Zachowamy kolejność playlisty. Lata pobrane z albumów oznaczymy do sprawdzenia.
@@ -420,6 +445,9 @@ function SpotifyImport({
   );
 }
 export default function App() {
+  const [showDemoOffer, setShowDemoOffer] = useState(false);
+  const updateAvailable = useSyncExternalStore(subscribeToUpdates, updateIsReady);
+  const [updating, setUpdating] = useState(false);
   const [decks, setDecks] = useState<Deck[]>([]),
     [loaded, setLoaded] = useState(false),
     [activeId, setActiveId] = useState(''),
@@ -489,15 +517,18 @@ export default function App() {
     loadDecks()
       .then((ds) => {
         if (!live) return;
-        const initial = ds.length ? ds : [demoDeck()];
+        const initial = ds.length ? ds : [newDeck()];
         setDecks(initial);
         const savedId = localStorage.getItem('hiciarz-active-deck');
         setActiveId(initial.some((d) => d.id === savedId) ? savedId! : initial[0].id);
         setLoaded(true);
+        setShowDemoOffer(!localStorage.getItem('hiciarz-demo-offer-v1'));
       })
       .catch(() => {
         if (!live) return;
-        setDecks([demoDeck()]);
+        const empty = newDeck();
+        setDecks([empty]);
+        setActiveId(empty.id);
         setLoaded(true);
         setStorageError('Nie można odczytać zapisu lokalnego. Pobieraj kopie projektu do pliku.');
       });
@@ -778,6 +809,33 @@ export default function App() {
             </label>
           </div>
         </header>
+        {updateAvailable && (
+          <div className="update-banner" role="status">
+            <span>
+              <strong>Nowa wersja Hiciarza jest gotowa.</strong> Zapiszemy Twoje talie i odświeżymy
+              aplikację.
+            </span>
+            <button
+              className="primary"
+              disabled={updating}
+              onClick={async () => {
+                setUpdating(true);
+                try {
+                  await saveQueue.current;
+                  await saveDecks(decks);
+                  await applyUpdate();
+                } catch {
+                  setUpdating(false);
+                  notify(
+                    'Nie udało się zapisać talii przed aktualizacją. Pobierz projekt i spróbuj ponownie.',
+                  );
+                }
+              }}
+            >
+              {updating ? 'Wczytuję…' : 'Wczytaj nową wersję'}
+            </button>
+          </div>
+        )}
         <a
           className="coffee-support"
           href="https://buymeacoffee.com/szymonrybka"
@@ -814,6 +872,51 @@ export default function App() {
                   Pobierz PDF <span className="button-key">↗</span>
                 </button>
               </section>
+              {showDemoOffer && (
+                <section className="demo-offer" aria-labelledby="demo-offer-title">
+                  <div>
+                    <span className="eyebrow">NA DOBRY POCZĄTEK</span>
+                    <h2 id="demo-offer-title">Świąteczna talia na pierwszy wieczór?</h2>
+                    <p>
+                      Utwórz własną talię z polecanej playlisty Spotify i motywem „Rybki
+                      świąteczne”. Utwory pobierzemy po połączeniu Twojego konta.
+                    </p>
+                    <a href={christmasPlaylist} target="_blank" rel="noopener noreferrer">
+                      Zobacz playlistę w Spotify <ArrowUpRight size={14} />
+                    </a>
+                  </div>
+                  <div className="demo-offer-actions">
+                    <button
+                      className="primary"
+                      onClick={() => {
+                        const demo = {
+                          ...newDeck(),
+                          name: 'Świąteczna talia',
+                          theme: 'fish' as Theme,
+                        };
+                        setDecks([...decks, demo]);
+                        setActiveId(demo.id);
+                        setUiTheme('fish');
+                        sessionStorage.setItem('spotify-import-playlist', christmasPlaylist);
+                        localStorage.setItem('hiciarz-demo-offer-v1', 'accepted');
+                        setShowDemoOffer(false);
+                        setModal('spotify');
+                      }}
+                    >
+                      <Sparkles size={18} /> Utwórz świąteczną talię
+                    </button>
+                    <button
+                      className="text-button"
+                      onClick={() => {
+                        localStorage.setItem('hiciarz-demo-offer-v1', 'dismissed');
+                        setShowDemoOffer(false);
+                      }}
+                    >
+                      Zacznę od własnych utworów
+                    </button>
+                  </div>
+                </section>
+              )}
               <GameGuide
                 onStart={(route) => {
                   setOutput(route === 'spotify' ? 'spotify' : 'browser');
@@ -826,6 +929,24 @@ export default function App() {
                 </div>
               )}
               <section className="deck-toolbar">
+                <label className="mobile-deck-picker">
+                  Twoje talie
+                  <select
+                    aria-label="Wybierz talię"
+                    value={activeId}
+                    onChange={(e) => {
+                      setActiveId(e.target.value);
+                      const chosen = decks.find((d) => d.id === e.target.value);
+                      if (chosen) setUiTheme(chosen.theme);
+                    }}
+                  >
+                    {decks.map((d) => (
+                      <option key={d.id} value={d.id}>
+                        {d.name} · {d.songs.length} utworów
+                      </option>
+                    ))}
+                  </select>
+                </label>
                 <div className="deck-title">
                   <span
                     className="deck-art"
@@ -1536,7 +1657,7 @@ export default function App() {
                     )}
                   </div>
                   <Suspense fallback={<p className="hint">Przygotowuję skaner…</p>}>
-                    <Camera onScan={handleScan} />
+                    <Camera onScan={handleScan} pairingRequired={output === 'browser'} />
                   </Suspense>
                   <div className="scanner-controls">
                     <button
@@ -1774,6 +1895,23 @@ export default function App() {
         </main>
         <footer className="workspace-footer">
           <span>Stworzone dla muzyki. I dobrego towarzystwa.</span>
+          <button
+            className="text-button version-check"
+            onClick={async () => {
+              try {
+                await checkForUpdates();
+                notify(
+                  updateIsReady()
+                    ? 'Nowa wersja jest gotowa. Wybierz „Wczytaj nową wersję”.'
+                    : 'Sprawdzanie aktualizacji uruchomione. Powiadomimy Cię, gdy nowa wersja będzie gotowa.',
+                );
+              } catch {
+                notify('Nie udało się sprawdzić aktualizacji. Sprawdź połączenie z internetem.');
+              }
+            }}
+          >
+            Wersja {appVersion} · Sprawdź aktualizacje
+          </button>
           <span>
             Hiciarz <span>✳</span> open source
           </span>
@@ -1820,7 +1958,11 @@ export default function App() {
         />
       )}
       {modal === 'spotify' && (
-        <SpotifyImport onClose={() => setModal(null)} onImport={importSongs} />
+        <SpotifyImport
+          initialPlaylist={sessionStorage.getItem('spotify-import-playlist') || ''}
+          onClose={() => setModal(null)}
+          onImport={importSongs}
+        />
       )}
       {modal === 'file' && pending && (
         <Modal title="Wczytaj plik" onClose={() => setModal(null)}>
@@ -2018,18 +2160,22 @@ export default function App() {
                 <button
                   className="text-button"
                   onClick={() =>
-                    download(JSON.stringify(demoDeck(), null, 2), 'hiciarz-przyklad.json')
+                    download(JSON.stringify(newDeck(), null, 2), 'hiciarz-szablon.json')
                   }
                 >
-                  Pobierz JSON
+                  Pobierz szablon JSON
                 </button>
                 <button
                   className="text-button"
                   onClick={() =>
-                    download(csvExport(demoDeck().songs), 'hiciarz-przyklad.csv', 'text/csv')
+                    download(
+                      '\ufefftitle,artist,year,theme,spotify,youtube\r\n',
+                      'hiciarz-szablon.csv',
+                      'text/csv;charset=utf-8',
+                    )
                   }
                 >
-                  Pobierz CSV
+                  Pobierz szablon CSV
                 </button>
               </div>
             </div>
