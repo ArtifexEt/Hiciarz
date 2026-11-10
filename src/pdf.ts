@@ -5,7 +5,7 @@ import { fitPrintText } from './print-text';
 import { type Deck, type Song, backPosition, cardUrl } from './model';
 import { asset, themeArt, themeColors } from './themes';
 let fontPromise: Promise<string> | undefined;
-function font() {
+export function pdfFont() {
   return (fontPromise ??= fetch(asset('fonts/NotoSans-Regular.ttf'))
     .then((r) => {
       if (!r.ok) throw new Error('Nie udało się wczytać czcionki PDF.');
@@ -89,7 +89,7 @@ export async function buildPDF(
   options.onProgress?.({ phase: 'preparing', completed: 0, total: songs.length, percent: 0 });
   await yieldForPDF();
   const doc = new jsPDF({ unit: 'mm', format: 'a4', compress: true });
-  doc.addFileToVFS('NotoSans.ttf', await font());
+  doc.addFileToVFS('NotoSans.ttf', await pdfFont());
   checkAbort();
   doc.addFont('NotoSans.ttf', 'NotoSans', 'normal');
   doc.setFont('NotoSans');

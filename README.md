@@ -62,6 +62,16 @@ Wczytaj go **bez logowania**, jako nową talię lub dopisując utwory do obecnej
 
 **[Przeglądaj przykłady i dodaj własny →](examples/playlists/README.md)**
 
+## Muzyczne Bingo
+
+Na stronie startowej wybierz **Zagraj w Bingo** lub otwórz **Bingo** w menu. Skaner i kreator pozostają osobnymi trybami.
+
+Wybierz poziom i naciśnij **Losuj zagadkę**. Aplikacja pokaże typ pytania oraz krótkie wyjaśnienie. Każde losowanie jest niezależne, więc kategorie mogą się powtarzać. Przyciskiem **Przejdź do skanera kart** otworzysz dotychczasowy skaner; po powrocie do Bingo ostatnia zagadka nadal będzie widoczna.
+
+Dostępne są dwa zestawy pytań: **Na dobry początek** (zespół/solista, przed 2000, rok ±4, dekada, rok ±2) oraz **Dla znawców** (tytuł, dokładny rok, wykonawca, dekada, rok ±3). Odpowiedzi sprawdzacie wspólnie na odwrocie muzycznej karty, a punkty zaznaczacie na papierze. Pełny rząd, kolumna lub przekątna daje Bingo.
+
+Opcjonalne **Plansze do druku** są schowane pod rozwijanym nagłówkiem. PDF zawiera po dwie różne plansze 5 × 5 na A4, w oszczędnym kolorze, z numerami kategorii i legendą dla wybranego poziomu. Drukuj jednostronnie w skali 100%. Zasady inspirowane [oficjalną instrukcją Bingo](https://hitstergame.com/pl-pl/pages/zasady-gry-bingo).
+
 ## Karty w Waszym stylu
 
 ### Zgadnij film lub grę

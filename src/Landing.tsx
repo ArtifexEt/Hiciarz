@@ -1,5 +1,5 @@
 import { useEffect, useState, type CSSProperties } from 'react';
-import { ArrowRight, Headphones, LayoutGrid, RotateCcw, ScanLine } from 'lucide-react';
+import { ArrowRight, Grid3X3, Headphones, LayoutGrid, RotateCcw, ScanLine } from 'lucide-react';
 import { type Deck, type Song, type Theme, cardUrl, defaultPrint, themes } from './model';
 import { frontDesign, frontImage } from './front';
 import { qrImage } from './qr';
@@ -139,7 +139,7 @@ export default function Landing({
   onChoose,
   theme = 'classic',
 }: {
-  onChoose: (mode: 'editor' | 'scanner' | 'player') => void;
+  onChoose: (mode: 'editor' | 'scanner' | 'player' | 'bingo') => void;
   theme?: Theme;
 }) {
   const activeTheme = themes.includes(theme) ? theme : 'classic';
@@ -176,6 +176,18 @@ export default function Landing({
         <ExampleRound theme={activeTheme} />
       </section>
 
+      <section className="home-bingo-entry" aria-labelledby="home-bingo-title">
+        <div>
+          <Grid3X3 size={30} aria-hidden="true" />
+          <div>
+            <h2 id="home-bingo-title">A może muzyczne Bingo?</h2>
+            <p>Losujcie kategorie, zgadujcie wspólnie i zbierajcie pola na planszy.</p>
+          </div>
+        </div>
+        <button onClick={() => onChoose('bingo')}>
+          Zagraj w Bingo <ArrowRight size={18} aria-hidden="true" />
+        </button>
+      </section>
       <section className="home-rules" aria-labelledby="home-rules-title">
         <div className="home-section-heading">
           <p className="home-kicker">Jak gramy</p>

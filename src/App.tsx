@@ -21,6 +21,7 @@ import {
   Download,
   FileJson,
   FolderOpen,
+  Grid3X3,
   Headphones,
   Info,
   LayoutGrid,
@@ -105,6 +106,7 @@ const Camera = lazy(() => import('./Camera'));
 const christmasPlaylist = 'https://open.spotify.com/playlist/7wfTeAa7cxhA3qNE05XPKk';
 import Players from './Players';
 import { SpotifyRemotePanel, useSpotifyRemote } from './SpotifyRemote';
+const BingoGame = lazy(() => import('./BingoGame'));
 import {
   beginSpotifyLogin,
   disconnectSpotify,
@@ -114,7 +116,7 @@ import {
   spotifyConnected,
   spotifyLoginPurpose,
 } from './spotify';
-type Mode = 'home' | 'editor' | 'scanner' | 'player';
+type Mode = 'home' | 'editor' | 'scanner' | 'player' | 'bingo';
 function Modal({
   title,
   children,
@@ -524,6 +526,7 @@ function SpotifyImport({
 export default function App() {
   const [isMobile, setIsMobile] = useState(() => window.matchMedia('(max-width: 700px)').matches);
   const [appMenuOpen, setAppMenuOpen] = useState(false);
+  const [bingoOpened, setBingoOpened] = useState(false);
   const [showCoffee, setShowCoffee] = useState(localStorage.getItem('hiciarz-hide-coffee') !== '1');
   const [showDemoOffer, setShowDemoOffer] = useState(false);
   const updateAvailable = useSyncExternalStore(subscribeToUpdates, updateIsReady);
@@ -533,6 +536,9 @@ export default function App() {
     [activeId, setActiveId] = useState(''),
     [mode, setMode] = useState<Mode>('home'),
     [tab, setTab] = useState<'songs' | 'design' | 'print'>('songs');
+  useEffect(() => {
+    if (mode === 'bingo') setBingoOpened(true);
+  }, [mode]);
   const focusedScanner = isMobile && mode === 'scanner';
   const [modal, setModal] = useState<
       | 'song'
@@ -1080,6 +1086,14 @@ export default function App() {
             >
               <Headphones size={19} /> Odtwarzacz {room.connected && <span className="live-dot" />}
             </button>
+            {!isMobile && (
+              <button
+                className={mode === 'bingo' ? 'nav active' : 'nav'}
+                onClick={() => changeMode('bingo')}
+              >
+                <Grid3X3 size={19} /> Bingo
+              </button>
+            )}
           </nav>
         </div>
         <div className="sidebar-group decks">
@@ -1158,7 +1172,9 @@ export default function App() {
                     ? 'Kreator kart'
                     : mode === 'scanner'
                       ? 'Skaner kart'
-                      : 'Odtwarzacz'}
+                      : mode === 'bingo'
+                        ? 'Bingo'
+                        : 'Odtwarzacz'}
                 </strong>
               </>
             )}
@@ -1247,6 +1263,9 @@ export default function App() {
               >
                 <Headphones size={18} /> Odtwarzacz
               </button>
+              <button onClick={() => changeMode('bingo')}>
+                <Grid3X3 size={18} /> Bingo
+              </button>
               <label>
                 Wygląd
                 <select
@@ -1326,10 +1345,19 @@ export default function App() {
           </div>
         )}
         <main>
-          {uiTheme === 'fish' && !((mode === 'scanner' || mode === 'player') && card) && (
-            <FishFestivities compact={mode !== 'home'} />
+          {uiTheme === 'fish' &&
+            mode !== 'bingo' &&
+            !((mode === 'scanner' || mode === 'player') && card) && (
+              <FishFestivities compact={mode !== 'home'} />
+            )}
+          {(bingoOpened || mode === 'bingo') && (
+            <div className="bingo-container" hidden={mode !== 'bingo'}>
+              <Suspense fallback={<p className="hint">Przygotowuję Bingo…</p>}>
+                <BingoGame onScanner={() => changeMode('scanner')} />
+              </Suspense>
+            </div>
           )}
-          {mode === 'home' ? (
+          {mode === 'bingo' ? null : mode === 'home' ? (
             <Landing onChoose={changeMode} theme={uiTheme} />
           ) : mode === 'editor' ? (
             <>
