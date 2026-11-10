@@ -33,7 +33,7 @@ Hiciarz łączy kreator kart, skaner QR i odtwarzacz w jednej aplikacji przeglą
 
 1. **[Otwórz Hiciarza](https://artifexet.github.io/Hiciarz/).** Na ekranie startowym wybierz **Skanuj i graj** albo **Twórz karty**.
 2. **Wybierz piosenki.** Zacznij od **Przykładowych playlist** lub przygotuj własną listę. Tytuł, wykonawcę i rok możesz poprawić przed drukiem.
-3. **Przygotuj karty.** Wybierz wygląd i pobierz PDF. Drukuj na A4 dwustronnie, w skali 100%. Najpierw wykonaj próbę kalibracyjną.
+3. **Wydrukuj karty.** Wybierz **Pobierz / drukuj karty**. Pobierz PDF lub otwórz go do druku, a w podglądzie wybierz ikonę drukarki. Instrukcja pokazuje właściwą krawędź obrotu, format A4 i skalę 100%. Najpierw wykonaj próbę kalibracyjną przez **Ustawienia druku i wydruk próbny**. Po wydrukowaniu obu stron wytnij karty.
 4. **Wybierz sposób słuchania.** Połącz Spotify albo uruchom odtwarzacz na drugim urządzeniu — oba warianty opisano poniżej.
 5. **Skanuj i zgaduj.** QR z karty wskazuje nagranie i motyw. Jeśli aparat udostępnia zoom, przybliżysz obraz suwakiem lub przyciskami − / +.
 

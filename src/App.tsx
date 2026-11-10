@@ -96,6 +96,8 @@ import {
 } from './model';
 import { imageData, loadDecks, saveDecks } from './storage';
 import PDFExportProgress, { setPDFProgress } from './PDFExportProgress';
+import PrintCards from './PrintCards';
+import { preparePDFPreview } from './pdf-preview';
 import { asset, themeArt } from './themes';
 import type { SourceCheck } from './availability';
 import { useConnection, type Command } from './connection';
@@ -534,6 +536,7 @@ export default function App() {
       | 'song'
       | 'spotify'
       | 'spotify-setup'
+      | 'print-cards'
       | 'examples'
       | 'file'
       | 'help'
@@ -603,7 +606,22 @@ export default function App() {
     [checking, setChecking] = useState(false),
     [checkProgress, setCheckProgress] = useState(0);
   const pdfAbort = useRef<AbortController | null>(null);
+  const [printError, setPrintError] = useState('');
+  const [printReady, setPrintReady] = useState<{
+    deck: Deck;
+    count: number;
+    destination: 'download' | 'print';
+  }>();
   const deck = decks.find((d) => d.id === activeId) || decks[0];
+  const printCount = deck
+    ? selected.size
+      ? deck.songs.filter((s) => selected.has(s.id)).length
+      : deck.songs.length
+    : 0;
+  function openPrintCards() {
+    setPrintError('');
+    setModal('print-cards');
+  }
   const notify = useCallback((s: string) => {
     setMessage(s);
     clearTimeout(toastTimer.current);
@@ -945,12 +963,22 @@ export default function App() {
       setChecking(false);
     }
   }
-  async function exportPDF() {
+  async function exportPDF(destination: 'download' | 'print' = 'download') {
     if (pdfAbort.current) return;
-    const controller = new AbortController();
-    pdfAbort.current = controller;
-    setBusy(true);
     const songs = selected.size ? deck.songs.filter((s) => selected.has(s.id)) : deck.songs;
+    if (!songs.length) return;
+    const controller = new AbortController();
+    const preview = destination === 'print' ? preparePDFPreview(() => controller.abort()) : null;
+    if (destination === 'print' && !preview) {
+      setPrintError(
+        'Nie udało się otworzyć nowej karty. Wybierz „Pobierz PDF”, a następnie otwórz pobrany plik do druku.',
+      );
+      return;
+    }
+    pdfAbort.current = controller;
+    setModal(null);
+    setPrintReady(undefined);
+    setBusy(true);
     setPDFProgress({ phase: 'preparing', completed: 0, total: songs.length, percent: 0 });
     try {
       const { buildPDF, yieldForPDF } = await import('./pdf');
@@ -958,20 +986,27 @@ export default function App() {
       const shortened = new Set<string>();
       const doc = await buildPDF(deck, songs, location.origin + location.pathname, {
         signal: controller.signal,
-        onProgress: setPDFProgress,
+        onProgress: (progress) => {
+          setPDFProgress(progress);
+          preview?.update(progress);
+        },
         onTextShortened: (song) => shortened.add(song.id),
       });
       await yieldForPDF();
       controller.signal.throwIfAborted();
-      await doc.save(`${deck.name.replace(/[^\p{L}\p{N} -]/gu, '') || 'hiciarz'}.pdf`, {
-        returnPromise: true,
-      });
+      if (preview) preview.show(doc.output('blob'));
+      else
+        await doc.save(`${deck.name.replace(/[^\p{L}\p{N} -]/gu, '') || 'hiciarz'}.pdf`, {
+          returnPromise: true,
+        });
+      setPrintReady({ deck, count: songs.length, destination });
       notify(
         shortened.size
           ? `PDF gotowy. Bardzo długie nazwy skróciliśmy na ${shortened.size} kartach; pełne dane zostały w talii. Drukuj w skali 100%.`
           : 'PDF gotowy. Drukuj w skali 100%, bez dopasowania do strony.',
       );
     } catch (e) {
+      preview?.close();
       notify(controller.signal.aborted ? 'Anulowano generowanie PDF.' : (e as Error).message);
     } finally {
       pdfAbort.current = null;
@@ -1307,17 +1342,50 @@ export default function App() {
                   </h1>
                   <p>Wybierz piosenki, nadaj im charakter i wydrukuj swoją talię.</p>
                 </div>
-                <div className="heading-actions">
+                <div className="heading-actions print-action">
+                  {deck.songs.length ? (
+                    <span className="print-next-step" id="print-next-step">
+                      <span aria-hidden="true">3</span> Wydrukuj i wytnij karty
+                    </span>
+                  ) : (
+                    <small id="print-next-step">Dodaj utwory, aby przygotować wydruk</small>
+                  )}
                   <button
-                    className={spotifyConfigured() ? 'secondary' : 'primary'}
-                    disabled={!deck.songs.length || busy}
-                    onClick={exportPDF}
+                    className="primary"
+                    disabled={!printCount || busy}
+                    onClick={openPrintCards}
+                    aria-haspopup="dialog"
+                    aria-describedby="print-next-step"
                   >
-                    {busy ? <LoaderCircle size={18} className="spin" /> : <Download size={18} />}{' '}
-                    Pobierz PDF <span className="button-key">↗</span>
+                    {busy ? <LoaderCircle size={18} className="spin" /> : <Printer size={18} />}{' '}
+                    {busy ? 'Przygotowuję karty…' : 'Pobierz / drukuj karty'}{' '}
+                    <ChevronDown size={16} aria-hidden="true" />
                   </button>
                 </div>
               </section>
+              {printReady?.deck === deck && (
+                <section className="print-ready-note" role="status">
+                  <Printer size={22} aria-hidden="true" />
+                  <div>
+                    <strong>PDF gotowy. Teraz wydrukuj i wytnij karty.</strong>
+                    <p>
+                      Liczba kart: {printReady.count}.{' '}
+                      {printReady.destination === 'print'
+                        ? 'W podglądzie PDF wybierz „Drukuj”.'
+                        : 'Otwórz pobrany PDF i wybierz „Drukuj”.'}{' '}
+                      A4, dwustronnie, skala 100%, obrót po{' '}
+                      {deck.print.edge === 'long' ? 'długiej' : 'krótkiej'} krawędzi.
+                    </p>
+                  </div>
+                  <button
+                    className="icon"
+                    aria-label="Ukryj wskazówki wydruku"
+                    onClick={() => setPrintReady(undefined)}
+                  >
+                    <X size={17} />
+                  </button>
+                </section>
+              )}
               {showDemoOffer && deck.songs.length === 0 && decks.length === 1 && (
                 <section className="demo-offer" aria-labelledby="demo-offer-title">
                   <div>
@@ -1588,7 +1656,9 @@ export default function App() {
                       {selected.size > 0 && (
                         <div className="selection-bar">
                           <span>Wybrano: {selected.size}</span>
-                          <button onClick={exportPDF}>PDF wybranych</button>
+                          <button onClick={openPrintCards} disabled={busy || !printCount}>
+                            Pobierz / drukuj wybrane
+                          </button>
                           <button
                             onClick={() => {
                               updateDeck({ songs: deck.songs.filter((s) => !selected.has(s.id)) });
@@ -2569,6 +2639,27 @@ export default function App() {
         </div>
       )}
       <PDFExportProgress onCancel={() => pdfAbort.current?.abort()} />
+      {modal === 'print-cards' && (
+        <Modal title="Wydrukuj swoją talię" onClose={() => setModal(null)} wide>
+          <PrintCards
+            count={printCount}
+            selected={selected.size > 0}
+            settings={deck.print}
+            error={printError}
+            onDownload={() => void exportPDF('download')}
+            onPreview={() => void exportPDF('print')}
+            onSettings={() => {
+              setTab('print');
+              setModal(null);
+              requestAnimationFrame(() =>
+                document
+                  .querySelector('[aria-label="Ustawienia talii"]')
+                  ?.scrollIntoView({ block: 'start' }),
+              );
+            }}
+          />
+        </Modal>
+      )}
       {modal === 'song' && (
         <SongForm
           song={editSong}

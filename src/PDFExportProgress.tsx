@@ -27,7 +27,7 @@ export default function PDFExportProgress({ onCancel }: { onCancel: () => void }
           {progress.phase === 'preparing'
             ? 'Przygotowuję wydruk…'
             : progress.phase === 'saving'
-              ? 'Zapisuję plik PDF…'
+              ? 'Kończę plik PDF…'
               : 'Tworzę Twoje karty…'}
         </strong>
         <span>{progress.percent}%</span>
@@ -44,7 +44,7 @@ export default function PDFExportProgress({ onCancel }: { onCancel: () => void }
           Anuluj
         </button>
       </div>
-      <p>Możesz dalej korzystać z aplikacji. Plik pobierze się po zakończeniu.</p>
+      <p>Przygotowuję obie strony kart w układzie do druku dwustronnego.</p>
     </section>
   );
 }
