@@ -1,10 +1,19 @@
 import { useEffect, useRef, useState } from 'react';
-import { Check, Headphones, LoaderCircle, RefreshCw, LogOut, ExternalLink } from 'lucide-react';
+import {
+  Check,
+  Headphones,
+  LoaderCircle,
+  RefreshCw,
+  LogOut,
+  ExternalLink,
+  Settings2,
+} from 'lucide-react';
+import { openSpotifySetup } from './spotify-settings';
 import type { Card } from './model';
 import type { Command } from './connection';
 import type { PlaybackState } from './playback';
 import {
-  authorizeSpotify,
+  beginSpotifyLogin,
   disconnectSpotify,
   playSpotifyTrack,
   spotifyConnected,
@@ -67,7 +76,7 @@ export function useSpotifyRemote(
       returnTo === 'scanner' ? 'scanner' : 'player',
     );
     try {
-      await authorizeSpotify('player');
+      if (!(await beginSpotifyLogin('player'))) setConnecting(false);
     } catch (e) {
       setError((e as Error).message);
       setConnecting(false);
@@ -228,14 +237,7 @@ export function SpotifyRemotePanel({ remote }: { remote: ReturnType<typeof useSp
           </li>
         </ol>
       )}
-      {!spotifyConfigured() ? (
-        <div className="notice">
-          <p>
-            Połączenie ze Spotify nie jest jeszcze dostępne na tej stronie. Możesz użyć trybu „Na
-            tym urządzeniu” z odtwarzaczem Spotify lub YouTube.
-          </p>
-        </div>
-      ) : !remote.linked ? (
+      {!remote.linked ? (
         <>
           <button className="primary full" disabled={remote.connecting} onClick={remote.connect}>
             {remote.connecting ? (
@@ -243,7 +245,11 @@ export function SpotifyRemotePanel({ remote }: { remote: ReturnType<typeof useSp
             ) : (
               <Headphones size={18} />
             )}
-            {remote.connecting ? 'Otwieram Spotify…' : 'Zaloguj się do Spotify'}
+            {remote.connecting
+              ? 'Otwieram Spotify…'
+              : spotifyConfigured()
+                ? 'Zaloguj się do Spotify'
+                : 'Skonfiguruj Spotify'}
           </button>
           <p className="hint">
             Spotify poprosi o dostęp do profilu, playlist i sterowania muzyką. Hasło wpisujesz
@@ -323,6 +329,9 @@ export function SpotifyRemotePanel({ remote }: { remote: ReturnType<typeof useSp
           {remote.error}
         </p>
       )}
+      <button className="spotify-settings-link" onClick={() => openSpotifySetup('player')}>
+        <Settings2 size={15} /> Ustawienia połączenia Spotify
+      </button>
     </div>
   );
 }

@@ -8,12 +8,14 @@ export default function Camera({
   paired = false,
   onStart,
   ready = true,
+  purpose = 'card',
 }: {
   onScan: (text: string) => void;
   pairingRequired?: boolean;
   paired?: boolean;
   onStart?: () => void;
   ready?: boolean;
+  purpose?: 'card' | 'setup';
 }) {
   const video = useRef<HTMLVideoElement>(null),
     controls = useRef<IScannerControls | null>(null),
@@ -98,12 +100,16 @@ export default function Camera({
           <div className="camera-start">
             <ScanLine size={52} />
             <h3>
-              {ready && (!pairingRequired || paired)
-                ? 'Zeskanuj muzyczną kartę'
-                : 'Przygotuj skaner'}
+              {purpose === 'setup'
+                ? 'Zeskanuj konfigurację Spotify'
+                : ready && (!pairingRequired || paired)
+                  ? 'Zeskanuj muzyczną kartę'
+                  : 'Przygotuj skaner'}
             </h3>
             <p>
-              {ready && (!pairingRequired || paired) ? (
+              {purpose === 'setup' ? (
+                'Skieruj aparat na QR konfiguracji wyświetlony na drugim urządzeniu.'
+              ) : ready && (!pairingRequired || paired) ? (
                 'Skieruj aparat na QR z karty. Muzyka zagra automatycznie.'
               ) : pairingRequired ? (
                 <>

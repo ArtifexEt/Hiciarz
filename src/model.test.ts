@@ -1,4 +1,5 @@
 import { describe, it, expect } from 'vitest';
+import QRCode from 'qrcode';
 import {
   cardUrl,
   readQR,
@@ -8,6 +9,8 @@ import {
   parseImport,
   csvExport,
   validateDeck,
+  findDeckForCard,
+  themes,
 } from './model';
 describe('self contained cards', () => {
   it('round trips sources and theme without a shared database', () => {
@@ -15,12 +18,88 @@ describe('self contained cards', () => {
       s = d.songs[1];
     expect(readQR(cardUrl(s, d.theme, 'https://example.org/Hiciarz/'))).toEqual({
       kind: 'card',
-      card: { v: 1, id: s.id, theme: 'fish', sources: s.sources },
+      card: {
+        v: 1,
+        id: `q2f:s${s.sources.spotify}y${s.sources.youtube}`,
+        theme: 'fish',
+        sources: s.sources,
+      },
     });
   });
   it('rejects foreign QR and malformed pairing codes', () => {
     expect(() => readQR('https://example.org/#pair=abc&token=oops')).toThrow();
     expect(() => readQR('javascript:alert(1)')).toThrow();
+  });
+  it('reads previously printed version 1 cards without changing their identity', () => {
+    const old =
+      'https://artifexet.github.io/Hiciarz/#card=eyJ2IjoxLCJpZCI6ImNocmlzdG1hcy0yRWpYZkg5MW03ZjhIaUpOMXlRZzk3IiwidGhlbWUiOiJmaXNoIiwic291cmNlcyI6eyJzcG90aWZ5IjoiMkVqWGZIOTFtN2Y4SGlKTjF5UWc5NyJ9fQ';
+    expect(readQR(old)).toEqual({
+      kind: 'card',
+      card: {
+        v: 1,
+        id: 'christmas-2EjXfH91m7f8HiJN1yQg97',
+        theme: 'fish',
+        sources: { spotify: '2EjXfH91m7f8HiJN1yQg97' },
+      },
+    });
+  });
+  it('round trips every skin with Spotify, YouTube or both sources', () => {
+    const song = demoDeck().songs[1];
+    for (const theme of themes)
+      for (const sources of [
+        { spotify: song.sources.spotify },
+        { youtube: song.sources.youtube },
+        song.sources,
+      ]) {
+        const result = readQR(
+          cardUrl({ ...song, theme: undefined, sources }, theme, 'https://example.com/'),
+        );
+        expect(result.kind === 'card' && result.card.sources).toEqual(sources);
+        expect(result.kind === 'card' && result.card.theme).toBe(theme);
+      }
+  });
+  it('generates a less dense self-contained Spotify code without card metadata or configuration', () => {
+    const song = { ...demoDeck().songs[1], sources: { spotify: '2EjXfH91m7f8HiJN1yQg97' } };
+    const url = cardUrl(song, 'fish', 'https://artifexet.github.io/Hiciarz/');
+    expect(url.length).toBe(62);
+    expect(QRCode.create(url, { errorCorrectionLevel: 'M' }).modules.size).toBeLessThanOrEqual(33);
+    expect(
+      cardUrl(
+        { ...song, id: 'different', title: 'Spoiler', artist: 'Hidden', year: 2001 },
+        'fish',
+        'https://artifexet.github.io/Hiciarz/',
+      ),
+    ).toBe(url);
+    expect(url).not.toContain('client');
+    expect(url).not.toContain('card=');
+  });
+  it('rejects malformed compact cards rather than guessing a source or skin', () => {
+    for (const hash of [
+      '#2fsabc',
+      '#2zsyoutube',
+      '#3fs2EjXfH91m7f8HiJN1yQg97',
+      '#2f',
+      '#2fyE8gmARGvPlIs2EjXfH91m7f8HiJN1yQg97',
+    ])
+      expect(() => readQR('https://example.com/' + hash)).toThrow();
+  });
+  it('keeps the local custom reverse when matching a compact card to its source and skin', () => {
+    const deck = demoDeck();
+    deck.back = 'custom-image';
+    const result = readQR(cardUrl(deck.songs[1], deck.theme, 'https://example.com/'));
+    expect(result.kind === 'card' && findDeckForCard([deck], result.card)?.back).toBe(
+      'custom-image',
+    );
+    const other = {
+      ...deck,
+      id: 'other',
+      back: 'other-image',
+      songs: deck.songs.map((s) => ({ ...s, theme: undefined })),
+      theme: 'winter' as const,
+    };
+    expect(result.kind === 'card' && findDeckForCard([other, deck], result.card)?.back).toBe(
+      'custom-image',
+    );
   });
 });
 describe('duplex imposition', () => {

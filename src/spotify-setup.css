@@ -1,0 +1,399 @@
+.spotify-onboarding {
+  font-size: 14px;
+}
+.modal:has(.spotify-onboarding) .modal-heading {
+  position: sticky;
+  top: -25px;
+  z-index: 3;
+  padding: 12px 0;
+  background: var(--surface);
+}
+.connection-title {
+  scroll-margin-top: 80px;
+}
+.connection-instruction-guide {
+  border-top: 1px solid var(--line);
+  margin: 20px 0 0;
+}
+.connection-instruction-guide summary {
+  padding: 16px 0;
+  min-height: 48px;
+  cursor: pointer;
+  font-size: 13px;
+  font-weight: 600;
+}
+.connection-instruction-guide .connection-instructions {
+  margin-top: 12px;
+}
+.connection-progress {
+  list-style: none;
+  padding: 0;
+  display: flex;
+  gap: 18px;
+  margin: 0 0 30px;
+  color: #747a71;
+  font-size: 11px;
+}
+.connection-progress li {
+  display: flex;
+  align-items: center;
+  gap: 7px;
+  flex: 1;
+}
+.connection-progress li > span {
+  display: grid;
+  place-items: center;
+  min-width: 24px;
+  height: 24px;
+  border: 1px solid #d3d8cb;
+  border-radius: 50%;
+  font-variant-numeric: tabular-nums;
+}
+.connection-progress [aria-current='step'] {
+  color: #173e34;
+  font-weight: 600;
+}
+.connection-progress [aria-current='step'] > span {
+  background: #173e34;
+  color: white;
+  border-color: #173e34;
+}
+.connection-progress .complete > span {
+  background: #edf3e7;
+  color: #45603c;
+}
+.connection-title {
+  font-family: Georgia, serif;
+  font-size: 30px;
+  font-weight: 400;
+  letter-spacing: -0.7px;
+  margin: 0 0 16px;
+  line-height: 1.2;
+  outline: none;
+}
+.connection-lead {
+  font-size: 14px;
+  line-height: 1.8;
+  color: #556057;
+  margin: 0 0 22px;
+}
+.connection-options {
+  display: grid;
+  gap: 10px;
+  margin: 22px 0;
+}
+.connection-options label {
+  display: flex;
+  flex-direction: row;
+  align-items: center;
+  gap: 14px;
+  border: 1px solid var(--line);
+  border-radius: 10px;
+  padding: 18px;
+  cursor: pointer;
+  margin: 0;
+  font-size: 14px;
+}
+.connection-options .chosen {
+  border-color: #718467;
+  background: #f5f7ef;
+}
+.connection-options strong,
+.connection-options small {
+  display: block;
+}
+.connection-options small {
+  font-size: 12px;
+  color: #667060;
+  font-weight: 400;
+  line-height: 1.6;
+  margin-top: 6px;
+}
+.connection-story {
+  border-top: 1px solid var(--line);
+  border-bottom: 1px solid var(--line);
+  padding: 4px 0;
+  margin-top: 24px;
+}
+.connection-story summary {
+  cursor: pointer;
+  padding: 16px 0;
+  font-size: 13px;
+  font-weight: 600;
+}
+.connection-story p {
+  color: #5a645a;
+  font-size: 13px;
+  line-height: 1.8;
+}
+.connection-story a,
+.connection-instructions a {
+  color: #315e49;
+  text-decoration: underline;
+  text-underline-offset: 3px;
+}
+.connection-story a {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  margin: 0 0 18px;
+  font-size: 12px;
+}
+.connection-actions {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 10px;
+  margin-top: 28px;
+  padding-top: 20px;
+  border-top: 1px solid var(--line);
+}
+.connection-actions .primary {
+  margin-left: auto;
+}
+.connection-actions button {
+  min-height: 46px;
+}
+.connection-source-switch {
+  display: flex;
+  gap: 5px;
+  padding: 5px;
+  background: var(--soft);
+  border-radius: 9px;
+  margin-bottom: 24px;
+}
+.connection-source-switch button {
+  flex: 1;
+  padding: 12px;
+  min-height: 44px;
+  border-radius: 6px;
+  color: #596456;
+  background: transparent;
+}
+.connection-source-switch [aria-pressed='true'] {
+  background: white;
+  color: #26382c;
+  box-shadow: 0 1px 4px #192e2012;
+}
+.connection-id-summary {
+  display: flex;
+  align-items: center;
+  gap: 14px;
+  padding: 20px;
+  background: #f4f5ef;
+  border: 1px solid #dce2d5;
+  border-radius: 10px;
+  margin-bottom: 20px;
+}
+.connection-id-summary code {
+  display: block;
+  margin-top: 8px;
+  font-size: 12px;
+  overflow-wrap: anywhere;
+}
+.connection-id-summary > div {
+  min-width: 0;
+}
+.connection-instructions {
+  padding-left: 23px;
+  margin: 0 0 22px;
+}
+.connection-instructions li {
+  padding-left: 7px;
+  margin: 0 0 22px;
+}
+.connection-instructions li::marker {
+  color: #738261;
+}
+.connection-instructions p {
+  font-size: 13px;
+  line-height: 1.8;
+  color: #5c665d;
+  margin: 7px 0 10px;
+}
+.connection-redirect {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  padding: 12px;
+  background: #f5f5f0;
+  border-radius: 8px;
+}
+.connection-redirect input {
+  flex: 1;
+  width: auto;
+  min-width: 0;
+  font-family: monospace;
+  font-size: 12px;
+}
+.connection-redirect button {
+  font-size: 12px;
+  min-height: 44px;
+}
+.connection-client-input {
+  font-size: 14px;
+  gap: 9px;
+}
+.connection-client-input input {
+  font-family: monospace;
+  min-height: 48px;
+  font-size: 14px;
+}
+.connection-client-input input[aria-invalid='true'] {
+  border-color: #ac4933;
+}
+.connection-scan {
+  display: inline-flex;
+  align-items: center;
+  gap: 9px;
+  min-height: 44px;
+  margin-top: 9px;
+  font-size: 13px;
+}
+.connection-confirm {
+  display: flex;
+  align-items: flex-start;
+  gap: 9px;
+  padding: 15px;
+  background: #f0f5e8;
+  border: 1px solid #d5e1c4;
+  border-radius: 8px;
+  color: #3d5936;
+  font-size: 13px;
+  line-height: 1.7;
+  margin-bottom: 20px;
+}
+.connection-confirm svg {
+  flex-shrink: 0;
+  margin-top: 2px;
+}
+.connection-phone {
+  border: 1px solid var(--line);
+  border-radius: 10px;
+  padding: 22px;
+  background: var(--soft);
+  display: flex;
+  align-items: center;
+  gap: 24px;
+}
+.connection-phone > div {
+  flex: 1;
+  min-width: 0;
+}
+.connection-phone h4 {
+  font-size: 15px;
+  margin: 0 0 10px;
+}
+.connection-phone p {
+  font-size: 13px;
+  line-height: 1.8;
+  color: #556152;
+  margin: 0 0 13px;
+}
+.connection-phone figure {
+  margin: 0;
+  max-width: 190px;
+  flex-shrink: 0;
+  text-align: center;
+}
+.connection-phone figcaption {
+  font-size: 11px;
+  line-height: 1.6;
+  color: #667060;
+  margin-top: 8px;
+}
+.connection-config-qr {
+  display: block;
+  width: 180px;
+  height: 180px;
+  max-width: 100%;
+  border-radius: 8px;
+}
+.spotify-settings-link {
+  display: inline-flex;
+  gap: 7px;
+  align-items: center;
+  min-height: 44px;
+  font-size: 12px;
+  color: #61724f;
+  background: none;
+  margin-top: 12px;
+  padding: 6px 0;
+}
+.spotify-onboarding .camera-wrap {
+  max-width: 340px;
+  margin: 20px auto;
+}
+.spotify-onboarding .camera-view {
+  width: 100%;
+}
+.spotify-onboarding .camera-start {
+  padding: 20px;
+}
+.spotify-onboarding .camera-start h3 {
+  font-size: 22px;
+}
+@media (max-width: 600px) {
+  .connection-progress {
+    gap: 8px;
+    margin-bottom: 24px;
+  }
+  .connection-progress li {
+    flex-direction: column;
+    text-align: center;
+    gap: 7px;
+    font-size: 10px;
+    line-height: 1.5;
+  }
+  .connection-title {
+    font-size: 27px;
+  }
+  .connection-options label {
+    padding: 14px;
+    font-size: 13px;
+  }
+  .connection-options small {
+    font-size: 12px;
+  }
+  .connection-actions {
+    gap: 10px;
+  }
+  .connection-actions button {
+    flex: 1;
+    font-size: 12px;
+    padding: 12px 10px;
+  }
+  .connection-actions .primary {
+    margin-left: 0;
+  }
+  .connection-source-switch button {
+    font-size: 12px;
+    padding: 10px 6px;
+  }
+  .connection-redirect {
+    padding: 10px;
+  }
+  .connection-redirect input {
+    flex-basis: 100%;
+    width: 100%;
+    font-size: 11px;
+  }
+  .connection-redirect button {
+    width: 100%;
+  }
+  .connection-phone {
+    flex-direction: column;
+    align-items: stretch;
+    padding: 17px;
+  }
+  .connection-phone figure {
+    align-self: center;
+  }
+  .connection-id-summary {
+    padding: 15px;
+    align-items: flex-start;
+  }
+  .connection-client-input input {
+    font-size: 12px;
+  }
+}

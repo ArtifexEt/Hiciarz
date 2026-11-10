@@ -46,6 +46,14 @@ Hiciarz łączy kreator kart, skaner QR i odtwarzacz w jednej aplikacji przeglą
 | **Dźwięk**        | Muzyka gra na wybranym urządzeniu Spotify.                                        | Spotify lub YouTube odtwarza na połączonym urządzeniu; wyjście dźwięku wybierasz w systemie.                            |
 | **Wymagania**     | Spotify Premium i urządzenie dostępne dla zalogowanego konta.                     | Nagranie dostępne do osadzenia. Spotify może odtwarzać tylko podgląd; przeglądarka może wymagać kliknięcia odtwarzania. |
 
+## Połącz swoje Spotify
+
+Przy pierwszym połączeniu Hiciarz przeprowadzi Cię przez wybór ustawień. Możesz użyć domyślnego połączenia tej strony, jeśli Twoje konto ma do niego dostęp, albo wpisać **własny Client ID**. Zmienisz go później w **O aplikacji → Ustawienia Spotify** lub w menu konta.
+
+Konfigurację przeniesiesz na telefon **osobnym QR**. Po instalacji aplikacji otwórz jej ustawienia Spotify, zeskanuj kod i potwierdź zapis. Na każdym urządzeniu logujesz się osobno. QR kart z piosenkami pozostają krótkie i niezależne od Client ID.
+
+Spotify ogranicza integracje w trybie deweloperskim. Własny Client ID służy do osobistego połączenia i nadal podlega zasadom dostawcy. **[Przewodnik: Spotify od pierwszego połączenia do własnego forka →](docs/spotify.md)**
+
 ## Świąteczny wieczór na start
 
 W kreatorze czeka przykład **Świąteczne hity**: 151 piosenek z [polecanej playlisty Spotify](https://open.spotify.com/playlist/7wfTeAa7cxhA3qNE05XPKk), zapisanych 9 listopada 2026, z motywem **Rybki świąteczne**.
@@ -95,7 +103,19 @@ pnpm build
 | [Przygotowanie listy utworów](docs/playlist-guide.md) | Format JSON/CSV i sposób przygotowania playlisty z pomocą AI.                            |
 | [Gotowy prompt](docs/playlist-prompt.txt)             | Treść do skopiowania przy tworzeniu własnej listy.                                       |
 
-Konfiguracja Spotify korzysta z **Client ID dodawanego podczas budowania** i logowania PKCE. Client ID jest publiczny w gotowej aplikacji. **Client Secret nie jest używany i nie powinien trafiać do frontendu.**
+Domyślny Client ID jest dodawany podczas budowania przez sekret Actions `SPOTIFY_CLIENT_ID`. Własny identyfikator wpisany w interfejsie ma pierwszeństwo i jest zapisywany lokalnie. Client ID jest publiczny; logowanie używa PKCE. **Client Secret nie jest używany i nie powinien trafiać do frontendu.**
+
+### Przełącznik przewodnika dla własnej publikacji
+
+W **Settings → Secrets and variables → Actions → Variables** ustaw zmienną repozytorium **`SPOTIFY_ONBOARDING`**:
+
+| Wartość       | Zachowanie                                                                                            |
+| ------------- | ----------------------------------------------------------------------------------------------------- |
+| `true`        | Pokaż przewodnik przed pierwszym logowaniem dla wybranego Client ID.                                  |
+| `false`       | Przejdź do logowania bez automatycznego przewodnika. Ustawienia i QR konfiguracji pozostają dostępne. |
+| Brak zmiennej | W repozytorium ArtifexEt/Hiciarz przewodnik jest włączony, w forkach domyślnie wyłączony.             |
+
+Po zmianie uruchom workflow publikacji. Gdy nie ma żadnego Client ID, aplikacja zawsze zaproponuje jego skonfigurowanie. Lokalnie użyj `VITE_SPOTIFY_ONBOARDING=true` lub `false`; przykład znajdziesz w [.env.example](.env.example).
 
 ---
 

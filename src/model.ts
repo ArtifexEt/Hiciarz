@@ -36,6 +36,13 @@ export type Deck = {
   print: PrintSettings;
 };
 export type Card = { v: 1; id: string; theme: Theme; sources: Sources };
+const themeCodes: Record<Theme, string> = {
+  classic: 'c',
+  minimal: 'm',
+  christmas: 'x',
+  winter: 'w',
+  fish: 'f',
+};
 export const defaultPrint: PrintSettings = {
   style: 'theme',
   frontColors: 'varied',
@@ -243,12 +250,6 @@ export function mergeSongs(existing: Song[], incoming: Song[], mode: 'append' | 
   }
   return { songs: output, skipped };
 }
-function encode(data: unknown) {
-  return btoa(String.fromCharCode(...new TextEncoder().encode(JSON.stringify(data))))
-    .replace(/\+/g, '-')
-    .replace(/\//g, '_')
-    .replace(/=+$/, '');
-}
 function decode(s: string) {
   if (s.length > 4000) throw new Error('Zbyt duży kod QR.');
   return JSON.parse(
@@ -262,21 +263,53 @@ export function cardUrl(
   theme: Theme,
   base = location.origin + location.pathname,
 ): string {
+  const sources = normalizeSources(song.sources);
+  const skin = song.theme || theme;
+  if (!themes.includes(skin) || (!sources.spotify && !sources.youtube))
+    throw new Error('Karta wymaga poprawnego motywu i źródła odtwarzania.');
+  return base.split(/[?#]/)[0] + '#2' + themeCodes[skin] + sourceKey(sources);
+}
+function sourceKey(sources: Sources) {
   return (
-    base +
-    '#card=' +
-    encode({ v: 1, id: song.id, theme: song.theme || theme, sources: song.sources })
+    (sources.spotify ? 's' + sources.spotify : '') + (sources.youtube ? 'y' + sources.youtube : '')
+  );
+}
+export function findDeckForCard(decks: Deck[], card: Card) {
+  return (
+    decks.find((d) => d.songs.some((s) => s.id === card.id)) ||
+    decks.find((d) =>
+      d.songs.some(
+        (s) =>
+          sourceKey(s.sources) === sourceKey(card.sources) && (s.theme || d.theme) === card.theme,
+      ),
+    )
   );
 }
 export function readQR(
   raw: string,
-): { kind: 'card'; card: Card } | { kind: 'pair'; peer: string; token: string } {
+):
+  | { kind: 'card'; card: Card }
+  | { kind: 'pair'; peer: string; token: string }
+  | { kind: 'spotify-setup'; clientId: string } {
   let hash: string;
   try {
     hash = new URL(raw).hash.slice(1);
   } catch {
     throw new Error('To nie jest kod QR Hiciarza.');
   }
+  const compact = hash.match(/^2([cmxwf])(?:s([A-Za-z0-9]{22}))?(?:y([\w-]{11}))?$/);
+  if (compact && (compact[2] || compact[3])) {
+    const theme = themes.find((t) => themeCodes[t] === compact[1])!;
+    const sources: Sources = {};
+    if (compact[2]) sources.spotify = compact[2];
+    if (compact[3]) sources.youtube = compact[3];
+    return {
+      kind: 'card',
+      card: { v: 1, id: 'q2' + compact[1] + ':' + sourceKey(sources), theme, sources },
+    };
+  }
+  const setup = hash.match(/^spotify=([a-f0-9]{32})$/);
+  if (setup) return { kind: 'spotify-setup', clientId: setup[1] };
   const q = new URLSearchParams(hash);
   if (q.has('pair')) {
     const peer = q.get('pair')!,

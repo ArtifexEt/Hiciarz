@@ -1,6 +1,13 @@
 import { spotifyId, type Song } from './model';
-const id = () => import.meta.env.VITE_SPOTIFY_CLIENT_ID || '';
-const redirect = () => location.origin + location.pathname;
+import {
+  spotifyClientId as id,
+  spotifyRedirectUri as redirect,
+  spotifyAccountEvent,
+  needsSpotifySetup,
+  openSpotifySetup,
+  type SpotifyPurpose,
+} from './spotify-settings';
+export { spotifyAccountEvent } from './spotify-settings';
 async function spotifyFetch(url: string, options: RequestInit): Promise<Response> {
   try {
     return await fetch(url, options);
@@ -14,7 +21,6 @@ const b64 = (buffer: ArrayBuffer) =>
     .replace(/\//g, '_')
     .replace(/=+$/, '');
 export const spotifyConfigured = () => Boolean(id());
-export const spotifyAccountEvent = 'hiciarz-spotify-account';
 export function spotifyLoginPurpose(): 'import' | 'player' | null {
   try {
     const purpose = JSON.parse(sessionStorage.getItem('spotify-oauth') || 'null')?.purpose;
@@ -31,6 +37,7 @@ export function spotifyConnected(purpose: 'import' | 'player' = 'import') {
     const t = JSON.parse(sessionStorage.getItem('spotify-token') || 'null');
     return Boolean(
       t?.access_token &&
+        (!t.client_id || t.client_id === id()) &&
         (t.scope || '')
           .split(' ')
           .includes(purpose === 'player' ? 'user-modify-playback-state' : 'playlist-read-private'),
@@ -44,11 +51,24 @@ export function disconnectSpotify() {
   sessionStorage.removeItem('spotify-oauth');
   accountChanged();
 }
+export async function beginSpotifyLogin(purpose: SpotifyPurpose = 'import') {
+  if (needsSpotifySetup()) {
+    openSpotifySetup(purpose);
+    return false;
+  }
+  await authorizeSpotify(purpose);
+  return true;
+}
 export async function authorizeSpotify(purpose: 'import' | 'player' = 'import') {
-  if (!id()) throw new Error('Połączenie Spotify nie jest skonfigurowane dla tej strony.');
+  const clientId = id(),
+    redirectUri = redirect();
+  if (!clientId) throw new Error('Dodaj Client ID w ustawieniach Spotify w Hiciarzu.');
   const verifier = b64(crypto.getRandomValues(new Uint8Array(48)).buffer),
     state = crypto.randomUUID();
-  sessionStorage.setItem('spotify-oauth', JSON.stringify({ verifier, state, purpose }));
+  sessionStorage.setItem(
+    'spotify-oauth',
+    JSON.stringify({ verifier, state, purpose, clientId, redirectUri }),
+  );
   const existing = JSON.parse(sessionStorage.getItem('spotify-token') || 'null');
   const required =
     'user-read-playback-state user-modify-playback-state playlist-read-private playlist-read-collaborative user-read-private';
@@ -56,10 +76,12 @@ export async function authorizeSpotify(purpose: 'import' | 'player' = 'import') 
     ...new Set([...required.split(' '), ...(existing?.scope || '').split(' ').filter(Boolean)]),
   ].join(' ');
   const challenge = b64(await crypto.subtle.digest('SHA-256', new TextEncoder().encode(verifier)));
+  if (clientId !== id())
+    throw new Error('Zmieniono połączenie Spotify. Spróbuj zalogować się ponownie.');
   const q = new URLSearchParams({
-    client_id: id(),
+    client_id: clientId,
     response_type: 'code',
-    redirect_uri: redirect(),
+    redirect_uri: redirectUri,
     scope,
     code_challenge_method: 'S256',
     code_challenge: challenge,
@@ -76,28 +98,38 @@ export async function finishSpotify() {
   if (q.has('error')) throw new Error('Logowanie Spotify zostało anulowane.');
   if (!saved || q.get('state') !== saved.state)
     throw new Error('Sesja logowania wygasła. Połącz Spotify ponownie.');
+  const clientId = saved.clientId || id();
+  if (clientId !== id())
+    throw new Error('Zmieniono Client ID podczas logowania. Połącz Spotify ponownie.');
   const r = await spotifyFetch('https://accounts.spotify.com/api/token', {
     method: 'POST',
     headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
     body: new URLSearchParams({
-      client_id: id(),
+      client_id: clientId,
       grant_type: 'authorization_code',
       code: q.get('code')!,
-      redirect_uri: redirect(),
+      redirect_uri: saved.redirectUri || redirect(),
       code_verifier: saved.verifier,
     }),
   });
   if (!r.ok) throw new Error('Nie udało się połączyć ze Spotify. Spróbuj ponownie.');
+  const granted = await r.json();
+  if (clientId !== id()) throw new Error('Zmieniono połączenie Spotify. Zaloguj się ponownie.');
   sessionStorage.setItem(
     'spotify-token',
-    JSON.stringify({ ...(await r.json()), expires: Date.now() + 3500000 }),
+    JSON.stringify({ ...granted, client_id: clientId, expires: Date.now() + 3500000 }),
   );
   accountChanged();
   return saved.purpose === 'player' ? ('player' as const) : ('import' as const);
 }
 async function token() {
+  const clientId = id();
   let t = JSON.parse(sessionStorage.getItem('spotify-token') || 'null');
   if (!t) throw new Error('Najpierw połącz Spotify.');
+  if (t.client_id && t.client_id !== clientId) {
+    disconnectSpotify();
+    throw new Error('Zmieniono Client ID. Połącz konto Spotify ponownie.');
+  }
   if (t.expires < Date.now()) {
     const r = await spotifyFetch('https://accounts.spotify.com/api/token', {
       method: 'POST',
@@ -105,14 +137,17 @@ async function token() {
       body: new URLSearchParams({
         grant_type: 'refresh_token',
         refresh_token: t.refresh_token,
-        client_id: id(),
+        client_id: clientId,
       }),
     });
+    if (clientId !== id()) throw new Error('Zmieniono połączenie Spotify. Zaloguj się ponownie.');
     if (!r.ok) {
       disconnectSpotify();
       throw new Error('Sesja Spotify wygasła. Zaloguj się ponownie.');
     }
-    t = { ...t, ...(await r.json()), expires: Date.now() + 3500000 };
+    const refreshed = await r.json();
+    if (clientId !== id()) throw new Error('Zmieniono połączenie Spotify. Zaloguj się ponownie.');
+    t = { ...t, ...refreshed, client_id: clientId, expires: Date.now() + 3500000 };
     sessionStorage.setItem('spotify-token', JSON.stringify(t));
   }
   return t.access_token;
@@ -126,7 +161,7 @@ async function api(url: string) {
   if (!r.ok)
     throw new Error(
       r.status === 403
-        ? 'Spotify odmówił dostępu. Ta integracja pobiera utwory tylko z Twoich własnych lub współtworzonych playlist. Inne publiczne playlisty nie są dostępne. Jeśli to Twoja playlista, połącz konto ponownie i sprawdź jego dostęp do integracji.'
+        ? 'Spotify odmówił dostępu (403). Sprawdź wybrany Client ID w ustawieniach Hiciarza i dostęp konta w Users Management. Tryb deweloperski pozwala odczytywać utwory z własnych lub współtworzonych playlist.'
         : r.status === 404
           ? 'Nie znaleziono playlisty lub nie jest dostępna dla tego konta.'
           : r.status === 429

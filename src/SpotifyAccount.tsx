@@ -1,5 +1,6 @@
 import { useEffect, useRef, useState } from 'react';
-import { LogOut, RefreshCw, UserRound } from 'lucide-react';
+import { LogOut, RefreshCw, UserRound, Settings2 } from 'lucide-react';
+import { openSpotifySetup } from './spotify-settings';
 import {
   disconnectSpotify,
   spotifyAccountEvent,
@@ -95,6 +96,14 @@ export default function SpotifyAccount() {
               </button>
             </>
           )}
+          <button
+            onClick={() => {
+              setOpen(false);
+              openSpotifySetup();
+            }}
+          >
+            <Settings2 size={17} /> Ustawienia Spotify
+          </button>
           <button onClick={disconnectSpotify}>
             <LogOut size={17} /> Wyloguj ze Spotify
           </button>

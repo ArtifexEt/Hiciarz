@@ -10,8 +10,15 @@ import {
   spotifyDevices,
   spotifyPlaybackCommand,
 } from './spotify';
+import { saveSpotifyClientId } from './spotify-settings';
 let data: Map<string, string>;
 beforeEach(() => {
+  const preferences = new Map<string, string>();
+  vi.stubGlobal('localStorage', {
+    getItem: (k: string) => preferences.get(k) || null,
+    setItem: (k: string, v: string) => preferences.set(k, v),
+    removeItem: (k: string) => preferences.delete(k),
+  });
   data = new Map();
   data.set(
     'spotify-token',
@@ -79,17 +86,15 @@ describe('Spotify Connect requests', () => {
   it('only exposes the display name and a safe avatar URL from the profile', async () => {
     vi.stubGlobal(
       'fetch',
-      vi
-        .fn()
-        .mockResolvedValue(
-          new Response(
-            JSON.stringify({
-              display_name: 'Szymon',
-              email: 'not-exposed@example.com',
-              images: [{ url: 'javascript:bad' }, { url: 'https://i.scdn.co/image/avatar' }],
-            }),
-          ),
+      vi.fn().mockResolvedValue(
+        new Response(
+          JSON.stringify({
+            display_name: 'Szymon',
+            email: 'not-exposed@example.com',
+            images: [{ url: 'javascript:bad' }, { url: 'https://i.scdn.co/image/avatar' }],
+          }),
         ),
+      ),
     );
     await expect(spotifyProfile()).resolves.toEqual({
       name: 'Szymon',
@@ -164,5 +169,84 @@ describe('Spotify Connect requests', () => {
     expect(url.searchParams.get('scope')).toContain('playlist-read-private');
     expect(url.searchParams.get('scope')).toContain('playlist-read-collaborative');
     expect(JSON.parse(data.get('spotify-oauth')!).purpose).toBe('player');
+  });
+  it('uses the locally chosen client for authorization and the code exchange', async () => {
+    const client = 'b'.repeat(32),
+      assign = vi.fn();
+    vi.stubGlobal('window', new EventTarget());
+    vi.stubGlobal('location', { origin: 'https://example.com', pathname: '/Hiciarz/', assign });
+    saveSpotifyClientId(client);
+    await authorizeSpotify('player');
+    const auth = new URL(assign.mock.calls[0][0]);
+    expect(auth.searchParams.get('client_id')).toBe(client);
+    const saved = JSON.parse(data.get('spotify-oauth')!);
+    vi.stubGlobal('location', {
+      origin: 'https://example.com',
+      pathname: '/Hiciarz/',
+      search: '?code=returned&state=' + saved.state,
+    });
+    vi.stubGlobal('history', { replaceState: vi.fn() });
+    const request = vi
+      .fn()
+      .mockResolvedValue(
+        new Response(JSON.stringify({ access_token: 'new', scope: 'user-modify-playback-state' })),
+      );
+    vi.stubGlobal('fetch', request);
+    await finishSpotify();
+    expect(request.mock.calls[0][1].body.get('client_id')).toBe(client);
+    expect(request.mock.calls[0][1].body.has('client_secret')).toBe(false);
+    expect(JSON.parse(data.get('spotify-token')!).client_id).toBe(client);
+  });
+  it('refreshes an expired session using the selected personal client ID', async () => {
+    const client = 'b'.repeat(32);
+    vi.stubGlobal('window', new EventTarget());
+    saveSpotifyClientId(client);
+    data.set(
+      'spotify-token',
+      JSON.stringify({
+        access_token: 'expired',
+        refresh_token: 'refresh',
+        client_id: client,
+        expires: 0,
+      }),
+    );
+    const request = vi
+      .fn()
+      .mockResolvedValueOnce(new Response(JSON.stringify({ access_token: 'refreshed' })))
+      .mockResolvedValueOnce(new Response(JSON.stringify({ devices: [] })));
+    vi.stubGlobal('fetch', request);
+    await spotifyDevices();
+    expect(request.mock.calls[0][1].body.get('client_id')).toBe(client);
+    expect(request.mock.calls[0][1].body.has('client_secret')).toBe(false);
+    expect(request.mock.calls[1][1].headers.Authorization).toBe('Bearer refreshed');
+    expect(JSON.parse(data.get('spotify-token')!).client_id).toBe(client);
+  });
+  it('does not save an old OAuth response after the client was changed', async () => {
+    const original = 'a'.repeat(32),
+      replacement = 'b'.repeat(32);
+    vi.stubEnv('VITE_SPOTIFY_CLIENT_ID', original);
+    vi.stubGlobal('window', new EventTarget());
+    vi.stubGlobal('location', {
+      origin: 'https://example.com',
+      pathname: '/Hiciarz/',
+      search: '?code=returned&state=state',
+    });
+    vi.stubGlobal('history', { replaceState: vi.fn() });
+    data.set(
+      'spotify-oauth',
+      JSON.stringify({ state: 'state', verifier: 'old', purpose: 'player', clientId: original }),
+    );
+    vi.stubGlobal(
+      'fetch',
+      vi.fn().mockResolvedValue({
+        ok: true,
+        json: async () => {
+          saveSpotifyClientId(replacement);
+          return { access_token: 'old-client-token' };
+        },
+      }),
+    );
+    await expect(finishSpotify()).rejects.toThrow('Zmieniono połączenie');
+    expect(data.has('spotify-token')).toBe(false);
   });
 });

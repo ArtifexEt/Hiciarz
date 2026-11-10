@@ -51,6 +51,15 @@ import { qrImage } from './qr';
 import Landing from './Landing';
 import FishFestivities from './FishFestivities';
 import SpotifyAccount from './SpotifyAccount';
+import SpotifySetup from './SpotifySetup';
+import {
+  isSpotifySettingsStorageKey,
+  openSpotifySetup,
+  spotifyClientId,
+  spotifySettingsEvent,
+  spotifySetupEvent,
+  type SpotifyPurpose,
+} from './spotify-settings';
 import PlayingCard from './PlayingCard';
 import type { PlaybackState } from './playback';
 import { vibrateOnScan } from './scan-feedback';
@@ -73,6 +82,7 @@ import {
   cardUrl,
   csvExport,
   download,
+  findDeckForCard,
   mergeSongs,
   newDeck,
   parseImport,
@@ -91,7 +101,7 @@ const christmasPlaylist = 'https://open.spotify.com/playlist/7wfTeAa7cxhA3qNE05X
 import Players from './Players';
 import { SpotifyRemotePanel, useSpotifyRemote } from './SpotifyRemote';
 import {
-  authorizeSpotify,
+  beginSpotifyLogin,
   disconnectSpotify,
   finishSpotify,
   importPlaylist,
@@ -358,8 +368,8 @@ function SpotifyImport({
         <div>
           <strong>Jakie playlisty możesz wczytać?</strong>
           <p>
-            Własne oraz te, które współtworzysz. Spotify nie udostępnia tej aplikacji utworów z
-            pozostałych playlist — również publicznych.
+            W trybie deweloperskim Spotify udostępnia własne i współtworzone playlisty. Dostęp do
+            pozostałych zależy od uprawnień wybranego połączenia Spotify.
           </p>
           <button className="text-button" onClick={onExamples}>
             Wybierz przykład bez logowania <ArrowUpRight size={14} />
@@ -383,27 +393,16 @@ function SpotifyImport({
           </span>
         </label>
       </div>
-      {!spotifyConfigured() ? (
-        <div className="notice">
-          <Music2 size={22} />
-          <div>
-            <strong>Import Spotify czeka na konfigurację</strong>
-            <p>
-              Import ze Spotify nie jest obecnie dostępny. Możesz wczytać listę z pliku JSON lub CSV
-              albo dodać utwory ręcznie.
-            </p>
-          </div>
-        </div>
-      ) : !spotifyConnected() ? (
+      {!spotifyConnected() ? (
         <button
           className="primary full"
           onClick={() => {
             sessionStorage.setItem('spotify-import-mode', mode);
             sessionStorage.setItem('spotify-import-playlist', initialPlaylist);
-            authorizeSpotify().catch((e) => setError(e.message));
+            beginSpotifyLogin().catch((e) => setError(e.message));
           }}
         >
-          Połącz ze Spotify
+          {spotifyConfigured() ? 'Połącz ze Spotify' : 'Skonfiguruj połączenie Spotify'}
         </button>
       ) : (
         <form
@@ -458,6 +457,16 @@ function SpotifyImport({
           </button>
         </form>
       )}
+      <button
+        className="spotify-settings-link"
+        onClick={() => {
+          sessionStorage.setItem('spotify-import-mode', mode);
+          sessionStorage.setItem('spotify-import-playlist', initialPlaylist);
+          openSpotifySetup('import');
+        }}
+      >
+        <Settings2 size={15} /> Ustawienia połączenia Spotify
+      </button>
       {error && (
         <p className="error" role="alert">
           {error}
@@ -482,6 +491,7 @@ export default function App() {
   const [modal, setModal] = useState<
       | 'song'
       | 'spotify'
+      | 'spotify-setup'
       | 'examples'
       | 'file'
       | 'help'
@@ -509,6 +519,12 @@ export default function App() {
     [preferred, setPreferred] = useState<'spotify' | 'youtube'>('spotify'),
     [playState, setPlayState] = useState('Przygotuj połączenie i zeskanuj kartę.'),
     [command, setCommand] = useState<{ type: Command; seq: number } | null>(null);
+  const [spotifySetup, setSpotifySetup] = useState<{
+    purpose?: SpotifyPurpose;
+    clientId?: string;
+    revision: number;
+  }>({ revision: 0 });
+  const [, refreshSpotifySettings] = useState(0);
   const [playbackState, setPlaybackState] = useState<PlaybackState>('paused');
   const [scanFeedback, setScanFeedback] = useState<{ sequence: number; kind: 'card' | 'pair' }>();
   const reportPlayback = useCallback((text: string, state?: PlaybackState) => {
@@ -605,7 +621,7 @@ export default function App() {
     );
     return () => clearTimeout(timeout);
   }, [mode, output, card, playbackState, reportPlayback]);
-  const cardDeck = card ? decks.find((d) => d.songs.some((s) => s.id === card.id)) : undefined;
+  const cardDeck = card ? findDeckForCard(decks, card) : undefined;
   const playingBack = cardDeck?.print.style === 'laser' ? themeArt('laser') : cardDeck?.back;
   function nextCard() {
     clearScanFeedback();
@@ -635,6 +651,38 @@ export default function App() {
     const resized = () => setIsMobile(query.matches);
     query.addEventListener('change', resized);
     return () => query.removeEventListener('change', resized);
+  }, []);
+  useEffect(() => {
+    const show = (event: Event) => {
+      const purpose = (event as CustomEvent<{ purpose?: SpotifyPurpose }>).detail?.purpose;
+      if (purpose === 'player')
+        sessionStorage.setItem(
+          'hiciarz-spotify-return-mode',
+          mode === 'scanner' ? 'scanner' : 'player',
+        );
+      setSpotifySetup((previous) => ({ purpose, revision: previous.revision + 1 }));
+      setModal('spotify-setup');
+    };
+    window.addEventListener(spotifySetupEvent, show);
+    return () => window.removeEventListener(spotifySetupEvent, show);
+  }, [mode]);
+  useEffect(() => {
+    let previousClientId = spotifyClientId();
+    const changed = () => {
+      previousClientId = spotifyClientId();
+      refreshSpotifySettings((n) => n + 1);
+    };
+    const storageChanged = (event: StorageEvent) => {
+      if (!isSpotifySettingsStorageKey(event.key)) return;
+      if (previousClientId !== spotifyClientId() || event.key === null) disconnectSpotify();
+      changed();
+    };
+    window.addEventListener(spotifySettingsEvent, changed);
+    window.addEventListener('storage', storageChanged);
+    return () => {
+      window.removeEventListener(spotifySettingsEvent, changed);
+      window.removeEventListener('storage', storageChanged);
+    };
   }, []);
   useEffect(() => {
     if (!appMenuOpen) return;
@@ -733,6 +781,19 @@ export default function App() {
       if (!location.hash) return;
       try {
         const q = readQR(location.href);
+        if (q.kind === 'spotify-setup') {
+          setMode('scanner');
+          setOutput('spotify');
+          sessionStorage.setItem('hiciarz-spotify-return-mode', 'scanner');
+          setSpotifySetup((previous) => ({
+            purpose: 'player',
+            clientId: q.clientId,
+            revision: previous.revision + 1,
+          }));
+          setModal('spotify-setup');
+          history.replaceState(null, '', location.pathname + location.search);
+          return;
+        }
         setMode('scanner');
         if (q.kind === 'pair') {
           setOutput('browser');
@@ -793,6 +854,18 @@ export default function App() {
   function handleScan(raw: string) {
     try {
       const q = readQR(raw);
+      if (q.kind === 'spotify-setup') {
+        setSpotifySetup((previous) => ({
+          purpose: 'player',
+          clientId: q.clientId,
+          revision: previous.revision + 1,
+        }));
+        sessionStorage.setItem('hiciarz-spotify-return-mode', 'scanner');
+        setModal('spotify-setup');
+        clearScanFeedback();
+        vibrateOnScan();
+        return;
+      }
       const now = Date.now();
       const scanId = q.kind === 'pair' ? 'pair:' + q.peer : q.card.id;
       if (lastScan.current.id === scanId && now - lastScan.current.time < 7000) return;
@@ -2074,7 +2147,9 @@ export default function App() {
                         }}
                         pairingRequired={output === 'browser'}
                         paired={room.connected}
-                        ready={output === 'browser' || spotifyRemote.ready}
+                        ready={
+                          modal !== 'spotify-setup' && (output === 'browser' || spotifyRemote.ready)
+                        }
                       />
                     </Suspense>
                   )}
@@ -2598,6 +2673,23 @@ export default function App() {
           </label>
         </Modal>
       )}
+      {modal === 'spotify-setup' && (
+        <Modal
+          title="Spotify w Hiciarzu"
+          wide
+          onClose={() => setModal(spotifySetup.purpose === 'import' ? 'spotify' : null)}
+        >
+          <SpotifySetup
+            key={spotifySetup.revision}
+            purpose={spotifySetup.purpose}
+            incomingClientId={spotifySetup.clientId}
+            onDone={() => {
+              if (spotifySetup.purpose === 'player') setOutput('spotify');
+              setModal(spotifySetup.purpose === 'import' ? 'spotify' : null);
+            }}
+          />
+        </Modal>
+      )}
       {modal === 'about' && (
         <Modal title="Hiciarz — muzyka nas łączy" onClose={() => setModal(null)}>
           <p>
@@ -2623,6 +2715,9 @@ export default function App() {
             </a>
             <button className="secondary" onClick={() => setModal('help')}>
               Jak grać i przygotować talię?
+            </button>
+            <button className="secondary" onClick={() => openSpotifySetup()}>
+              <Settings2 size={18} /> Ustawienia Spotify
             </button>
           </div>
           <label className="check-line">

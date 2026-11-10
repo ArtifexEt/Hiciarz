@@ -30,6 +30,12 @@ Nie wpisuj sekretu Spotify do kodu ani zmiennych frontendu. Zmienne budowania tr
 
 Client ID jest dołączany do gotowego frontendu podczas budowania. Client Secret nie jest potrzebny: logowanie używa PKCE. Nigdy nie przekazuj Client Secret do zmiennych VITE ani do plików strony.
 
+Użytkownik może nadpisać domyślny identyfikator w **O aplikacji → Ustawienia Spotify**. Własny Client ID jest w localStorage, ma pierwszeństwo przed wartością buildu i można go przywrócić do domyślnego. Jego zmiana czyści sesję OAuth, token i wybrane urządzenie; tokeny nowego logowania są powiązane z wybranym Client ID. Zmiany konfiguracji między kartami przeglądarki również rozłączają wcześniejszą sesję.
+
+Osobny QR `#spotify=<Client ID>` otwiera podgląd ustawienia do zatwierdzenia. Nie zapisuje konfiguracji samym odczytem i nie przenosi tokenów ani sekretów. Działa też w skanerze ustawień zainstalowanej aplikacji, gdy jej magazyn danych jest osobny od przeglądarki.
+
+Zmienna repozytorium Actions **SPOTIFY_ONBOARDING** steruje automatycznym przewodnikiem: `true` lub `false`. Gdy jest pusta, workflow włącza go dla ArtifexEt/Hiciarz, a wyłącza dla forków. Lokalnie odpowiada jej `VITE_SPOTIFY_ONBOARDING`. Brak jakiegokolwiek Client ID nadal wymaga konfiguracji. [Przewodnik dla użytkownika](spotify.md).
+
 ## Parowanie i sieć
 
 Połączenie danych: PeerJS/WebRTC. Domyślnie używamy publicznego PeerServer do sygnalizacji oraz serwerów ICE dostarczanych w konfiguracji PeerJS. To nie jest rozwiązanie całkowicie offline ani gwarantowany transport wyłącznie po LAN. Muzyka nie przechodzi przez połączenie telefon–laptop. Zapory i izolacja klientów Wi-Fi mogą uniemożliwić połączenie.
@@ -80,6 +86,12 @@ CSV: `id,title,artist,year,theme,spotify,youtube`. Pola zawierające przecinki l
 Instrukcja dla AI: „Przygotuj tablicę JSON według powyższego schematu. Rok ma dotyczyć pierwszego wydania wskazanego nagrania, nie składanki. Nie wymyślaj identyfikatorów Spotify ani YouTube. Zweryfikuj linki. Nie dodawaj komentarzy ani Markdown wewnątrz pliku.”
 
 ## Dane lokalne i PWA
+
+### Format kodów kart
+
+Nowe karty używają krótkiego formatu `#2<skórka>s<Spotify ID>y<YouTube ID>`; obecne jest co najmniej jedno źródło. Kody skórek: `c` klasyczny, `m` minimalistyczny, `x` świąteczny, `w` zimowy, `f` rybki. Dane utworu, lokalny identyfikator rekordu i Client ID nie są zapisywane w QR. Przykładowa karta Spotify ma 62 znaki wraz z adresem głównej publikacji. Korekcja błędów M i czteromodułowy margines pozostają zachowane.
+
+Czytnik nadal obsługuje starsze karty `#card=<Base64 JSON>`. Wcześniejsze wydruki nie wymagają wymiany. Nowa karta jest dopasowywana do lokalnej talii po źródłach i skórce, dzięki czemu dostępny jest jej własny rewers i preset druku. QR pozostaje samodzielny: do wskazania nagrania nie wymaga wspólnej bazy kart.
 
 Pierwsze uruchomienie zaczyna się od pustej talii. Możesz skorzystać z jednorazowej propozycji wczytania świątecznego przykładu albo ją pominąć. Przykłady zawsze znajdziesz też w kreatorze pod **Przykładowe playlisty**. Na ekranie startowym wybierz **Twórz karty**, a zapisane talie przełączaj polem **Twoje talie**. Z każdego trybu wrócisz przyciskiem **Start**.
 
