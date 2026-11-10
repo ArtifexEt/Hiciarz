@@ -1,0 +1,270 @@
+html[data-theme='fish'] .fish-festivities {
+  position: relative;
+  isolation: isolate;
+  height: 124px;
+  margin: 0 0 4px;
+}
+.fish-garland {
+  position: absolute;
+  inset: 0;
+  pointer-events: none;
+  user-select: none;
+}
+.fish-light-string {
+  position: absolute;
+  top: 0;
+  width: 100%;
+  height: 68px;
+  overflow: visible;
+}
+.fish-light-wire {
+  fill: none;
+  stroke: #b18a4d;
+  stroke-width: 1.2;
+  vector-effect: non-scaling-stroke;
+}
+.fish-bulb {
+  fill: #bd7220;
+}
+.fish-hanging {
+  position: absolute;
+  top: 0;
+  width: 154px;
+  height: 124px;
+  transform-origin: 50% 0;
+}
+.fish-hanging::before {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: 50%;
+  height: 23px;
+  width: 1px;
+  background: #b18a4d;
+}
+.fish-hanging img {
+  position: absolute;
+  top: 6px;
+  width: 154px;
+  height: 154px;
+  object-fit: contain;
+}
+.fish-hanging-left {
+  left: 5%;
+  transform: rotate(-7deg);
+}
+.fish-hanging-right {
+  right: 5%;
+  transform: rotate(5deg);
+}
+.fish-hanging-right img {
+  transform: scaleX(-1);
+}
+.fish-spark {
+  position: absolute;
+  font-family: Georgia, serif;
+  color: #a9792c;
+  font-size: 23px;
+}
+.fish-spark-one {
+  top: 50px;
+  left: 29%;
+}
+.fish-spark-two {
+  top: 74px;
+  right: 28%;
+  font-size: 16px;
+}
+.fish-motion-toggle {
+  position: absolute;
+  left: 50%;
+  bottom: 4px;
+  transform: translateX(-50%);
+  display: flex;
+  align-items: center;
+  gap: 7px;
+  min-height: 44px;
+  padding: 10px 12px;
+  border: 1px solid transparent;
+  border-radius: 6px;
+  background: var(--bg);
+  color: #526857;
+  font-size: 11px;
+  white-space: nowrap;
+}
+.fish-motion-toggle:hover:not(:disabled) {
+  border-color: #cbb995;
+}
+.fish-motion-toggle:disabled {
+  opacity: 1;
+  color: #6e756a;
+}
+.fish-festivities[data-motion='on'] .fish-hanging-left {
+  animation: fish-swing-left 5.5s ease-in-out infinite;
+}
+.fish-festivities[data-motion='on'] .fish-hanging-right {
+  animation: fish-swing-right 6.5s ease-in-out -2s infinite;
+}
+.fish-festivities[data-motion='on'] .fish-bulb,
+.fish-festivities[data-motion='on'] .fish-spark {
+  animation: fish-light-glow 4.5s ease-in-out infinite;
+}
+.fish-festivities[data-motion='on'] .fish-bulb-1,
+.fish-festivities[data-motion='on'] .fish-spark-two {
+  animation-delay: -1.5s;
+}
+.fish-festivities[data-motion='on'] .fish-bulb-2 {
+  animation-delay: -3s;
+}
+.mode-home:has(.fish-festivities) .home-hero {
+  padding-top: 24px;
+}
+html[data-theme='fish'] .fish-festivities-compact {
+  height: 74px;
+  margin-top: -20px;
+  margin-bottom: 22px;
+}
+.fish-festivities-compact .fish-hanging {
+  width: 100px;
+  height: 74px;
+}
+.fish-festivities-compact .fish-hanging img {
+  width: 100px;
+  height: 100px;
+  top: 0;
+}
+.fish-festivities-compact .fish-hanging::before {
+  height: 12px;
+}
+.fish-festivities-compact .fish-light-string {
+  height: 40px;
+}
+.fish-festivities-compact .fish-motion-toggle {
+  bottom: -10px;
+}
+.fish-festivities-compact .fish-spark {
+  display: none;
+}
+@keyframes fish-swing-left {
+  0%,
+  100% {
+    transform: rotate(-7deg);
+  }
+  50% {
+    transform: rotate(6deg);
+  }
+}
+@keyframes fish-swing-right {
+  0%,
+  100% {
+    transform: rotate(5deg);
+  }
+  50% {
+    transform: rotate(-6deg);
+  }
+}
+@keyframes fish-light-glow {
+  0%,
+  100% {
+    opacity: 0.5;
+  }
+  50% {
+    opacity: 1;
+  }
+}
+@media (prefers-reduced-motion: reduce) {
+  .fish-festivities *,
+  .fish-festivities *::before {
+    animation: none !important;
+  }
+}
+@media (max-width: 600px) {
+  html[data-theme='fish'] .fish-festivities {
+    height: 100px;
+  }
+  .fish-hanging-left {
+    left: 0;
+    width: 112px;
+    height: 100px;
+  }
+  .fish-hanging img {
+    top: 0;
+    width: 112px;
+    height: 112px;
+  }
+  .fish-hanging::before {
+    height: 14px;
+  }
+  .fish-hanging-right,
+  .fish-spark-two {
+    display: none;
+  }
+  .fish-light-string {
+    height: 38px;
+  }
+  .fish-spark-one {
+    left: 44%;
+    top: 40px;
+    font-size: 15px;
+  }
+  .fish-motion-toggle {
+    left: auto;
+    right: 0;
+    bottom: 4px;
+    transform: none;
+  }
+  .mode-home:has(.fish-festivities) .home-hero {
+    padding-top: 14px;
+  }
+  html[data-theme='fish'] .fish-festivities-compact {
+    height: 76px;
+    margin-top: -10px;
+    margin-bottom: 18px;
+  }
+  .fish-festivities-compact .fish-hanging {
+    width: 92px;
+  }
+  .fish-festivities-compact .fish-hanging img {
+    width: 92px;
+    height: 92px;
+  }
+  .fish-festivities-compact .fish-motion-toggle {
+    bottom: -2px;
+  }
+}
+@media (max-height: 600px) {
+  html[data-theme='fish'] .fish-festivities {
+    height: 72px;
+    margin-top: 0;
+    margin-bottom: 12px;
+  }
+  .fish-hanging {
+    width: 94px;
+    height: 74px;
+  }
+  .fish-hanging img {
+    width: 94px;
+    height: 94px;
+    top: 0;
+  }
+  .fish-hanging::before {
+    height: 12px;
+  }
+  .fish-light-string {
+    height: 35px;
+  }
+  .fish-motion-toggle {
+    bottom: -2px;
+  }
+  .fish-spark {
+    display: none;
+  }
+  .mode-home:has(.fish-festivities) .home-hero {
+    padding-top: 12px;
+  }
+}
+@media print {
+  .fish-festivities {
+    display: none;
+  }
+}

@@ -36,7 +36,7 @@ html[data-theme='fish'] {
   --bg: #f4f2e9;
   --sidebar: #083935;
   --soft: #f4f0e4;
-  --decor: url('../public/themes/fish.webp');
+  --decor: url('../public/themes/fish-santa.webp');
 }
 html[data-theme='winter'] {
   --accent: #b5d9ed;

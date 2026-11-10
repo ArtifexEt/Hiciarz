@@ -1,7 +1,7 @@
 import type { Theme } from './model';
 export const asset = (path: string) => import.meta.env.BASE_URL + path;
 export const themeArt = (theme: Theme | 'laser') =>
-  asset(`themes/${theme === 'fish' ? 'fish.webp' : theme + '.svg'}`);
+  asset(`themes/${theme === 'fish' ? 'fish-santa.webp' : theme + '.svg'}`);
 export const themeColors: Record<Theme | 'laser', { dark: string; light: string; accent: string }> =
   {
     laser: { dark: '#26332e', light: '#ffffff', accent: '#638876' },

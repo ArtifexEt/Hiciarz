@@ -49,6 +49,7 @@ import {
 } from 'lucide-react';
 import { qrImage } from './qr';
 import Landing from './Landing';
+import FishFestivities from './FishFestivities';
 import SpotifyAccount from './SpotifyAccount';
 import PlayingCard from './PlayingCard';
 import type { PlaybackState } from './playback';
@@ -1173,6 +1174,9 @@ export default function App() {
           </div>
         )}
         <main>
+          {uiTheme === 'fish' && !((mode === 'scanner' || mode === 'player') && card) && (
+            <FishFestivities compact={mode !== 'home'} />
+          )}
           {mode === 'home' ? (
             <Landing onChoose={changeMode} theme={uiTheme} />
           ) : mode === 'editor' ? (
