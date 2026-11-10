@@ -9,11 +9,26 @@ export const themeNames: Record<Theme, string> = {
   fish: 'Rybki świąteczne',
 };
 export type Sources = { spotify?: string; youtube?: string };
+export const gameModes = ['music', 'movie', 'game'] as const;
+export type GameMode = (typeof gameModes)[number];
+export const gameModeNames = {
+  music: 'Muzyczna oś czasu',
+  movie: 'Zgadnij film',
+  game: 'Zgadnij grę',
+};
+export const cardQuestion = (mode?: GameMode) =>
+  mode === 'movie'
+    ? 'Z jakiego filmu pochodzi ta muzyka?'
+    : mode === 'game'
+      ? 'Z jakiej gry pochodzi ta muzyka?'
+      : 'Co to za hit?';
 export type Song = {
   id: string;
   title: string;
   artist: string;
   year: number;
+  gameMode?: GameMode;
+  answer?: string;
   theme?: Theme;
   sources: Sources;
   review?: boolean;
@@ -32,10 +47,11 @@ export type Deck = {
   name: string;
   theme: Theme;
   back?: string;
+  gameMode?: GameMode;
   songs: Song[];
   print: PrintSettings;
 };
-export type Card = { v: 1; id: string; theme: Theme; sources: Sources };
+export type Card = { v: 1; id: string; theme: Theme; sources: Sources; gameMode?: GameMode };
 const themeCodes: Record<Theme, string> = {
   classic: 'c',
   minimal: 'm',
@@ -153,6 +169,11 @@ export function validateSong(raw: unknown, index = 0): Song {
   if (r.theme !== undefined && r.theme !== '' && !themes.includes(r.theme as Theme))
     throw new Error(`Wiersz ${index + 1}: nieznany motyw.`);
   const sources = normalizeSources(r.sources || { spotify: r.spotify, youtube: r.youtube });
+  const gameMode = r.gameMode || 'music';
+  if (!gameModes.includes(gameMode as GameMode)) throw new Error('Nieznany tryb gry.');
+  const answer = String(r.answer || '').trim();
+  if (answer.length > 200 || (gameMode !== 'music' && !answer))
+    throw new Error('Uzupełnij nazwę filmu lub gry (maks. 200 znaków).');
   if (!sources.spotify && !sources.youtube)
     throw new Error(`Wiersz ${index + 1}: dodaj źródło Spotify lub YouTube.`);
   return {
@@ -163,6 +184,7 @@ export function validateSong(raw: unknown, index = 0): Song {
     sources,
     theme: (r.theme || undefined) as Theme | undefined,
     review: r.review === true,
+    ...(gameMode !== 'music' ? { gameMode: gameMode as GameMode, answer } : {}),
   };
 }
 export function validateDeck(raw: unknown): Deck {
@@ -188,6 +210,7 @@ export function validateDeck(raw: unknown): Deck {
     version: 1,
     id: typeof r.id === 'string' ? r.id : crypto.randomUUID(),
     name: String(r.name || 'Zaimportowana talia').slice(0, 100),
+    ...(gameModes.includes(r.gameMode) ? { gameMode: r.gameMode } : {}),
     theme: r.theme,
     back: r.back,
     songs,
@@ -224,6 +247,8 @@ export function csvExport(songs: Song[]): string {
         title: s.title,
         artist: s.artist,
         year: s.year,
+        gameMode: s.gameMode || 'music',
+        answer: s.answer || '',
         theme: s.theme || '',
         spotify: s.sources.spotify || '',
         youtube: s.sources.youtube || '',
@@ -267,7 +292,13 @@ export function cardUrl(
   const skin = song.theme || theme;
   if (!themes.includes(skin) || (!sources.spotify && !sources.youtube))
     throw new Error('Karta wymaga poprawnego motywu i źródła odtwarzania.');
-  return base.split(/[?#]/)[0] + '#2' + themeCodes[skin] + sourceKey(sources);
+  return (
+    base.split(/[?#]/)[0] +
+    '#2' +
+    themeCodes[skin] +
+    sourceKey(sources) +
+    (song.gameMode === 'movie' ? 'm' : song.gameMode === 'game' ? 'g' : '')
+  );
 }
 function sourceKey(sources: Sources) {
   return (
@@ -280,7 +311,9 @@ export function findDeckForCard(decks: Deck[], card: Card) {
     decks.find((d) =>
       d.songs.some(
         (s) =>
-          sourceKey(s.sources) === sourceKey(card.sources) && (s.theme || d.theme) === card.theme,
+          sourceKey(s.sources) === sourceKey(card.sources) &&
+          (s.theme || d.theme) === card.theme &&
+          (s.gameMode || 'music') === (card.gameMode || 'music'),
       ),
     )
   );
@@ -297,7 +330,7 @@ export function readQR(
   } catch {
     throw new Error('To nie jest kod QR Hiciarza.');
   }
-  const compact = hash.match(/^2([cmxwf])(?:s([A-Za-z0-9]{22}))?(?:y([\w-]{11}))?$/);
+  const compact = hash.match(/^2([cmxwf])(?:s([A-Za-z0-9]{22}))?(?:y([\w-]{11}))?([mg])?$/);
   if (compact && (compact[2] || compact[3])) {
     const theme = themes.find((t) => themeCodes[t] === compact[1])!;
     const sources: Sources = {};
@@ -305,7 +338,15 @@ export function readQR(
     if (compact[3]) sources.youtube = compact[3];
     return {
       kind: 'card',
-      card: { v: 1, id: 'q2' + compact[1] + ':' + sourceKey(sources), theme, sources },
+      card: {
+        v: 1,
+        id: 'q2' + compact[1] + ':' + sourceKey(sources) + (compact[4] || ''),
+        theme,
+        sources,
+        ...(compact[4]
+          ? { gameMode: compact[4] === 'm' ? ('movie' as const) : ('game' as const) }
+          : {}),
+      },
     };
   }
   const setup = hash.match(/^spotify=([a-f0-9]{32})$/);
@@ -325,7 +366,17 @@ export function readQR(
     const sources = normalizeSources(c.sources);
     if (!sources.spotify && !sources.youtube)
       throw new Error('Karta nie zawiera źródła odtwarzania.');
-    return { kind: 'card', card: { v: 1, id: c.id, theme: c.theme, sources } };
+    if (c.gameMode && !gameModes.includes(c.gameMode)) throw new Error('Nieznany tryb gry.');
+    return {
+      kind: 'card',
+      card: {
+        v: 1,
+        id: c.id,
+        theme: c.theme,
+        sources,
+        ...(c.gameMode && c.gameMode !== 'music' ? { gameMode: c.gameMode } : {}),
+      },
+    };
   }
   throw new Error('To nie jest kod QR Hiciarza.');
 }

@@ -83,6 +83,9 @@ import {
   csvExport,
   download,
   findDeckForCard,
+  gameModes,
+  gameModeNames,
+  type GameMode,
   mergeSongs,
   newDeck,
   parseImport,
@@ -205,16 +208,24 @@ function CardPreview({ song, deck, back = false }: { song: Song; deck: Deck; bac
           <div className="card-qr">
             <QR value={cardUrl(song, deck.theme)} />
           </div>
-          <small>ZESKANUJ. POSŁUCHAJ. ZGADNIJ.</small>
+          <small>
+            {song.gameMode === 'movie'
+              ? 'ZGADNIJ FILM'
+              : song.gameMode === 'game'
+                ? 'ZGADNIJ GRĘ'
+                : 'ZESKANUJ. POSŁUCHAJ. ZGADNIJ.'}
+          </small>
         </>
       ) : (
         <>
           <div className="card-topline">
             <span>HICIARZ</span>
           </div>
-          <strong className="card-year">{song.year}</strong>
-          <h3>{song.title}</h3>
-          <p>{song.artist}</p>
+          <strong className="card-year">
+            {song.gameMode === 'movie' ? 'FILM' : song.gameMode === 'game' ? 'GRA' : song.year}
+          </strong>
+          <h3>{song.gameMode && song.gameMode !== 'music' ? song.answer : song.title}</h3>
+          <p>{song.gameMode && song.gameMode !== 'music' ? song.title : song.artist}</p>
           <div className="card-bottomline">
             <span>{song.id.slice(0, 12)}</span>
           </div>
@@ -225,14 +236,17 @@ function CardPreview({ song, deck, back = false }: { song: Song; deck: Deck; bac
 }
 function SongForm({
   song,
+  defaultMode = 'music',
   onSave,
   onClose,
 }: {
   song?: Song;
+  defaultMode?: GameMode;
   onSave: (s: Song) => void;
   onClose: () => void;
 }) {
   const [error, setError] = useState('');
+  const [gameMode, setGameMode] = useState<GameMode>(song?.gameMode || defaultMode);
   return (
     <Modal title={song ? 'Edytuj utwór' : 'Dodaj swój hit'} onClose={onClose}>
       <form
@@ -249,6 +263,8 @@ function SongForm({
                 theme: f.get('theme') || undefined,
                 sources: { spotify: f.get('spotify'), youtube: f.get('youtube') },
                 review: false,
+                gameMode,
+                answer: f.get('answer'),
               }),
             );
             onClose();
@@ -258,6 +274,30 @@ function SongForm({
         }}
       >
         <div className="form-grid">
+          <label>
+            Tryb gry
+            <select value={gameMode} onChange={(e) => setGameMode(e.target.value as GameMode)}>
+              {gameModes.map((m) => (
+                <option key={m} value={m}>
+                  {gameModeNames[m]}
+                </option>
+              ))}
+            </select>
+          </label>
+          {gameMode !== 'music' && (
+            <label>
+              {gameMode === 'movie' ? 'Tytuł filmu — odpowiedź' : 'Tytuł gry — odpowiedź'}
+              <input
+                name="answer"
+                required
+                maxLength={200}
+                defaultValue={song?.answer || ''}
+                placeholder={
+                  gameMode === 'movie' ? 'Np. Jurassic Park' : 'Np. The Witcher 3: Wild Hunt'
+                }
+              />
+            </label>
+          )}
           <label>
             Tytuł
             <input
@@ -1310,6 +1350,36 @@ export default function App() {
                   </div>
                 </section>
               )}
+              <section className="mode-help creator-help">
+                <label>
+                  Domyślny tryb nowych kart
+                  <select
+                    value={deck.gameMode || 'music'}
+                    onChange={(e) => updateDeck({ gameMode: e.target.value as GameMode })}
+                  >
+                    {gameModes.map((m) => (
+                      <option key={m} value={m}>
+                        {gameModeNames[m]}
+                      </option>
+                    ))}
+                  </select>
+                </label>
+                <p>
+                  {deck.gameMode === 'movie'
+                    ? 'Rozpoznaj film po muzyce ze ścieżki dźwiękowej.'
+                    : deck.gameMode === 'game'
+                      ? 'Rozpoznaj grę po jej muzyce.'
+                      : 'Rozpoznawaj utwory i układaj je na osi czasu.'}{' '}
+                  W trybach filmu i gry gracze podają tytuł, a następnie odwracają kartę, by
+                  sprawdzić odpowiedź. Za poprawną odpowiedź otrzymują punkt. Ustalcie przed grą
+                  liczbę rund.
+                </p>
+                <p>
+                  Wybór dotyczy dodawanych kart. Tryb już zapisanej karty zmienisz w jej edytorze.
+                  Import z Spotify dostarcza dane nagrania — nazwę filmu lub gry uzupełnij
+                  samodzielnie.
+                </p>
+              </section>
               <details className="mode-help creator-help">
                 <summary>Premiera Twojej talii w trzech krokach</summary>
                 <ol>
@@ -1573,7 +1643,7 @@ export default function App() {
                                   setModal('song');
                                 }}
                               >
-                                <strong>{s.title}</strong>
+                                <strong>{s.answer ? s.answer + ' · ' + s.title : s.title}</strong>
                                 <small>{s.artist}</small>
                               </button>
                               <span
@@ -2495,6 +2565,7 @@ export default function App() {
       {modal === 'song' && (
         <SongForm
           song={editSong}
+          defaultMode={deck.gameMode}
           onClose={() => setModal(null)}
           onSave={(song) =>
             updateDeck({

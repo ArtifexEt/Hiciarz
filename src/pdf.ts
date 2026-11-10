@@ -114,10 +114,31 @@ export async function buildPDF(
       drawFront(doc, s, deck, x, y);
       doc.setFontSize(5);
       doc.text('HICIARZ', x + 7, y + 8, { charSpace: 0.4 });
-      doc.setFontSize(34);
-      doc.text(String(s.year), x + 30, y + 22, { align: 'center' });
-      const shortTitle = textFit(doc, s.title, x + 30, y + 27, 14, 12, 7);
-      const shortArtist = textFit(doc, s.artist, x + 30, y + 42, 8.5, 9, 6.5);
+      doc.setFontSize(s.gameMode && s.gameMode !== 'music' ? 22 : 34);
+      doc.text(
+        s.gameMode === 'movie' ? 'FILM' : s.gameMode === 'game' ? 'GRA' : String(s.year),
+        x + 30,
+        y + 22,
+        { align: 'center' },
+      );
+      const shortTitle = textFit(
+        doc,
+        s.gameMode && s.gameMode !== 'music' ? s.answer || s.title : s.title,
+        x + 30,
+        y + 27,
+        14,
+        12,
+        7,
+      );
+      const shortArtist = textFit(
+        doc,
+        s.gameMode && s.gameMode !== 'music' ? s.title : s.artist,
+        x + 30,
+        y + 42,
+        8.5,
+        9,
+        6.5,
+      );
       if (shortTitle || shortArtist) options.onTextShortened?.(s);
       doc.setFontSize(5);
       doc.text(s.id.slice(0, 12), x + 30, y + 54.8, { align: 'center' });
@@ -175,7 +196,16 @@ export async function buildPDF(
       doc.roundedRect(x + 9, y + 52.5, 42, 4, 1, 1, 'F');
       doc.setTextColor(laser ? '#26332e' : '#ffffff');
       doc.setFontSize(4.5);
-      doc.text('ZESKANUJ · POSŁUCHAJ · ZGADNIJ', x + 30, y + 55.2, { align: 'center' });
+      doc.text(
+        s.gameMode === 'movie'
+          ? 'ZGADNIJ FILM'
+          : s.gameMode === 'game'
+            ? 'ZGADNIJ GRĘ'
+            : 'ZESKANUJ · POSŁUCHAJ · ZGADNIJ',
+        x + 30,
+        y + 55.2,
+        { align: 'center' },
+      );
       if (deck.print.cuts) cuts(doc, x, y);
       report('backs', start + i + 1, start * 2 + sheet.length + i + 1);
       await yieldForPDF();

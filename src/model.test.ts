@@ -9,10 +9,29 @@ import {
   parseImport,
   csvExport,
   validateDeck,
+  validateSong,
   findDeckForCard,
   themes,
 } from './model';
 describe('self contained cards', () => {
+  it('preserves film and game modes without leaking their answers into QR or losing them in files', () => {
+    for (const gameMode of ['movie', 'game'] as const) {
+      const song = validateSong({ ...demoDeck().songs[0], gameMode, answer: 'Sekretna odpowiedź' });
+      const url = cardUrl(song, 'classic', 'https://example.com/');
+      const decoded = readQR(url);
+      expect(decoded.kind === 'card' && decoded.card.gameMode).toBe(gameMode);
+      expect(url).not.toContain('Sekretna');
+      expect(decoded.kind === 'card' && 'answer' in decoded.card).toBe(false);
+      const imported = parseImport(csvExport([song]), 'songs.csv');
+      expect(Array.isArray(imported) && imported[0].answer).toBe(song.answer);
+      expect(Array.isArray(imported) && imported[0].gameMode).toBe(gameMode);
+      expect(() => validateSong({ ...song, answer: '' })).toThrow('nazwę filmu lub gry');
+      const legacy =
+        'https://example.com/#card=' +
+        btoa(JSON.stringify(decoded.kind === 'card' ? decoded.card : {}));
+      expect(readQR(legacy)).toEqual(decoded);
+    }
+  });
   it('round trips sources and theme without a shared database', () => {
     const d = demoDeck(),
       s = d.songs[1];

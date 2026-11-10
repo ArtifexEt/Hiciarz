@@ -64,6 +64,12 @@ Wczytaj go **bez logowania**, jako nową talię lub dopisując utwory do obecnej
 
 ## Karty w Waszym stylu
 
+### Zgadnij film lub grę
+
+W kreatorze wybierz domyślny tryb nowych kart: **Zgadnij film** albo **Zgadnij grę**. W edytorze utworu wpisz tytuł produkcji w polu odpowiedzi i dodaj nagranie ze Spotify lub YouTube. Tryb istniejącej karty zmienisz w jej edytorze. Na skanerze po odczycie QR pojawi się właściwe pytanie, a odpowiedź sprawdzicie po odwróceniu wydrukowanej karty. Punkt otrzymuje osoba, która odgadnie film lub grę; przed rozpoczęciem ustalcie liczbę rund.
+
+JSON i CSV obsługują pola `gameMode` (`music`, `movie`, `game`) oraz `answer` (wymagane dla filmu i gry). Import Spotify dostarcza dane nagrania; tytuł produkcji uzupełnia się ręcznie. Odpowiedź pozostaje w projekcie i na stronie odpowiedzi PDF — QR jej nie zawiera. Rok nagrania jest zachowany w projekcie, ale na kartach tych trybów zastępuje go etykieta FILM lub GRA. Starsze karty i talie nadal działają.
+
 - **Pięć motywów:** Klasyczny, Minimalistyczny, Świąteczna noc, Zimowa opowieść i autorskie Rybki świąteczne.
 - **Spójna oprawa gry:** zeskanowana karta przełącza wygląd aplikacji na swój motyw.
 - **Kolorowe awersy:** różne odcienie kart, ozdobne akcenty oraz czytelny rok, tytuł i wykonawca.

@@ -1,6 +1,6 @@
 import { LoaderCircle, Music2, Pause, Play, RotateCcw, ScanLine } from 'lucide-react';
 import type { Card } from './model';
-import { themeNames } from './model';
+import { themeNames, cardQuestion } from './model';
 import { themeArt } from './themes';
 import type { PlaybackState } from './playback';
 
@@ -39,7 +39,13 @@ export default function PlayingCard({
         <span className="playing-cover-caption">SŁUCHAJ · ZGADUJ · BAW SIĘ</span>
       </div>
       <div className="playing-copy">
-        <span className="eyebrow">TWOJA MUZYCZNA ZAGADKA</span>
+        <span className="eyebrow">
+          {card.gameMode === 'movie'
+            ? 'ZGADNIJ FILM'
+            : card.gameMode === 'game'
+              ? 'ZGADNIJ GRĘ'
+              : 'TWOJA MUZYCZNA ZAGADKA'}
+        </span>
         <h2>
           {state === 'paused' || state === 'stopped'
             ? 'Chwila przerwy.'
@@ -47,7 +53,7 @@ export default function PlayingCard({
               ? 'Spróbujmy jeszcze raz.'
               : loading
                 ? 'Za chwilę muzyka…'
-                : 'Co to za hit?'}
+                : cardQuestion(card.gameMode)}
         </h2>
         <p className="playing-message" role={state === 'error' ? 'alert' : 'status'}>
           {message}
