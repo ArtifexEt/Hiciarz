@@ -1,0 +1,25 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 600 600">
+  <defs>
+    <clipPath id="ball"><circle cx="483" cy="88" r="108"/></clipPath>
+    <radialGradient id="mirror" cx=".3" cy=".25"><stop stop-color="#e7d3f1"/><stop offset=".55" stop-color="#ab92c3"/><stop offset="1" stop-color="#63557e"/></radialGradient>
+  </defs>
+  <rect width="600" height="600" fill="#392a50"/>
+  <path d="M18-10l192 610H-40zM561-20L340 600h290z" fill="#d7b9ef" fill-opacity=".045"/>
+  <path d="M483 0v20" stroke="#d7b9ef" stroke-width="3"/>
+  <circle cx="483" cy="88" r="108" fill="url(#mirror)"/>
+  <g clip-path="url(#ball)" fill="none" stroke="#453657" stroke-width="2.5" stroke-opacity=".7">
+    <ellipse cx="483" cy="88" rx="83" ry="108"/><ellipse cx="483" cy="88" rx="46" ry="108"/>
+    <path d="M483-22v220M367 88h230M375 57q108 30 216 0M375 119q108-30 216 0M394 29q89 40 178 0M394 147q89-40 178 0M422 5q61 33 122 0M422 171q61-33 122 0"/>
+  </g>
+  <g fill="none" stroke="#c79ee0" stroke-opacity=".4" stroke-width="2">
+    <path d="M300 410L-100 650M300 410L40 650M300 410L180 650M300 410L320 650M300 410L460 650M300 410L600 650M300 410L740 650"/>
+    <path d="M190 476h220M131 512h338M58 556h484M-22 604h644"/>
+  </g>
+  <g fill="#f1d5af">
+    <path d="M79 68l5 20 20 5-20 5-5 20-5-20-20-5 20-5z"/>
+    <path d="M537 390l4 14 14 4-14 4-4 14-4-14-14-4 14-4z"/>
+    <path d="M109 458l3 12 12 3-12 3-3 12-3-12-12-3 12-3z"/>
+  </g>
+  <g fill="#d7b9ef" fill-opacity=".7"><circle cx="194" cy="48" r="3"/><circle cx="50" cy="228" r="3"/><circle cx="561" cy="251" r="3"/></g>
+  <rect x="21" y="21" width="558" height="558" rx="19" fill="none" stroke="#d7b9ef" stroke-opacity=".5"/>
+</svg>

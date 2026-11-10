@@ -36,6 +36,26 @@ const winter = [
   '#d7e8ed',
   '#e9e0ed',
 ];
+const retro = [
+  '#f5e6cd',
+  '#dfe9dc',
+  '#efdbc8',
+  '#d9e7e6',
+  '#f2e4d2',
+  '#e6e5ce',
+  '#f1dcd3',
+  '#e4e7da',
+];
+const party = [
+  '#eee4f3',
+  '#dfe9ee',
+  '#f3dfe7',
+  '#e7e4f6',
+  '#f3e7ce',
+  '#d8e9e3',
+  '#eddfec',
+  '#e6e8f2',
+];
 
 export function frontDesign(song: Song, deck: Deck) {
   const theme = song.theme || deck.theme;
@@ -44,7 +64,15 @@ export function frontDesign(song: Song, deck: Deck) {
   const variant = hash % colors.length;
   const laser = deck.print.style === 'laser';
   const palette =
-    theme === 'fish' || theme === 'christmas' ? festive : theme === 'winter' ? winter : colors;
+    theme === 'fish' || theme === 'christmas'
+      ? festive
+      : theme === 'winter'
+        ? winter
+        : theme === 'vinyl' || theme === 'mixtape'
+          ? retro
+          : theme === 'memphis' || theme === 'disco'
+            ? party
+            : colors;
   const background = laser
     ? '#ffffff'
     : deck.print.frontColors === 'theme'
@@ -57,7 +85,15 @@ export function frontDesign(song: Song, deck: Deck) {
       ? '#6d90ad'
       : theme === 'fish' || theme === 'christmas'
         ? '#ac864f'
-        : '#8b7393';
+        : theme === 'vinyl'
+          ? '#a96c3e'
+          : theme === 'mixtape'
+            ? '#59847d'
+            : theme === 'memphis'
+              ? '#7978a1'
+              : theme === 'disco'
+                ? '#9672ac'
+                : '#8b7393';
   const secondary = laser ? '#b56e58' : accent;
   const shapes: Shape[] = [
     { type: 'frame', inset: 2.7, radius: 3.5, color: accent },
@@ -97,6 +133,24 @@ export function frontDesign(song: Song, deck: Deck) {
         line(cx + n, cy + n * 0.65, cx + n, cy + n * 0.65 - 2);
         line(cx + n, cy + n * 0.65, cx + n - 1.8, cy + n * 0.65 + 0.4);
       }
+    } else if (theme === 'mixtape') {
+      line(cx - 3, cy - 1.9, cx + 3, cy - 1.9);
+      line(cx + 3, cy - 1.9, cx + 3, cy + 1.9);
+      line(cx + 3, cy + 1.9, cx - 3, cy + 1.9);
+      line(cx - 3, cy + 1.9, cx - 3, cy - 1.9);
+      ellipse(cx - 1.4, cy, 0.7, 0.7);
+      ellipse(cx + 1.4, cy, 0.7, 0.7);
+    } else if (theme === 'memphis') {
+      line(cx - 3, cy + 1.8, cx - 1.5, cy - 1.8);
+      line(cx - 1.5, cy - 1.8, cx, cy + 1.8);
+      line(cx, cy + 1.8, cx + 1.5, cy - 1.8);
+      line(cx + 1.5, cy - 1.8, cx + 3, cy + 1.8);
+    } else if (theme === 'disco') {
+      ellipse(cx, cy, 2.6, 2.6);
+      ellipse(cx, cy, 1.2, 2.6);
+      line(cx - 2.6, cy, cx + 2.6, cy);
+      line(cx - 2.1, cy - 1.5, cx + 2.1, cy - 1.5);
+      line(cx - 2.1, cy + 1.5, cx + 2.1, cy + 1.5);
     } else if (theme === 'minimal') {
       line(cx, cy - 2.5, cx + 2.5, cy);
       line(cx + 2.5, cy, cx, cy + 2.5);

@@ -1,9 +1,23 @@
 import Papa from 'papaparse';
-export const themes = ['classic', 'minimal', 'christmas', 'winter', 'fish'] as const;
+export const themes = [
+  'classic',
+  'minimal',
+  'vinyl',
+  'mixtape',
+  'memphis',
+  'disco',
+  'christmas',
+  'winter',
+  'fish',
+] as const;
 export type Theme = (typeof themes)[number];
 export const themeNames: Record<Theme, string> = {
   classic: 'Klasyczny',
   minimal: 'Minimalistyczny',
+  vinyl: 'Winylowy wieczór',
+  mixtape: 'Lato z kasetą',
+  memphis: 'Domówka 90s',
+  disco: 'Noc disco',
   christmas: 'Świąteczna noc',
   winter: 'Zimowa opowieść',
   fish: 'Rybki świąteczne',
@@ -55,6 +69,10 @@ export type Card = { v: 1; id: string; theme: Theme; sources: Sources; gameMode?
 const themeCodes: Record<Theme, string> = {
   classic: 'c',
   minimal: 'm',
+  vinyl: 'v',
+  mixtape: 't',
+  memphis: 'p',
+  disco: 'd',
   christmas: 'x',
   winter: 'w',
   fish: 'f',
@@ -330,7 +348,7 @@ export function readQR(
   } catch {
     throw new Error('To nie jest kod QR Hiciarza.');
   }
-  const compact = hash.match(/^2([cmxwf])(?:s([A-Za-z0-9]{22}))?(?:y([\w-]{11}))?([mg])?$/);
+  const compact = hash.match(/^2([cmxwfvtpd])(?:s([A-Za-z0-9]{22}))?(?:y([\w-]{11}))?([mg])?$/);
   if (compact && (compact[2] || compact[3])) {
     const theme = themes.find((t) => themeCodes[t] === compact[1])!;
     const sources: Sources = {};

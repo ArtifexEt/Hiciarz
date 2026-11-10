@@ -1,0 +1,20 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 600 600">
+  <defs>
+    <pattern id="dots" width="31" height="31" patternUnits="userSpaceOnUse"><circle cx="3" cy="3" r="1.3" fill="#e7dff1" fill-opacity=".13"/></pattern>
+    <pattern id="checker" width="38" height="38" patternUnits="userSpaceOnUse"><rect width="19" height="19" fill="#f2c95f"/><rect x="19" y="19" width="19" height="19" fill="#f2c95f"/></pattern>
+  </defs>
+  <rect width="600" height="600" fill="#30315b"/>
+  <rect width="600" height="600" fill="url(#dots)"/>
+  <g fill="none" stroke-linecap="round" stroke-linejoin="round">
+    <path d="M-20 96l47-42 30 53 46-42 32 54" stroke="#e99d9c" stroke-width="17"/>
+    <path d="M483-22l-44 55 52 26-44 55 52 26" stroke="#8bbdb4" stroke-width="13"/>
+    <path d="M28 489l30-22 21 30 30-22 21 30 30-22" stroke="#f2c95f" stroke-width="10"/>
+    <path d="M497 310l43 18-39 29z" stroke="#e99d9c" stroke-width="5"/>
+    <circle cx="65" cy="301" r="28" stroke="#8bbdb4" stroke-width="10"/>
+    <path d="M296 564c-9-31 26-43 37-15s48 5 35-20" stroke="#e99d9c" stroke-width="8"/>
+  </g>
+  <path d="M425 500l148-41 40 148-148 40z" fill="url(#checker)" transform="rotate(-8 517 550)"/>
+  <g fill="#f2c95f"><rect x="232" y="42" width="11" height="32" rx="5" transform="rotate(-31 237 58)"/><circle cx="140" cy="557" r="7"/></g>
+  <g fill="#bca7d3"><path d="M329 69l23-29 13 34z"/><rect x="37" y="394" width="9" height="29" rx="4" transform="rotate(34 41 408)"/></g>
+  <rect x="21" y="21" width="558" height="558" rx="19" fill="none" stroke="#e0d9f0" stroke-opacity=".4"/>
+</svg>

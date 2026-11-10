@@ -1,0 +1,26 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 600 600">
+  <defs>
+    <pattern id="ruling" width="24" height="24" patternUnits="userSpaceOnUse"><path d="M0 24V0h24" fill="none" stroke="#b4d1be" stroke-opacity=".07"/></pattern>
+  </defs>
+  <rect width="600" height="600" fill="#183e46"/>
+  <rect width="600" height="600" fill="url(#ruling)"/>
+  <g fill="none" stroke-width="13">
+    <path d="M-12 83h126q45 0 45 45v15" stroke="#efac83"/>
+    <path d="M-12 107h126q21 0 21 21v15" stroke="#e4d7ae"/>
+    <path d="M-12 131h103" stroke="#89b6a5"/>
+  </g>
+  <g transform="translate(481 79) rotate(17)">
+    <rect x="-115" y="-59" width="230" height="142" rx="14" fill="#e8d6ad" stroke="#0e2e36" stroke-width="5"/>
+    <rect x="-101" y="-45" width="202" height="92" rx="7" fill="#efac83"/>
+    <path d="M-91-28H91M-91-17H91" stroke="#ae6e53" stroke-width="2"/>
+    <rect x="-70" y="0" width="140" height="39" rx="19" fill="#183e46"/>
+    <g fill="#e8d6ad" stroke="#31525a" stroke-width="3"><circle cx="-47" cy="20" r="16"/><circle cx="47" cy="20" r="16"/></g>
+    <g fill="#31525a"><circle cx="-47" cy="20" r="6"/><circle cx="47" cy="20" r="6"/></g>
+    <path d="M-60 82l12-23h96l12 23" fill="#89b6a5" stroke="#597a6d" stroke-width="2"/>
+    <g fill="#31525a"><circle cx="-97" cy="65" r="3"/><circle cx="97" cy="65" r="3"/></g>
+  </g>
+  <path d="M-30 463c92-93 211-18 168 42s-117-4-75-38 166 8 130 86-121 32-139 82" fill="none" stroke="#efac83" stroke-width="8"/>
+  <path d="M-20 476c92-93 211-18 168 42s-117-4-75-38 166 8 130 86" fill="none" stroke="#8bb9a7" stroke-width="3"/>
+  <path d="M421 544h100m-100 13h70" stroke="#e8d6ad" stroke-width="3" stroke-linecap="round"/>
+  <rect x="21" y="21" width="558" height="558" rx="19" fill="none" stroke="#b1cdb9" stroke-opacity=".48"/>
+</svg>

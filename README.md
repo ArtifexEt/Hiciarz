@@ -70,8 +70,9 @@ W kreatorze wybierz domyślny tryb nowych kart: **Zgadnij film** albo **Zgadnij 
 
 JSON i CSV obsługują pola `gameMode` (`music`, `movie`, `game`) oraz `answer` (wymagane dla filmu i gry). Import Spotify dostarcza dane nagrania; tytuł produkcji uzupełnia się ręcznie. Odpowiedź pozostaje w projekcie i na stronie odpowiedzi PDF — QR jej nie zawiera. Rok nagrania jest zachowany w projekcie, ale na kartach tych trybów zastępuje go etykieta FILM lub GRA. Starsze karty i talie nadal działają.
 
-- **Pięć motywów:** Klasyczny, Minimalistyczny, Świąteczna noc, Zimowa opowieść i autorskie Rybki świąteczne.
-- **Spójna oprawa gry:** zeskanowana karta przełącza wygląd aplikacji na swój motyw.
+- **Dziewięć motywów:** Klasyczny, Minimalistyczny, Winylowy wieczór, Lato z kasetą, Domówka 90s, Noc disco, Świąteczna noc, Zimowa opowieść i autorskie Rybki świąteczne.
+- **Osobny wygląd strony i kart:** skórkę strony wybierasz w górnym pasku lub mobilnym menu „Wygląd”, a motyw talii w zakładce „Wygląd kart”. Wybieranie, tworzenie i wczytywanie talii nie zmienia skórki strony.
+- **Oprawa rundy:** zeskanowana karta dopasowuje wygląd skanera i odtwarzacza tylko na czas rundy. Po jej zakończeniu lub powrocie do kreatora wraca Twoja skórka strony.
 - **Kolorowe awersy:** różne odcienie kart, ozdobne akcenty oraz czytelny rok, tytuł i wykonawca.
 - **Własne rewersy:** wgraj grafikę lub wybierz gotowy preset.
 - **Laser — lekki kolor:** białe tło, ciemny tekst i oszczędne kolorowe akcenty do drukarki laserowej.

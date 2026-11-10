@@ -98,7 +98,7 @@ import { imageData, loadDecks, saveDecks } from './storage';
 import PDFExportProgress, { setPDFProgress } from './PDFExportProgress';
 import PrintCards from './PrintCards';
 import { preparePDFPreview } from './pdf-preview';
-import { asset, themeArt } from './themes';
+import { asset, themeArt, themeDescriptions } from './themes';
 import type { SourceCheck } from './availability';
 import { useConnection, type Command } from './connection';
 const Camera = lazy(() => import('./Camera'));
@@ -172,13 +172,15 @@ function ThemePicker({ value, onChange }: { value: Theme; onChange: (t: Theme) =
         <button
           key={t}
           className={'theme-option ' + (value === t ? 'chosen' : '')}
+          aria-label={'Motyw kart: ' + themeNames[t]}
+          aria-pressed={value === t}
           onClick={() => onChange(t)}
         >
           <span style={{ backgroundImage: `url("${themeArt(t)}")` }}>
             {value === t && <Check size={18} />}
           </span>
           <strong>{themeNames[t]}</strong>
-          {t === 'fish' && <small>Autorska kolekcja</small>}
+          <small>{themeDescriptions[t]}</small>
         </button>
       ))}
     </div>
@@ -564,6 +566,7 @@ export default function App() {
     [preferred, setPreferred] = useState<'spotify' | 'youtube'>('spotify'),
     [playState, setPlayState] = useState('Przygotuj połączenie i zeskanuj kartę.'),
     [command, setCommand] = useState<{ type: Command; seq: number } | null>(null);
+  const displayTheme = (mode === 'scanner' || mode === 'player') && card ? card.theme : uiTheme;
   const [spotifySetup, setSpotifySetup] = useState<{
     purpose?: SpotifyPurpose;
     clientId?: string;
@@ -641,7 +644,6 @@ export default function App() {
     setMessage('');
     setCard(c);
     setCommand(null);
-    setUiTheme(c.theme);
     setSource(c.sources[preferred] ? preferred : c.sources.spotify ? 'spotify' : 'youtube');
     setPlayState('Wczytuję utwór z karty…');
     setPlaybackState('loading');
@@ -790,9 +792,12 @@ export default function App() {
       );
   }, [decks, loaded]);
   useEffect(() => {
-    const t = themes.includes(uiTheme) ? uiTheme : 'classic';
-    document.documentElement.dataset.theme = t;
-    localStorage.setItem('hiciarz-theme', t);
+    document.documentElement.dataset.theme = themes.includes(displayTheme)
+      ? displayTheme
+      : 'classic';
+  }, [displayTheme]);
+  useEffect(() => {
+    localStorage.setItem('hiciarz-theme', themes.includes(uiTheme) ? uiTheme : 'classic');
   }, [uiTheme]);
   useEffect(() => {
     setSelected(new Set());
@@ -898,7 +903,6 @@ export default function App() {
     if (destination === 'new') {
       setDecks((ds) => [...ds, example]);
       setActiveId(example.id);
-      setUiTheme(example.theme);
       notify(
         `Utworzono „${example.name}”: ${example.songs.length} utworów. Sprawdź lata przed drukiem.`,
       );
@@ -1025,7 +1029,6 @@ export default function App() {
     }
     setMode(next);
     if (next === 'player') setOutput('browser');
-    if (next === 'editor' && deck) setUiTheme(deck.theme);
   }
   const filtered =
     deck?.songs.filter((s) =>
@@ -1102,7 +1105,6 @@ export default function App() {
               onClick={() => {
                 setActiveId(d.id);
                 changeMode('editor');
-                setUiTheme(d.theme);
               }}
             >
               <span className={'deck-dot ' + d.theme} />
@@ -1484,8 +1486,6 @@ export default function App() {
                     value={activeId}
                     onChange={(e) => {
                       setActiveId(e.target.value);
-                      const chosen = decks.find((d) => d.id === e.target.value);
-                      if (chosen) setUiTheme(chosen.theme);
                     }}
                   >
                     {decks.map((d) => (
@@ -1841,14 +1841,16 @@ export default function App() {
                       <div className="panel-heading">
                         <div>
                           <h2>Nadaj talii charakter.</h2>
-                          <p>Motyw karty zmieni również wygląd skanera i odtwarzacza.</p>
+                          <p>
+                            Wybierz tło kart. Wygląd strony ustawiasz osobno w menu „Wygląd”. Skaner
+                            dopasuje się do karty tylko na czas rundy.
+                          </p>
                         </div>
                       </div>
                       <ThemePicker
                         value={deck.theme}
                         onChange={(theme) => {
                           updateDeck({ theme, back: undefined });
-                          setUiTheme(theme);
                         }}
                       />
                       <label className="front-color-choice">
@@ -1900,7 +1902,7 @@ export default function App() {
                       {deck.back && (
                         <div className="notice">
                           <span>
-                            Własne tło jest aktywne. Aplikacja użyje motywu „
+                            Własne tło jest aktywne. Kolory kart i oprawę rundy określa motyw „
                             {themeNames[deck.theme]}”.
                           </span>
                           <button
@@ -2746,7 +2748,6 @@ export default function App() {
                   const d = { ...pending.data, id: crypto.randomUUID() };
                   setDecks([...decks, d]);
                   setActiveId(d.id);
-                  setUiTheme(d.theme);
                   notify('Otworzono pełny projekt.');
                 } else
                   importSongs(

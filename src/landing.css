@@ -37,6 +37,26 @@ html[data-theme='fish'] .home-landing {
   --home-muted: #5e665e;
   --home-line: #d2d5ca;
 }
+html[data-theme='vinyl'] .home-landing {
+  --home-ink: #493326;
+  --home-muted: #736456;
+  --home-line: #ded2bd;
+}
+html[data-theme='mixtape'] .home-landing {
+  --home-ink: #244b48;
+  --home-muted: #5c6c65;
+  --home-line: #ccd8ce;
+}
+html[data-theme='memphis'] .home-landing {
+  --home-ink: #38385c;
+  --home-muted: #696779;
+  --home-line: #d4cfe2;
+}
+html[data-theme='disco'] .home-landing {
+  --home-ink: #473255;
+  --home-muted: #75627c;
+  --home-line: #ddcfe4;
+}
 .home-hero {
   display: grid;
   grid-template-columns: 1fr 1.08fr;

@@ -1,0 +1,28 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 600 600">
+  <defs>
+    <pattern id="paper" width="8" height="8" patternUnits="userSpaceOnUse"><path d="M0 1h8" stroke="#f5e6cd" stroke-opacity=".035"/></pattern>
+  </defs>
+  <rect width="600" height="600" fill="#382a24"/>
+  <rect width="600" height="600" fill="url(#paper)"/>
+  <g fill="none" stroke-linecap="round" stroke-width="13">
+    <path d="M-40 38H78a150 150 0 0 1 150 150v30" stroke="#eeb77b"/>
+    <path d="M-40 62H78a126 126 0 0 1 126 126v30" stroke="#c47a4c"/>
+    <path d="M-40 86H78a102 102 0 0 1 102 102v30" stroke="#908a62"/>
+    <path d="M-40 110H78a78 78 0 0 1 78 78v30" stroke="#f1d9af"/>
+  </g>
+  <g transform="translate(487 506)">
+    <circle r="169" fill="#241e1b" stroke="#8d7054" stroke-width="2"/>
+    <g fill="none" stroke="#c6a57b" stroke-opacity=".26">
+      <circle r="158"/><circle r="150"/><circle r="142"/><circle r="134"/>
+      <circle r="126"/><circle r="118"/><circle r="110"/><circle r="102"/>
+      <circle r="94"/><circle r="86"/><circle r="78"/>
+    </g>
+    <path d="M-125-92a155 155 0 0 1 217-33M-104-77a130 130 0 0 1 181-27" fill="none" stroke="#f2dbb4" stroke-opacity=".3"/>
+    <circle r="56" fill="#b66c43"/>
+    <circle r="42" fill="none" stroke="#eed1a4" stroke-width="2"/>
+    <circle r="10" fill="#241e1b"/>
+    <circle r="3" fill="#eed1a4"/>
+  </g>
+  <g fill="#eeb77b"><circle cx="80" cy="491" r="4"/><circle cx="80" cy="508" r="4"/><circle cx="80" cy="525" r="4"/></g>
+  <rect x="21" y="21" width="558" height="558" rx="19" fill="none" stroke="#efc28c" stroke-opacity=".48"/>
+</svg>
