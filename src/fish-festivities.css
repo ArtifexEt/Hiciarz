@@ -75,45 +75,21 @@ html[data-theme='fish'] .fish-festivities {
   right: 28%;
   font-size: 16px;
 }
-.fish-motion-toggle {
-  position: absolute;
-  left: 50%;
-  bottom: 4px;
-  transform: translateX(-50%);
-  display: flex;
-  align-items: center;
-  gap: 7px;
-  min-height: 44px;
-  padding: 10px 12px;
-  border: 1px solid transparent;
-  border-radius: 6px;
-  background: var(--bg);
-  color: #526857;
-  font-size: 11px;
-  white-space: nowrap;
-}
-.fish-motion-toggle:hover:not(:disabled) {
-  border-color: #cbb995;
-}
-.fish-motion-toggle:disabled {
-  opacity: 1;
-  color: #6e756a;
-}
-.fish-festivities[data-motion='on'] .fish-hanging-left {
+.fish-festivities .fish-hanging-left {
   animation: fish-swing-left 5.5s ease-in-out infinite;
 }
-.fish-festivities[data-motion='on'] .fish-hanging-right {
+.fish-festivities .fish-hanging-right {
   animation: fish-swing-right 6.5s ease-in-out -2s infinite;
 }
-.fish-festivities[data-motion='on'] .fish-bulb,
-.fish-festivities[data-motion='on'] .fish-spark {
+.fish-festivities .fish-bulb,
+.fish-festivities .fish-spark {
   animation: fish-light-glow 4.5s ease-in-out infinite;
 }
-.fish-festivities[data-motion='on'] .fish-bulb-1,
-.fish-festivities[data-motion='on'] .fish-spark-two {
+.fish-festivities .fish-bulb-1,
+.fish-festivities .fish-spark-two {
   animation-delay: -1.5s;
 }
-.fish-festivities[data-motion='on'] .fish-bulb-2 {
+.fish-festivities .fish-bulb-2 {
   animation-delay: -3s;
 }
 .mode-home:has(.fish-festivities) .home-hero {
@@ -138,9 +114,6 @@ html[data-theme='fish'] .fish-festivities-compact {
 }
 .fish-festivities-compact .fish-light-string {
   height: 40px;
-}
-.fish-festivities-compact .fish-motion-toggle {
-  bottom: -10px;
 }
 .fish-festivities-compact .fish-spark {
   display: none;
@@ -207,12 +180,6 @@ html[data-theme='fish'] .fish-festivities-compact {
     top: 40px;
     font-size: 15px;
   }
-  .fish-motion-toggle {
-    left: auto;
-    right: 0;
-    bottom: 4px;
-    transform: none;
-  }
   .mode-home:has(.fish-festivities) .home-hero {
     padding-top: 14px;
   }
@@ -227,9 +194,6 @@ html[data-theme='fish'] .fish-festivities-compact {
   .fish-festivities-compact .fish-hanging img {
     width: 92px;
     height: 92px;
-  }
-  .fish-festivities-compact .fish-motion-toggle {
-    bottom: -2px;
   }
 }
 @media (max-height: 600px) {
@@ -252,9 +216,6 @@ html[data-theme='fish'] .fish-festivities-compact {
   }
   .fish-light-string {
     height: 35px;
-  }
-  .fish-motion-toggle {
-    bottom: -2px;
   }
   .fish-spark {
     display: none;
