@@ -401,6 +401,7 @@ function SpotifyImport({
     ),
     [busy, setBusy] = useState(false),
     [error, setError] = useState('');
+  const [playlist, setPlaylist] = useState(initialPlaylist);
   return (
     <Modal title="Importuj playlistę ze Spotify" onClose={onClose}>
       <div className="notice spotify-import-access">
@@ -438,7 +439,7 @@ function SpotifyImport({
           className="primary full"
           onClick={() => {
             sessionStorage.setItem('spotify-import-mode', mode);
-            sessionStorage.setItem('spotify-import-playlist', initialPlaylist);
+            sessionStorage.setItem('spotify-import-playlist', playlist);
             beginSpotifyLogin().catch((e) => setError(e.message));
           }}
         >
@@ -474,8 +475,9 @@ function SpotifyImport({
             <input
               name="playlist"
               required
-              defaultValue={initialPlaylist}
-              placeholder="https://open.spotify.com/playlist/…"
+              value={playlist}
+              onChange={(e) => setPlaylist(e.target.value)}
+              placeholder="Wklej link do swojej playlisty"
             />
           </label>
           <p className="hint">
@@ -501,7 +503,7 @@ function SpotifyImport({
         className="spotify-settings-link"
         onClick={() => {
           sessionStorage.setItem('spotify-import-mode', mode);
-          sessionStorage.setItem('spotify-import-playlist', initialPlaylist);
+          sessionStorage.setItem('spotify-import-playlist', playlist);
           openSpotifySetup('import');
         }}
       >
@@ -1529,7 +1531,12 @@ export default function App() {
                           <strong>Twoja playlista. Wasza talia.</strong>
                           <p>Wczytaj własną lub współtworzoną playlistę ze Spotify.</p>
                         </div>
-                        <button onClick={() => setModal('spotify')}>
+                        <button
+                          onClick={() => {
+                            sessionStorage.removeItem('spotify-import-playlist');
+                            setModal('spotify');
+                          }}
+                        >
                           Importuj playlistę <ArrowUpRight size={17} />
                         </button>
                       </div>
@@ -2579,7 +2586,10 @@ export default function App() {
       {modal === 'spotify' && (
         <SpotifyImport
           initialPlaylist={sessionStorage.getItem('spotify-import-playlist') || ''}
-          onClose={() => setModal(null)}
+          onClose={() => {
+            sessionStorage.removeItem('spotify-import-playlist');
+            setModal(null);
+          }}
           onImport={importSongs}
           onExamples={() => setModal('examples')}
         />
