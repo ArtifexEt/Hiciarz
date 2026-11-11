@@ -1,39 +1,12 @@
 {
-  "name": "hiciarz",
-  "version": "0.1.0",
+  "name": "hiciarz-workspace",
   "private": true,
-  "type": "module",
+  "packageManager": "pnpm@11.25.0",
   "scripts": {
-    "dev": "vite --host 127.0.0.1",
-    "build": "tsc -b && vite build",
-    "preview": "vite preview --host 127.0.0.1",
-    "test": "vitest run",
-    "format": "prettier --write src vite.config.ts tsconfig.json README.md"
-  },
-  "dependencies": {
-    "@zxing/browser": "^0.1.5",
-    "idb-keyval": "^6.2.2",
-    "jspdf": "^3.0.4",
-    "lucide-react": "^0.468.0",
-    "papaparse": "^5.5.3",
-    "peerjs": "^1.5.5",
-    "qrcode": "^1.5.4",
-    "react": "^19.2.0",
-    "react-dom": "^19.2.0",
-    "workbox-window": "^7.3.0"
-  },
-  "devDependencies": {
-    "@types/node": "^22.10.0",
-    "@types/papaparse": "^5.3.16",
-    "@types/qrcode": "^1.5.6",
-    "@types/react": "^19.2.0",
-    "@types/react-dom": "^19.2.0",
-    "@vitejs/plugin-react": "^4.7.0",
-    "prettier": "3.6.2",
-    "typescript": "~5.9.3",
-    "vite": "^6.4.1",
-    "vite-plugin-pwa": "^1.1.0",
-    "vitest": "^3.2.4"
-  },
-  "packageManager": "pnpm@11.25.0"
+    "dev": "pnpm --dir web dev",
+    "test": "pnpm --dir web test",
+    "build": "pnpm --dir web build",
+    "preview": "pnpm --dir web preview",
+    "format:web": "pnpm --dir web format"
+  }
 }

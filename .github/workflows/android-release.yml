@@ -1,0 +1,185 @@
+name: Publish Android test release
+
+on:
+  push:
+    tags: ['android-v*']
+  workflow_dispatch:
+    inputs:
+      version:
+        description: 'Version, for example 0.1.0-alpha.1 (creates android-v<version>)'
+        required: true
+        default: '0.1.0-alpha.1'
+        type: string
+      version_code:
+        description: 'Optional positive Android version code; otherwise generated from the run number'
+        required: false
+        type: string
+
+permissions:
+  contents: read
+
+concurrency:
+  group: android-release-${{ github.ref }}-${{ inputs.version }}
+  cancel-in-progress: false
+
+jobs:
+  release:
+    name: Build and publish test APK
+    runs-on: ubuntu-latest
+    timeout-minutes: 35
+    permissions:
+      contents: write
+    defaults:
+      run:
+        working-directory: android-app
+    env:
+      SPOTIFY_CLIENT_ID: ${{ vars.SPOTIFY_CLIENT_ID || secrets.SPOTIFY_CLIENT_ID }}
+      HICIARZ_KEYSTORE_BASE64: ${{ secrets.HICIARZ_KEYSTORE_BASE64 }}
+      HICIARZ_KEYSTORE_PASSWORD: ${{ secrets.HICIARZ_KEYSTORE_PASSWORD }}
+      HICIARZ_KEY_ALIAS: ${{ secrets.HICIARZ_KEY_ALIAS }}
+      HICIARZ_KEY_PASSWORD: ${{ secrets.HICIARZ_KEY_PASSWORD }}
+      HICIARZ_PRODUCTION_SIGNING: 'false'
+      ANDROID_SIGNING_CERT_SHA256: ${{ vars.ANDROID_SIGNING_CERT_SHA256 }}
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          fetch-depth: 0
+      - name: Resolve release version
+        id: version
+        working-directory: .
+        env:
+          INPUT_VERSION: ${{ inputs.version }}
+          INPUT_VERSION_CODE: ${{ inputs.version_code }}
+        run: |
+          set -euo pipefail
+          if [[ "$GITHUB_REF_TYPE" == tag ]]; then
+            tag="$GITHUB_REF_NAME"
+            version="${tag#android-v}"
+          else
+            version="$INPUT_VERSION"
+            tag="android-v${version}"
+          fi
+          if [[ ! "$version" =~ ^[0-9]+\.[0-9]+\.[0-9]+(-[0-9A-Za-z][0-9A-Za-z.-]*)?$ ]]; then
+            echo 'Invalid version; use a semantic version such as 0.1.0-alpha.1.' >&2
+            exit 1
+          fi
+          code="${INPUT_VERSION_CODE:-$((100000 + GITHUB_RUN_NUMBER))}"
+          if [[ ! "$code" =~ ^[1-9][0-9]{0,9}$ ]] || (( code > 2100000000 )); then
+            echo 'Invalid Android version code.' >&2
+            exit 1
+          fi
+          git check-ref-format "refs/tags/$tag"
+          if git show-ref --verify --quiet "refs/tags/$tag"; then
+            tag_commit="$(git rev-parse "$tag^{commit}")"
+            if [[ "$tag_commit" != "$GITHUB_SHA" ]]; then
+              echo 'This tag points to another commit. Choose a new version.' >&2
+              exit 1
+            fi
+          fi
+          echo "tag=$tag" >> "$GITHUB_OUTPUT"
+          echo "name=$version" >> "$GITHUB_OUTPUT"
+          echo "code=$code" >> "$GITHUB_OUTPUT"
+      - uses: actions/setup-java@77dd5b2ce225ea11469928ac317850245a74ae78 # v6.2.0
+        with:
+          distribution: temurin
+          java-version: 17
+      - uses: android-actions/setup-android@be39fa834029ff78f1a44aa3bb0819b8fc2bd8fd # v4.0.4
+      - uses: gradle/actions/setup-gradle@8da46b539cd8fe6ab27ca75128919a18d757604c # v6.4.1
+      - name: Install Android platform
+        run: sdkmanager 'platforms;android-37.0' 'build-tools;37.0.0'
+      - name: Prepare private test signing
+        run: |
+          set -euo pipefail
+          if [[ -z "$HICIARZ_KEYSTORE_BASE64" || -z "$HICIARZ_KEYSTORE_PASSWORD" || \
+                -z "$HICIARZ_KEY_ALIAS" || -z "$HICIARZ_KEY_PASSWORD" ]]; then
+            echo 'Configure all four HICIARZ signing secrets before publishing an APK.' >&2
+            exit 1
+          fi
+          certificate_digest="$(printf '%s' "$ANDROID_SIGNING_CERT_SHA256" | tr -d '[:space:]:' | tr '[:upper:]' '[:lower:]')"
+          if [[ ! "$certificate_digest" =~ ^[a-f0-9]{64}$ ]]; then
+            echo 'Configure the public ANDROID_SIGNING_CERT_SHA256 repository variable.' >&2
+            exit 1
+          fi
+          signing_file="$RUNNER_TEMP/hiciarz-signing.jks"
+          umask 077
+          printf '%s' "$HICIARZ_KEYSTORE_BASE64" | base64 --decode > "$signing_file"
+          echo "HICIARZ_KEYSTORE_FILE=$signing_file" >> "$GITHUB_ENV"
+      - name: Test, lint and build
+        env:
+          RELEASE_VERSION: ${{ steps.version.outputs.name }}
+          RELEASE_VERSION_CODE: ${{ steps.version.outputs.code }}
+        run: |
+          if [[ ! "$SPOTIFY_CLIENT_ID" =~ ^[A-Fa-f0-9]{32}$ ]]; then
+            echo 'Set the SPOTIFY_CLIENT_ID repository variable before publishing an APK.' >&2
+            exit 1
+          fi
+          ./gradlew --no-daemon :app:testDebugUnitTest :app:lintRelease :app:assembleRelease \
+            -PversionName="$RELEASE_VERSION" -PversionCode="$RELEASE_VERSION_CODE"
+      - name: Prepare APK, checksum and certificate
+        env:
+          RELEASE_VERSION: ${{ steps.version.outputs.name }}
+          RELEASE_VERSION_CODE: ${{ steps.version.outputs.code }}
+        run: |
+          set -euo pipefail
+          mkdir -p release-artifacts
+          apk_name="hiciarz-android-${RELEASE_VERSION}-test.apk"
+          cp app/build/outputs/apk/release/app-release.apk "release-artifacts/$apk_name"
+          build_tools="$ANDROID_HOME/build-tools/37.0.0"
+          badging="$("$build_tools/aapt2" dump badging "release-artifacts/$apk_name")"
+          if [[ "$badging" != *"package: name='pl.artifex.hiciarz'"* ]] || \
+             [[ "$badging" != *"versionCode='$RELEASE_VERSION_CODE'"* ]] || \
+             [[ "$badging" != *"versionName='$RELEASE_VERSION'"* ]]; then
+            echo 'Built APK package or version does not match the requested release.' >&2
+            exit 1
+          fi
+          "$build_tools/apksigner" verify --verbose --print-certs "release-artifacts/$apk_name" > release-artifacts/SIGNING-CERTIFICATE.txt
+          expected_test_cert="$(printf '%s' "$ANDROID_SIGNING_CERT_SHA256" | tr -d '[:space:]:' | tr '[:upper:]' '[:lower:]')"
+          if ! grep --fixed-strings --ignore-case --quiet \
+            "Signer #1 certificate SHA-256 digest: $expected_test_cert" release-artifacts/SIGNING-CERTIFICATE.txt; then
+            echo 'The APK signing certificate does not match ANDROID_SIGNING_CERT_SHA256.' >&2
+            exit 1
+          fi
+          {
+            printf 'applicationId=pl.artifex.hiciarz\nversionName=%s\nversionCode=%s\n' "$RELEASE_VERSION" "$RELEASE_VERSION_CODE"
+            printf 'commit=%s\nsigning=test\n' "$GITHUB_SHA"
+          } > release-artifacts/BUILD-INFO.txt
+          cd release-artifacts
+          sha256sum "$apk_name" > "$apk_name.sha256"
+      - name: Keep release files as workflow artifacts
+        uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7.0.2
+        with:
+          name: android-release-${{ steps.version.outputs.name }}
+          path: android-app/release-artifacts/
+          if-no-files-found: error
+          retention-days: 30
+      - name: Publish prerelease
+        env:
+          GH_TOKEN: ${{ github.token }}
+          RELEASE_TAG: ${{ steps.version.outputs.tag }}
+          RELEASE_VERSION: ${{ steps.version.outputs.name }}
+          REPOSITORY: ${{ github.repository }}
+        run: |
+          set -euo pipefail
+          if gh release view "$RELEASE_TAG" --repo "$REPOSITORY" >/dev/null 2>&1; then
+            echo 'This release already exists. Choose a new version instead of replacing published APKs.' >&2
+            exit 1
+          fi
+          cat > release-artifacts/RELEASE-NOTES.md <<'NOTES'
+          Testowe wydanie natywnej aplikacji Hiciarz na Androida.
+
+          - Pobierz plik `hiciarz-android-…-test.apk` na telefon.
+          - APK jest podpisane prywatnym kluczem testowym przechowywanym w GitHub Secrets. To wydanie do testów, nie wydanie produkcyjne Google Play.
+          - Spotify App Remote wymaga zainstalowanej aplikacji Spotify, zalogowanego konta i zgody na sterowanie odtwarzaniem.
+          - Plik `.sha256` pozwala sprawdzić integralność APK. Odcisk podpisu znajduje się w `SIGNING-CERTIFICATE.txt`.
+          - `BUILD-INFO.txt` podaje wersję aplikacji i commit źródeł. Wersja jest odczytywana i sprawdzana z manifestu gotowego APK.
+          - Wydanie Androida nie publikuje ani nie aktualizuje strony internetowej.
+          NOTES
+          gh release create "$RELEASE_TAG" \
+            release-artifacts/*.apk release-artifacts/*.sha256 \
+            release-artifacts/SIGNING-CERTIFICATE.txt release-artifacts/BUILD-INFO.txt \
+            --repo "$REPOSITORY" --target "$GITHUB_SHA" \
+            --title "Hiciarz Android ${RELEASE_VERSION} — test" \
+            --notes-file release-artifacts/RELEASE-NOTES.md --prerelease
+      - name: Remove temporary private keystore
+        if: always()
+        run: rm -f "$RUNNER_TEMP/hiciarz-signing.jks"

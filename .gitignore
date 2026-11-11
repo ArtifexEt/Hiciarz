@@ -8,3 +8,22 @@ output/
 .playwright-mcp/
 *.tsbuildinfo
 TODO.local.md
+.DS_Store
+._*
+
+# Android local/build files
+.gradle/
+.kotlin/
+**/build/
+local.properties
+*.apk
+*.aab
+*.apks
+*.hprof
+*.jks
+*.keystore
+*.p12
+*.pfx
+
+# Private, local protocol research and device logs
+/research/

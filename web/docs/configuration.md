@@ -17,7 +17,9 @@ Otwórz adres wypisany przez Vite z końcówką `/Hiciarz/`. Dla telefonu użyj 
 
 ## GitHub Pages
 
-Workflow `.github/workflows/pages.yml` testuje, buduje i publikuje gałąź `main`. W Settings → Pages wybierz źródło **GitHub Actions**. Własny fork używa nazwy swojego repozytorium jako ścieżki bazowej. Dla hostingu w katalogu głównym ustaw `BASE_PATH=/` podczas budowania.
+Workflow [`.github/workflows/pages.yml`](../../.github/workflows/pages.yml) publikuje stronę automatycznie po pushu lub merge do `main`, jeśli zmienił się `web/`, główna konfiguracja package/pnpm lub sam workflow. Commity dotyczące wyłącznie `android-app/` nie uruchamiają wdrożenia. Ręczna publikacja pozostaje dostępna przez **Actions → Publish website → Run workflow**, np. po zmianie zmiennych repozytorium. Budowanie odbywa się z folderu `web/`; wszystkie dotychczasowe funkcje i PWA pozostają dostępne.
+
+W Settings → Pages wybierz źródło **GitHub Actions**. Własny fork używa nazwy swojego repozytorium jako ścieżki bazowej. Dla hostingu w katalogu głównym ustaw `BASE_PATH=/` podczas budowania.
 
 Nie wpisuj sekretu Spotify do kodu ani zmiennych frontendu. Zmienne budowania trafiające do strony są publiczne.
 
@@ -26,7 +28,7 @@ Nie wpisuj sekretu Spotify do kodu ani zmiennych frontendu. Zmienne budowania tr
 1. W panelu Spotify ustaw dokładny Redirect URI strony, np. `https://artifexet.github.io/Hiciarz/`.
 2. W repozytorium otwórz Settings → Secrets and variables → Actions → New repository secret.
 3. Utwórz sekret **SPOTIFY_CLIENT_ID** z wartością Client ID. Nie dodawaj pliku z identyfikatorem do repozytorium.
-4. Uruchom ponownie workflow **Build, test and publish Pages** na gałęzi main.
+4. Uruchom ponownie workflow **Publish website** na gałęzi main.
 
 Client ID jest dołączany do gotowego frontendu podczas budowania. Client Secret nie jest potrzebny: logowanie używa PKCE. Nigdy nie przekazuj Client Secret do zmiennych VITE ani do plików strony.
 
