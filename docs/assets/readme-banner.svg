@@ -1,16 +1,33 @@
-<svg xmlns="http://www.w3.org/2000/svg" width="1200" height="360" viewBox="0 0 1200 360" role="img" aria-labelledby="title desc">
-  <title id="title">Hiciarz — Twoja muzyka. Wasza gra.</title>
-  <desc id="desc">Zielony baner z nazwą Hiciarz i trzema kolorowymi kartami muzycznymi.</desc>
-  <defs><linearGradient id="bg" x2="1" y2="1"><stop stop-color="#083935"/><stop offset="1" stop-color="#142c2a"/></linearGradient><pattern id="dots" width="28" height="28" patternUnits="userSpaceOnUse"><circle cx="1" cy="1" r="1" fill="#ffffff" opacity=".08"/></pattern></defs>
-  <rect width="1200" height="360" rx="24" fill="url(#bg)"/><rect width="1200" height="360" rx="24" fill="url(#dots)"/>
-  <circle cx="1090" cy="28" r="200" fill="#edbd75" opacity=".05"/>
+<svg xmlns="http://www.w3.org/2000/svg" width="1200" height="360" viewBox="0 0 1200 360" preserveAspectRatio="xMidYMid meet" role="img" aria-labelledby="title desc">
+  <title id="title">Hiciarz — skaner kart i kreator talii</title>
+  <desc id="desc">Nazwa Hiciarz i trzy kwadratowe karty ułożone w wachlarz, w proporcji 1:1 jak karty do druku 60 × 60 mm: Dancing Queen, ABBA, 1976; Last Christmas, Wham!, 1984; Take on Me, a-ha, 1985.</desc>
+  <rect width="1200" height="360" rx="20" fill="#083b34"/>
   <g font-family="Arial, Helvetica, sans-serif">
-    <text x="60" y="75" fill="#edbd75" font-size="13" letter-spacing="4">ZESKANUJ. POSŁUCHAJ. ZGADNIJ.</text>
-    <text x="56" y="175" fill="#faf7ed" font-size="82" font-weight="700" letter-spacing="-4">hiciarz<tspan fill="#edbd75" font-size="72"> ✳</tspan></text>
-    <text x="60" y="225" fill="#faf7ed" font-size="28">Twoja muzyka. Wasza gra.</text>
-    <text x="60" y="288" fill="#b5c9c1" font-size="17">Własne playlisty · Karty do druku · Skaner QR</text>
-    <g transform="translate(714 79) rotate(-12 80 104)"><rect width="160" height="208" rx="16" fill="#c4d5c2"/><rect x="9" y="9" width="142" height="190" rx="10" fill="none" stroke="#315849"/><text x="22" y="38" fill="#315849" font-size="11" letter-spacing="2">HICIARZ</text><text x="20" y="119" fill="#234136" font-size="44" font-weight="700">1978</text><text x="22" y="163" fill="#315849" font-size="14">Dobry rytm.</text><text x="22" y="183" fill="#315849" font-size="14">Dobre wspomnienia.</text></g>
-    <g transform="translate(858 58) rotate(5 80 104)"><rect width="160" height="208" rx="16" fill="#edbd75"/><rect x="9" y="9" width="142" height="190" rx="10" fill="none" stroke="#6a4b27"/><text x="22" y="38" fill="#6a4b27" font-size="11" letter-spacing="2">HICIARZ</text><text x="20" y="119" fill="#513b24" font-size="44" font-weight="700">1984</text><text x="22" y="164" fill="#6a4b27" font-size="14">Wasz kolejny hit.</text><text x="22" y="185" fill="#6a4b27" font-size="20">♪</text></g>
-    <g transform="translate(1014 101) rotate(14 64 88)"><rect width="128" height="176" rx="14" fill="#dac9e5"/><rect x="9" y="9" width="110" height="158" rx="8" fill="none" stroke="#675576"/><text x="19" y="35" fill="#675576" font-size="10" letter-spacing="2">HICIARZ</text><text x="18" y="103" fill="#574763" font-size="36" font-weight="700">2001</text><text x="20" y="148" fill="#675576" font-size="25">♫</text></g>
+    <text x="54" y="158" fill="#faf7ed" font-size="78" font-weight="700" letter-spacing="-3">hiciarz</text>
+    <text x="58" y="205" fill="#d7e0d7" font-size="21">Skanowanie QR i tworzenie talii do druku.</text>
+    <g transform="translate(672 108) rotate(-15 82 82)">
+      <rect width="164" height="164" rx="12" fill="#d5dfcf"/>
+      <rect x="7" y="7" width="150" height="150" rx="8" fill="none" stroke="#8da58d"/>
+      <text x="16" y="29" fill="#315849" font-size="9" letter-spacing="1.6">HICIARZ</text>
+      <text x="82" y="84" text-anchor="middle" fill="#234136" font-size="39" font-weight="700" letter-spacing="-1.5">1976</text>
+      <text x="82" y="118" text-anchor="middle" fill="#234136" font-size="14" font-weight="700">Dancing Queen</text>
+      <text x="82" y="141" text-anchor="middle" fill="#315849" font-size="12">ABBA</text>
+    </g>
+    <g transform="translate(816 76)">
+      <rect width="164" height="164" rx="12" fill="#f1dab1"/>
+      <rect x="7" y="7" width="150" height="150" rx="8" fill="none" stroke="#c2a779"/>
+      <text x="16" y="29" fill="#6a4b27" font-size="9" letter-spacing="1.6">HICIARZ</text>
+      <text x="82" y="84" text-anchor="middle" fill="#513b24" font-size="39" font-weight="700" letter-spacing="-1.5">1984</text>
+      <text x="82" y="118" text-anchor="middle" fill="#513b24" font-size="14" font-weight="700">Last Christmas</text>
+      <text x="82" y="141" text-anchor="middle" fill="#6a4b27" font-size="12">Wham!</text>
+    </g>
+    <g transform="translate(954 108) rotate(15 82 82)">
+      <rect width="164" height="164" rx="12" fill="#ddd0e9"/>
+      <rect x="7" y="7" width="150" height="150" rx="8" fill="none" stroke="#ac99bd"/>
+      <text x="16" y="29" fill="#675576" font-size="9" letter-spacing="1.6">HICIARZ</text>
+      <text x="82" y="84" text-anchor="middle" fill="#574763" font-size="39" font-weight="700" letter-spacing="-1.5">1985</text>
+      <text x="82" y="118" text-anchor="middle" fill="#574763" font-size="14" font-weight="700">Take on Me</text>
+      <text x="82" y="141" text-anchor="middle" fill="#675576" font-size="12">a-ha</text>
+    </g>
   </g>
 </svg>

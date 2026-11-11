@@ -24,6 +24,7 @@ import {
   type SpotifyPurpose,
 } from './spotify-settings';
 import { vibrateOnScan } from './scan-feedback';
+import DocumentationLinks from './DocumentationLinks';
 import './spotify-setup.css';
 
 const Camera = lazy(() => import('./Camera'));
@@ -425,6 +426,7 @@ export default function SpotifySetup({
           {displayTranslation(error)}
         </p>
       )}
+      <DocumentationLinks topic="spotify" />
     </div>
   );
 }

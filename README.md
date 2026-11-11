@@ -1,11 +1,9 @@
 <p align="center">
-  <img src="docs/assets/readme-banner.svg" alt="Hiciarz — Twoja muzyka. Wasza gra." width="100%">
+  <img src="docs/assets/readme-banner.svg" alt="Hiciarz — skaner kart i kreator talii do druku" width="100%">
 </p>
 
 <p align="center">
   Twórz własne karty muzyczne, skanuj je telefonem i zgaduj hity ze znajomymi.
-  <br>
-  <strong>Od ulubionej playlisty do wspólnego wieczoru.</strong>
 </p>
 
 <p align="center">
@@ -16,107 +14,115 @@
 
 <p align="center">
   <a href="https://github.com/ArtifexEt/Hiciarz/actions/workflows/pages.yml"><img src="https://github.com/ArtifexEt/Hiciarz/actions/workflows/pages.yml/badge.svg" alt="Budowanie, testy i publikacja"></a>
-  &nbsp; Przeglądarka · Telefon · Własne talie · PDF do druku
+  &nbsp; Przeglądarka · Telefon · PWA · Własne talie · PDF do druku
 </p>
 
----
+Hiciarz łączy kreator kart, skaner QR i odtwarzacz. Przygotuj listę nagrań, wybierz wygląd i wydrukuj talię. Podczas gry zeskanuj kartę, posłuchaj utworu i odgadnij rok, film lub grę. Dostępne jest też muzyczne Bingo z planszami do druku.
 
-## Twój zestaw do muzycznej zabawy
+**[Spotify: konfiguracja i rozwiązywanie problemów](docs/spotify.md)** · **[Format playlist JSON/CSV](docs/playlist-guide.md)** · **[Uruchomienie i publikacja](docs/configuration.md)**
 
-Hiciarz łączy kreator kart, skaner QR i odtwarzacz w jednej aplikacji przeglądarkowej. Przygotuj swoją kolekcję piosenek, dobierz oprawę i wydrukuj talię. Podczas gry zeskanuj kartę, posłuchaj nagrania i spróbuj odgadnąć jego miejsce na muzycznej osi czasu.
+## Zobacz aplikację
 
-| Przygotuj                                                                                  | Nadaj charakter                                              | Zagraj                                                                               |
-| ------------------------------------------------------------------------------------------ | ------------------------------------------------------------ | ------------------------------------------------------------------------------------ |
-| Dodawaj i edytuj piosenki, wczytuj JSON lub CSV, korzystaj z przykładów i importu Spotify. | Wybierz motyw, wgraj własny rewers i pobierz dwustronny PDF. | Skanuj QR i słuchaj na tym samym urządzeniu, steruj Spotify albo połącz drugi ekran. |
+Ekran startowy na komputerze:
+
+![Ekran startowy Hiciarza z wejściami Skanuj i Twórz oraz przykładowymi kartami muzycznymi](docs/screenshots/home-desktop.png)
+
+<table>
+  <tr>
+    <th>Tworzenie talii</th>
+    <th>Odtwarzanie na komputerze</th>
+  </tr>
+  <tr>
+    <td width="50%" align="center"><a href="docs/screenshots/editor-desktop.png"><img src="docs/screenshots/editor-desktop.png" alt="Kreator talii z listą utworów, podglądem karty i etapami przygotowania wydruku" width="560"></a></td>
+    <td width="50%" align="center"><a href="docs/screenshots/sound-desktop.png"><img src="docs/screenshots/sound-desktop.png" alt="Panel Dźwięk na komputerze z trzema opcjami: Na tym urządzeniu, Spotify Connect i Drugi ekran" width="560"></a></td>
+  </tr>
+</table>
+
+<table>
+  <tr>
+    <th>Skaner na telefonie</th>
+    <th>Bingo</th>
+  </tr>
+  <tr>
+    <td width="50%" align="center"><a href="docs/screenshots/scanner-mobile.png"><img src="docs/screenshots/scanner-mobile.png" alt="Mobilny skaner z dolnym menu: Skaner, Bingo, Talie, Dźwięk i Więcej" width="320"></a></td>
+    <td width="50%" align="center"><a href="docs/screenshots/bingo-mobile.png"><img src="docs/screenshots/bingo-mobile.png" alt="Losowanie zagadki w Bingo z dostępem do Dźwięku w dolnym pasku" width="320"></a></td>
+  </tr>
+  <tr>
+    <th>Gdzie ma grać muzyka?</th>
+    <th>Start na telefonie</th>
+  </tr>
+  <tr>
+    <td width="50%" align="center"><a href="docs/screenshots/sound-mobile.png"><img src="docs/screenshots/sound-mobile.png" alt="Szuflada Dźwięk z wyborem odtwarzania na tym urządzeniu, przez Spotify Connect albo na drugim ekranie" width="320"></a></td>
+    <td width="50%" align="center"><a href="docs/screenshots/home-mobile.png"><img src="docs/screenshots/home-mobile.png" alt="Start Hiciarza na telefonie z wejściami do skanowania i tworzenia talii oraz przykładowymi kartami" width="320"></a></td>
+  </tr>
+</table>
 
 ## Pierwsza rozgrywka
 
-1. **[Otwórz Hiciarza](https://artifexet.github.io/Hiciarz/).** Na ekranie startowym wybierz **Skanuj i graj** albo **Twórz karty**.
-2. **Wybierz piosenki.** Zacznij od **Przykładowych playlist** lub przygotuj własną listę. Tytuł, wykonawcę i rok możesz poprawić przed drukiem.
-3. **Wydrukuj karty.** Wybierz **Pobierz / drukuj karty**. Pobierz PDF lub otwórz go do druku, a w podglądzie wybierz ikonę drukarki. Instrukcja pokazuje właściwą krawędź obrotu, format A4 i skalę 100%. Najpierw wykonaj próbę kalibracyjną przez **Ustawienia druku i wydruk próbny**. Po wydrukowaniu obu stron wytnij karty.
-4. **Wybierz sposób słuchania.** W skanerze wybierz **Na tym urządzeniu**, **Moje Spotify** albo **Drugi ekran** — warianty opisano poniżej.
-5. **Skanuj i zgaduj.** QR z karty wskazuje nagranie i motyw. Jeśli aparat udostępnia zoom, przybliżysz obraz suwakiem lub przyciskami − / +.
+1. **[Otwórz Hiciarza](https://artifexet.github.io/Hiciarz/)** i wybierz **Twórz karty**. Jeśli masz już wydrukowaną talię, przejdź do **Skanuj karty**.
+2. **Przygotuj talię.** W widoku **Talie** wybierz wariant gry i gotowy przykład albo dodaj nagrania ręcznie. Obszar **Import i pomoc AI** pozwala wczytać JSON/CSV, zaimportować Spotify lub skopiować instrukcję dla swojego AI. Plik możesz przeciągnąć do pola importu.
+3. **Wydrukuj karty.** Przejdź przez **Utwory → Wygląd → Druk** i wybierz **Pobierz / drukuj karty**. PDF mieści 12 kart 60 × 60 mm na A4. Drukuj dwustronnie w skali 100%, zgodnie z krawędzią obrotu pokazaną w oknie wydruku. Przed całą talią wykonaj próbę z **Próba wydruku i kalibracja**.
+4. **Wybierz miejsce odtwarzania.** Otwórz **Dźwięk** i wybierz jeden z wariantów opisanych poniżej.
+5. **Skanuj i zgaduj.** Zezwól na aparat, zeskanuj QR z karty i posłuchaj nagrania. Odpowiedź sprawdźcie po odwróceniu wydrukowanej karty. Jeśli przeglądarka zablokuje automatyczny start, użyj przycisku odtwarzania.
 
-## Muzyka tam, gdzie gracie
+## Gdzie ma grać muzyka?
 
-|                   | Na tym urządzeniu                                                                                                         | Spotify Connect                                                                   | Drugi ekran                                                                             |
-| ----------------- | ------------------------------------------------------------------------------------------------------------------------- | --------------------------------------------------------------------------------- | --------------------------------------------------------------------------------------- |
-| **Przygotowanie** | Wybierz **Skanuj i graj → Na tym urządzeniu**.                                                                            | Wybierz **Skanuj i graj → Moje Spotify**, zaloguj się i wskaż aktywne urządzenie. | Na urządzeniu do odtwarzania otwórz **Odtwarzacz → Na tym urządzeniu → Połącz skaner**. |
-| **Skanowanie**    | Włącz aparat i zeskanuj kartę; parowanie nie jest potrzebne.                                                              | Włącz aparat na telefonie i skanuj karty ze źródłem Spotify.                      | Wybierz **Drugi ekran**, zeskanuj QR parowania, a następnie kody z kart.                |
-| **Dźwięk**        | Spotify lub YouTube odtwarza bezpośrednio w widoku skanera.                                                               | Muzyka gra na wybranym urządzeniu Spotify.                                        | Spotify lub YouTube odtwarza na połączonym urządzeniu.                                  |
-| **Wymagania**     | Nagranie dostępne do osadzenia. Spotify może udostępnić tylko fragment; przeglądarka może wymagać kliknięcia odtwarzania. | Spotify Premium i urządzenie dostępne dla zalogowanego konta.                     | Nagranie dostępne do osadzenia; oba urządzenia pozostają otwarte i mają internet.       |
+| Wybór w **Dźwięk**    | Jak działa                                                                             | Co przygotować                                                                                                                                                     |
+| --------------------- | -------------------------------------------------------------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------ |
+| **Na tym urządzeniu** | Spotify lub YouTube odtwarza w skanerze na telefonie albo tablecie.                    | Bez parowania i bez Client ID. Nagranie musi pozwalać na osadzanie; Spotify może udostępnić tylko fragment.                                                        |
+| **Spotify Connect**   | Hiciarz wysyła polecenia do aplikacji Spotify lub głośnika dostępnego na Twoim koncie. | Połączenie Spotify, Premium i aktywne urządzenie. [Instrukcja](docs/spotify.md#odtwarzanie-przez-spotify-connect).                                                 |
+| **Drugi ekran**       | Telefon skanuje karty, a połączony komputer lub drugi telefon odtwarza muzykę.         | Na drugim urządzeniu otwórz **Drugi ekran** i wybierz **Połącz skaner**. W skanerze zeskanuj QR parowania, a następnie karty. Oba urządzenia potrzebują internetu. |
 
-W trybie **Na tym urządzeniu** odtwarzacz dostawcy może pokazać tytuł i okładkę. Jeśli zgadujecie nagranie, skorzystajcie ze Spotify Connect lub drugiego ekranu. Wyjście dźwięku lokalnego wybierasz w ustawieniach systemu, np. podłączając głośnik Bluetooth.
+Osadzony odtwarzacz może pokazywać tytuł i okładkę. Przy zgadywaniu nagrań przydaje się Spotify Connect lub drugi ekran ustawiony poza wzrokiem graczy. Głośnik Bluetooth dla odtwarzania lokalnego wybierasz w ustawieniach systemu.
 
-Po skanie możesz zatrzymać lub wznowić odtwarzanie, zmienić źródło dostępne na karcie i wybrać **Skanuj kolejną kartę**. Powrót do aparatu zatrzymuje lokalny odtwarzacz.
+Po skanie możesz zatrzymać lub wznowić utwór, przełączyć źródło dostępne na karcie i wybrać **Skanuj kolejną kartę**. Powrót do aparatu zatrzymuje lokalny odtwarzacz. Internet i dostępność nagrania w danym regionie są wymagane niezależnie od zapisania aplikacji jako PWA.
 
-## Język aplikacji
+## Spotify: co jest potrzebne?
 
-Hiciarz obsługuje **polski i angielski**. Zmienisz język polem **Język / Language** w **Ustawieniach** (ikona suwaków u góry lub menu na telefonie); wybór jest zapamiętywany w tej przeglądarce. Przy pierwszym uruchomieniu aplikacja wybiera obsługiwany język przeglądarki, a jeśli go nie znajdzie — polski.
+W Hiciarzu Spotify pełni trzy osobne role:
 
-Zmiana obejmuje interfejs, komunikaty i napisy generowane na kartach oraz planszach PDF. Tytuły utworów, wykonawcy, nazwy talii i własne odpowiedzi pozostają treścią wpisaną przez użytkownika. Słowniki JSON i zasady rozbudowy opisano w [dokumentacji technicznej](docs/configuration.md#tłumaczenia-json).
+- **Odsłuch w osadzonym odtwarzaczu** działa bez konfiguracji Client ID w Hiciarzu. Dostępność całego nagrania i automatycznego startu zależy od Spotify, konta i przeglądarki.
+- **Spotify Connect** wymaga logowania, konta Premium oraz urządzenia dostępnego do sterowania. Otwórz **Dźwięk → Spotify Connect**, połącz konto i wybierz urządzenie. [Wymagania Spotify Player API](https://developer.spotify.com/documentation/web-api/reference/start-a-users-playback).
+- **Import playlisty** wczytuje metadane utworów do talii. Otwórz **Talie → Utwory → Import i pomoc AI → Ze Spotify**. Obecna integracja odczytuje playlisty, których jesteś właścicielem lub współtwórcą; zapisanie cudzej publicznej playlisty w Bibliotece nie daje takiego dostępu. [Zasady dostępu do playlist](https://developer.spotify.com/documentation/web-api/reference/get-playlists-items).
 
-## Połącz swoje Spotify
+Do Connect i importu wybierasz **Domyślne połączenie**, jeśli Twoje konto ma dostęp, albo **Własne połączenie**. Przed logowaniem przez domyślne połączenie Hiciarz informuje, że konto może wymagać dodania przez opiekuna integracji. Przycisk **Zmień połączenie** prowadzi do konfiguracji własnego Client ID z instrukcją.
 
-Przy pierwszym połączeniu Hiciarz przeprowadzi Cię przez wybór ustawień. Możesz użyć domyślnego połączenia tej strony, jeśli Twoje konto ma do niego dostęp, albo wpisać **własny Client ID**. Zmienisz go później w **O aplikacji → Ustawienia Spotify** lub w menu konta.
+Ustawienia pokazują rodzaj połączenia, bez wyświetlania zapisanego identyfikatora. Znajdziesz je w **Ustawienia → Ustawienia Spotify** (na telefonie: **Więcej → Ustawienia**). Po wybraniu **Zmień połączenie → Własne połączenie** pole **Nowy Client ID** jest puste. Własny identyfikator przygotujesz w [Spotify Developer Dashboard](https://developer.spotify.com/dashboard); nie wymaga to forka Hiciarza. Na każdym urządzeniu konfigurujesz połączenie i logujesz się osobno.
 
-Konfigurację przeniesiesz na telefon **osobnym QR**. Po instalacji aplikacji otwórz jej ustawienia Spotify, zeskanuj kod i potwierdź zapis. Na każdym urządzeniu logujesz się osobno. QR kart z piosenkami pozostają krótkie i niezależne od Client ID.
+**Samo logowanie nie gwarantuje dostępu do API.** W trybie deweloperskim właściciel integracji musi mieć Premium, a użytkownik musi być dopisany w **User Management**; nowe integracje mają limit pięciu użytkowników. Własny Client ID nadal podlega tym zasadom. [Aktualne tryby dostępu Spotify](https://developer.spotify.com/documentation/web-api/concepts/quota-modes).
 
-Spotify ogranicza integracje w trybie deweloperskim. Własny Client ID służy do osobistego połączenia i nadal podlega zasadom dostawcy. **[Przewodnik: Spotify od pierwszego połączenia do własnego forka →](docs/spotify.md)**
+Dokładne kroki, poprawny Redirect URI, ustawienia forka oraz pomoc przy błędach **403**, **429** i niewidocznym urządzeniu znajdziesz w **[przewodniku Spotify](docs/spotify.md)**. Client ID jest publiczny; Hiciarz używa logowania PKCE i nie potrzebuje Client Secret.
 
-## Świąteczny wieczór na start
+## Talie, wygląd i warianty gry
 
-W kreatorze czeka przykład **Świąteczne hity**: 151 piosenek z [polecanej playlisty Spotify](https://open.spotify.com/playlist/7wfTeAa7cxhA3qNE05XPKk), zapisanych 9 listopada 2026, z motywem **Rybki świąteczne**.
+- **Klasyczna oś czasu:** zgaduj rok nagrania i układaj muzyczną chronologię.
+- **Zgadnij film / Zgadnij grę:** wybierz wariant przez **W co gramy? → Inne warianty** i uzupełnij tytuł produkcji jako odpowiedź. Import Spotify dostarcza metadane nagrania; odpowiedź wpisujesz samodzielnie. Jest drukowana na stronie odpowiedzi karty i nie trafia do QR.
+- **Muzyczne Bingo:** otwórz **Bingo**, wybierz poziom i użyj **Losuj zagadkę**. Zestawy **Na dobry początek** i **Dla znawców** zawierają po pięć kategorii pytań. Każde losowanie jest niezależne. Odpowiedzi sprawdzacie na kartach, punkty zaznaczacie na papierze; pełny rząd, kolumna lub przekątna daje Bingo. W **Plansze do druku** przygotujesz różne plansze 5 × 5, po dwie na A4.
+- **Wygląd kart:** dziewięć motywów, własne rewersy z obsługą przeciągania plików, presety i oszczędny wydruk **Laser — lekki kolor**. Skórka strony jest wybierana osobno w ustawieniach; nie zmienia motywu zapisanej talii.
 
-Wczytaj go **bez logowania**, jako nową talię lub dopisując utwory do obecnej. Własną kopię możesz dowolnie edytować. Lata pochodzą z wydań Spotify i są oznaczone do sprawdzenia przed drukiem.
+**Wybierz gotową talię** udostępnia przykłady bez logowania:
 
-**[Przeglądaj przykłady i dodaj własny →](examples/playlists/README.md)**
+| Przykład                          | Zawartość                                |
+| --------------------------------- | ---------------------------------------- |
+| Świąteczne hity                   | 151 piosenek z motywem Rybki świąteczne. |
+| Zgadnij grę — oryginalne nagrania | 294 karty z 93 gier.                     |
+| Zgadnij grę — symfonicznie        | 34 orkiestrowe aranżacje z 34 gier.      |
 
-## Muzyczne Bingo
+Przykład można otworzyć jako nową talię lub dopisać do obecnej. To edytowalna kopia zapisanych danych, która nie aktualizuje się automatycznie. Lata z wydań Spotify mogą oznaczać składanki lub reedycje — sprawdź je przed drukiem. [Pliki i źródła przykładów](examples/playlists/README.md).
 
-Na stronie startowej wybierz **Zagraj w Bingo** lub otwórz **Bingo** w menu. Skaner i kreator pozostają osobnymi trybami.
+Import JSON/CSV lub Spotify pyta o dopisanie na końcu albo zastąpienie listy. Dopisywanie zachowuje poprawki i pomija duplikaty rozpoznane po źródle nagrania. JSON i CSV obsługują `gameMode` (`music`, `movie`, `game`) oraz `answer` wymagane dla filmu i gry. [Format plików i prompt dla AI](docs/playlist-guide.md).
 
-Wybierz poziom i naciśnij **Losuj zagadkę**. Aplikacja pokaże typ pytania oraz krótkie wyjaśnienie. Każde losowanie jest niezależne, więc kategorie mogą się powtarzać. Przyciskiem **Przejdź do skanera kart** otworzysz dotychczasowy skaner; po powrocie do Bingo ostatnia zagadka nadal będzie widoczna.
+## Telefon, PWA i zapis danych
 
-Dostępne są dwa zestawy pytań: **Na dobry początek** (zespół/solista, przed 2000, rok ±4, dekada, rok ±2) oraz **Dla znawców** (tytuł, dokładny rok, wykonawca, dekada, rok ±3). Odpowiedzi sprawdzacie wspólnie na odwrocie muzycznej karty, a punkty zaznaczacie na papierze. Pełny rząd, kolumna lub przekątna daje Bingo.
+Na telefonie dolny pasek zawiera **Skaner**, **Bingo**, **Talie**, **Dźwięk** i **Więcej**. Na komputerze widoki są w bocznym pasku. Logo wraca do startu, a **Wstecz** zamyka okno lub wraca do poprzedniego widoku. **Dźwięk** jest dostępny także podczas Bingo.
 
-Opcjonalne **Plansze do druku** są schowane pod rozwijanym nagłówkiem. PDF zawiera po dwie różne plansze 5 × 5 na A4, w oszczędnym kolorze, z numerami kategorii i legendą dla wybranego poziomu. Drukuj jednostronnie w skali 100%. Zasady inspirowane [oficjalną instrukcją Bingo](https://hitstergame.com/pl-pl/pages/zasady-gry-bingo).
+W **Ustawieniach** zmienisz skórkę strony i język (**polski / angielski**), połączysz Spotify, sprawdzisz aktualizacje i zainstalujesz Hiciarza. Na iOS aplikacja pokazuje instrukcję dodania do ekranu początkowego przez menu udostępniania. Zmiana języka obejmuje interfejs oraz napisy na PDF; dane wpisane do talii pozostają bez zmian. [Słowniki JSON](docs/configuration.md#tłumaczenia-json).
 
-## Karty w Waszym stylu
+Talie i grafiki są zapisywane **na tym urządzeniu**. W **Talie → Opcje talii** przełączysz projekty, utworzysz nowy, wczytasz plik lub pobierzesz pełną kopię JSON przez **Zapisz do pliku**. Listę utworów wyeksportujesz również jako CSV. Zapis do pliku pozwala przenieść projekt i chroni przed utratą danych po wyczyszczeniu przeglądarki.
 
-### Zgadnij film lub grę
+Po zapisaniu zasobów PWA można bez sieci edytować talie i przygotowywać PDF. Muzyka, Spotify i parowanie wymagają internetu. Aparat na telefonie wymaga bezpiecznego kontekstu — korzystaj z publikacji HTTPS. [Dane lokalne i PWA](docs/configuration.md#dane-lokalne-i-pwa).
 
-W kreatorze wybierz **W co gramy? → Inne warianty → Zgadnij grę** lub **Zgadnij film**. Klasyczna oś czasu pozostaje głównym wariantem. Przy dodawaniu karty wskaż nazwę gry lub filmu w wyróżnionym polu odpowiedzi, a następnie nagranie do odsłuchu. Rok opisuje nagranie; w tych wariantach zgadujecie tytuł gry lub filmu.
-
-Przygotowanie talii prowadzi przez **1. Utwory → 2. Wygląd → 3. Druk**. Przyciski **Dalej** i **Wróć** pozwalają przechodzić po kolei, a pasek etapów wrócić do dowolnego miejsca. Zmiana wariantu talii dotyczy nowych kart; już dodane zachowują swój wariant, który zmienisz w edytorze konkretnej karty.
-
-W **Wybierz gotową talię** są dwa zestawy do zgadywania gier:
-
-- **Oryginalne nagrania: 294 karty z 93 gier.** Rozpoznawalne motywy z oryginalnych soundtracków, m.in. DOOM, Skyrim, Final Fantasy, Wiedźmin, Minecraft, Portal, Halo, NieR i Persona. Nagrania z jednej gry są rozdzielone innymi grami.
-- **Symfonicznie: 34 karty z 34 gier.** London Philharmonic Orchestra, z podanym przykładem z Assassin’s Creed: Revelations jako pierwszą kartą.
-
-Każda karta ma gotową odpowiedź i własny link Spotify. Dane pochodzą z metadanych konkretnych nagrań; spisy źródeł znajdziesz w [dokumentacji przykładów](examples/playlists/README.md). Dostępność odsłuchu zależy od konta i regionu Spotify. Po odczycie QR skaner pokazuje pytanie o grę, a odpowiedź sprawdzicie po odwróceniu wydrukowanej karty. Punkt otrzymuje osoba, która odgadnie grę lub film; przed rozpoczęciem ustalcie liczbę rund.
-
-JSON i CSV obsługują pola `gameMode` (`music`, `movie`, `game`) oraz `answer` (wymagane dla filmu i gry). Import Spotify dostarcza dane nagrania; tytuł produkcji uzupełnia się ręcznie. Odpowiedź pozostaje w projekcie i na stronie odpowiedzi PDF — QR jej nie zawiera. Rok nagrania jest zachowany w projekcie, ale na kartach tych trybów zastępuje go etykieta FILM lub GRA. Starsze karty i talie nadal działają.
-
-- **Dziewięć motywów:** Klasyczny, Minimalistyczny, Winylowy wieczór, Lato z kasetą, Domówka 90s, Noc disco, Świąteczna noc, Zimowa opowieść i autorskie Rybki świąteczne.
-- **Osobny wygląd strony i kart:** skórkę strony wybierasz w górnym pasku lub mobilnym menu „Wygląd”, a motyw talii w zakładce „Wygląd kart”. Wybieranie, tworzenie i wczytywanie talii nie zmienia skórki strony.
-- **Oprawa rundy:** zeskanowana karta dopasowuje wygląd skanera i odtwarzacza tylko na czas rundy. Po jej zakończeniu lub powrocie do kreatora wraca Twoja skórka strony.
-- **Kolorowe awersy:** różne odcienie kart, ozdobne akcenty oraz czytelny rok, tytuł i wykonawca.
-- **Własne rewersy:** wgraj grafikę lub wybierz gotowy preset.
-- **Laser — lekki kolor:** białe tło, ciemny tekst i oszczędne kolorowe akcenty do drukarki laserowej.
-
-PDF mieści 12 kart o wymiarach **60 × 60 mm** na stronie A4. Ustawienia druku obejmują krawędź obrotu, przesunięcia kalibracyjne i znaczniki cięcia.
-
-## Playlisty i zapis
-
-Import pyta, czy dopisać nowe utwory na końcu, czy zastąpić listę. Dopisywanie zachowuje ręczne poprawki i pomija duplikaty rozpoznane po źródle nagrania. Projekt zapiszesz jako JSON, a listę utworów również jako CSV.
-
-> **Import Spotify:** obecna integracja odczytuje playlisty, których jesteś właścicielem lub współtwórcą. Spotify nie udostępnia jej zawartości pozostałych playlist, także publicznych. Gotowe przykłady można wczytać niezależnie od tego ograniczenia.
-
-Talie i grafiki są zapisywane w Twojej przeglądarce. **Zapisz projekt do pliku**, aby mieć kopię lub przenieść talię na inne urządzenie. Aktualizacja aplikacji zachowuje lokalny zapis; w stopce znajdziesz wersję i przycisk **Sprawdź aktualizacje**.
-
-## Rozwijaj Hiciarza
+## Uruchomienie i rozwój
 
 Wymagane: **Node.js 22+** i **pnpm 11**.
 
@@ -125,38 +131,40 @@ pnpm install
 pnpm dev
 ```
 
-Serwer poda lokalny adres z końcówką `/Hiciarz/`. Pozostałe polecenia:
+Otwórz adres wypisany przez Vite z końcówką `/Hiciarz/`, zwykle `http://127.0.0.1:5173/Hiciarz/`.
 
 ```sh
 pnpm test
 pnpm build
+pnpm preview
 ```
 
-| Dokumentacja                                          | Co znajdziesz                                                                            |
-| ----------------------------------------------------- | ---------------------------------------------------------------------------------------- |
-| [Konfiguracja i publikacja](docs/configuration.md)    | GitHub Pages, Spotify PKCE, zmienne Actions, parowanie, dane lokalne i zasoby graficzne. |
-| [Przykładowe playlisty](examples/playlists/README.md) | Gotowe projekty oraz instrukcja dodawania kolejnych przykładów.                          |
-| [Przygotowanie listy utworów](docs/playlist-guide.md) | Format JSON/CSV i sposób przygotowania playlisty z pomocą AI.                            |
-| [Gotowy prompt](docs/playlist-prompt.txt)             | Treść do skopiowania przy tworzeniu własnej listy.                                       |
+Spotify można skonfigurować bezpośrednio w interfejsie. Jeśli chcesz dołączyć domyślny Client ID do lokalnego buildu, skopiuj [.env.example](.env.example) do `.env.local` i ustaw `VITE_SPOTIFY_CLIENT_ID`. Do lokalnego logowania zarejestruj dokładny adres z `127.0.0.1`; Spotify nie akceptuje `localhost` jako Redirect URI. [Wymagania adresu powrotu](https://developer.spotify.com/documentation/web-api/concepts/redirect_uri).
 
-Domyślny Client ID jest dodawany podczas budowania przez sekret Actions `SPOTIFY_CLIENT_ID`. Własny identyfikator wpisany w interfejsie ma pierwszeństwo i jest zapisywany lokalnie. Client ID jest publiczny; logowanie używa PKCE. **Client Secret nie jest używany i nie powinien trafiać do frontendu.**
+GitHub Actions uruchamia testy, buduje i publikuje `main` w GitHub Pages. Fork używa nazwy swojego repozytorium jako ścieżki bazowej. Domyślny Client ID można podać jako sekret Actions `SPOTIFY_CLIENT_ID`; jest publiczny w gotowym frontendzie. **Client Secret nie jest używany i nie powinien trafiać do kodu ani zmiennych `VITE_*`.** [Pełna konfiguracja publikacji](docs/configuration.md).
 
 ### Przełącznik przewodnika dla własnej publikacji
 
-W **Settings → Secrets and variables → Actions → Variables** ustaw zmienną repozytorium **`SPOTIFY_ONBOARDING`**:
+Zmienna repozytorium Actions **`SPOTIFY_ONBOARDING`** (`Settings → Secrets and variables → Actions → Variables`) steruje automatycznym przewodnikiem:
 
-| Wartość       | Zachowanie                                                                                            |
-| ------------- | ----------------------------------------------------------------------------------------------------- |
-| `true`        | Pokaż przewodnik przed pierwszym logowaniem dla wybranego Client ID.                                  |
-| `false`       | Przejdź do logowania bez automatycznego przewodnika. Ustawienia i QR konfiguracji pozostają dostępne. |
-| Brak zmiennej | W repozytorium ArtifexEt/Hiciarz przewodnik jest włączony, w forkach domyślnie wyłączony.             |
+| Wartość       | Zachowanie                                                                 |
+| ------------- | -------------------------------------------------------------------------- |
+| `true`        | Pokaż przewodnik przed pierwszym logowaniem dla wybranego Client ID.       |
+| `false`       | Przejdź do logowania; zmiana połączenia i instrukcja pozostają dostępne. |
+| Brak zmiennej | Przewodnik włączony dla ArtifexEt/Hiciarz, domyślnie wyłączony dla forków. |
 
-Po zmianie uruchom workflow publikacji. Gdy nie ma żadnego Client ID, aplikacja zawsze zaproponuje jego skonfigurowanie. Lokalnie użyj `VITE_SPOTIFY_ONBOARDING=true` lub `false`; przykład znajdziesz w [.env.example](.env.example).
+Po zmianie uruchom workflow publikacji. Gdy nie ma Client ID, aplikacja zawsze proponuje konfigurację. Informacja o ograniczeniach domyślnego połączenia pojawia się przed logowaniem niezależnie od tego przełącznika. Lokalny odpowiednik to `VITE_SPOTIFY_ONBOARDING=true` lub `false`.
 
----
+## Dokumentacja
 
-## Podoba Ci się Hiciarz?
+| Dokument                                              | Zawartość                                                                    |
+| ----------------------------------------------------- | ---------------------------------------------------------------------------- |
+| [Spotify](docs/spotify.md)                            | Zmiana połączenia, Client ID, logowanie, Connect, import i pomoc przy błędach. |
+| [Konfiguracja techniczna](docs/configuration.md)      | Publikacja, zmienne Actions, parowanie, PWA, tłumaczenia i zasoby.           |
+| [Przygotowanie listy utworów](docs/playlist-guide.md) | JSON/CSV i przygotowanie playlisty z pomocą AI.                              |
+| [Gotowy prompt](docs/playlist-prompt.txt)             | Instrukcja do skopiowania do wybranego AI.                                   |
+| [Przykładowe playlisty](examples/playlists/README.md) | Gotowe pliki, źródła nagrań i dodawanie kolejnych zestawów.                  |
 
-Jeśli aplikacja uprzyjemniła Wam wieczór, możesz [postawić autorowi kawę](https://buymeacoffee.com/szymonrybka). Dzięki za wsparcie kolejnych muzycznych spotkań.
+Linki do dokumentacji znajdziesz też w aplikacji: **Jak grać** (na telefonie **Więcej → Jak grać**). Przewodnik Spotify jest dostępny bezpośrednio w **Ustawieniach Spotify**.
 
-Pomysły i zgłoszenia błędów zbieramy w [Issues](https://github.com/ArtifexEt/Hiciarz/issues).
+Pomysły i błędy zgłaszaj w [Issues](https://github.com/ArtifexEt/Hiciarz/issues). Jeśli Hiciarz uprzyjemnił Wam wieczór, możesz [postawić autorowi kawę](https://buymeacoffee.com/szymonrybka).

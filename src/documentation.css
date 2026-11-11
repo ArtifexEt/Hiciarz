@@ -1,0 +1,58 @@
+.documentation-links {
+  margin-top: 24px;
+  padding-top: 18px;
+  border-top: 1px solid var(--line);
+}
+
+.documentation-links h3 {
+  margin: 0 0 8px;
+  font-size: 15px;
+}
+
+.documentation-links ul {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(min(100%, 240px), 1fr));
+  gap: 0 24px;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.documentation-links a,
+.documentation-inline {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  min-height: 44px;
+  padding: 8px 0;
+  color: var(--ink);
+  font-size: 14px;
+  line-height: 1.5;
+  text-decoration: none;
+}
+
+.documentation-links a:hover,
+.documentation-inline:hover {
+  text-decoration: underline;
+  text-underline-offset: 3px;
+}
+
+.documentation-links a:focus-visible,
+.documentation-inline:focus-visible {
+  outline: 2px solid var(--accent-ink);
+  outline-offset: 3px;
+  border-radius: 2px;
+}
+
+.documentation-links svg,
+.documentation-inline svg {
+  flex-shrink: 0;
+  color: var(--muted);
+}
+
+.documentation-inline {
+  width: fit-content;
+  max-width: 100%;
+  margin-top: 12px;
+}

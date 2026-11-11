@@ -61,6 +61,7 @@ import Landing from './Landing';
 import FishFestivities from './FishFestivities';
 import SpotifyAccount from './SpotifyAccount';
 import SpotifySetup from './SpotifySetup';
+import DocumentationLinks from './DocumentationLinks';
 import {
   isSpotifySettingsStorageKey,
   openSpotifySetup,
@@ -3121,6 +3122,7 @@ export default function App() {
             </div>
           </div>
           <p className="hint">{tr('app.projectsAndCustomBackgroundsAreSavedIn')}</p>
+          <DocumentationLinks />
         </Modal>
       )}
     </div>
