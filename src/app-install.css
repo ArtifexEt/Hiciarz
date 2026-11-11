@@ -1,0 +1,45 @@
+.app-install {
+  margin-block: 18px;
+}
+.app-install > .secondary {
+  width: 100%;
+  min-height: 44px;
+  justify-content: center;
+  font-size: 14px;
+}
+.app-install-steps {
+  margin: 14px 0 0;
+  padding-left: 22px;
+  display: grid;
+  gap: 10px;
+  font-size: 14px;
+  line-height: 1.6;
+}
+.app-install-steps li:first-child > svg {
+  display: inline-block;
+  vertical-align: text-bottom;
+  margin-right: 7px;
+}
+.app-install-error {
+  margin: 12px 0 0;
+  color: var(--danger, #9b332e);
+  font-size: 14px;
+}
+.connection-notice {
+  display: flex;
+  align-items: flex-start;
+  gap: 10px;
+  padding: 12px clamp(16px, 3vw, 36px);
+  border-bottom: 1px solid var(--line);
+  color: var(--ink);
+  background: var(--soft);
+}
+.connection-notice > svg {
+  flex-shrink: 0;
+  margin-top: 2px;
+}
+.connection-notice p {
+  margin: 0;
+  font-size: 13px;
+  line-height: 1.55;
+}

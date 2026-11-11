@@ -1,0 +1,8 @@
+{
+  "pwa.install": "Install Hiciarz",
+  "pwa.installOpening": "Opening installation…",
+  "pwa.iosShare": "Open your browser's Share menu.",
+  "pwa.iosAdd": "Choose “Add to Home Screen”, then “Add”.",
+  "pwa.installError": "Could not open installation. Try your browser's menu.",
+  "pwa.offline": "You're offline. You can edit and print saved decks. Music playback and Spotify need an internet connection."
+}

@@ -1,10 +1,8 @@
 import { t as translate, createTranslator } from './i18n';
 import { jsPDF } from 'jspdf';
-import { qrImage } from './qr';
-import { drawFront } from './front';
-import { fitPrintText } from './print-text';
-import { type Deck, type Song, backPosition, cardUrl } from './model';
-import { asset, themeArt, themeColors } from './themes';
+import { createCardArtwork, type CardArtwork } from './card-artwork';
+import { type Deck, type Song, backPosition } from './model';
+import { asset, themeArt } from './themes';
 let fontPromise: Promise<string> | undefined;
 export function pdfFont() {
   return (fontPromise ??= fetch(asset('fonts/NotoSans-Regular.ttf'))
@@ -16,7 +14,15 @@ export function pdfFont() {
       let s = '';
       for (const n of new Uint8Array(b)) s += String.fromCharCode(n);
       return btoa(s);
+    })
+    .catch((error) => {
+      fontPromise = undefined;
+      throw error;
     }));
+}
+export function centerSquareCrop(width: number, height: number) {
+  const size = Math.min(width, height);
+  return { x: (width - size) / 2, y: (height - size) / 2, size };
 }
 async function raster(url: string): Promise<string> {
   return new Promise((resolve, reject) => {
@@ -25,30 +31,118 @@ async function raster(url: string): Promise<string> {
       const c = document.createElement('canvas');
       c.width = c.height = 900;
       const ctx = c.getContext('2d')!;
-      ctx.drawImage(image, 0, 0, 900, 900);
+      ctx.fillStyle = '#ffffff';
+      ctx.fillRect(0, 0, 900, 900);
+      const crop = centerSquareCrop(image.naturalWidth, image.naturalHeight);
+      // A viewBox-only SVG can report a default intrinsic size (150px) while
+      // Canvas interprets a source rectangle in its original viewBox units.
+      // Square artwork needs no source crop, so let the browser scale it whole.
+      if (!crop.x && !crop.y) ctx.drawImage(image, 0, 0, 900, 900);
+      else ctx.drawImage(image, crop.x, crop.y, crop.size, crop.size, 0, 0, 900, 900);
       resolve(c.toDataURL('image/jpeg', 0.92));
     };
     image.onerror = () => reject(new Error(translate('pdf.backgroundFailed')));
     image.src = url;
   });
 }
-function textFit(
+async function artworkDocument() {
+  const doc = new jsPDF({ unit: 'mm', format: 'a4', compress: true });
+  doc.addFileToVFS('NotoSans.ttf', await pdfFont());
+  doc.addFont('NotoSans.ttf', 'NotoSans', 'normal');
+  doc.setFont('NotoSans');
+  return doc;
+}
+
+export async function createCardPreviewArtwork(
+  song: Song,
+  deck: Deck,
+  back: boolean,
+  base: string,
+): Promise<CardArtwork> {
+  const translate = createTranslator();
+  const doc = await artworkDocument();
+  return createCardArtwork(doc, song, deck, back, base, translate);
+}
+
+/** Draw the exact layout used by the SVG preview at a sheet's card origin. */
+export function drawCardArtwork(
   doc: jsPDF,
-  text: string,
+  artwork: CardArtwork,
   x: number,
-  top: number,
-  height: number,
-  max: number,
-  min: number,
+  y: number,
+  images: ReadonlyMap<string, string> = new Map(),
 ) {
-  const layout = fitPrintText(doc, text, 50, height, max, min);
-  doc.setFontSize(layout.size);
-  doc.text(layout.lines, x, top + (height - layout.lines.length * layout.lineHeight) / 2, {
-    align: 'center',
-    baseline: 'top',
-    lineHeightFactor: 1.15,
-  });
-  return layout.shortened;
+  for (const element of artwork.elements) {
+    if (element.type === 'text') {
+      doc.setFontSize(element.fontSize);
+      doc.setTextColor(element.fill);
+      for (const [index, line] of element.lines.entries()) {
+        let textX = x + element.x;
+        let align = element.align;
+        if (element.charSpaceMm && align !== 'left') {
+          // jsPDF measures charSpace as points when aligning, but draws it in
+          // document units. Resolve tracked text here in millimetres, as SVG does.
+          const width = doc.getTextWidth(line) + Array.from(line).length * element.charSpaceMm;
+          textX -= align === 'center' ? width / 2 : width;
+          align = 'left';
+        }
+        doc.text(line, textX, y + element.y + index * element.lineHeightMm, {
+          align,
+          baseline: 'alphabetic',
+          charSpace: element.charSpaceMm,
+        });
+      }
+      continue;
+    }
+    if (element.type === 'image') {
+      const image = images.get(element.src);
+      doc.addImage(
+        image || element.src,
+        image ? 'JPEG' : 'PNG',
+        x + element.x,
+        y + element.y,
+        element.width,
+        element.height,
+        undefined,
+        'FAST',
+      );
+      continue;
+    }
+    if (element.stroke) {
+      doc.setDrawColor(element.stroke);
+      doc.setLineWidth(element.strokeWidth || 0.2);
+    }
+    if (element.type === 'line') {
+      doc.line(x + element.x1, y + element.y1, x + element.x2, y + element.y2);
+      continue;
+    }
+    if (element.fill) doc.setFillColor(element.fill);
+    const style = element.fill ? (element.stroke ? 'FD' : 'F') : 'S';
+    if (element.type === 'rect') {
+      if (element.radius)
+        doc.roundedRect(
+          x + element.x,
+          y + element.y,
+          element.width,
+          element.height,
+          element.radius,
+          element.radius,
+          style,
+        );
+      else doc.rect(x + element.x, y + element.y, element.width, element.height, style);
+    } else if (element.type === 'ellipse') {
+      doc.ellipse(x + element.cx, y + element.cy, element.rx, element.ry, style);
+    } else {
+      const first = element.points[0];
+      const segments = element.points
+        .slice(1)
+        .map((point, index) => [
+          point.x - element.points[index].x,
+          point.y - element.points[index].y,
+        ]);
+      doc.lines(segments, x + first.x, y + first.y, [1, 1], style, true);
+    }
+  }
 }
 export type PDFProgress = {
   phase: 'preparing' | 'fronts' | 'backs' | 'saving';
@@ -90,11 +184,8 @@ export async function buildPDF(
   checkAbort();
   options.onProgress?.({ phase: 'preparing', completed: 0, total: songs.length, percent: 0 });
   await yieldForPDF();
-  const doc = new jsPDF({ unit: 'mm', format: 'a4', compress: true });
-  doc.addFileToVFS('NotoSans.ttf', await pdfFont());
+  const doc = await artworkDocument();
   checkAbort();
-  doc.addFont('NotoSans.ttf', 'NotoSans', 'normal');
-  doc.setFont('NotoSans');
   const arts = new Map<string, string>();
   const laser = deck.print.style === 'laser';
   for (const s of laser ? [] : songs) {
@@ -117,41 +208,9 @@ export async function buildPDF(
       const s = sheet[i],
         x = 15 + (i % 3) * 60,
         y = 28 + Math.floor(i / 3) * 60;
-      drawFront(doc, s, deck, x, y);
-      doc.setFontSize(5);
-      doc.text('HICIARZ', x + 7, y + 8, { charSpace: 0.4 });
-      doc.setFontSize(s.gameMode && s.gameMode !== 'music' ? 22 : 34);
-      doc.text(
-        s.gameMode === 'movie'
-          ? translate('cards.film')
-          : s.gameMode === 'game'
-            ? translate('cards.game')
-            : String(s.year),
-        x + 30,
-        y + 22,
-        { align: 'center' },
-      );
-      const shortTitle = textFit(
-        doc,
-        s.gameMode && s.gameMode !== 'music' ? s.answer || s.title : s.title,
-        x + 30,
-        y + 27,
-        14,
-        12,
-        7,
-      );
-      const shortArtist = textFit(
-        doc,
-        s.gameMode && s.gameMode !== 'music' ? s.title : s.artist,
-        x + 30,
-        y + 42,
-        8.5,
-        9,
-        6.5,
-      );
-      if (shortTitle || shortArtist) options.onTextShortened?.(s);
-      doc.setFontSize(5);
-      doc.text(s.id.slice(0, 12), x + 30, y + 54.8, { align: 'center' });
+      const artwork = createCardArtwork(doc, s, deck, false, base, translate);
+      drawCardArtwork(doc, artwork, x, y, arts);
+      if (artwork.shortened) options.onTextShortened?.(s);
       if (deck.print.cuts) cuts(doc, x, y);
       report('fronts', start, start * 2 + i + 1);
       await yieldForPDF();
@@ -173,52 +232,7 @@ export async function buildPDF(
         pos = backPosition(i, deck.print.edge),
         x = 15 + pos.col * 60 + deck.print.offsetX,
         y = 28 + pos.row * 60 + deck.print.offsetY;
-      if (laser) {
-        doc.setDrawColor('#638876');
-        doc.setLineWidth(0.22);
-        doc.line(x + 4.4, y + 2.4, x + 4.4, y + 7.2);
-        doc.ellipse(x + 5.8, y + 8.4, 1.7, 1.1, 'S');
-        doc.triangle(x + 7.5, y + 8.4, x + 8.6, y + 7.5, x + 8.6, y + 9.3, 'S');
-        doc.line(x + 55.6, y + 57.6, x + 55.6, y + 52.8);
-        doc.ellipse(x + 54.2, y + 51.6, 1.7, 1.1, 'S');
-        doc.triangle(x + 52.5, y + 51.6, x + 51.4, y + 50.7, x + 51.4, y + 52.5, 'S');
-        doc.setDrawColor('#b56e58');
-        doc.circle(x + 5.1, y + 8.1, 0.15, 'S');
-        doc.circle(x + 54.9, y + 51.3, 0.15, 'S');
-      } else
-        doc.addImage(arts.get(deck.back || themeArt(s.theme || deck.theme))!, 'JPEG', x, y, 60, 60);
-      const colors = themeColors[laser ? 'laser' : s.theme || deck.theme];
-      doc.setDrawColor(laser ? '#638876' : colors.accent);
-      doc.setLineWidth(0.4);
-      doc.roundedRect(x + 2.5, y + 2.5, 55, 55, 3, 3, 'S');
-      doc.setLineWidth(0.15);
-      doc.roundedRect(x + 3.7, y + 3.7, 52.6, 52.6, 2.3, 2.3, 'S');
-      doc.setFillColor(laser ? '#ffffff' : colors.dark);
-      doc.roundedRect(x + 18, y + 3, 24, 6.5, 2, 2, 'F');
-      doc.setTextColor(laser ? '#26332e' : colors.accent);
-      doc.setFontSize(7);
-      doc.text('HICIARZ', x + 30, y + 7.5, { align: 'center', charSpace: 0.8 });
-      doc.setFillColor('#ffffff');
-      doc.roundedRect(x + 9, y + 10, 42, 42, 3, 3, 'F');
-      doc.setDrawColor(laser ? '#b56e58' : colors.accent);
-      doc.setLineWidth(0.3);
-      doc.roundedRect(x + 9, y + 10, 42, 42, 3, 3, 'S');
-      const qr = qrImage(cardUrl(s, deck.theme, base), 8);
-      doc.addImage(qr, 'PNG', x + 10, y + 11, 40, 40, undefined, 'FAST');
-      doc.setFillColor(laser ? '#ffffff' : colors.dark);
-      doc.roundedRect(x + 9, y + 52.5, 42, 4, 1, 1, 'F');
-      doc.setTextColor(laser ? '#26332e' : '#ffffff');
-      doc.setFontSize(4.5);
-      doc.text(
-        s.gameMode === 'movie'
-          ? translate('cards.guessFilm')
-          : s.gameMode === 'game'
-            ? translate('cards.guessGame')
-            : translate('cards.scanListenGuess'),
-        x + 30,
-        y + 55.2,
-        { align: 'center' },
-      );
+      drawCardArtwork(doc, createCardArtwork(doc, s, deck, true, base, translate), x, y, arts);
       if (deck.print.cuts) cuts(doc, x, y);
       report('backs', start + i + 1, start * 2 + sheet.length + i + 1);
       await yieldForPDF();

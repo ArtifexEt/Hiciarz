@@ -1,0 +1,12 @@
+{
+  "uiPrint.summary": "Arkusze A4: {{sheets}} · Strony PDF: {{pages}} · Karty 60 × 60 mm",
+  "uiPrint.paper": "Papier",
+  "uiPrint.sides": "Druk",
+  "uiPrint.duplexLong": "Dwustronny · obrót po długiej krawędzi",
+  "uiPrint.duplexShort": "Dwustronny · obrót po krótkiej krawędzi",
+  "uiPrint.scale": "Skala",
+  "uiPrint.actualSize": "100%, bez dopasowania do strony",
+  "uiPrint.previewHint": "Podgląd PDF otwiera się w nowej karcie. Stamtąd możesz uruchomić drukowanie.",
+  "uiPrint.testPrint": "Próba wydruku i kalibracja",
+  "uiPrint.calibrationHelp": "Najpierw wydrukuj jedną kartkę dwustronnie. Jeśli obie strony nie pokrywają się, wydrukuj kalibrację i skoryguj przesunięcie kodów QR."
+}

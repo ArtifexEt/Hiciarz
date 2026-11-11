@@ -79,7 +79,7 @@ describe('JSON translations', () => {
     vi.stubGlobal('document', document);
     setLanguage('en');
     expect(document.documentElement.lang).toBe('en');
-    expect(document.title).toBe('Hiciarz — Your music. Your game.');
+    expect(document.title).toBe('Hiciarz — music cards');
     expect(description.setAttribute).toHaveBeenCalledWith('content', t('document.description'));
     expect(t('app.title')).toBe('Title');
   });

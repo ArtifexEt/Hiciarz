@@ -1,0 +1,8 @@
+{
+  "pwa.install": "Zainstaluj Hiciarza",
+  "pwa.installOpening": "Otwieram instalację…",
+  "pwa.iosShare": "Otwórz menu Udostępnij w przeglądarce.",
+  "pwa.iosAdd": "Wybierz „Do ekranu początkowego”, a następnie „Dodaj”.",
+  "pwa.installError": "Nie udało się otworzyć instalacji. Spróbuj przez menu przeglądarki.",
+  "pwa.offline": "Brak połączenia. Zapisane talie możesz edytować i drukować. Odtwarzanie muzyki i Spotify wymagają internetu."
+}

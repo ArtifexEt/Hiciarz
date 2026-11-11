@@ -109,11 +109,21 @@ Interfejs korzysta z tych samych widoków w przeglądarce i PWA. Na telefonie st
 
 Przycisk **Dźwięk** otwiera wspólny panel ustawień odtwarzania. Na telefonie ma formę szuflady, a na komputerze trzy duże karty: **Na tym urządzeniu**, **Spotify Connect** i **Drugi ekran**. Służy do wyboru miejsca odtwarzania i urządzenia Spotify bez przechodzenia do innego widoku; jest dostępny także podczas Bingo. Konfiguracja Spotify pokazuje dwa warianty połączenia obok siebie na szerokim ekranie: domyślne, jeśli jest dostępne, i własne.
 
+Na telefonie skaner i Bingo zajmują dostępną wysokość ekranu (`100dvh`) z uwzględnieniem bezpiecznych obszarów systemu i dolnej nawigacji. Skaner ma aparat na całej szerokości, dolny przycisk startu/zatrzymania i wybór odtwarzania w górnym pasku. Bingo pokazuje poziom, kategorię i akcje gry; pomoc i druk są osobnymi szufladami obsługiwanymi przez historię aplikacji. Układ poziomy przenosi kontrolki obok aparatu lub kategorii. Błędy, powiększony tekst i osadzony odtwarzacz mogą rozszerzyć zawartość do przewijania.
+
 Widok jest zapisany w parametrze `?view=` (`home`, `scanner`, `editor`, `bingo`, `player`); brak lub nieznana wartość oznacza start. Zmiana widoku zachowuje pozostałe parametry oraz hash QR. Modale mają oznaczony stan `history.state`, więc systemowy lub przeglądarkowy **Wstecz** zamyka okno albo wraca do poprzedniego widoku. Przy zmianie widoku aplikacja sprząta stan skanera i odtwarzania, zamiast polegać na przeładowaniu strony.
 
 **Ustawienia** zawierają język, wygląd strony, konto i konfigurację Spotify, instalację, informacje o zapisie lokalnym oraz wersję i sprawdzanie aktualizacji. Wsparcie projektu jest zwykłym linkiem w ustawieniach.
 
 Przycisk instalacji korzysta z zapamiętanego zdarzenia `beforeinstallprompt` i otwiera natywny prompt dopiero po kliknięciu. Jeśli przeglądarka iOS udostępnia instalację ręczną, przycisk pokazuje instrukcję **Udostępnij → Do ekranu początkowego → Dodaj**. W trybie zainstalowanej aplikacji propozycja instalacji jest ukryta. Manifest używa `display: standalone`, a obsługujące je systemy mogą pokazać skróty **Skanuj karty** (`?view=scanner`) i **Twórz karty** (`?view=editor`). Wszystkie ścieżki uwzględniają `BASE_PATH`.
+
+### Wygląd i podgląd wydruku
+
+Podgląd karty i eksport PDF korzystają ze wspólnego układu 60 × 60 mm, fontu Noto Sans i reguł łamania tekstu. Prostokątne własne tło jest przycinane centralnie do kwadratu bez rozciągania. Wariant **Laser — lekki kolor** pomija własne tło zarówno w podglądzie, jak i w PDF.
+
+Motyw zapisany przy pojedynczej karcie ma pierwszeństwo przed motywem talii. Podgląd oznacza kartę o innym motywie niż talia, a przy wyborze wyglądu widoczna jest liczba kart z własnym motywem. **Zastosuj motyw talii do wszystkich kart** usuwa te indywidualne ustawienia dopiero po kliknięciu; sama zmiana motywu talii ich nie usuwa.
+
+Gdy widoczny jest komunikat **Wczytywanie tła…**, eksport jest niedostępny. Kolejne wczytanie zastępuje poprzednie; zmiana motywu, usunięcie tła lub przełączenie talii unieważnia oczekującą operację. Podczas generowania PDF edytor nie przyjmuje zmian.
 
 ### Format kodów kart
 

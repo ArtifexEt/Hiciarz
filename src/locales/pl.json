@@ -171,6 +171,6 @@
   "examples.christmas-hits.description": "151 świątecznych piosenek z polecanej playlisty. Klasyki i nowsze nagrania w oprawie Rybek świątecznych.",
   "examples.christmas-hits.yearNote": "Lata pochodzą z wydań dostępnych w Spotify. Mogą dotyczyć składanki lub reedycji, dlatego są oznaczone do sprawdzenia przed drukiem.",
   "model.invalidJson": "Nieprawidłowy plik JSON. Sprawdź składnię i spróbuj ponownie.",
-  "document.title": "Hiciarz — Twoja muzyka. Wasza gra.",
-  "document.description": "Twoje piosenki, Twoje karty. Twórz talie muzyczne, drukuj i graj z przyjaciółmi."
+  "document.title": "Hiciarz — muzyczne karty",
+  "document.description": "Twórz i drukuj karty z muzyką, skanuj kody QR i zgaduj utwory, gry lub filmy."
 }

@@ -4,5 +4,6 @@
   "documentation.spotify": "Spotify: konfiguracja i odtwarzanie",
   "documentation.playlists": "Format playlist i pomoc AI",
   "documentation.configuration": "Konfiguracja techniczna",
-  "documentation.spotifyGuide": "Przewodnik Spotify"
+  "documentation.spotifyGuide": "Przewodnik Spotify",
+  "documentation.reportIssue": "Zgłoś usterkę"
 }

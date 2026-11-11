@@ -10,6 +10,8 @@ export default function Camera({
   onStart,
   ready = true,
   purpose = 'card',
+  immersive = false,
+  onConfigure,
 }: {
   onScan: (text: string) => void;
   pairingRequired?: boolean;
@@ -17,6 +19,8 @@ export default function Camera({
   onStart?: () => void;
   ready?: boolean;
   purpose?: 'card' | 'setup';
+  immersive?: boolean;
+  onConfigure?: () => void;
 }) {
   useTranslation();
   const video = useRef<HTMLVideoElement>(null),
@@ -87,8 +91,34 @@ export default function Camera({
       stream?.getTracks().forEach((t) => t.stop());
     };
   }, [active]);
+  const startButton = (
+    <button
+      className="primary camera-start-button"
+      disabled={!ready && !onConfigure}
+      onClick={() => {
+        if (!ready) {
+          onConfigure?.();
+          return;
+        }
+        setError('');
+        onStart?.();
+        setActive(true);
+      }}
+    >
+      <CameraIcon size={20} aria-hidden="true" />{' '}
+      {!ready && onConfigure
+        ? t('gameScreen.configurePlayback')
+        : t('components.Camera.startCamera')}
+    </button>
+  );
   return (
-    <div className="camera-wrap">
+    <div
+      className={
+        'camera-wrap' +
+        (immersive ? ' camera-immersive' : '') +
+        (active ? ' is-active' : ' is-idle')
+      }
+    >
       <div className="camera-view">
         <video
           ref={video}
@@ -97,70 +127,60 @@ export default function Camera({
           autoPlay
           aria-label={t('components.Camera.cameraPreview')}
         />
-        <div className="scan-frame">
+        <div className="scan-frame" aria-hidden="true">
           <i />
           <i />
           <i />
           <i />
+          {!active && immersive && <ScanLine className="scan-frame-icon" size={44} />}
           {active && <span className="scan-sweep" />}
         </div>
         {!active && (
           <div className="camera-start">
-            <ScanLine size={52} />
+            {!immersive && <ScanLine size={52} aria-hidden="true" />}
             <h3>
               {purpose === 'setup'
                 ? t('components.Camera.scanSpotifyConfiguration')
-                : ready && (!pairingRequired || paired)
-                  ? t('components.Camera.scanAMusicCard')
-                  : t('components.Camera.prepareTheScanner')}
+                : !ready
+                  ? t('plainPlayback.prepareSpotify')
+                  : pairingRequired && !paired
+                    ? t('plainPlayback.scanPairingCode')
+                    : t('components.Camera.scanAMusicCard')}
             </h3>
             <p>
-              {purpose === 'setup' ? (
-                t('components.Camera.pointTheCameraAtTheConfiguration')
-              ) : ready && (!pairingRequired || paired) ? (
-                t('components.Camera.pointTheCameraAtTheCards')
-              ) : pairingRequired ? (
-                <>
-                  {t('components.Camera.firstScanThePlayersPairingQR')}
-                  <br />
-                  {t('components.Camera.thenTheMusicCardsQRCode')}
-                </>
-              ) : (
-                <>
-                  {t('components.Camera.connectSpotifyAndChooseADevice')}
-                  <br />
-                  {t('components.Camera.thenScanTheMusicCardsQR')}
-                </>
-              )}
+              {purpose === 'setup'
+                ? t('components.Camera.pointTheCameraAtTheConfiguration')
+                : !ready
+                  ? t('plainPlayback.chooseSpotifyDevice')
+                  : pairingRequired && !paired
+                    ? t('plainPlayback.pairingCodeLocation')
+                    : t('plainPlayback.pointAtCard')}
             </p>
-            <button
-              className="primary"
-              disabled={!ready}
-              onClick={() => {
-                setError('');
-                onStart?.();
-                setActive(true);
-              }}
-            >
-              <CameraIcon size={18} />{' '}
-              {ready
-                ? t('components.Camera.startCamera')
-                : t('components.Camera.setUpSpotifyFirst')}
-            </button>
+            {!immersive && startButton}
           </div>
         )}
+        {active && immersive && (
+          <p className="camera-guidance">
+            {pairingRequired && !paired
+              ? t('plainPlayback.scanPairingCode')
+              : t('plainPlayback.pointAtCard')}
+          </p>
+        )}
       </div>
-      {active && track && <CameraZoom track={track} />}
-      {error && (
-        <p className="error" role="alert">
-          {displayTranslation(error)}
-        </p>
-      )}
-      {active && (
-        <button className="quiet" onClick={() => setActive(false)}>
-          <CameraOff size={16} /> {t('components.Camera.stopCamera')}
-        </button>
-      )}
+      <div className="camera-actions">
+        {error && (
+          <p className="error" role="alert">
+            {displayTranslation(error)}
+          </p>
+        )}
+        {active && track && <CameraZoom track={track} />}
+        {!active && immersive && startButton}
+        {active && (
+          <button className="quiet camera-stop-button" onClick={() => setActive(false)}>
+            <CameraOff size={18} aria-hidden="true" /> {t('components.Camera.stopCamera')}
+          </button>
+        )}
+      </div>
     </div>
   );
 }

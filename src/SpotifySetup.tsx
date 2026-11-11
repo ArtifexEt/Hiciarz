@@ -1,17 +1,6 @@
 import { displayTranslation, t, useTranslation } from './i18n';
-import { lazy, Suspense, useRef, useState } from 'react';
-import {
-  ArrowLeft,
-  ArrowRight,
-  Check,
-  Copy,
-  ExternalLink,
-  LoaderCircle,
-  QrCode,
-  Settings2,
-} from 'lucide-react';
-import { qrImage } from './qr';
-import { readQR } from './model';
+import { useRef, useState } from 'react';
+import { ArrowRight, Check, Copy, ExternalLink, LoaderCircle, Settings2 } from 'lucide-react';
 import { authorizeSpotify } from './spotify';
 import {
   acknowledgeSpotifySetup,
@@ -19,17 +8,14 @@ import {
   defaultSpotifyClientId,
   saveSpotifyClientId,
   spotifyRedirectUri,
-  spotifySetupUrl,
   validateSpotifyClientId,
   type SpotifyPurpose,
 } from './spotify-settings';
-import { vibrateOnScan } from './scan-feedback';
 import DocumentationLinks from './DocumentationLinks';
+import SpotifyLoginNotice from './SpotifyLoginNotice';
 import './spotify-setup.css';
 
-const Camera = lazy(() => import('./Camera'));
 const dashboard = 'https://developer.spotify.com/dashboard';
-const rules = 'https://developer.spotify.com/documentation/web-api/concepts/quota-modes';
 
 export default function SpotifySetup({
   purpose,
@@ -41,36 +27,42 @@ export default function SpotifySetup({
   onDone: () => void;
 }) {
   useTranslation();
-  const defaultId = defaultSpotifyClientId();
-  const [step, setStep] = useState(purpose && !incomingClientId ? 0 : 1);
-  const [choice, setChoice] = useState<'default' | 'own'>(
-    incomingClientId || customSpotifyClientId() || !defaultId ? 'own' : 'default',
+  const hasDefault = Boolean(defaultSpotifyClientId());
+  const hasCustom = Boolean(customSpotifyClientId());
+  const configured = hasDefault || hasCustom;
+  const [stage, setStage] = useState<'summary' | 'edit' | 'ready'>(
+    purpose || incomingClientId || !configured ? 'edit' : 'summary',
   );
-  const [clientId, setClientId] = useState(incomingClientId || customSpotifyClientId());
+  const [choice, setChoice] = useState<'default' | 'own'>(
+    incomingClientId || hasCustom || !hasDefault ? 'own' : 'default',
+  );
+  const [incomingId, setIncomingId] = useState(incomingClientId || '');
+  // A replacement is entered explicitly; saved and incoming identifiers never enter the DOM.
+  const [clientId, setClientId] = useState('');
   const [error, setError] = useState('');
   const [idError, setIdError] = useState('');
-  const [instructionsOpen, setInstructionsOpen] = useState(
-    !incomingClientId && !customSpotifyClientId(),
-  );
   const [copied, setCopied] = useState(false);
-  const [scanning, setScanning] = useState(false);
-  const [scanned, setScanned] = useState(Boolean(incomingClientId));
-  const [sharing, setSharing] = useState(false);
   const [connecting, setConnecting] = useState(false);
-  const [shareImage, setShareImage] = useState('');
   const heading = useRef<HTMLHeadingElement>(null);
   const clientInput = useRef<HTMLInputElement>(null);
-  const shareFigure = useRef<HTMLElement>(null);
   const redirectUri = spotifyRedirectUri();
-  function go(next: number) {
+
+  function go(next: typeof stage) {
     setError('');
     setIdError('');
-    setStep(next);
+    setStage(next);
     requestAnimationFrame(() => {
       heading.current?.focus();
       heading.current?.scrollIntoView({ block: 'nearest' });
     });
   }
+
+  function edit() {
+    setClientId('');
+    setChoice(incomingId || hasCustom || !hasDefault ? 'own' : 'default');
+    go('edit');
+  }
+
   async function copyRedirect() {
     try {
       await navigator.clipboard.writeText(redirectUri);
@@ -79,64 +71,54 @@ export default function SpotifySetup({
       setError(t('components.SpotifySetup.selectTheReturnAddressBelowAnd'));
     }
   }
+
   function save() {
     try {
-      if (choice === 'default' && !defaultId)
-        throw new Error(t('components.SpotifySetup.thisSiteHasNoDefaultClient'));
-      saveSpotifyClientId(choice === 'default' ? null : validateSpotifyClientId(clientId));
+      if (choice === 'default') {
+        if (!hasDefault) throw new Error(t('components.SpotifySetup.thisSiteHasNoDefaultClient'));
+        saveSpotifyClientId(null);
+      } else if (clientId.trim() || incomingId) {
+        saveSpotifyClientId(validateSpotifyClientId(clientId.trim() || incomingId));
+      } else if (!hasCustom) {
+        throw new Error(t('spotifyPrivate.enterClientId'));
+      }
+      // Continuing with an unchanged custom connection preserves its login and device.
       acknowledgeSpotifySetup();
-      setSharing(false);
-      go(2);
+      setClientId('');
+      setIncomingId('');
+      go('ready');
     } catch (e) {
       setIdError((e as Error).message);
       clientInput.current?.focus();
     }
   }
+
   return (
-    <div className="spotify-onboarding">
-      <ol
-        className="connection-progress"
-        aria-label={t('components.SpotifySetup.spotifyConfiguration')}
-      >
-        {[
-          t('components.SpotifySetup.chooseConnection'),
-          t('components.SpotifySetup.configure'),
-          t('components.SpotifySetup.takeItToYourPhone'),
-        ].map((label, i) => (
-          <li
-            key={label}
-            aria-current={step === i ? 'step' : undefined}
-            className={i < step ? 'complete' : ''}
-          >
-            <span>{i < step ? <Check size={13} aria-hidden="true" /> : i + 1}</span>
-            {label}
-          </li>
-        ))}
-      </ol>
-      <h3 ref={heading} tabIndex={-1} className="connection-title">
-        {step === 0
-          ? t('components.SpotifySetup.yourMusicYourConnection')
-          : step === 1
-            ? t('components.SpotifySetup.prepareYourConnection')
-            : t('components.SpotifySetup.configurationSavedWhatsNext')}
-      </h3>
-      {step === 0 && (
+    <div className={'spotify-onboarding' + (stage === 'edit' ? ' is-editing' : '')}>
+      {stage === 'edit' ? (
         <>
-          <p className="connection-lead">
-            {t('components.SpotifySetup.spotifyLetsYouImportPlaylistsAnd')}
-          </p>
-          <div className="connection-options">
-            {defaultId && (
+          <h3 ref={heading} tabIndex={-1} className="connection-title">
+            {t('spotifyPrivate.chooseConnection')}
+          </h3>
+          <div
+            className={'connection-options' + (hasDefault ? ' has-default' : '')}
+            role="radiogroup"
+            aria-label={t('spotifyPrivate.chooseConnection')}
+          >
+            {hasDefault && (
               <label className={choice === 'default' ? 'chosen' : ''}>
                 <input
                   type="radio"
                   name="spotify-client-choice"
                   checked={choice === 'default'}
-                  onChange={() => setChoice('default')}
+                  onChange={() => {
+                    setChoice('default');
+                    setIdError('');
+                  }}
                 />
                 <span>
-                  <strong>{t('components.SpotifySetup.hiciarzsDefaultConnection')}</strong>
-                  <small>{t('components.SpotifySetup.forAccountsAddedByThePerson')}</small>
+                  <strong>{t('spotifyPrivate.defaultConnection')}</strong>
+                  <small>{t('spotifyPrivate.defaultDescription')}</small>
                 </span>
               </label>
             )}
@@ -145,160 +127,79 @@ export default function SpotifySetup({
                 type="radio"
                 name="spotify-client-choice"
                 checked={choice === 'own'}
-                onChange={() => setChoice('own')}
+                onChange={() => {
+                  setChoice('own');
+                  setIdError('');
+                }}
               />
               <span>
-                <strong>{t('components.SpotifySetup.myOwnConnection')}</strong>
-                <small>{t('components.SpotifySetup.youHaveAClientIDOr')}</small>
+                <strong>{t('spotifyPrivate.ownConnection')}</strong>
+                <small>{t('spotifyPrivate.ownDescription')}</small>
               </span>
             </label>
           </div>
-          <details className="connection-story">
-            <summary>{t('components.SpotifySetup.whyDoesSpotifyNeedConfiguration')}</summary>
-            <p>{t('components.SpotifySetup.sinceFebruary2026NewDevelopmentmodeIntegrations')}</p>
-            <p>{t('components.SpotifySetup.hiciarzIsOpenSourceAndYou')}</p>
-            <a href={rules} target="_blank" rel="noopener noreferrer">
-              {t('components.SpotifySetup.spotifyAccessRules')} <ExternalLink size={13} />
-            </a>
-          </details>
-          <div className="connection-actions">
-            <button className="primary" onClick={() => go(1)}>
-              {t('components.SpotifySetup.next')} <ArrowRight size={17} />
-            </button>
-          </div>
-        </>
-      )}
-      {step === 1 && (
-        <>
-          {scanned && (
-            <p className="connection-confirm" role="status">
-              <Check size={17} /> {t('components.SpotifySetup.configurationReadFromQRCheckThe')}
-            </p>
-          )}
-          {defaultId && (
-            <div
-              className="connection-source-switch"
-              role="group"
-              aria-label={t('components.SpotifySetup.clientIDSource')}
-            >
-              <button
-                aria-pressed={choice === 'default'}
-                onClick={() => {
-                  setChoice('default');
-                  setError('');
-                }}
-              >
-                {t('components.SpotifySetup.defaultConnection')}
-              </button>
-              <button
-                aria-pressed={choice === 'own'}
-                onClick={() => {
-                  setChoice('own');
-                  setError('');
-                }}
-              >
-                {t('components.SpotifySetup.myOwnClientID')}
-              </button>
-            </div>
-          )}
+
           {choice === 'default' ? (
-            <>
-              <p className="connection-lead">
-                {t('components.SpotifySetup.youWillUseTheConnectionBundled')}
-              </p>
-              <div className="connection-id-summary">
-                <Settings2 size={20} />
-                <div>
-                  <strong>{t('components.SpotifySetup.thisSitesClientID')}</strong>
-                  <code>{defaultId}</code>
-                </div>
-              </div>
-              <p className="hint">{t('components.SpotifySetup.ifSpotifyDeniesAccessAskThe')}</p>
-            </>
+            <div className="connection-configuration connection-default-guide">
+              <h4>{t('spotifyPrivate.defaultAccess')}</h4>
+              <p>{t('spotifyPrivate.defaultAccessDescription')}</p>
+            </div>
           ) : (
-            <>
-              <p className="connection-lead">
-                {t('components.SpotifySetup.alreadyHaveAClientIDPaste')}
-              </p>
-              <label className="connection-client-input">
-                {t('components.SpotifySetup.yourClientID')}
-                <input
-                  ref={clientInput}
-                  value={clientId}
-                  onChange={(e) => {
-                    setClientId(e.target.value);
-                    setError('');
-                    setIdError('');
-                  }}
-                  autoComplete="off"
-                  spellCheck={false}
-                  autoCapitalize="none"
-                  placeholder={t('components.SpotifySetup.32CharactersFromTheSpotifyDashboard')}
-                  aria-invalid={Boolean(idError)}
-                  aria-describedby="client-id-help client-id-error"
-                />
-              </label>
-              {idError && (
-                <p className="error" id="client-id-error" role="alert">
-                  {displayTranslation(idError)}
-                </p>
-              )}
-              <p className="hint" id="client-id-help">
-                {t('components.SpotifySetup.clientIDIsAPublicApplication')}
-              </p>
-              <button
-                className="text-button connection-scan"
-                onClick={() => setScanning(!scanning)}
-              >
-                <QrCode size={17} />
-                {scanning
-                  ? t('components.SpotifySetup.closeConfigurationScanner')
-                  : t('components.SpotifySetup.scanConfigurationQR')}
-              </button>
-              {scanning && (
-                <Suspense fallback={<p>{t('components.SpotifySetup.preparingScanner')}</p>}>
-                  <Camera
-                    purpose="setup"
-                    pairingRequired={false}
-                    onScan={(raw) => {
-                      try {
-                        const value = readQR(raw);
-                        if (value.kind !== 'spotify-setup')
-                          throw new Error(t('components.SpotifySetup.thisIsACardOrPairing'));
-                        setClientId(value.clientId);
-                        setScanned(true);
-                        setScanning(false);
-                        setInstructionsOpen(false);
-                        setIdError('');
-                        setError('');
-                        vibrateOnScan();
-                      } catch (e) {
-                        setError((e as Error).message);
-                      }
+            <div className="connection-configuration connection-own-guide">
+              <section className="connection-entry">
+                <h4>{t('spotifyPrivate.connectionSettings')}</h4>
+                {incomingId ? (
+                  <p className="connection-confirm" role="status">
+                    <Check size={18} aria-hidden="true" />
+                    {t('spotifyPrivate.incomingConfiguration')}
+                  </p>
+                ) : hasCustom ? (
+                  <p className="hint">{t('spotifyPrivate.keepSavedConnection')}</p>
+                ) : null}
+                <label className="connection-client-input">
+                  {t('spotifyPrivate.newClientId')}
+                  <input
+                    ref={clientInput}
+                    value={clientId}
+                    onChange={(e) => {
+                      setClientId(e.target.value);
+                      setError('');
+                      setIdError('');
                     }}
+                    autoComplete="off"
+                    spellCheck={false}
+                    autoCapitalize="none"
+                    placeholder={t('components.SpotifySetup.32CharactersFromTheSpotifyDashboard')}
+                    aria-invalid={Boolean(idError)}
+                    aria-describedby={'client-id-help' + (idError ? ' client-id-error' : '')}
                   />
-                </Suspense>
-              )}
-              <details
-                className="connection-instruction-guide"
-                open={instructionsOpen}
-                onToggle={(event) => setInstructionsOpen(event.currentTarget.open)}
-              >
-                <summary>{t('components.SpotifySetup.iDontHaveAClientID')}</summary>
+                </label>
+                {idError && (
+                  <p className="error" id="client-id-error" role="alert">
+                    {displayTranslation(idError)}
+                  </p>
+                )}
+                <p className="hint" id="client-id-help">
+                  {t('spotifyPrivate.noSecret')}
+                </p>
+              </section>
+
+              <section className="connection-guide" aria-labelledby="connection-guide-title">
+                <h4 id="connection-guide-title">{t('spotifyPrivate.howToConfigure')}</h4>
                 <ol className="connection-instructions">
                   <li>
-                    <strong>{t('components.SpotifySetup.createOrOpenASpotifyApp')}</strong>
+                    <strong>{t('spotifyPrivate.createApp')}</strong>
                     <p>
-                      {t('components.SpotifySetup.in')}{' '}
                       <a href={dashboard} target="_blank" rel="noopener noreferrer">
-                        Spotify Developer Dashboard <ExternalLink size={12} />
-                      </a>{' '}
-                      {t('components.SpotifySetup.selectWebAPIYouCanUse')}
+                        Spotify Developer Dashboard <ExternalLink size={13} aria-hidden="true" />
+                      </a>
+                      {' — '}
+                      {t('spotifyPrivate.selectWebApi')}
                     </p>
                   </li>
                   <li>
                     <strong>{t('components.SpotifySetup.addTheReturnAddress')}</strong>
-                    <p>{t('components.SpotifySetup.inTheAppSettingsAddThe')}</p>
+                    <p>{t('spotifyPrivate.redirectInstruction')}</p>
                     <div className="connection-redirect">
                       <input
                         aria-label={t('components.SpotifySetup.spotifyReturnAddress')}
@@ -306,8 +207,12 @@ export default function SpotifySetup({
                         readOnly
                         onFocus={(e) => e.currentTarget.select()}
                       />
-                      <button className="secondary" onClick={copyRedirect}>
-                        {copied ? <Check size={16} /> : <Copy size={16} />}{' '}
+                      <button type="button" className="secondary" onClick={copyRedirect}>
+                        {copied ? (
+                          <Check size={16} aria-hidden="true" />
+                        ) : (
+                          <Copy size={16} aria-hidden="true" />
+                        )}
                         {copied
                           ? t('components.SpotifySetup.copied')
                           : t('components.SpotifySetup.copyAddress')}
@@ -315,110 +220,84 @@ export default function SpotifySetup({
                     </div>
                   </li>
                   <li>
-                    <strong>{t('components.SpotifySetup.checkAccountAccessAndCopyThe')}</strong>
-                    <p>{t('components.SpotifySetup.inUsersManagementAddTheAccounts')}</p>
+                    <strong>{t('spotifyPrivate.addAccount')}</strong>
+                    <p>{t('spotifyPrivate.accountInstruction')}</p>
+                  </li>
+                  <li>
+                    <strong>{t('spotifyPrivate.pasteClientId')}</strong>
+                    <p>{t('spotifyPrivate.clientIdInstruction')}</p>
                   </li>
                 </ol>
-              </details>
-            </>
+                <DocumentationLinks topic="spotify" />
+              </section>
+            </div>
           )}
           <div className="connection-actions">
-            <button className="secondary" onClick={() => go(0)}>
-              <ArrowLeft size={16} /> {t('components.SpotifySetup.back')}
-            </button>
-            <button className="primary" onClick={save}>
-              {t('components.SpotifySetup.saveConfiguration')} <ArrowRight size={17} />
+            {configured && !purpose && (
+              <button type="button" className="secondary" onClick={() => go('summary')}>
+                {t('spotifyPrivate.cancel')}
+              </button>
+            )}
+            <button type="button" className="primary" onClick={save}>
+              {t('spotifyPrivate.saveConnection')} <Check size={17} aria-hidden="true" />
             </button>
           </div>
         </>
-      )}
-      {step === 2 && (
+      ) : (
         <>
-          <p className="connection-confirm">
-            <Check size={18} /> {t('components.SpotifySetup.youAreUsing')}{' '}
-            {customSpotifyClientId()
-              ? t('components.SpotifySetup.yourOwnConnection')
-              : t('components.SpotifySetup.thisSitesDefaultConnection')}
-            .
-          </p>
-          <p className="connection-lead">
-            {t('components.SpotifySetup.theClientIDIsSavedOn')}{' '}
-            <strong>{t('components.SpotifySetup.aboutSpotifySettings')}</strong>{' '}
-            {t('components.SpotifySetup.orInTheAccountMenu')}
-          </p>
-          <div className="connection-phone">
+          <div className="connection-summary">
+            <Settings2 size={24} aria-hidden="true" />
             <div>
-              <h4>{t('components.SpotifySetup.theSameClientIDOnYour')}</h4>
-              <p>{t('components.SpotifySetup.afterInstallingHiciarzOpenSpotifySettings')}</p>
-              <p className="hint">{t('components.SpotifySetup.theQRCodeTransfersAPublic')}</p>
-              <button
-                className="secondary"
-                onClick={() => {
-                  try {
-                    setShareImage(qrImage(spotifySetupUrl(), 6));
-                    const show = !sharing;
-                    setSharing(show);
-                    if (show)
-                      requestAnimationFrame(() =>
-                        shareFigure.current?.scrollIntoView({ block: 'nearest' }),
-                      );
-                  } catch (e) {
-                    setError((e as Error).message);
-                  }
-                }}
-              >
-                <QrCode size={17} />{' '}
-                {sharing
-                  ? t('components.SpotifySetup.hideQRCode')
-                  : t('components.SpotifySetup.showConfigurationQR')}
-              </button>
+              <h3 ref={heading} tabIndex={-1} className="connection-title">
+                {hasCustom
+                  ? t('spotifyPrivate.ownConnection')
+                  : t('spotifyPrivate.defaultConnection')}
+              </h3>
+              <p>
+                {stage === 'ready' ? t('spotifyPrivate.saved') : t('spotifyPrivate.configured')}
+              </p>
             </div>
-            {sharing && (
-              <figure ref={shareFigure}>
-                <img
-                  className="connection-config-qr"
-                  src={shareImage}
-                  alt={t('components.SpotifySetup.spotifyConfigurationQR')}
-                  data-qr-value={spotifySetupUrl()}
-                />
-                <figcaption>{t('components.SpotifySetup.scanAndConfirmSavingOnYour')}</figcaption>
-              </figure>
-            )}
-          </div>
-          <div className="connection-actions">
-            <button className="secondary" onClick={() => go(1)}>
-              <ArrowLeft size={16} /> {t('components.SpotifySetup.editClientID')}
-            </button>
-            {purpose ? (
-              <button
-                className="primary"
-                disabled={connecting}
-                onClick={async () => {
-                  setConnecting(true);
-                  setError('');
-                  try {
-                    await authorizeSpotify(purpose);
-                  } catch (e) {
-                    setError((e as Error).message);
-                    setConnecting(false);
-                  }
-                }}
-              >
-                {connecting ? (
-                  <LoaderCircle size={17} className="spin" />
-                ) : (
-                  <ArrowRight size={17} />
-                )}{' '}
-                {connecting
-                  ? t('components.SpotifySetup.openingSpotify')
-                  : t('components.SpotifySetup.signInToSpotify')}
-              </button>
-            ) : (
-              <button className="primary" onClick={onDone}>
-                {t('components.SpotifySetup.done')} <Check size={17} />
+            {!(purpose && stage === 'ready' && !hasCustom) && (
+              <button type="button" className="secondary" onClick={edit}>
+                {t('spotifyPrivate.changeConnection')}
               </button>
             )}
           </div>
+          {purpose && stage === 'ready' && <SpotifyLoginNotice purpose={purpose} />}
+          {stage === 'ready' && (
+            <div className="connection-actions">
+              {purpose ? (
+                <button
+                  type="button"
+                  className="primary"
+                  disabled={connecting}
+                  onClick={async () => {
+                    setConnecting(true);
+                    setError('');
+                    try {
+                      await authorizeSpotify(purpose);
+                    } catch (e) {
+                      setError((e as Error).message);
+                      setConnecting(false);
+                    }
+                  }}
+                >
+                  {connecting ? (
+                    <LoaderCircle size={17} className="spin" aria-hidden="true" />
+                  ) : (
+                    <ArrowRight size={17} aria-hidden="true" />
+                  )}
+                  {connecting
+                    ? t('components.SpotifySetup.openingSpotify')
+                    : t('components.SpotifySetup.signInToSpotify')}
+                </button>
+              ) : (
+                <button type="button" className="primary" onClick={onDone}>
+                  {t('components.SpotifySetup.done')} <Check size={17} aria-hidden="true" />
+                </button>
+              )}
+            </div>
+          )}
         </>
       )}
       {error && (
@@ -426,7 +305,6 @@ export default function SpotifySetup({
           {displayTranslation(error)}
         </p>
       )}
-      <DocumentationLinks topic="spotify" />
     </div>
   );
 }

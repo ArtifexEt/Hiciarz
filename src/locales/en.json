@@ -171,6 +171,6 @@
   "examples.christmas-hits.description": "151 Christmas songs from the recommended playlist. Classics and newer recordings with the Christmas fish theme.",
   "examples.christmas-hits.yearNote": "Years come from releases available on Spotify. They may refer to a compilation or reissue, so they are marked for review before printing.",
   "model.invalidJson": "Invalid JSON file. Check its syntax and try again.",
-  "document.title": "Hiciarz — Your music. Your game.",
-  "document.description": "Your songs, your cards. Create music decks, print and play with friends."
+  "document.title": "Hiciarz — music cards",
+  "document.description": "Create and print music cards, scan QR codes and guess songs, games or films."
 }

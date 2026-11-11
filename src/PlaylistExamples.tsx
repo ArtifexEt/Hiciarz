@@ -49,7 +49,7 @@ export default function PlaylistExamples({
             <span className="example-description">
               <strong>{p.deck.name}</strong>
               <span>
-                {t('examples.gallery.cardCount', { count: p.deck.songs.length })} ·{' '}
+                {t('shell.cardCount', { count: p.deck.songs.length })} ·{' '}
                 {gameModeNames[p.deck.gameMode || 'music']}
               </span>
               <small>{p.description}</small>
