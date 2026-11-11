@@ -1,25 +1,39 @@
+import { t, useTranslation, getLanguage } from './i18n';
 import { useState } from 'react';
 import { ArrowUpRight, Check, Sparkles } from 'lucide-react';
-import { examplePlaylists } from './examples';
+import { examplePlaylists, examplesForMode, exampleWouldMixModes } from './examples';
 import { themeArt } from './themes';
-import { themeNames } from './model';
+import { themeNames, gameModeNames, type GameMode } from './model';
+
+const sourceNotes = import.meta.glob<string>('../docs/game-*-sources.json', {
+  query: '?url',
+  import: 'default',
+  eager: true,
+});
 
 export default function PlaylistExamples({
   onChoose,
+  initialMode,
+  currentMode,
 }: {
   onChoose: (id: string, destination: 'new' | 'append') => void;
+  initialMode?: GameMode;
+  currentMode?: GameMode;
 }) {
-  const [selected, setSelected] = useState(examplePlaylists[0]?.id || '');
+  useTranslation();
+  const playlists = examplesForMode(initialMode);
+  const [selected, setSelected] = useState(playlists[0]?.id || '');
   const [destination, setDestination] = useState<'new' | 'append'>('new');
   const example = examplePlaylists.find((p) => p.id === selected);
   return (
     <div className="playlist-examples">
-      <p className="muted">
-        Gotowe listy na dobry początek. Wczytaj przykład bez logowania, a potem zmieniaj go po
-        swojemu.
-      </p>
-      <div className="example-options" role="group" aria-label="Wybierz przykładową playlistę">
-        {examplePlaylists.map((p) => (
+      <p className="muted">{t('components.PlaylistExamples.readymadeListsToGetYouStarted')}</p>
+      <div
+        className="example-options"
+        role="group"
+        aria-label={t('components.PlaylistExamples.chooseASamplePlaylist')}
+      >
+        {playlists.map((p) => (
           <button
             key={p.id}
             className={'example-option ' + (selected === p.id ? 'chosen' : '')}
@@ -34,7 +48,10 @@ export default function PlaylistExamples({
             </span>
             <span className="example-description">
               <strong>{p.deck.name}</strong>
-              <span>{p.deck.songs.length} utworów · Bez logowania</span>
+              <span>
+                {t('examples.gallery.cardCount', { count: p.deck.songs.length })} ·{' '}
+                {gameModeNames[p.deck.gameMode || 'music']}
+              </span>
               <small>{p.description}</small>
             </span>
             {selected === p.id && <Check size={19} aria-hidden="true" />}
@@ -45,21 +62,41 @@ export default function PlaylistExamples({
         <>
           <div className="example-source">
             <span>
-              Zapis playlisty z{' '}
-              {new Intl.DateTimeFormat('pl-PL', { dateStyle: 'long', timeZone: 'UTC' }).format(
-                new Date(example.snapshotDate + 'T00:00:00Z'),
+              {example.sourceType === 'curated' ? (
+                t('examples.gallery.curatedOn', {
+                  date: new Intl.DateTimeFormat(getLanguage(), {
+                    dateStyle: 'long',
+                    timeZone: 'UTC',
+                  }).format(new Date(example.snapshotDate + 'T00:00:00Z')),
+                })
+              ) : (
+                <>
+                  {t('components.PlaylistExamples.playlistSnapshotFrom')}{' '}
+                  {new Intl.DateTimeFormat(getLanguage(), {
+                    dateStyle: 'long',
+                    timeZone: 'UTC',
+                  }).format(new Date(example.snapshotDate + 'T00:00:00Z'))}
+                  {t('components.PlaylistExamples.thisListDoesNotUpdateAutomatically')}
+                </>
               )}
-              . Lista nie aktualizuje się automatycznie.
             </span>
-            <a href={example.sourceUrl} target="_blank" rel="noopener noreferrer">
-              Zobacz źródło w Spotify <ArrowUpRight size={14} />
+            <a
+              href={sourceNotes[`../docs/${example.id}-sources.json`] || example.sourceUrl}
+              target="_blank"
+              rel="noopener noreferrer"
+            >
+              {example.sourceType === 'curated'
+                ? t('examples.gallery.sources')
+                : t('components.PlaylistExamples.viewSourceOnSpotify')}{' '}
+              <ArrowUpRight size={14} />
             </a>
           </div>
           <p className="hint">
-            {example.yearNote} Odtwarzanie muzyki wymaga połączenia z internetem.
+            {example.yearNote}{' '}
+            {t('components.PlaylistExamples.musicPlaybackRequiresAnInternetConnection')}
           </p>
           <fieldset className="example-destination">
-            <legend>Gdzie wczytać utwory?</legend>
+            <legend>{t('components.PlaylistExamples.whereShouldTheTracksGo')}</legend>
             <div className="choice-list">
               <label>
                 <input
@@ -69,8 +106,11 @@ export default function PlaylistExamples({
                   onChange={() => setDestination('new')}
                 />
                 <span>
-                  <strong>Utwórz nową talię</strong>
-                  <small>Motyw: {themeNames[example.deck.theme]}. Zachowaj obecną talię.</small>
+                  <strong>{t('components.PlaylistExamples.createANewDeck')}</strong>
+                  <small>
+                    {t('components.PlaylistExamples.theme')} {themeNames[example.deck.theme]}
+                    {t('components.PlaylistExamples.keepTheCurrentDeck')}
+                  </small>
                 </span>
               </label>
               <label>
@@ -81,16 +121,25 @@ export default function PlaylistExamples({
                   onChange={() => setDestination('append')}
                 />
                 <span>
-                  <strong>Dodaj do obecnej talii</strong>
-                  <small>Dopisz na końcu, zachowaj poprawki i pomiń duplikaty.</small>
+                  <strong>{t('components.PlaylistExamples.addToTheCurrentDeck')}</strong>
+                  <small>{t('components.PlaylistExamples.appendTracksKeepYourEditsAnd')}</small>
                 </span>
               </label>
             </div>
           </fieldset>
+          {destination === 'append' &&
+            currentMode &&
+            exampleWouldMixModes(example, currentMode) && (
+              <p className="notice" role="status">
+                {t('examples.gallery.mixedAppend')}
+              </p>
+            )}
           <div className="modal-actions">
             <button className="primary" onClick={() => onChoose(example.id, destination)}>
               <Sparkles size={18} />{' '}
-              {destination === 'new' ? 'Utwórz talię z przykładu' : 'Dodaj utwory do talii'}
+              {destination === 'new'
+                ? t('components.PlaylistExamples.createDeckFromSample')
+                : t('components.PlaylistExamples.addTracksToDeck')}
             </button>
           </div>
         </>

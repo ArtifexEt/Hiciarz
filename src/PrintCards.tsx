@@ -1,3 +1,4 @@
+import { displayTranslation, t, useTranslation } from './i18n';
 import { ArrowUpRight, Download, Printer, Settings2 } from 'lucide-react';
 import type { PrintSettings } from './model';
 import './print-cards.css';
@@ -19,6 +20,7 @@ export default function PrintCards({
   onPreview: () => void;
   onSettings: () => void;
 }) {
+  useTranslation();
   const sheets = Math.ceil(count / 12);
   return (
     <div className="print-cards-guide">
@@ -26,66 +28,68 @@ export default function PrintCards({
         <Printer size={20} aria-hidden="true" />
         <span>
           <strong>
-            {selected ? 'Wybrane karty' : 'Cała talia'}: {count}
+            {selected
+              ? t('components.PrintCards.selectedCards')
+              : t('components.PrintCards.entireDeck')}
+            : {count}
           </strong>
           <small>
-            {sheets} ark. A4 · {sheets * 2} str. PDF · karty 60 × 60 mm
+            {sheets} {t('components.PrintCards.a4Sheets')} {sheets * 2}{' '}
+            {t('components.PrintCards.pDFPages6060MmCards')}
           </small>
         </span>
       </p>
-      <p className="print-guide-lead">
-        PDF zawiera obie strony kart, ułożone do druku dwustronnego.
-      </p>
+      <p className="print-guide-lead">{t('components.PrintCards.thePDFContainsBothSidesOf')}</p>
       <ol className="print-guide-steps">
         <li>
           <span aria-hidden="true">1</span>
           <div>
-            <strong>Pobierz lub otwórz PDF</strong>
-            <p>
-              Zapisz plik na później albo otwórz go teraz. W podglądzie PDF wybierz ikonę drukarki
-              lub polecenie „Drukuj”.
-            </p>
+            <strong>{t('components.PrintCards.downloadOrOpenThePDF')}</strong>
+            <p>{t('components.PrintCards.saveTheFileForLaterOr')}</p>
           </div>
         </li>
         <li>
           <span aria-hidden="true">2</span>
           <div>
-            <strong>Wydrukuj obie strony</strong>
+            <strong>{t('components.PrintCards.printBothSides')}</strong>
             <p>
-              Papier <b>A4</b>, skala <b>100% / rozmiar rzeczywisty</b>. Druk dwustronny z obrotem
-              po <b>{settings.edge === 'long' ? 'długiej' : 'krótkiej'} krawędzi</b>. Wyłącz
-              dopasowanie do strony.
+              {t('components.PrintCards.paper')} <b>A4</b>
+              {t('components.PrintCards.scale')} <b>{t('components.PrintCards.100ActualSize')}</b>
+              {t('components.PrintCards.doublesidedPrintingFlipOnThe')}{' '}
+              <b>
+                {settings.edge === 'long'
+                  ? t('components.PrintCards.long')
+                  : t('components.PrintCards.short')}{' '}
+                {t('components.PrintCards.edge')}
+              </b>
+              {t('components.PrintCards.turnOffFitToPage')}
             </p>
           </div>
         </li>
         <li>
           <span aria-hidden="true">3</span>
           <div>
-            <strong>Wytnij karty i graj</strong>
-            <p>
-              Po jednej stronie będzie odpowiedź, po drugiej kod QR. Wytnij karty wzdłuż ich
-              krawędzi i przygotuj skaner.
-            </p>
+            <strong>{t('components.PrintCards.cutOutTheCardsAndPlay')}</strong>
+            <p>{t('components.PrintCards.theAnswerIsOnOneSide')}</p>
           </div>
         </li>
       </ol>
       <button className="print-settings-link" onClick={onSettings}>
-        <Settings2 size={16} /> Ustawienia druku i wydruk próbny
+        <Settings2 size={16} /> {t('components.PrintCards.printSettingsAndTestPrint')}
       </button>
       <div className="print-guide-actions">
         <button className="primary" disabled={!count} onClick={onDownload}>
-          <Download size={19} /> Pobierz PDF
+          <Download size={19} /> {t('components.PrintCards.downloadPDF')}
         </button>
         <button className="secondary" disabled={!count} onClick={onPreview}>
-          <Printer size={19} /> Otwórz PDF do druku <ArrowUpRight size={15} />
+          <Printer size={19} /> {t('components.PrintCards.openPDFForPrinting')}{' '}
+          <ArrowUpRight size={15} />
         </button>
       </div>
-      <p className="print-guide-footnote">
-        Podgląd otworzy się w nowej karcie. Drukarkę wybierzesz w oknie drukowania.
-      </p>
+      <p className="print-guide-footnote">{t('components.PrintCards.thePreviewOpensInANew')}</p>
       {error && (
         <p className="error" role="alert">
-          {error}
+          {displayTranslation(error)}
         </p>
       )}
     </div>

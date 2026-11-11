@@ -1,3 +1,4 @@
+import { t as translate } from './i18n';
 export type ZoomRange = { min: number; max: number; step: number; value: number };
 type ZoomCapabilities = MediaTrackCapabilities & {
   zoom?: { min: number; max: number; step?: number };
@@ -27,7 +28,7 @@ export function clampCameraZoom(range: ZoomRange, value: number) {
 }
 
 export async function applyCameraZoom(track: MediaStreamTrack, range: ZoomRange, value: number) {
-  if (track.readyState !== 'live') throw new Error('Aparat jest wyłączony.');
+  if (track.readyState !== 'live') throw new Error(translate('camera.off'));
   const target = clampCameraZoom(range, value);
   const {
     advanced = [],
@@ -50,7 +51,7 @@ export async function applyCameraZoom(track: MediaStreamTrack, range: ZoomRange,
     !Number.isFinite(actual) ||
     Math.abs(actual - target) > range.step / 2 + 0.000001
   )
-    throw new Error('Aparat nie ustawił wybranego przybliżenia.');
+    throw new Error(translate('camera.zoomFailed'));
   return actual;
 }
 

@@ -1,0 +1,436 @@
+{
+  "version": 1,
+  "id": "example-game-symphonic-2026",
+  "name": "Zgadnij grę — symfonicznie",
+  "theme": "vinyl",
+  "gameMode": "game",
+  "songs": [
+    {
+      "id": "symph-2ZyB5UIsdbme30poIHtzog",
+      "title": "Assassin's Creed - Revelations: Main Theme",
+      "artist": "Crouch End Festival Chorus, Sarah Covey, London Philharmonic Orchestra",
+      "year": 2012,
+      "gameMode": "game",
+      "answer": "Assassin's Creed: Revelations",
+      "sources": {
+        "spotify": "2ZyB5UIsdbme30poIHtzog"
+      },
+      "review": true
+    },
+    {
+      "id": "symph-78NOjcwjSb7qSrPtKUAHiy",
+      "title": "Elder Scrolls – Skyrim: Far Horizons",
+      "artist": "Crouch End Festival Chorus, London Philharmonic Orchestra",
+      "year": 2012,
+      "gameMode": "game",
+      "answer": "The Elder Scrolls V: Skyrim",
+      "sources": {
+        "spotify": "78NOjcwjSb7qSrPtKUAHiy"
+      },
+      "review": true
+    },
+    {
+      "id": "symph-45sBxqtVAuFpJoLGLZbYER",
+      "title": "Legend of Zelda – the Windwaker: Dragon Roost Island",
+      "artist": "London Philharmonic Orchestra",
+      "year": 2012,
+      "gameMode": "game",
+      "answer": "The Legend of Zelda: The Wind Waker",
+      "sources": {
+        "spotify": "45sBxqtVAuFpJoLGLZbYER"
+      },
+      "review": true
+    },
+    {
+      "id": "symph-2I0CWu60kk4gpON8Z0wIZk",
+      "title": "Final Fantasy VII: One-Winged Angel",
+      "artist": "Crouch End Festival Chorus, London Philharmonic Orchestra",
+      "year": 2012,
+      "gameMode": "game",
+      "answer": "Final Fantasy VII",
+      "sources": {
+        "spotify": "2I0CWu60kk4gpON8Z0wIZk"
+      },
+      "review": true
+    },
+    {
+      "id": "symph-5pydCYU7m8wcg5GWqi7d1p",
+      "title": "Mass Effect 3: a Future For the Krogan/An End Once and For All",
+      "artist": "Sarah Covey, London Philharmonic Orchestra",
+      "year": 2012,
+      "gameMode": "game",
+      "answer": "Mass Effect 3",
+      "sources": {
+        "spotify": "5pydCYU7m8wcg5GWqi7d1p"
+      },
+      "review": true
+    },
+    {
+      "id": "symph-3ymuMYnJtBvcs5xk8MuBRl",
+      "title": "Chrono Trigger: Main Theme",
+      "artist": "London Philharmonic Orchestra",
+      "year": 2012,
+      "gameMode": "game",
+      "answer": "Chrono Trigger",
+      "sources": {
+        "spotify": "3ymuMYnJtBvcs5xk8MuBRl"
+      },
+      "review": true
+    },
+    {
+      "id": "symph-5mQBlZeo7pcJ9TGTDRdlBL",
+      "title": "Luigi's Mansion: Main Theme",
+      "artist": "Crouch End Festival Chorus, London Philharmonic Orchestra",
+      "year": 2012,
+      "gameMode": "game",
+      "answer": "Luigi's Mansion",
+      "sources": {
+        "spotify": "5mQBlZeo7pcJ9TGTDRdlBL"
+      },
+      "review": true
+    },
+    {
+      "id": "symph-6blXPfaOIeOmpZxC6SDoIr",
+      "title": "Kingdom Hearts Birth By Sleep: Fate of the Unknown",
+      "artist": "Crouch End Festival Chorus, London Philharmonic Orchestra",
+      "year": 2012,
+      "gameMode": "game",
+      "answer": "Kingdom Hearts Birth by Sleep",
+      "sources": {
+        "spotify": "6blXPfaOIeOmpZxC6SDoIr"
+      },
+      "review": true
+    },
+    {
+      "id": "symph-77aOEYyGTpsBLDFqZYXFsH",
+      "title": "Super Metroid: a Symphonic Poem",
+      "artist": "Crouch End Festival Chorus, London Philharmonic Orchestra",
+      "year": 2012,
+      "gameMode": "game",
+      "answer": "Super Metroid",
+      "sources": {
+        "spotify": "77aOEYyGTpsBLDFqZYXFsH"
+      },
+      "review": true
+    },
+    {
+      "id": "symph-2SmesAYC9MVtMqzpmeNsQW",
+      "title": "Diablo III: Overture",
+      "artist": "Crouch End Festival Chorus, London Philharmonic Orchestra",
+      "year": 2012,
+      "gameMode": "game",
+      "answer": "Diablo III",
+      "sources": {
+        "spotify": "2SmesAYC9MVtMqzpmeNsQW"
+      },
+      "review": true
+    },
+    {
+      "id": "symph-67JH6JbRjQNfo5lnKxZQpS",
+      "title": "Batman Arkham City: Main Theme",
+      "artist": "Crouch End Festival Chorus, London Philharmonic Orchestra",
+      "year": 2012,
+      "gameMode": "game",
+      "answer": "Batman: Arkham City",
+      "sources": {
+        "spotify": "67JH6JbRjQNfo5lnKxZQpS"
+      },
+      "review": true
+    },
+    {
+      "id": "symph-3HtS1RB6Ulg4gqM18vSaWi",
+      "title": "Deus Ex-Human Revolution: Icarus Main Theme",
+      "artist": "Crouch End Festival Chorus, Sarah Covey, London Philharmonic Orchestra",
+      "year": 2012,
+      "gameMode": "game",
+      "answer": "Deus Ex: Human Revolution",
+      "sources": {
+        "spotify": "3HtS1RB6Ulg4gqM18vSaWi"
+      },
+      "review": true
+    },
+    {
+      "id": "symph-0NUXU54CVejX3YlRPPQR8c",
+      "title": "Fez: Adventure",
+      "artist": "London Philharmonic Orchestra",
+      "year": 2012,
+      "gameMode": "game",
+      "answer": "FEZ",
+      "sources": {
+        "spotify": "0NUXU54CVejX3YlRPPQR8c"
+      },
+      "review": true
+    },
+    {
+      "id": "symph-6GWA26734ibbyUJqBlrP1B",
+      "title": "Portal: Still Alive",
+      "artist": "Sarah Covey, John Evans, Leo Abrahams, London Philharmonic Orchestra, Simon Little, Tim Weller, Tom Cawley",
+      "year": 2012,
+      "gameMode": "game",
+      "answer": "Portal",
+      "sources": {
+        "spotify": "6GWA26734ibbyUJqBlrP1B"
+      },
+      "review": true
+    },
+    {
+      "id": "symph-0puQTVTKS0v5GRKF4et8cx",
+      "title": "Little Big Planet: Orb of Dreamers (The Cosmic Imagisphere)",
+      "artist": "Crouch End Festival Chorus, London Philharmonic Orchestra",
+      "year": 2012,
+      "gameMode": "game",
+      "answer": "LittleBigPlanet",
+      "sources": {
+        "spotify": "0puQTVTKS0v5GRKF4et8cx"
+      },
+      "review": true
+    },
+    {
+      "id": "symph-3oxlRBeTRFpaNWkcZii482",
+      "title": "Advent Rising: Muse",
+      "artist": "Emmanuel Fratianni, Laurie Robinson, Tommy Tallarico, Andrew Skeet, London Philharmonic Orchestra, Crouch End Festival Chorus",
+      "year": 2011,
+      "gameMode": "game",
+      "answer": "Advent Rising",
+      "sources": {
+        "spotify": "3oxlRBeTRFpaNWkcZii482"
+      },
+      "review": true
+    },
+    {
+      "id": "symph-24IHfaMkymZAzmiUYB6tHb",
+      "title": "Call of Duty, Modern Warfare 2: Theme",
+      "artist": "Hans Zimmer, Andrew Skeet, London Philharmonic Orchestra",
+      "year": 2011,
+      "gameMode": "game",
+      "answer": "Call of Duty: Modern Warfare 2",
+      "sources": {
+        "spotify": "24IHfaMkymZAzmiUYB6tHb"
+      },
+      "review": true
+    },
+    {
+      "id": "symph-2Aq7zCYfNpb2Q7AkVbMKzk",
+      "title": "Angry Birds: Main Theme",
+      "artist": "Ari Pulkkinen, Andrew Skeet, London Philharmonic Orchestra",
+      "year": 2011,
+      "gameMode": "game",
+      "answer": "Angry Birds",
+      "sources": {
+        "spotify": "2Aq7zCYfNpb2Q7AkVbMKzk"
+      },
+      "review": true
+    },
+    {
+      "id": "symph-2xGDOy0pPf7XQSBhvJ9lzn",
+      "title": "Final Fantasy VIII: Liberi Fatali",
+      "artist": "Nobuo Uematsu, Andrew Skeet, London Philharmonic Orchestra, Crouch End Festival Chorus",
+      "year": 2011,
+      "gameMode": "game",
+      "answer": "Final Fantasy VIII",
+      "sources": {
+        "spotify": "2xGDOy0pPf7XQSBhvJ9lzn"
+      },
+      "review": true
+    },
+    {
+      "id": "symph-5sDx7tlKik6y6k2wfCnrxL",
+      "title": "Super Mario Bros: Theme",
+      "artist": "Koji Kondo, Andrew Skeet, London Philharmonic Orchestra",
+      "year": 2011,
+      "gameMode": "game",
+      "answer": "Super Mario Bros.",
+      "sources": {
+        "spotify": "5sDx7tlKik6y6k2wfCnrxL"
+      },
+      "review": true
+    },
+    {
+      "id": "symph-53Lp7OESwvZmD9D4b4fMG6",
+      "title": "Uncharted, Drake's Fortune: Nate's Theme",
+      "artist": "Greg Edmonson, Andrew Skeet, London Philharmonic Orchestra",
+      "year": 2011,
+      "gameMode": "game",
+      "answer": "Uncharted: Drake's Fortune",
+      "sources": {
+        "spotify": "53Lp7OESwvZmD9D4b4fMG6"
+      },
+      "review": true
+    },
+    {
+      "id": "symph-5S0uiDTyiUtutmU10TlEXW",
+      "title": "Grand Theft Auto IV: Soviet Connection",
+      "artist": "Michael Hunter, Andrew Skeet, London Philharmonic Orchestra",
+      "year": 2011,
+      "gameMode": "game",
+      "answer": "Grand Theft Auto IV",
+      "sources": {
+        "spotify": "5S0uiDTyiUtutmU10TlEXW"
+      },
+      "review": true
+    },
+    {
+      "id": "symph-0C6MXVVI5JWJCDh7WA8oqx",
+      "title": "World of Warcraft: Seasons of War",
+      "artist": "Jason Hayes, Andrew Skeet, London Philharmonic Orchestra, Crouch End Festival Chorus",
+      "year": 2011,
+      "gameMode": "game",
+      "answer": "World of Warcraft",
+      "sources": {
+        "spotify": "0C6MXVVI5JWJCDh7WA8oqx"
+      },
+      "review": true
+    },
+    {
+      "id": "symph-2Ft993NAjpq9v3ljhHrJtf",
+      "title": "Metal Gear Solid: Sons of Liberty Theme",
+      "artist": "Harry Gregson-Williams, Andrew Skeet, London Philharmonic Orchestra",
+      "year": 2011,
+      "gameMode": "game",
+      "answer": "Metal Gear Solid 2: Sons of Liberty",
+      "sources": {
+        "spotify": "2Ft993NAjpq9v3ljhHrJtf"
+      },
+      "review": true
+    },
+    {
+      "id": "symph-6CxWweyu61N9WSpMQ3oyGS",
+      "title": "Tetris Theme (Korobeiniki)",
+      "artist": "Alexey Pajitnov, Andrew Skeet, London Philharmonic Orchestra",
+      "year": 2011,
+      "gameMode": "game",
+      "answer": "Tetris",
+      "sources": {
+        "spotify": "6CxWweyu61N9WSpMQ3oyGS"
+      },
+      "review": true
+    },
+    {
+      "id": "symph-7aENwq13lwx4TLLNRDxr5P",
+      "title": "Elder Scrolls: Oblivion",
+      "artist": "Jeremy Soule, Andrew Skeet, London Philharmonic Orchestra",
+      "year": 2011,
+      "gameMode": "game",
+      "answer": "The Elder Scrolls IV: Oblivion",
+      "sources": {
+        "spotify": "7aENwq13lwx4TLLNRDxr5P"
+      },
+      "review": true
+    },
+    {
+      "id": "symph-6ahMVFZCiPBvvtLMT3VZuK",
+      "title": "Call of Duty 4, Modern Warfare: Main Menu Theme",
+      "artist": "Harry Gregson-Williams, Stephen Barton, Andrew Skeet, London Philharmonic Orchestra",
+      "year": 2011,
+      "gameMode": "game",
+      "answer": "Call of Duty 4: Modern Warfare",
+      "sources": {
+        "spotify": "6ahMVFZCiPBvvtLMT3VZuK"
+      },
+      "review": true
+    },
+    {
+      "id": "symph-2ZrSFxVUAvbgVMqYTkfx3B",
+      "title": "Mass Effect 2: Suicide Mission",
+      "artist": "Jack Wall, Sam Hulick, Andrew Skeet, London Philharmonic Orchestra",
+      "year": 2011,
+      "gameMode": "game",
+      "answer": "Mass Effect 2",
+      "sources": {
+        "spotify": "2ZrSFxVUAvbgVMqYTkfx3B"
+      },
+      "review": true
+    },
+    {
+      "id": "symph-20nVeE1rFZGtx284kA79BY",
+      "title": "Splinter Cell: Conviction",
+      "artist": "Amon Tobin, Kaveh Cohen, Michael Nielsen, Andrew Skeet, London Philharmonic Orchestra",
+      "year": 2011,
+      "gameMode": "game",
+      "answer": "Tom Clancy's Splinter Cell: Conviction",
+      "sources": {
+        "spotify": "20nVeE1rFZGtx284kA79BY"
+      },
+      "review": true
+    },
+    {
+      "id": "symph-47lO43fv2mhm1irHW3gMHV",
+      "title": "Final Fantasy: Main Theme",
+      "artist": "Nobuo Uematsu, Andrew Skeet, London Philharmonic Orchestra",
+      "year": 2011,
+      "gameMode": "game",
+      "answer": "Final Fantasy",
+      "sources": {
+        "spotify": "47lO43fv2mhm1irHW3gMHV"
+      },
+      "review": true
+    },
+    {
+      "id": "symph-3VJKUA38YDt4Nqi2nCjbd3",
+      "title": "Bioshock: The Ocean on His Shoulders",
+      "artist": "Garry Schyman, Andrew Skeet, London Philharmonic Orchestra",
+      "year": 2011,
+      "gameMode": "game",
+      "answer": "BioShock",
+      "sources": {
+        "spotify": "3VJKUA38YDt4Nqi2nCjbd3"
+      },
+      "review": true
+    },
+    {
+      "id": "symph-3q81uuMbxNCZ3QrgR1BqE2",
+      "title": "Halo 3: One Final Effort",
+      "artist": "Martin O'Donnell, Michael Salvatori, Andrew Skeet, London Philharmonic Orchestra",
+      "year": 2011,
+      "gameMode": "game",
+      "answer": "Halo 3",
+      "sources": {
+        "spotify": "3q81uuMbxNCZ3QrgR1BqE2"
+      },
+      "review": true
+    },
+    {
+      "id": "symph-7rUa1vYP9ahdfHKyrtrsKj",
+      "title": "Fallout 3: Theme",
+      "artist": "Inon Zur, Andrew Skeet, London Philharmonic Orchestra",
+      "year": 2011,
+      "gameMode": "game",
+      "answer": "Fallout 3",
+      "sources": {
+        "spotify": "7rUa1vYP9ahdfHKyrtrsKj"
+      },
+      "review": true
+    },
+    {
+      "id": "symph-05XPxcgHp4I4CFlOhMnskS",
+      "title": "Super Mario Galaxy: Gusty Garden Galaxy",
+      "artist": "Koji Kondo, Mahito Yokota, Andrew Skeet, London Philharmonic Orchestra",
+      "year": 2011,
+      "gameMode": "game",
+      "answer": "Super Mario Galaxy",
+      "sources": {
+        "spotify": "05XPxcgHp4I4CFlOhMnskS"
+      },
+      "review": true
+    }
+  ],
+  "print": {
+    "style": "theme",
+    "frontColors": "varied",
+    "edge": "long",
+    "offsetX": 0,
+    "offsetY": 0,
+    "cuts": true
+  },
+  "example": {
+    "id": "game-symphonic",
+    "description": "34 orkiestrowe zagadki z muzyki gier. Od Assassin’s Creed i Skyrima po Chrono Trigger i Portal.",
+    "sourceUrl": "https://www.warnerclassics.com/release/greatest-video-game-music-1-2",
+    "sourceName": "The Greatest Video Game Music 1 & 2",
+    "sourceOwner": "London Philharmonic Orchestra / Warner Classics",
+    "snapshotDate": "2026-11-11",
+    "yearNote": "Lata odnoszą się do wydań konkretnych aranżacji w Spotify, nie do premier gier. W tym wariancie zgadujecie grę; rok nie jest pytaniem.",
+    "category": "games",
+    "sourceType": "curated"
+  }
+}

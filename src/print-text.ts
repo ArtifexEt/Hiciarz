@@ -1,3 +1,4 @@
+import { t as translate } from './i18n';
 import type { jsPDF } from 'jspdf';
 
 /** Fit a full name into its printed area before shortening only the printed label. */
@@ -25,5 +26,5 @@ export function fitPrintText(
       return { lines: visible, size, lineHeight, shortened: true };
     }
   }
-  throw new Error('Nie udało się dopasować tekstu do karty.');
+  throw new Error(translate('print.fitFailed'));
 }

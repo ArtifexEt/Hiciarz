@@ -1,4 +1,12 @@
 import {
+  t as tr,
+  displayTranslation,
+  getLanguage,
+  useTranslation,
+  languageNames,
+  type Language,
+} from './i18n';
+import {
   useCallback,
   useEffect,
   useRef,
@@ -62,11 +70,20 @@ import {
   type SpotifyPurpose,
 } from './spotify-settings';
 import PlayingCard from './PlayingCard';
+import GameModePicker from './GameModePicker';
+import CreatorSteps, { type CreatorStep } from './CreatorSteps';
 import type { PlaybackState } from './playback';
 import { vibrateOnScan } from './scan-feedback';
+import {
+  cardPlaybackSource,
+  initialPlaybackOutput,
+  scannerPlaybackRoute,
+  type PlaybackOutput,
+} from './scanner-playback';
 import PlaylistExamples from './PlaylistExamples';
 import { createExampleDeck } from './examples';
-import playlistPrompt from '../docs/playlist-prompt.txt?raw';
+import playlistPromptPl from '../docs/playlist-prompt.txt?raw';
+import playlistPromptEn from '../docs/playlist-prompt.en.txt?raw';
 import { frontDesign, frontImage } from './front';
 import {
   appVersion,
@@ -84,8 +101,6 @@ import {
   csvExport,
   download,
   findDeckForCard,
-  gameModes,
-  gameModeNames,
   type GameMode,
   mergeSongs,
   newDeck,
@@ -103,7 +118,6 @@ import { asset, themeArt, themeDescriptions } from './themes';
 import type { SourceCheck } from './availability';
 import { useConnection, type Command } from './connection';
 const Camera = lazy(() => import('./Camera'));
-const christmasPlaylist = 'https://open.spotify.com/playlist/7wfTeAa7cxhA3qNE05XPKk';
 import Players from './Players';
 import { SpotifyRemotePanel, useSpotifyRemote } from './SpotifyRemote';
 const BingoGame = lazy(() => import('./BingoGame'));
@@ -117,6 +131,10 @@ import {
   spotifyLoginPurpose,
 } from './spotify';
 type Mode = 'home' | 'editor' | 'scanner' | 'player' | 'bingo';
+function trackCount(count: number) {
+  const form = new Intl.PluralRules(getLanguage()).select(count);
+  return tr('app.trackCount.' + form, { count });
+}
 function Modal({
   title,
   children,
@@ -143,7 +161,7 @@ function Modal({
     >
       <div className="modal-heading">
         <h2>{title}</h2>
-        <button className="icon" aria-label="Zamknij" onClick={onClose}>
+        <button className="icon" aria-label={tr('app.close')} onClick={onClose}>
           <X size={20} />
         </button>
       </div>
@@ -162,7 +180,7 @@ export function QR({ value, className = '' }: { value: string; className?: strin
     };
   }, [value]);
   return url ? (
-    <img className={'qr ' + className} src={url} alt="Kod QR" data-qr-value={value} />
+    <img className={'qr ' + className} src={url} alt={tr('app.qrCode')} data-qr-value={value} />
   ) : (
     <span className="qr-loading" />
   );
@@ -174,7 +192,7 @@ function ThemePicker({ value, onChange }: { value: Theme; onChange: (t: Theme) =
         <button
           key={t}
           className={'theme-option ' + (value === t ? 'chosen' : '')}
-          aria-label={'Motyw kart: ' + themeNames[t]}
+          aria-label={tr('app.cardTheme') + themeNames[t]}
           aria-pressed={value === t}
           onClick={() => onChange(t)}
         >
@@ -209,26 +227,31 @@ function CardPreview({ song, deck, back = false }: { song: Song; deck: Deck; bac
       {back ? (
         <>
           <span className="card-wordmark">
-            hiciarz<span>✳</span>
+            {tr('app.hiciarz')}
+            <span>✳</span>
           </span>
           <div className="card-qr">
             <QR value={cardUrl(song, deck.theme)} />
           </div>
           <small>
             {song.gameMode === 'movie'
-              ? 'ZGADNIJ FILM'
+              ? tr('app.guessTheMovie')
               : song.gameMode === 'game'
-                ? 'ZGADNIJ GRĘ'
-                : 'ZESKANUJ. POSŁUCHAJ. ZGADNIJ.'}
+                ? tr('app.guessTheGame')
+                : tr('app.scanListenGuess')}
           </small>
         </>
       ) : (
         <>
           <div className="card-topline">
-            <span>HICIARZ</span>
+            <span>{tr('app.hiciarz2')}</span>
           </div>
           <strong className="card-year">
-            {song.gameMode === 'movie' ? 'FILM' : song.gameMode === 'game' ? 'GRA' : song.year}
+            {song.gameMode === 'movie'
+              ? tr('app.movie')
+              : song.gameMode === 'game'
+                ? tr('app.game')
+                : song.year}
           </strong>
           <h3>{song.gameMode && song.gameMode !== 'music' ? song.answer : song.title}</h3>
           <p>{song.gameMode && song.gameMode !== 'music' ? song.title : song.artist}</p>
@@ -252,9 +275,18 @@ function SongForm({
   onClose: () => void;
 }) {
   const [error, setError] = useState('');
-  const [gameMode, setGameMode] = useState<GameMode>(song?.gameMode || defaultMode);
+  const [gameMode, setGameMode] = useState<GameMode>(song ? song.gameMode || 'music' : defaultMode);
   return (
-    <Modal title={song ? 'Edytuj utwór' : 'Dodaj swój hit'} onClose={onClose}>
+    <Modal
+      title={
+        song
+          ? tr('app.editTrack')
+          : gameMode === 'music'
+            ? tr('app.addYourHit')
+            : tr('creator.newCardTitle.' + gameMode)
+      }
+      onClose={onClose}
+    >
       <form
         onSubmit={(e) => {
           e.preventDefault();
@@ -279,54 +311,56 @@ function SongForm({
           }
         }}
       >
+        <GameModePicker value={gameMode} onChange={setGameMode} compact />
         <div className="form-grid">
-          <label>
-            Tryb gry
-            <select value={gameMode} onChange={(e) => setGameMode(e.target.value as GameMode)}>
-              {gameModes.map((m) => (
-                <option key={m} value={m}>
-                  {gameModeNames[m]}
-                </option>
-              ))}
-            </select>
-          </label>
           {gameMode !== 'music' && (
-            <label>
-              {gameMode === 'movie' ? 'Tytuł filmu — odpowiedź' : 'Tytuł gry — odpowiedź'}
+            <label className="answer-entry">
+              {tr('creator.answer.' + gameMode)}
               <input
                 name="answer"
+                autoFocus
                 required
                 maxLength={200}
                 defaultValue={song?.answer || ''}
                 placeholder={
-                  gameMode === 'movie' ? 'Np. Jurassic Park' : 'Np. The Witcher 3: Wild Hunt'
+                  gameMode === 'movie' ? tr('app.eGJurassicPark') : tr('app.eGTheWitcher3WildHunt')
                 }
               />
             </label>
           )}
           <label>
-            Tytuł
+            {tr('creator.recordingTitle')}
             <input
               name="title"
               required
               maxLength={200}
               defaultValue={song?.title}
-              placeholder="Na przykład Dancing Queen"
-              autoFocus
+              placeholder={
+                gameMode === 'music'
+                  ? tr('app.forExampleDancingQueen')
+                  : tr('creator.recordingExample.' + gameMode)
+              }
+              autoFocus={gameMode === 'music'}
             />
           </label>
           <label>
-            Wykonawca
+            {gameMode === 'music' ? tr('app.artist') : tr('creator.recordingArtist')}
             <input
               name="artist"
               required
               maxLength={200}
               defaultValue={song?.artist}
-              placeholder="ABBA"
+              placeholder={
+                gameMode === 'music'
+                  ? 'ABBA'
+                  : gameMode === 'game'
+                    ? 'Jeremy Soule'
+                    : 'John Williams'
+              }
             />
           </label>
           <label>
-            Rok do gry
+            {gameMode === 'music' ? tr('app.yearForTheGame') : tr('creator.recordingYear')}
             <input
               name="year"
               type="number"
@@ -334,13 +368,13 @@ function SongForm({
               min="1000"
               max="2100"
               defaultValue={song?.year || ''}
-              placeholder="1976"
+              placeholder={gameMode === 'game' ? '2011' : gameMode === 'movie' ? '1993' : '1976'}
             />
           </label>
           <label>
-            Motyw karty
+            {tr('app.cardTheme2')}
             <select name="theme" defaultValue={song?.theme || ''}>
-              <option value="">Jak cała talia</option>
+              <option value="">{tr('app.sameAsTheDeck')}</option>
               {themes.map((t) => (
                 <option key={t} value={t}>
                   {themeNames[t]}
@@ -350,11 +384,11 @@ function SongForm({
           </label>
         </div>
         <div className="form-divider">
-          <span>ŹRÓDŁA ODTWARZANIA</span>
-          <small>Dodaj przynajmniej jedno</small>
+          <span>{tr('app.playbackSources')}</span>
+          <small>{tr('app.addAtLeastOne')}</small>
         </div>
         <label>
-          Spotify
+          {tr('app.spotify')}
           <input
             name="spotify"
             defaultValue={
@@ -364,7 +398,7 @@ function SongForm({
           />
         </label>
         <label>
-          YouTube
+          {tr('app.youtube')}
           <input
             name="youtube"
             defaultValue={song?.sources.youtube ? 'https://youtu.be/' + song.sources.youtube : ''}
@@ -372,19 +406,22 @@ function SongForm({
           />
         </label>
         <p className="hint">
-          Rok dotyczy konkretnego nagrania. Sprawdź go zwłaszcza dla coverów i reedycji.
+          {gameMode === 'music'
+            ? tr('app.theYearRefersToThisParticularRecording')
+            : tr('creator.yearNotAnswer')}
         </p>
         {error && (
           <p className="error" role="alert">
-            {error}
+            {displayTranslation(error)}
           </p>
         )}
         <div className="modal-actions">
           <button type="button" className="secondary" onClick={onClose}>
-            Anuluj
+            {tr('app.cancel')}
           </button>
           <button className="primary" type="submit">
-            <Check size={17} /> Zapisz utwór
+            <Check size={17} />{' '}
+            {gameMode === 'music' ? tr('app.saveTrack') : tr('creator.saveCard')}
           </button>
         </div>
       </form>
@@ -409,34 +446,31 @@ function SpotifyImport({
     [error, setError] = useState('');
   const [playlist, setPlaylist] = useState(initialPlaylist);
   return (
-    <Modal title="Importuj playlistę ze Spotify" onClose={onClose}>
+    <Modal title={tr('app.importASpotifyPlaylist')} onClose={onClose}>
       <div className="notice spotify-import-access">
         <Info size={22} aria-hidden="true" />
         <div>
-          <strong>Jakie playlisty możesz wczytać?</strong>
-          <p>
-            W trybie deweloperskim Spotify udostępnia własne i współtworzone playlisty. Dostęp do
-            pozostałych zależy od uprawnień wybranego połączenia Spotify.
-          </p>
+          <strong>{tr('app.whichPlaylistsCanYouImport')}</strong>
+          <p>{tr('app.inDevelopmentModeSpotifyProvidesYourOwn')}</p>
           <button className="text-button" onClick={onExamples}>
-            Wybierz przykład bez logowania <ArrowUpRight size={14} />
+            {tr('app.chooseAnExampleWithoutSigningIn')} <ArrowUpRight size={14} />
           </button>
         </div>
       </div>
-      <p className="muted">Wybierz, co zrobić z obecną listą utworów.</p>
+      <p className="muted">{tr('app.chooseWhatToDoWithYourCurrent')}</p>
       <div className="choice-list">
         <label>
           <input type="radio" checked={mode === 'append'} onChange={() => setMode('append')} />
           <span>
-            <strong>Dodaj nowe piosenki na końcu</strong>
-            <small>Zachowaj swoje utwory i poprawki. Pomiń duplikaty.</small>
+            <strong>{tr('app.appendNewTracks')}</strong>
+            <small>{tr('app.keepYourTracksAndEditsSkipDuplicates')}</small>
           </span>
         </label>
         <label>
           <input type="radio" checked={mode === 'replace'} onChange={() => setMode('replace')} />
           <span>
-            <strong>Zastąp obecną listę</strong>
-            <small>Usuń obecną listę i wczytaj zawartość playlisty.</small>
+            <strong>{tr('app.replaceTheCurrentList')}</strong>
+            <small>{tr('app.removeTheCurrentListAndImportThe')}</small>
           </span>
         </label>
       </div>
@@ -449,7 +483,7 @@ function SpotifyImport({
             beginSpotifyLogin().catch((e) => setError(e.message));
           }}
         >
-          {spotifyConfigured() ? 'Połącz ze Spotify' : 'Skonfiguruj połączenie Spotify'}
+          {spotifyConfigured() ? tr('app.connectToSpotify') : tr('app.setUpSpotifyConnection')}
         </button>
       ) : (
         <form
@@ -460,12 +494,11 @@ function SpotifyImport({
             setError('');
             try {
               const r = await importPlaylist(String(f.get('playlist')));
-              if (!r.songs.length)
-                throw new Error('Playlista nie zawiera utworów możliwych do zaimportowania.');
+              if (!r.songs.length) throw new Error(tr('app.thePlaylistHasNoTracksThatCan'));
               onImport(
                 r.songs,
                 mode,
-                `${r.name}. ${r.skipped ? 'Pominięte pozycje: ' + r.skipped + '. ' : ''}Sprawdź lata wydania.`,
+                tr('app.importSummary', { name: r.name, skipped: r.skipped }),
               );
               sessionStorage.removeItem('spotify-import-playlist');
               onClose();
@@ -477,21 +510,19 @@ function SpotifyImport({
           }}
         >
           <label>
-            Link do playlisty
+            {tr('app.playlistLink')}
             <input
               name="playlist"
               required
               value={playlist}
               onChange={(e) => setPlaylist(e.target.value)}
-              placeholder="Wklej link do swojej playlisty"
+              placeholder={tr('app.pasteALinkToYourPlaylist')}
             />
           </label>
-          <p className="hint">
-            Zachowamy kolejność playlisty. Lata pobrane z albumów oznaczymy do sprawdzenia.
-          </p>
+          <p className="hint">{tr('app.weKeepPlaylistOrderYearsFromAlbum')}</p>
           <button disabled={busy} className="primary full" type="submit">
             {busy ? <LoaderCircle className="spin" size={18} /> : <Download size={18} />}{' '}
-            {busy ? 'Pobieram utwory…' : 'Importuj playlistę'}
+            {busy ? tr('app.fetchingTracks') : tr('app.importPlaylist')}
           </button>
           <button
             className="quiet"
@@ -501,7 +532,7 @@ function SpotifyImport({
               onClose();
             }}
           >
-            Odłącz Spotify
+            {tr('app.disconnectSpotify')}
           </button>
         </form>
       )}
@@ -513,29 +544,32 @@ function SpotifyImport({
           openSpotifySetup('import');
         }}
       >
-        <Settings2 size={15} /> Ustawienia połączenia Spotify
+        <Settings2 size={15} /> {tr('app.spotifyConnectionSettings')}
       </button>
       {error && (
         <p className="error" role="alert">
-          {error}
+          {displayTranslation(error)}
         </p>
       )}
     </Modal>
   );
 }
 export default function App() {
+  const { language, setLanguage } = useTranslation();
+  const playlistPrompt = language === 'en' ? playlistPromptEn : playlistPromptPl;
+  const [draggingFile, setDraggingFile] = useState(false);
+  const [draggingImage, setDraggingImage] = useState(false);
   const [isMobile, setIsMobile] = useState(() => window.matchMedia('(max-width: 700px)').matches);
   const [appMenuOpen, setAppMenuOpen] = useState(false);
   const [bingoOpened, setBingoOpened] = useState(false);
   const [showCoffee, setShowCoffee] = useState(localStorage.getItem('hiciarz-hide-coffee') !== '1');
-  const [showDemoOffer, setShowDemoOffer] = useState(false);
   const updateAvailable = useSyncExternalStore(subscribeToUpdates, updateIsReady);
   const [updating, setUpdating] = useState(false);
   const [decks, setDecks] = useState<Deck[]>([]),
     [loaded, setLoaded] = useState(false),
     [activeId, setActiveId] = useState(''),
     [mode, setMode] = useState<Mode>('home'),
-    [tab, setTab] = useState<'songs' | 'design' | 'print'>('songs');
+    [tab, setTab] = useState<CreatorStep>('songs');
   useEffect(() => {
     if (mode === 'bingo') setBingoOpened(true);
   }, [mode]);
@@ -570,7 +604,7 @@ export default function App() {
     [card, setCard] = useState<Card | null>(null),
     [source, setSource] = useState<'spotify' | 'youtube'>('spotify'),
     [preferred, setPreferred] = useState<'spotify' | 'youtube'>('spotify'),
-    [playState, setPlayState] = useState('Przygotuj połączenie i zeskanuj kartę.'),
+    [playState, setPlayState] = useState(tr('app.setUpPlaybackAndScanACard')),
     [command, setCommand] = useState<{ type: Command; seq: number } | null>(null);
   const displayTheme = (mode === 'scanner' || mode === 'player') && card ? card.theme : uiTheme;
   const [spotifySetup, setSpotifySetup] = useState<{
@@ -580,20 +614,37 @@ export default function App() {
   }>({ revision: 0 });
   const [, refreshSpotifySettings] = useState(0);
   const [playbackState, setPlaybackState] = useState<PlaybackState>('paused');
+  const [playerRevision, setPlayerRevision] = useState(0);
+  const playbackTransition = useRef(false);
   const [scanFeedback, setScanFeedback] = useState<{ sequence: number; kind: 'card' | 'pair' }>();
   const reportPlayback = useCallback((text: string, state?: PlaybackState) => {
     setPlayState(text);
     if (state) setPlaybackState(state);
   }, []);
-  const [output, setOutputState] = useState<'browser' | 'spotify'>(() =>
-    localStorage.getItem('hiciarz-output') === 'spotify' ||
-    (!localStorage.getItem('hiciarz-output') && spotifyConfigured())
-      ? 'spotify'
-      : 'browser',
+  const [output, setOutputState] = useState<PlaybackOutput>(() =>
+    initialPlaybackOutput(localStorage.getItem('hiciarz-output'), spotifyConfigured()),
   );
-  const setOutput = (value: 'browser' | 'spotify') => {
-    setOutputState(value);
-    localStorage.setItem('hiciarz-output', value);
+  const setOutput = async (value: PlaybackOutput) => {
+    if (playbackTransition.current) return false;
+    if (value === outputRef.current) return true;
+    playbackTransition.current = true;
+    try {
+      if (outputRef.current === 'spotify' && card) await spotifyRemote.stop();
+      if (card && mode === 'scanner' && outputRef.current === 'browser')
+        room.send(undefined, 'stop');
+      if (mode === 'scanner' && value !== 'browser' && (room.connected || room.pairUrl))
+        room.disconnect();
+      clearRound();
+      outputRef.current = value;
+      setOutputState(value);
+      localStorage.setItem('hiciarz-output', value);
+      return true;
+    } catch (error) {
+      notify((error as Error).message);
+      return false;
+    } finally {
+      playbackTransition.current = false;
+    }
   };
   const spotifyRemote = useSpotifyRemote(
     card,
@@ -622,6 +673,9 @@ export default function App() {
     destination: 'download' | 'print';
   }>();
   const deck = decks.find((d) => d.id === activeId) || decks[0];
+  useEffect(() => {
+    if (deck && !deck.songs.length) setTab('songs');
+  }, [deck?.id, deck?.songs.length]);
   const printCount = deck
     ? selected.size
       ? deck.songs.filter((s) => selected.has(s.id)).length
@@ -636,6 +690,24 @@ export default function App() {
     clearTimeout(toastTimer.current);
     toastTimer.current = setTimeout(() => setMessage(''), 6000);
   }, []);
+  async function readImportFile(file: File) {
+    try {
+      if (file.size > 8 * 1024 * 1024) throw new Error(tr('app.theFileIsTooLargeTheLimit'));
+      setPending({ data: parseImport(await file.text(), file.name), name: file.name });
+      setImportMode('append');
+      setModal('file');
+    } catch (error) {
+      notify((error as Error).message);
+    }
+  }
+  async function readBackground(file: File) {
+    try {
+      updateDeck({ back: await imageData(file) });
+      setShowBack(true);
+    } catch (error) {
+      notify((error as Error).message);
+    }
+  }
   function clearScanFeedback() {
     clearTimeout(scanFeedbackTimer.current);
     setScanFeedback(undefined);
@@ -647,11 +719,12 @@ export default function App() {
     vibrateOnScan();
   }
   function receive(c: Card) {
+    if (playbackTransition.current) return;
     setMessage('');
     setCard(c);
     setCommand(null);
-    setSource(c.sources[preferred] ? preferred : c.sources.spotify ? 'spotify' : 'youtube');
-    setPlayState('Wczytuję utwór z karty…');
+    setSource(cardPlaybackSource(c, preferred));
+    setPlayState(tr('app.loadingTheTrackFromYourCard'));
     setPlaybackState('loading');
   }
   function playerCommand(c: Command) {
@@ -666,7 +739,8 @@ export default function App() {
     if (mode === 'player' && card && room.connected)
       room.reportPlayback({ cardId: card.id, state: playbackState, message: playState });
   }, [mode, card, room.connected, playbackState, playState]);
-  const gameReady = output === 'spotify' ? spotifyRemote.ready : room.connected;
+  const gameReady =
+    output === 'spotify' ? spotifyRemote.ready : output === 'local' || room.connected;
   useEffect(() => {
     window.scrollTo({ top: 0, behavior: 'auto' });
   }, [mode, card?.id]);
@@ -674,36 +748,50 @@ export default function App() {
     if (mode === 'scanner' && output === 'browser' && card && !room.connected) {
       setCard(null);
       setCommand(null);
-      setPlayState('Połączenie z odtwarzaczem zostało przerwane. Zeskanuj ponownie QR parowania.');
+      setPlayState(tr('app.thePlayerConnectionWasLostScanThe'));
     }
   }, [mode, output, card, room.connected]);
   useEffect(() => {
     if (mode !== 'scanner' || output !== 'browser' || !card || playbackState !== 'loading') return;
     const timeout = setTimeout(
-      () =>
-        reportPlayback(
-          'Odtwarzacz nie potwierdził odtwarzania. Sprawdź drugi ekran i spróbuj ponownie.',
-          'error',
-        ),
+      () => reportPlayback(tr('app.thePlayerHasNotConfirmedPlaybackCheck'), 'error'),
       22000,
     );
     return () => clearTimeout(timeout);
   }, [mode, output, card, playbackState, reportPlayback]);
   const cardDeck = card ? findDeckForCard(decks, card) : undefined;
   const playingBack = cardDeck?.print.style === 'laser' ? themeArt('laser') : cardDeck?.back;
-  function nextCard() {
+  function clearRound() {
     clearScanFeedback();
     setCard(null);
     setCommand(null);
     lastScan.current = { id: '', time: 0 };
     setPlaybackState('paused');
+    setPlayState(tr('app.startTheCameraAndScanTheNext'));
+  }
+  async function nextCard() {
+    if (playbackTransition.current) return;
+    playbackTransition.current = true;
+    try {
+      if (outputRef.current === 'spotify' && card) await spotifyRemote.stop();
+      if (outputRef.current === 'browser' && mode === 'scanner' && card)
+        room.send(undefined, 'stop');
+      clearRound();
+    } catch (error) {
+      notify((error as Error).message);
+    } finally {
+      playbackTransition.current = false;
+    }
   }
   function togglePlayback() {
     if (!card) return;
     if (playbackState === 'error') {
       if (mode === 'scanner' && output === 'browser') {
-        if (room.send(card)) reportPlayback('Czekam na odtwarzacz…', 'loading');
-      } else receive({ ...card });
+        if (room.send(card)) reportPlayback(tr('app.waitingForThePlayer'), 'loading');
+      } else {
+        setPlayerRevision((revision) => revision + 1);
+        receive({ ...card });
+      }
       return;
     }
     const action = playbackState === 'playing' ? 'pause' : 'resume';
@@ -711,7 +799,7 @@ export default function App() {
   }
   function sendPlaybackCommand(action: Command) {
     if (mode === 'scanner' && output === 'browser') {
-      if (room.send(undefined, action)) reportPlayback('Czekam na odtwarzacz…', 'loading');
+      if (room.send(undefined, action)) reportPlayback(tr('app.waitingForThePlayer'), 'loading');
     } else playerCommand(action);
   }
   useEffect(() => {
@@ -771,7 +859,6 @@ export default function App() {
         const savedId = localStorage.getItem('hiciarz-active-deck');
         setActiveId(initial.some((d) => d.id === savedId) ? savedId! : initial[0].id);
         setLoaded(true);
-        setShowDemoOffer(!localStorage.getItem('hiciarz-demo-offer-v1'));
       })
       .catch(() => {
         if (!live) return;
@@ -779,7 +866,7 @@ export default function App() {
         setDecks([empty]);
         setActiveId(empty.id);
         setLoaded(true);
-        setStorageError('Nie można odczytać zapisu lokalnego. Pobieraj kopie projektu do pliku.');
+        setStorageError(tr('app.localDataCouldNotBeReadDownload'));
       });
     return () => {
       live = false;
@@ -793,9 +880,7 @@ export default function App() {
       .catch(() => {})
       .then(() => saveDecks(decks))
       .then(() => setStorageError(''))
-      .catch(() =>
-        setStorageError('Nie udało się zapisać projektu w przeglądarce. Pobierz kopię JSON.'),
-      );
+      .catch(() => setStorageError(tr('app.theProjectCouldNotBeSavedIn')));
   }, [decks, loaded]);
   useEffect(() => {
     document.documentElement.dataset.theme = themes.includes(displayTheme)
@@ -808,6 +893,7 @@ export default function App() {
   useEffect(() => {
     setSelected(new Set());
     setPreviewIndex(0);
+    setTab('songs');
     if (activeId) localStorage.setItem('hiciarz-active-deck', activeId);
   }, [activeId]);
   const oauthStarted = useRef(false);
@@ -826,10 +912,10 @@ export default function App() {
                 : 'player',
             );
             sessionStorage.removeItem('hiciarz-spotify-return-mode');
-            notify('Połączono Spotify. Wybierz urządzenie odtwarzania.');
+            notify(tr('app.spotifyConnectedSelectAPlaybackDevice'));
           } else {
             setMode('editor');
-            notify('Połączono Spotify. Wybierz playlistę do importu.');
+            notify(tr('app.spotifyConnectedSelectAPlaylistToImport'));
             setModal('spotify');
           }
         }
@@ -847,38 +933,45 @@ export default function App() {
         notify(e.message);
       });
   }, []);
-  useEffect(() => {
-    function route() {
-      if (!location.hash) return;
-      try {
-        const q = readQR(location.href);
-        if (q.kind === 'spotify-setup') {
-          setMode('scanner');
-          setOutput('spotify');
-          sessionStorage.setItem('hiciarz-spotify-return-mode', 'scanner');
-          setSpotifySetup((previous) => ({
-            purpose: 'player',
-            clientId: q.clientId,
-            revision: previous.revision + 1,
-          }));
-          setModal('spotify-setup');
-          history.replaceState(null, '', location.pathname + location.search);
-          return;
-        }
+  const routeHandler = useRef<() => Promise<void>>(async () => {});
+  routeHandler.current = async () => {
+    if (!location.hash || playbackTransition.current) return;
+    const raw = location.href;
+    try {
+      const q = readQR(raw);
+      if (q.kind === 'spotify-setup') {
+        if (!(await setOutput('spotify'))) return;
         setMode('scanner');
-        if (q.kind === 'pair') {
-          setOutput('browser');
-          room.join(q.peer, q.token);
-        } else if (outputRef.current === 'spotify') {
+        sessionStorage.setItem('hiciarz-spotify-return-mode', 'scanner');
+        setSpotifySetup((previous) => ({
+          purpose: 'player',
+          clientId: q.clientId,
+          revision: previous.revision + 1,
+        }));
+        setModal('spotify-setup');
+      } else if (q.kind === 'pair') {
+        if (!(await setOutput('browser'))) return;
+        setMode('scanner');
+        room.join(q.peer, q.token);
+      } else {
+        setMode('scanner');
+        if (
+          scannerPlaybackRoute(outputRef.current, room.connected) === 'direct' ||
+          room.send(q.card)
+        )
           receive(q.card);
-        } else if (room.send(q.card)) {
-          receive(q.card);
-        } else incomingCard.current = q.card;
-        history.replaceState(null, '', location.pathname + location.search);
-      } catch {
-        /* Non-QR hash ignored. */
+        else incomingCard.current = q.card;
       }
+      if (location.href === raw)
+        history.replaceState(null, '', location.pathname + location.search);
+    } catch {
+      // Ignore hashes that are not valid Hiciarz QR payloads.
     }
+  };
+  useEffect(() => {
+    const route = () => {
+      void routeHandler.current();
+    };
     const initial = setTimeout(route, 0);
     window.addEventListener('hashchange', route);
     return () => {
@@ -887,12 +980,21 @@ export default function App() {
     };
   }, []);
   useEffect(() => {
-    if (room.connected && incomingCard.current) {
-      room.send(incomingCard.current);
+    if (incomingCard.current && scannerPlaybackRoute(output, room.connected) !== 'pair-required') {
+      if (output === 'browser' && !room.send(incomingCard.current)) return;
       receive(incomingCard.current);
       incomingCard.current = null;
     }
-  }, [room.connected]);
+  }, [room.connected, output]);
+  function goToCreatorStep(next: CreatorStep) {
+    if (next !== 'songs' && !deck.songs.length) return;
+    setTab(next);
+    requestAnimationFrame(() =>
+      document
+        .querySelector('[data-deck-settings]')
+        ?.scrollIntoView({ block: 'start', behavior: 'auto' }),
+    );
+  }
   function updateDeck(patch: Partial<Deck>) {
     setDecks((ds) => ds.map((d) => (d.id === deck.id ? { ...d, ...patch } : d)));
   }
@@ -900,28 +1002,24 @@ export default function App() {
     const r = mergeSongs(deck.songs, songs, mode);
     updateDeck({ songs: r.songs });
     setSelected(new Set());
-    notify(
-      `Talia ma teraz ${r.songs.length} utworów.${r.skipped ? ' Pominięto duplikaty: ' + r.skipped + '.' : ''} ${note}`,
-    );
+    notify(tr('app.deckImportSummary', { count: r.songs.length, skipped: r.skipped, note }));
   }
   function chooseExample(id: string, destination: 'new' | 'append' = 'new') {
     const example = createExampleDeck(id);
     if (destination === 'new') {
       setDecks((ds) => [...ds, example]);
       setActiveId(example.id);
-      notify(
-        `Utworzono „${example.name}”: ${example.songs.length} utworów. Sprawdź lata przed drukiem.`,
-      );
-    } else importSongs(example.songs, 'append', 'Sprawdź lata przed drukiem.');
+      notify(tr('app.exampleCreated', { name: example.name, count: example.songs.length }));
+    } else importSongs(example.songs, 'append', tr('app.checkTheYearsBeforePrinting'));
     setFilter('');
     setSelected(new Set());
     setPreviewIndex(0);
     setTab('songs');
-    setShowDemoOffer(false);
     localStorage.setItem('hiciarz-demo-offer-v1', 'accepted');
     setModal(null);
   }
-  function handleScan(raw: string) {
+  async function handleScan(raw: string) {
+    if (playbackTransition.current) return;
     try {
       const q = readQR(raw);
       if (q.kind === 'spotify-setup') {
@@ -941,12 +1039,12 @@ export default function App() {
       if (lastScan.current.id === scanId && now - lastScan.current.time < 7000) return;
       if (q.kind === 'pair') {
         lastScan.current = { id: scanId, time: now };
-        setOutput('browser');
+        if (!(await setOutput('browser'))) return;
         room.join(q.peer, q.token);
         confirmScan('pair');
         return;
       }
-      if (output === 'spotify') {
+      if (scannerPlaybackRoute(output, room.connected) === 'direct') {
         lastScan.current = { id: q.card.id, time: now };
         receive(q.card);
         confirmScan('card');
@@ -954,7 +1052,7 @@ export default function App() {
         lastScan.current = { id: q.card.id, time: now };
         receive(q.card);
         confirmScan('card');
-      } else notify('Najpierw zeskanuj QR parowania z ekranu odtwarzacza.');
+      } else notify(tr('app.firstScanThePairingQrCodeOn'));
     } catch (e) {
       notify((e as Error).message);
     }
@@ -980,9 +1078,7 @@ export default function App() {
     const controller = new AbortController();
     const preview = destination === 'print' ? preparePDFPreview(() => controller.abort()) : null;
     if (destination === 'print' && !preview) {
-      setPrintError(
-        'Nie udało się otworzyć nowej karty. Wybierz „Pobierz PDF”, a następnie otwórz pobrany plik do druku.',
-      );
+      setPrintError(tr('app.aNewTabCouldNotBeOpened'));
       return;
     }
     pdfAbort.current = controller;
@@ -1006,47 +1102,58 @@ export default function App() {
       controller.signal.throwIfAborted();
       if (preview) preview.show(doc.output('blob'));
       else
-        await doc.save(`${deck.name.replace(/[^\p{L}\p{N} -]/gu, '') || 'hiciarz'}.pdf`, {
+        await doc.save(`${deck.name.replace(/[^\p{L}\p{N} -]/gu, '') || tr('app.hiciarz')}.pdf`, {
           returnPromise: true,
         });
       setPrintReady({ deck, count: songs.length, destination });
       notify(
         shortened.size
-          ? `PDF gotowy. Bardzo długie nazwy skróciliśmy na ${shortened.size} kartach; pełne dane zostały w talii. Drukuj w skali 100%.`
-          : 'PDF gotowy. Drukuj w skali 100%, bez dopasowania do strony.',
+          ? tr('app.pdfNamesShortened', { count: shortened.size })
+          : tr('app.pdfReadyPrintAt100ScaleWithout'),
       );
     } catch (e) {
       preview?.close();
-      notify(controller.signal.aborted ? 'Anulowano generowanie PDF.' : (e as Error).message);
+      notify(controller.signal.aborted ? tr('app.pdfGenerationCancelled') : (e as Error).message);
     } finally {
       pdfAbort.current = null;
       setPDFProgress(undefined);
       setBusy(false);
     }
   }
-  function changeMode(next: Mode) {
+  async function changeMode(next: Mode) {
     setAppMenuOpen(false);
-    if (next !== mode) {
-      clearScanFeedback();
+    if (next === mode || playbackTransition.current) return;
+    playbackTransition.current = true;
+    try {
+      if (outputRef.current === 'spotify' && card) await spotifyRemote.stop();
+      if (mode === 'scanner' && outputRef.current === 'browser' && card)
+        room.send(undefined, 'stop');
       if (room.connected || room.pairUrl) room.disconnect();
-      setCard(null);
-      setCommand(null);
+      clearRound();
       incomingCard.current = null;
+      setMode(next);
+      if (next === 'player') {
+        outputRef.current = 'browser';
+        setOutputState('browser');
+        localStorage.setItem('hiciarz-output', 'browser');
+      }
+    } catch (error) {
+      notify((error as Error).message);
+    } finally {
+      playbackTransition.current = false;
     }
-    setMode(next);
-    if (next === 'player') setOutput('browser');
   }
   const filtered =
     deck?.songs.filter((s) =>
       (s.title + ' ' + s.artist + ' ' + s.year)
-        .toLocaleLowerCase('pl')
-        .includes(filter.toLocaleLowerCase('pl')),
+        .toLocaleLowerCase(language)
+        .includes(filter.toLocaleLowerCase(language)),
     ) || [];
   const previewSong = deck?.songs[Math.min(previewIndex, Math.max(0, deck.songs.length - 1))];
   if (!loaded || !deck)
     return (
       <div className="boot">
-        <LoaderCircle className="spin" /> Przygotowuję Twoje studio…
+        <LoaderCircle className="spin" /> {tr('app.preparingYourStudio')}
       </div>
     );
   return (
@@ -1059,54 +1166,56 @@ export default function App() {
       }
     >
       <aside className="sidebar">
-        <a className="brand" href={import.meta.env.BASE_URL} aria-label="Hiciarz — strona główna">
+        <a className="brand" href={import.meta.env.BASE_URL} aria-label={tr('app.hiciarzHome')}>
           <span className="brand-icon">
-            <Music2 size={23} />
+            <img src={asset('icon.svg')} alt="" aria-hidden="true" width="38" height="38" />
           </span>
-          hiciarz<span className="brand-star">✳</span>
+          {tr('app.hiciarz')}
+          <span className="brand-star">✳</span>
         </a>
         <div className="sidebar-group">
-          <span className="eyebrow">TWOJA MUZYCZNA PRZESTRZEŃ</span>
-          <nav aria-label="Tryby aplikacji">
+          <span className="eyebrow">{tr('app.yourMusicSpace')}</span>
+          <nav aria-label={tr('app.appModes')}>
             <button
               className={mode === 'editor' ? 'nav active' : 'nav'}
               onClick={() => changeMode('editor')}
             >
-              <LayoutGrid size={19} /> Kreator kart <span className="nav-dot" />
+              <LayoutGrid size={19} /> {tr('app.cardCreator')} <span className="nav-dot" />
             </button>
             <button
               className={mode === 'scanner' ? 'nav active' : 'nav'}
               onClick={() => changeMode('scanner')}
             >
-              <ScanLine size={19} /> Skaner kart
+              <ScanLine size={19} /> {tr('app.cardScanner')}
             </button>
             <button
               className={mode === 'player' ? 'nav active' : 'nav'}
               onClick={() => changeMode('player')}
             >
-              <Headphones size={19} /> Odtwarzacz {room.connected && <span className="live-dot" />}
+              <Headphones size={19} /> {tr('app.player')}{' '}
+              {room.connected && <span className="live-dot" />}
             </button>
             {!isMobile && (
               <button
                 className={mode === 'bingo' ? 'nav active' : 'nav'}
                 onClick={() => changeMode('bingo')}
               >
-                <Grid3X3 size={19} /> Bingo
+                <Grid3X3 size={19} /> {tr('app.bingo')}
               </button>
             )}
           </nav>
         </div>
         <div className="sidebar-group decks">
           <div className="label-row">
-            <span className="eyebrow">TWOJE TALIE</span>
+            <span className="eyebrow">{tr('app.yourDecks')}</span>
             <button
               className="icon small"
-              aria-label="Utwórz nową talię"
+              aria-label={tr('app.createANewDeck')}
               onClick={() => {
                 const d = newDeck();
                 setDecks([...decks, d]);
                 setActiveId(d.id);
-                setMode('editor');
+                void changeMode('editor');
               }}
             >
               <Plus size={17} />
@@ -1131,22 +1240,22 @@ export default function App() {
           <div className="sidebar-note">
             <Sparkles size={20} />
             <strong>
-              Dobry wieczór zaczyna
+              {tr('app.aGreatEveningStarts')}
               <br />
-              się od dobrej muzyki.
+              {tr('app.withGreatMusic')}
             </strong>
-            <p>Stwórz coś, co Was połączy.</p>
+            <p>{tr('app.createSomethingThatBringsYouTogether')}</p>
           </div>
           <a href="https://buymeacoffee.com/szymonrybka" target="_blank" rel="noreferrer">
-            <Coffee size={17} /> Postaw kawę <ArrowUpRight size={14} />
+            <Coffee size={17} /> {tr('app.buyACoffee')} <ArrowUpRight size={14} />
           </a>
           <a href="https://github.com/ArtifexEt/Hiciarz" target="_blank" rel="noreferrer">
-            <FileJson size={17} /> Otwarty kod źródłowy <ArrowUpRight size={14} />
+            <FileJson size={17} /> {tr('app.openSourceCode')} <ArrowUpRight size={14} />
           </a>
           <button className="help-link" onClick={() => setModal('help')}>
-            <Info size={17} /> Jak to działa?
+            <Info size={17} /> {tr('app.howDoesItWork')}
           </button>
-          <span className="version">HICIARZ / STUDIO 01</span>
+          <span className="version">{tr('app.hiciarzStudio01')}</span>
         </div>
       </aside>
       <div className="workspace">
@@ -1154,27 +1263,27 @@ export default function App() {
           <div className="breadcrumb">
             {mode === 'home' ? (
               <span className="start-brand">
-                hiciarz <span aria-hidden="true">✳</span>
+                {tr('app.hiciarz')} <span aria-hidden="true">✳</span>
               </span>
             ) : (
               <>
                 <button
                   className="start-link"
                   onClick={() => changeMode('home')}
-                  aria-label="Wróć do startu"
+                  aria-label={tr('app.backToHome')}
                 >
                   <ChevronLeft size={16} />
-                  Start
+                  {tr('app.home')}
                 </button>
                 <ChevronRight size={13} />
                 <strong>
                   {mode === 'editor'
-                    ? 'Kreator kart'
+                    ? tr('app.cardCreator')
                     : mode === 'scanner'
-                      ? 'Skaner kart'
+                      ? tr('app.cardScanner')
                       : mode === 'bingo'
-                        ? 'Bingo'
-                        : 'Odtwarzacz'}
+                        ? tr('app.bingo')
+                        : tr('app.player')}
                 </strong>
               </>
             )}
@@ -1182,12 +1291,12 @@ export default function App() {
           <div className="topbar-right">
             <span className="save-status">
               <span className={storageError ? 'warn-dot' : 'live-dot'} />
-              {storageError ? 'Zapis niedostępny' : 'Zapis lokalny'}
+              {storageError ? tr('app.savingUnavailable') : tr('app.savedLocally')}
             </span>
             <label className="theme-select">
               <Palette size={16} />
               <select
-                aria-label="Motyw aplikacji"
+                aria-label={tr('app.appTheme')}
                 value={uiTheme}
                 onChange={(e) => setUiTheme(e.target.value as Theme)}
               >
@@ -1200,15 +1309,15 @@ export default function App() {
             </label>
             <button
               className="icon about-button"
-              aria-label="O aplikacji"
-              title="O aplikacji"
+              aria-label={tr('app.settings')}
+              title={tr('app.settings')}
               onClick={() => setModal('about')}
             >
-              <Info size={20} />
+              <Settings2 size={20} />
             </button>
             <button
               className="icon mobile-menu-toggle"
-              aria-label="Menu aplikacji"
+              aria-label={tr('app.appMenu')}
               aria-expanded={appMenuOpen}
               aria-controls="mobile-app-menu"
               onClick={() => setAppMenuOpen(!appMenuOpen)}
@@ -1221,23 +1330,23 @@ export default function App() {
             <nav
               id="mobile-app-menu"
               className="mobile-app-menu"
-              aria-label="Menu aplikacji"
+              aria-label={tr('app.appMenu')}
               onKeyDown={(e) => {
                 if (e.key === 'Escape') setAppMenuOpen(false);
               }}
             >
               <div className="label-row">
-                <strong>Hiciarz</strong>
+                <strong>{tr('app.hiciarz3')}</strong>
                 <button
                   className="icon"
-                  aria-label="Zamknij menu"
+                  aria-label={tr('app.closeMenu')}
                   onClick={() => setAppMenuOpen(false)}
                 >
                   <X size={18} />
                 </button>
               </div>
               <button onClick={() => changeMode('home')}>
-                <Music2 size={18} /> Strona startowa
+                <Music2 size={18} /> {tr('app.homePage')}
               </button>
               <button
                 onClick={() => {
@@ -1245,7 +1354,7 @@ export default function App() {
                   setAppMenuOpen(false);
                 }}
               >
-                <ScanLine size={18} /> Skanuj i graj
+                <ScanLine size={18} /> {tr('app.scanAndPlay')}
               </button>
               <button
                 onClick={() => {
@@ -1253,7 +1362,7 @@ export default function App() {
                   setAppMenuOpen(false);
                 }}
               >
-                <LayoutGrid size={18} /> Twórz karty
+                <LayoutGrid size={18} /> {tr('app.createCards')}
               </button>
               <button
                 onClick={() => {
@@ -1261,15 +1370,15 @@ export default function App() {
                   setAppMenuOpen(false);
                 }}
               >
-                <Headphones size={18} /> Odtwarzacz
+                <Headphones size={18} /> {tr('app.player')}
               </button>
               <button onClick={() => changeMode('bingo')}>
-                <Grid3X3 size={18} /> Bingo
+                <Grid3X3 size={18} /> {tr('app.bingo')}
               </button>
               <label>
-                Wygląd
+                {tr('app.appearance')}
                 <select
-                  aria-label="Motyw w menu"
+                  aria-label={tr('app.menuTheme')}
                   value={uiTheme}
                   onChange={(e) => setUiTheme(e.target.value as Theme)}
                 >
@@ -1286,7 +1395,7 @@ export default function App() {
                   setAppMenuOpen(false);
                 }}
               >
-                <Info size={18} /> O aplikacji
+                <Settings2 size={18} /> {tr('app.settings')}
               </button>
             </nav>
           )}
@@ -1294,8 +1403,8 @@ export default function App() {
         {updateAvailable && (
           <div className="update-banner" role="status">
             <span>
-              <strong>Nowa wersja Hiciarza jest gotowa.</strong> Zapiszemy Twoje talie i odświeżymy
-              aplikację.
+              <strong>{tr('app.aNewVersionOfHiciarzIsReady')}</strong>{' '}
+              {tr('app.weWillSaveYourDecksAndRefresh')}
             </span>
             <button
               className="primary"
@@ -1308,13 +1417,11 @@ export default function App() {
                   await applyUpdate();
                 } catch {
                   setUpdating(false);
-                  notify(
-                    'Nie udało się zapisać talii przed aktualizacją. Pobierz projekt i spróbuj ponownie.',
-                  );
+                  notify(tr('app.yourDecksCouldNotBeSavedBefore'));
                 }
               }}
             >
-              {updating ? 'Wczytuję…' : 'Wczytaj nową wersję'}
+              {updating ? tr('app.loading') : tr('app.loadNewVersion')}
             </button>
           </div>
         )}
@@ -1327,14 +1434,14 @@ export default function App() {
             >
               <Coffee size={20} aria-hidden="true" />
               <span>
-                Podoba Ci się Hiciarz? <strong>Postaw mi kawę</strong>
+                {tr('app.enjoyingHiciarz')} <strong>{tr('app.buyMeACoffee')}</strong>
               </span>
               <ArrowUpRight size={18} aria-hidden="true" />
             </a>
             <button
               className="icon"
-              aria-label="Ukryj baner kawy"
-              title="Ukryj baner kawy"
+              aria-label={tr('app.hideCoffeeBanner')}
+              title={tr('app.hideCoffeeBanner')}
               onClick={() => {
                 setShowCoffee(false);
                 localStorage.setItem('hiciarz-hide-coffee', '1');
@@ -1352,7 +1459,7 @@ export default function App() {
             )}
           {(bingoOpened || mode === 'bingo') && (
             <div className="bingo-container" hidden={mode !== 'bingo'}>
-              <Suspense fallback={<p className="hint">Przygotowuję Bingo…</p>}>
+              <Suspense fallback={<p className="hint">{tr('app.preparingBingo')}</p>}>
                 <BingoGame onScanner={() => changeMode('scanner')} />
               </Suspense>
             </div>
@@ -1364,31 +1471,22 @@ export default function App() {
               <section className="page-heading">
                 <div>
                   <div className="eyebrow">
-                    <span className="tiny-line" /> ZRÓB Z MUZYKI DOBRY WIECZÓR
+                    <span className="tiny-line" /> {tr('app.makeMusicAGreatEvening')}
                   </div>
                   <h1>
-                    Twórz własne karty
+                    {tr('app.createYourOwnCards')}
                     <span className="heading-star">✳</span>
                   </h1>
-                  <p>Wybierz piosenki, nadaj im charakter i wydrukuj swoją talię.</p>
                 </div>
                 <div className="heading-actions print-action">
-                  {deck.songs.length ? (
-                    <span className="print-next-step" id="print-next-step">
-                      <span aria-hidden="true">3</span> Wydrukuj i wytnij karty
-                    </span>
-                  ) : (
-                    <small id="print-next-step">Dodaj utwory, aby przygotować wydruk</small>
-                  )}
                   <button
                     className="primary"
                     disabled={!printCount || busy}
                     onClick={openPrintCards}
                     aria-haspopup="dialog"
-                    aria-describedby="print-next-step"
                   >
                     {busy ? <LoaderCircle size={18} className="spin" /> : <Printer size={18} />}{' '}
-                    {busy ? 'Przygotowuję karty…' : 'Pobierz / drukuj karty'}{' '}
+                    {busy ? tr('app.preparingCards') : tr('app.downloadPrintCards')}{' '}
                     <ChevronDown size={16} aria-hidden="true" />
                   </button>
                 </div>
@@ -1397,120 +1495,37 @@ export default function App() {
                 <section className="print-ready-note" role="status">
                   <Printer size={22} aria-hidden="true" />
                   <div>
-                    <strong>PDF gotowy. Teraz wydrukuj i wytnij karty.</strong>
+                    <strong>{tr('app.pdfReadyNowPrintAndCutOut')}</strong>
                     <p>
-                      Liczba kart: {printReady.count}.{' '}
-                      {printReady.destination === 'print'
-                        ? 'W podglądzie PDF wybierz „Drukuj”.'
-                        : 'Otwórz pobrany PDF i wybierz „Drukuj”.'}{' '}
-                      A4, dwustronnie, skala 100%, obrót po{' '}
-                      {deck.print.edge === 'long' ? 'długiej' : 'krótkiej'} krawędzi.
+                      {tr('app.printReadySummary', {
+                        count: printReady.count,
+                        action:
+                          printReady.destination === 'print'
+                            ? tr('app.choosePrintInThePdfPreview')
+                            : tr('app.openTheDownloadedPdfAndChoosePrint'),
+                        edge: deck.print.edge === 'long' ? tr('app.long') : tr('app.short'),
+                      })}
                     </p>
                   </div>
                   <button
                     className="icon"
-                    aria-label="Ukryj wskazówki wydruku"
+                    aria-label={tr('app.hidePrintingTips')}
                     onClick={() => setPrintReady(undefined)}
                   >
                     <X size={17} />
                   </button>
                 </section>
               )}
-              {showDemoOffer && deck.songs.length === 0 && decks.length === 1 && (
-                <section className="demo-offer" aria-labelledby="demo-offer-title">
-                  <div>
-                    <span className="eyebrow">NA DOBRY POCZĄTEK</span>
-                    <h2 id="demo-offer-title">Świąteczna talia na pierwszy wieczór?</h2>
-                    <p>
-                      Gotowa lista 151 piosenek i motyw „Rybki świąteczne”. Wczytaj przykład bez
-                      logowania i dopasuj go do Waszego wieczoru.
-                    </p>
-                    <a href={christmasPlaylist} target="_blank" rel="noopener noreferrer">
-                      Zobacz playlistę w Spotify <ArrowUpRight size={14} />
-                    </a>
-                  </div>
-                  <div className="demo-offer-actions">
-                    <button
-                      className="primary"
-                      onClick={() => {
-                        chooseExample('christmas-hits');
-                      }}
-                    >
-                      <Sparkles size={18} /> Utwórz świąteczną talię
-                    </button>
-                    <button
-                      className="text-button"
-                      onClick={() => {
-                        localStorage.setItem('hiciarz-demo-offer-v1', 'dismissed');
-                        setShowDemoOffer(false);
-                      }}
-                    >
-                      Zacznę od własnych utworów
-                    </button>
-                  </div>
-                </section>
-              )}
-              <section className="mode-help creator-help">
-                <label>
-                  Domyślny tryb nowych kart
-                  <select
-                    value={deck.gameMode || 'music'}
-                    onChange={(e) => updateDeck({ gameMode: e.target.value as GameMode })}
-                  >
-                    {gameModes.map((m) => (
-                      <option key={m} value={m}>
-                        {gameModeNames[m]}
-                      </option>
-                    ))}
-                  </select>
-                </label>
-                <p>
-                  {deck.gameMode === 'movie'
-                    ? 'Rozpoznaj film po muzyce ze ścieżki dźwiękowej.'
-                    : deck.gameMode === 'game'
-                      ? 'Rozpoznaj grę po jej muzyce.'
-                      : 'Rozpoznawaj utwory i układaj je na osi czasu.'}{' '}
-                  W trybach filmu i gry gracze podają tytuł, a następnie odwracają kartę, by
-                  sprawdzić odpowiedź. Za poprawną odpowiedź otrzymują punkt. Ustalcie przed grą
-                  liczbę rund.
-                </p>
-                <p>
-                  Wybór dotyczy dodawanych kart. Tryb już zapisanej karty zmienisz w jej edytorze.
-                  Import z Spotify dostarcza dane nagrania — nazwę filmu lub gry uzupełnij
-                  samodzielnie.
-                </p>
-              </section>
-              <details className="mode-help creator-help">
-                <summary>Premiera Twojej talii w trzech krokach</summary>
-                <ol>
-                  <li>
-                    <strong>Utwory:</strong> dodaj piosenki, wczytaj plik lub gotowy przykład.
-                    Spotify połączysz tylko, jeśli wybierzesz import playlisty.
-                  </li>
-                  <li>
-                    <strong>Wygląd kart:</strong> wybierz motyw i rewers. Możesz wgrać własną
-                    grafikę.
-                  </li>
-                  <li>
-                    <strong>Druk:</strong> sprawdź lata, wybierz ustawienia i pobierz dwustronny
-                    PDF.
-                  </li>
-                </ol>
-                <p>
-                  Nie potrzebujesz konta Hiciarza. Projekt zapisuje się w tej przeglądarce;
-                  przyciskiem „Zapisz projekt” pobierzesz kopię.
-                </p>
-              </details>
               {storageError && (
                 <div className="notice error" role="alert">
-                  {storageError}
+                  {displayTranslation(storageError)}
                 </div>
               )}
               <section className="deck-toolbar">
                 <label className="mobile-deck-picker">
-                  Twoje talie
+                  {tr('app.yourDecks2')}
                   <select
-                    aria-label="Wybierz talię"
+                    aria-label={tr('app.selectADeck')}
                     value={activeId}
                     onChange={(e) => {
                       setActiveId(e.target.value);
@@ -1518,7 +1533,7 @@ export default function App() {
                   >
                     {decks.map((d) => (
                       <option key={d.id} value={d.id}>
-                        {d.name} · {d.songs.length} utworów
+                        {d.name} · {trackCount(d.songs.length)}
                       </option>
                     ))}
                   </select>
@@ -1532,7 +1547,7 @@ export default function App() {
                   </span>
                   <div>
                     <label className="sr-only" htmlFor="deck-name">
-                      Nazwa talii
+                      {tr('app.deckName')}
                     </label>
                     <input
                       id="deck-name"
@@ -1541,28 +1556,28 @@ export default function App() {
                       onChange={(e) => updateDeck({ name: e.target.value })}
                     />
                     <div className="deck-meta">
-                      <span>{deck.songs.length} utworów</span>
+                      <span>{trackCount(deck.songs.length)}</span>
                       <i /> <span>{themeNames[deck.theme]}</span>
                       <i />
-                      <span>A4 · 60 × 60 mm</span>
+                      <span>{tr('app.a46060Mm')}</span>
                     </div>
                   </div>
                 </div>
                 <div className="toolbar-buttons">
                   <button
                     className="secondary"
-                    aria-label="Nowa talia"
+                    aria-label={tr('app.newDeck')}
                     onClick={() => {
                       const d = newDeck();
                       setDecks([...decks, d]);
                       setActiveId(d.id);
-                      setMode('editor');
+                      void changeMode('editor');
                     }}
                   >
-                    <Plus size={17} /> Nowa talia
+                    <Plus size={17} /> {tr('app.newDeck')}
                   </button>
                   <button className="secondary" onClick={() => fileRef.current?.click()}>
-                    <FolderOpen size={17} /> Wczytaj
+                    <FolderOpen size={17} /> {tr('app.import')}
                   </button>
                   <button
                     className="secondary"
@@ -1570,46 +1585,38 @@ export default function App() {
                       download(JSON.stringify(deck, null, 2), `${deck.name || 'talia'}.json`)
                     }
                   >
-                    <Download size={17} /> Zapisz projekt
+                    <Download size={17} /> {tr('app.saveProject')}
                   </button>
                   <button
                     className="secondary delete-deck-button"
-                    aria-label="Usuń talię"
+                    aria-label={tr('app.deleteDeck')}
                     onClick={() => setModal('delete')}
                   >
-                    <Trash2 size={17} /> Usuń talię
+                    <Trash2 size={17} /> {tr('app.deleteDeck')}
                   </button>
                 </div>
               </section>
               <div className="studio-grid">
                 <section className="editor-panel">
-                  <div className="tabs" role="tablist" aria-label="Ustawienia talii">
-                    {(
-                      [
-                        ['songs', 'Utwory', Music2],
-                        ['design', 'Wygląd kart', Palette],
-                        ['print', 'Ustawienia druku', Printer],
-                      ] as const
-                    ).map(([id, label, Icon]) => (
-                      <button
-                        role="tab"
-                        aria-selected={tab === id}
-                        key={id}
-                        className={tab === id ? 'tab active' : 'tab'}
-                        onClick={() => setTab(id)}
-                      >
-                        <Icon size={16} />
-                        {label}
-                        {id === 'songs' && <span>{deck.songs.length}</span>}
-                      </button>
-                    ))}
-                  </div>
+                  <CreatorSteps
+                    current={tab}
+                    hasSongs={deck.songs.length > 0}
+                    onChange={goToCreatorStep}
+                  />
                   {tab === 'songs' ? (
                     <>
+                      <div className="creator-game-choice">
+                        <GameModePicker
+                          value={deck.gameMode || 'music'}
+                          onChange={(gameMode) => updateDeck({ gameMode })}
+                        />
+                        {deck.songs.some(
+                          (song) => (song.gameMode || 'music') !== (deck.gameMode || 'music'),
+                        ) && <p className="hint">{tr('creator.mixedModes')}</p>}
+                      </div>
                       <div className="panel-heading">
                         <div>
-                          <h2>Muzyka, którą znacie.</h2>
-                          <p>Każdy utwór to kolejna historia do odgadnięcia.</p>
+                          <h2>{tr('creator.collection.' + (deck.gameMode || 'music'))}</h2>
                         </div>
                         <button
                           className="secondary compact"
@@ -1618,14 +1625,18 @@ export default function App() {
                             setModal('song');
                           }}
                         >
-                          <Plus size={17} /> Dodaj utwór
+                          <Plus size={17} /> {tr('creator.add.' + (deck.gameMode || 'music'))}
                         </button>
                       </div>
                       <div className="import-banner">
                         <span className="spotify-mark">≋</span>
                         <div>
-                          <strong>Twoja playlista. Wasza talia.</strong>
-                          <p>Wczytaj własną lub współtworzoną playlistę ze Spotify.</p>
+                          <strong>{tr('app.yourPlaylistYourDeck')}</strong>
+                          <p>
+                            {deck.gameMode && deck.gameMode !== 'music'
+                              ? tr('creator.importRecordingNote')
+                              : tr('app.importYourOwnOrACollaborativeSpotify')}
+                          </p>
                         </div>
                         <button
                           onClick={() => {
@@ -1633,14 +1644,16 @@ export default function App() {
                             setModal('spotify');
                           }}
                         >
-                          Importuj playlistę <ArrowUpRight size={17} />
+                          {tr('app.importPlaylist')} <ArrowUpRight size={17} />
                         </button>
                       </div>
                       <button className="example-entry" onClick={() => setModal('examples')}>
                         <Sparkles size={20} aria-hidden="true" />
                         <span>
-                          <strong>Przykładowe playlisty</strong>
-                          <small>Gotowa talia świąteczna — bez logowania</small>
+                          <strong>{tr('creator.chooseExamples')}</strong>
+                          <small>
+                            {tr('creator.exampleDescription.' + (deck.gameMode || 'music'))}
+                          </small>
                         </span>
                         <ChevronRight size={18} aria-hidden="true" />
                       </button>
@@ -1648,16 +1661,16 @@ export default function App() {
                         <label className="search">
                           <Search size={17} />
                           <input
-                            aria-label="Szukaj utworu"
-                            placeholder="Szukaj tytułu, wykonawcy lub roku…"
+                            aria-label={tr('app.searchTracks')}
+                            placeholder={tr('app.searchByTitleArtistOrYear')}
                             value={filter}
                             onChange={(e) => setFilter(e.target.value)}
                           />
                         </label>
                         <button
                           className="icon"
-                          aria-label="Sprawdź dostępność źródeł"
-                          title="Sprawdź źródła"
+                          aria-label={tr('app.checkSourceAvailability')}
+                          title={tr('app.checkSources')}
                           disabled={!deck.songs.length || checking}
                           onClick={verifySources}
                         >
@@ -1665,8 +1678,8 @@ export default function App() {
                         </button>
                         <button
                           className="icon"
-                          aria-label="Wymieszaj kolejność utworów"
-                          title="Wymieszaj kolejność"
+                          aria-label={tr('app.shuffleTrackOrder')}
+                          title={tr('app.shuffleTracks')}
                           onClick={() => {
                             const songs = [...deck.songs];
                             for (let i = songs.length - 1; i > 0; i--) {
@@ -1683,9 +1696,11 @@ export default function App() {
                       </div>
                       {selected.size > 0 && (
                         <div className="selection-bar">
-                          <span>Wybrano: {selected.size}</span>
+                          <span>
+                            {tr('app.selected')} {selected.size}
+                          </span>
                           <button onClick={openPrintCards} disabled={busy || !printCount}>
-                            Pobierz / drukuj wybrane
+                            {tr('app.downloadPrintSelected')}
                           </button>
                           <button
                             onClick={() => {
@@ -1693,16 +1708,23 @@ export default function App() {
                               setSelected(new Set());
                             }}
                           >
-                            Usuń wybrane
+                            {tr('app.deleteSelected')}
                           </button>
-                          <button onClick={() => setSelected(new Set())}>Anuluj wybór</button>
+                          <button onClick={() => setSelected(new Set())}>
+                            {tr('app.clearSelection')}
+                          </button>
                         </div>
                       )}
-                      <div className="song-table">
+                      <div
+                        className="song-table"
+                        role="region"
+                        aria-label={tr('creator.collection.' + (deck.gameMode || 'music'))}
+                        tabIndex={filtered.length > 8 ? 0 : -1}
+                      >
                         <div className="table-head">
                           <input
                             type="checkbox"
-                            aria-label="Zaznacz widoczne utwory"
+                            aria-label={tr('app.selectVisibleTracks')}
                             checked={
                               filtered.length > 0 && filtered.every((s) => selected.has(s.id))
                             }
@@ -1715,9 +1737,9 @@ export default function App() {
                             }}
                           />
                           <span>#</span>
-                          <span>UTWÓR / WYKONAWCA</span>
-                          <span>ROK</span>
-                          <span>ŹRÓDŁA</span>
+                          <span>{tr('app.trackArtist')}</span>
+                          <span>{tr('app.year')}</span>
+                          <span>{tr('app.sources')}</span>
                           <span />
                         </div>
                         {filtered.map((s) => {
@@ -1731,7 +1753,7 @@ export default function App() {
                             >
                               <input
                                 type="checkbox"
-                                aria-label={'Zaznacz ' + s.title}
+                                aria-label={tr('app.select') + s.title}
                                 checked={selected.has(s.id)}
                                 onChange={(e) => {
                                   const set = new Set(selected);
@@ -1753,19 +1775,19 @@ export default function App() {
                               </button>
                               <span
                                 className={'year-pill ' + (s.review ? 'review' : '')}
-                                title={s.review ? 'Rok pobrany z albumu — sprawdź' : ''}
+                                title={s.review ? tr('app.yearFromAlbumMetadataCheckIt') : ''}
                               >
                                 {s.year}
                                 {s.review && <span>•</span>}
                               </span>
                               <span className="source-icons">
                                 {s.sources.spotify && (
-                                  <span title="Spotify" className="source-spotify">
+                                  <span title={tr('app.spotify')} className="source-spotify">
                                     ≋
                                   </span>
                                 )}
                                 {s.sources.youtube && (
-                                  <span title="YouTube" className="source-youtube">
+                                  <span title={tr('app.youtube')} className="source-youtube">
                                     <Play size={10} fill="currentColor" />
                                   </span>
                                 )}
@@ -1773,7 +1795,7 @@ export default function App() {
                               <div className="row-actions">
                                 <button
                                   className="icon tiny"
-                                  aria-label={'Przesuń w górę: ' + s.title}
+                                  aria-label={tr('app.moveUp') + s.title}
                                   disabled={i === 0}
                                   onClick={() => {
                                     const songs = [...deck.songs];
@@ -1785,7 +1807,7 @@ export default function App() {
                                 </button>
                                 <button
                                   className="icon tiny"
-                                  aria-label={'Przesuń w dół: ' + s.title}
+                                  aria-label={tr('app.moveDown') + s.title}
                                   disabled={i === deck.songs.length - 1}
                                   onClick={() => {
                                     const songs = [...deck.songs];
@@ -1797,7 +1819,7 @@ export default function App() {
                                 </button>
                                 <button
                                   className="icon tiny"
-                                  aria-label={'Usuń: ' + s.title}
+                                  aria-label={tr('app.delete') + s.title}
                                   onClick={() => {
                                     updateDeck({ songs: deck.songs.filter((x) => x.id !== s.id) });
                                     setSelected(new Set([...selected].filter((id) => id !== s.id)));
@@ -1813,19 +1835,19 @@ export default function App() {
                           <div className="empty-list">
                             <Music2 size={28} />
                             <h3>
-                              {filter ? 'Nie znaleziono utworów' : 'Pierwszy hit należy do Ciebie'}
+                              {filter ? tr('app.noTracksFound') : tr('app.theFirstHitIsYours')}
                             </h3>
                             <p>
                               {filter
-                                ? 'Spróbuj zmienić wyszukiwanie.'
-                                : 'Dodaj piosenkę, wczytaj plik lub zaimportuj playlistę.'}
+                                ? tr('app.tryChangingYourSearch')
+                                : tr('app.addASongImportAFileOr')}
                             </p>
                           </div>
                         )}
                       </div>
                       <div className="table-footer">
                         <span>
-                          {filtered.length} z {deck.songs.length} utworów
+                          {filtered.length} {tr('app.of')} {trackCount(deck.songs.length)}
                         </span>
                         <button
                           className="text-button"
@@ -1837,42 +1859,63 @@ export default function App() {
                             )
                           }
                         >
-                          Eksportuj CSV <ArrowUpRight size={14} />
+                          {tr('app.exportCsv')} <ArrowUpRight size={14} />
                         </button>
                       </div>
-                      <div className="file-drop">
+                      <div
+                        className={'file-drop' + (draggingFile ? ' is-dragging' : '')}
+                        onDragOver={(event) => {
+                          event.preventDefault();
+                          event.dataTransfer.dropEffect = 'copy';
+                          setDraggingFile(true);
+                        }}
+                        onDragLeave={(event) => {
+                          if (
+                            !(event.relatedTarget instanceof Node) ||
+                            !event.currentTarget.contains(event.relatedTarget)
+                          )
+                            setDraggingFile(false);
+                        }}
+                        onDrop={(event) => {
+                          event.preventDefault();
+                          setDraggingFile(false);
+                          const file = event.dataTransfer.files[0];
+                          if (file) void readImportFile(file);
+                        }}
+                      >
                         <FileJson size={22} />
                         <div>
-                          <strong>Masz gotową listę utworów?</strong>
-                          <span>Wczytaj JSON lub CSV i dopracuj swoją talię.</span>
+                          <strong>{tr('app.alreadyHaveATrackList')}</strong>
+                          <span>{tr('app.dropTrackFile')}</span>
                         </div>
                         <button className="text-button" onClick={() => fileRef.current?.click()}>
-                          Wybierz plik <ArrowUpRight size={15} />
+                          {tr('app.chooseFile')} <ArrowUpRight size={15} />
                         </button>
                       </div>
                       <button
                         className="text-button prompt-copy"
+                        aria-describedby="playlist-ai-help"
                         onClick={async () => {
                           try {
                             await navigator.clipboard.writeText(playlistPrompt);
-                            notify('Prompt skopiowany. Wklej go do wybranego asystenta.');
+                            notify(tr('app.promptCopiedPasteItIntoYourPreferred'));
                           } catch {
                             setModal('prompt');
                           }
                         }}
                       >
-                        <Copy size={16} /> Skopiuj prompt do swojego AI
+                        <Copy size={16} /> {tr('app.copyPromptForYourAi')}
                       </button>
+                      <p id="playlist-ai-help" className="hint prompt-copy-help">
+                        {tr('app.playlistAiHelp')}
+                      </p>
                     </>
                   ) : tab === 'design' ? (
                     <div className="design-content">
                       <div className="panel-heading">
                         <div>
-                          <h2>Nadaj talii charakter.</h2>
-                          <p>
-                            Wybierz tło kart. Wygląd strony ustawiasz osobno w menu „Wygląd”. Skaner
-                            dopasuje się do karty tylko na czas rundy.
-                          </p>
+                          <h2>{tr('app.giveYourDeckCharacter')}</h2>
+                          <p>{tr('app.chooseACardBackgroundSetThePage')}</p>
                         </div>
                       </div>
                       <ThemePicker
@@ -1882,7 +1925,7 @@ export default function App() {
                         }}
                       />
                       <label className="front-color-choice">
-                        Kolory strony z odpowiedzią
+                        {tr('app.answerSideColours')}
                         <select
                           value={deck.print.frontColors || 'varied'}
                           onChange={(e) =>
@@ -1894,35 +1937,46 @@ export default function App() {
                             })
                           }
                         >
-                          <option value="varied">Różne odcienie dla poszczególnych kart</option>
-                          <option value="theme">Jednolity kolor motywu</option>
+                          <option value="varied">{tr('app.differentShadesForEachCard')}</option>
+                          <option value="theme">{tr('app.uniformThemeColour')}</option>
                         </select>
-                        <small>
-                          Odcień karty pozostaje taki sam po zmianie kolejności. Preset laserowy
-                          zachowuje białe tło i kolorowe kontury.
-                        </small>
+                        <small>{tr('app.aCardKeepsItsShadeWhenReordered')}</small>
                       </label>
-                      <div className="upload-panel">
+                      <div
+                        className={'upload-panel' + (draggingImage ? ' is-dragging' : '')}
+                        onDragOver={(event) => {
+                          event.preventDefault();
+                          event.dataTransfer.dropEffect = 'copy';
+                          setDraggingImage(true);
+                        }}
+                        onDragLeave={(event) => {
+                          if (
+                            !(event.relatedTarget instanceof Node) ||
+                            !event.currentTarget.contains(event.relatedTarget)
+                          )
+                            setDraggingImage(false);
+                        }}
+                        onDrop={(event) => {
+                          event.preventDefault();
+                          setDraggingImage(false);
+                          const file = event.dataTransfer.files[0];
+                          if (file) void readBackground(file);
+                        }}
+                      >
                         <Upload size={23} />
                         <div>
-                          <strong>A może coś własnego?</strong>
-                          <p>PNG, JPG lub WebP · środkowy kwadrat zdjęcia · do 12 MB</p>
+                          <strong>{tr('app.dropBackground')}</strong>
+                          <p>{tr('app.pngJpgOrWebpCentreSquareCrop')}</p>
                         </div>
                         <label className="secondary file-label">
-                          Wgraj tło
+                          {tr('app.uploadBackground')}
                           <input
                             type="file"
                             accept="image/png,image/jpeg,image/webp"
-                            onChange={async (e) => {
-                              const f = e.target.files?.[0];
-                              if (!f) return;
-                              try {
-                                updateDeck({ back: await imageData(f) });
-                                setShowBack(true);
-                              } catch (err) {
-                                notify((err as Error).message);
-                              }
-                              e.target.value = '';
+                            onChange={(event) => {
+                              const file = event.target.files?.[0];
+                              if (file) void readBackground(file);
+                              event.target.value = '';
                             }}
                           />
                         </label>
@@ -1930,25 +1984,26 @@ export default function App() {
                       {deck.back && (
                         <div className="notice">
                           <span>
-                            Własne tło jest aktywne. Kolory kart i oprawę rundy określa motyw „
+                            {tr('app.yourCustomBackgroundIsActiveCardColours')}
                             {themeNames[deck.theme]}”.
                           </span>
                           <button
                             className="text-button"
                             onClick={() => updateDeck({ back: undefined })}
                           >
-                            Usuń tło
+                            {tr('app.removeBackground')}
                           </button>
                         </div>
                       )}
-                      <p className="hint">
-                        Inny motyw pojedynczej karty ustawisz podczas edycji utworu. Wybrany preset
-                        zastępuje własne tło.
-                      </p>
+                      <p className="hint">{tr('app.setADifferentThemeForAnIndividual')}</p>
                     </div>
                   ) : (
                     <div className="print-content">
-                      <div className="print-presets" role="group" aria-label="Preset wydruku">
+                      <div
+                        className="print-presets"
+                        role="group"
+                        aria-label={tr('app.printPreset')}
+                      >
                         <button
                           className={
                             deck.print.style === 'laser' ? 'print-preset chosen' : 'print-preset'
@@ -1956,8 +2011,8 @@ export default function App() {
                           onClick={() => updateDeck({ print: { ...deck.print, style: 'laser' } })}
                         >
                           <Printer size={22} />
-                          <strong>Laser — lekki kolor</strong>
-                          <span>Białe tło, dwa kolory konturów, minimum wypełnień.</span>
+                          <strong>{tr('app.laserLightColour')}</strong>
+                          <span>{tr('app.whiteBackgroundTwoOutlineColoursMinimalFill')}</span>
                         </button>
                         <button
                           className={
@@ -1966,20 +2021,17 @@ export default function App() {
                           onClick={() => updateDeck({ print: { ...deck.print, style: 'theme' } })}
                         >
                           <Palette size={22} />
-                          <strong>Pełna grafika motywu</strong>
-                          <span>Ilustracje, kolory i własne tło w pełnej wersji.</span>
+                          <strong>{tr('app.fullThemeArtwork')}</strong>
+                          <span>{tr('app.completeIllustrationsColoursAndCustomBackground')}</span>
                         </button>
                       </div>
                       {deck.print.style === 'laser' && (
-                        <p className="hint">
-                          Lekki wydruk nie zmienia motywu zapisanego w QR. Świąteczna karta nadal
-                          włączy świąteczny wygląd aplikacji.
-                        </p>
+                        <p className="hint">{tr('app.lightPrintingDoesNotChangeTheTheme')}</p>
                       )}
                       <div className="panel-heading">
                         <div>
-                          <h2>Gotowe do wycięcia.</h2>
-                          <p>A4 · 12 kart na arkusz · 60 × 60 mm</p>
+                          <h2>{tr('app.readyToCutOut')}</h2>
+                          <p>{tr('app.a412CardsPerSheet6060')}</p>
                         </div>
                       </div>
                       <div className="print-diagram">
@@ -1990,15 +2042,15 @@ export default function App() {
                         </div>
                         <ArrowUpRight size={25} />
                         <p>
-                          Najpierw odpowiedzi,
+                          {tr('app.answersFirst')}
                           <br />
-                          potem pasujące kody QR.
+                          {tr('app.thenMatchingQrCodes')}
                           <br />
-                          <strong>Druk dwustronny, skala 100%.</strong>
+                          <strong>{tr('app.doubleSidedPrinting100Scale')}</strong>
                         </p>
                       </div>
                       <label>
-                        Obrót kartki
+                        {tr('app.pageFlip')}
                         <select
                           value={deck.print.edge}
                           onChange={(e) =>
@@ -2007,13 +2059,13 @@ export default function App() {
                             })
                           }
                         >
-                          <option value="long">Po długiej krawędzi</option>
-                          <option value="short">Po krótkiej krawędzi</option>
+                          <option value="long">{tr('app.flipOnLongEdge')}</option>
+                          <option value="short">{tr('app.flipOnShortEdge')}</option>
                         </select>
                       </label>
                       <div className="form-grid">
                         <label>
-                          Przesunięcie QR w poziomie (mm)
+                          {tr('app.horizontalQrOffsetMm')}
                           <input
                             type="number"
                             min="-10"
@@ -2031,7 +2083,7 @@ export default function App() {
                           />
                         </label>
                         <label>
-                          Przesunięcie QR w pionie (mm)
+                          {tr('app.verticalQrOffsetMm')}
                           <input
                             type="number"
                             min="-10"
@@ -2057,16 +2109,13 @@ export default function App() {
                             updateDeck({ print: { ...deck.print, cuts: e.target.checked } })
                           }
                         />{' '}
-                        Pokaż znaczniki cięcia
+                        {tr('app.showCuttingMarks')}
                       </label>
                       <div className="notice">
                         <Printer size={22} />
                         <div>
-                          <strong>Zacznij od jednej kartki.</strong>
-                          <p>
-                            Wydrukuj kalibrację dwustronnie. Sprawdź numery pod światło i skoryguj
-                            przesunięcie, jeśli obie strony nie pokrywają się.
-                          </p>
+                          <strong>{tr('app.startWithASingleSheet')}</strong>
+                          <p>{tr('app.printCalibrationDoubleSidedCheckTheNumbers')}</p>
                         </div>
                       </div>
                       <button
@@ -2077,16 +2126,47 @@ export default function App() {
                             .catch((e) => notify(e.message))
                         }
                       >
-                        <Printer size={17} /> Pobierz stronę kalibracyjną
+                        <Printer size={17} /> {tr('app.downloadCalibrationSheet')}
                       </button>
                     </div>
                   )}
+                  <div className="creator-navigation">
+                    {tab !== 'songs' && (
+                      <button
+                        className="secondary"
+                        onClick={() => goToCreatorStep(tab === 'print' ? 'design' : 'songs')}
+                      >
+                        <ChevronLeft size={17} />
+                        {tr(tab === 'print' ? 'creator.backDesign' : 'creator.backSongs')}
+                      </button>
+                    )}
+                    {tab === 'songs' && !deck.songs.length && <p>{tr('creator.addFirst')}</p>}
+                    {tab === 'print' ? (
+                      <button
+                        className="primary"
+                        disabled={!printCount || busy}
+                        onClick={openPrintCards}
+                      >
+                        <Printer size={18} />
+                        {tr('app.downloadPrintCards')}
+                      </button>
+                    ) : (
+                      <button
+                        className="primary"
+                        disabled={!deck.songs.length}
+                        onClick={() => goToCreatorStep(tab === 'songs' ? 'design' : 'print')}
+                      >
+                        {tr(tab === 'songs' ? 'creator.nextDesign' : 'creator.nextPrint')}
+                        <ChevronRight size={17} />
+                      </button>
+                    )}
+                  </div>
                 </section>
                 <aside className="preview-panel">
                   <div className="preview-heading">
-                    <span className="eyebrow">TAK BĘDZIE WYGLĄDAĆ</span>
+                    <span className="eyebrow">{tr('app.howItWillLook')}</span>
                     <span className="live-tag">
-                      <span /> PODGLĄD NA ŻYWO
+                      <span /> {tr('app.livePreview')}
                     </span>
                   </div>
                   <div className="preview-stage">
@@ -2101,9 +2181,9 @@ export default function App() {
                       <div className="empty-preview">
                         <Music2 size={40} />
                         <p>
-                          Dodaj pierwszy utwór,
+                          {tr('app.addYourFirstTrack')}
                           <br />
-                          aby zobaczyć swoją kartę.
+                          {tr('app.toSeeYourCard')}
                         </p>
                       </div>
                     )}
@@ -2113,16 +2193,16 @@ export default function App() {
                       className={!showBack ? 'active' : ''}
                       onClick={() => setShowBack(false)}
                     >
-                      Odpowiedź
+                      {tr('app.answer')}
                     </button>
                     <button className={showBack ? 'active' : ''} onClick={() => setShowBack(true)}>
-                      Kod QR
+                      {tr('app.qrCode')}
                     </button>
                   </div>
                   <div className="preview-pagination">
                     <button
                       className="icon"
-                      aria-label="Poprzednia karta"
+                      aria-label={tr('app.previousCard')}
                       disabled={!deck.songs.length}
                       onClick={() =>
                         setPreviewIndex((i) => (i - 1 + deck.songs.length) % deck.songs.length)
@@ -2131,7 +2211,7 @@ export default function App() {
                       <ChevronLeft size={18} />
                     </button>
                     <span>
-                      Karta{' '}
+                      {tr('app.card')}{' '}
                       <strong>
                         {deck.songs.length ? Math.min(previewIndex + 1, deck.songs.length) : 0}
                       </strong>{' '}
@@ -2139,7 +2219,7 @@ export default function App() {
                     </span>
                     <button
                       className="icon"
-                      aria-label="Następna karta"
+                      aria-label={tr('app.nextCard')}
                       disabled={!deck.songs.length}
                       onClick={() => setPreviewIndex((i) => (i + 1) % deck.songs.length)}
                     >
@@ -2148,50 +2228,50 @@ export default function App() {
                   </div>
                   <div className="preview-spec">
                     <span>
-                      FORMAT KARTY<strong>60 × 60 mm</strong>
+                      {tr('app.cardSize')}
+                      <strong>{tr('app.6060Mm')}</strong>
                     </span>
                     <span>
-                      UKŁAD WYDRUKU<strong>12 kart / A4</strong>
+                      {tr('app.printLayout')}
+                      <strong>{tr('app.12CardsA4')}</strong>
                     </span>
                   </div>
                   <div className="preview-tip">
                     <span>✳</span>
                     <p>
-                      <strong>Mała karta. Wielkie wspomnienia.</strong>
+                      <strong>{tr('app.smallCardGreatMemories')}</strong>
                       <br />
-                      Rok, wykonawca i tytuł po jednej stronie. Muzyczna niespodzianka po drugiej.
+                      {tr('app.yearArtistAndTitleOnOneSide')}
                     </p>
                   </div>
                   <button
                     className="text-button full preview-theme"
-                    onClick={() => setTab('design')}
+                    disabled={!deck.songs.length}
+                    onClick={() => goToCreatorStep('design')}
                   >
-                    <Palette size={16} /> Odkryj wszystkie motywy <ArrowUpRight size={16} />
+                    <Palette size={16} /> {tr('app.exploreAllThemes')} <ArrowUpRight size={16} />
                   </button>
                 </aside>
               </div>
               <div className="bottom-note">
                 <ShieldCheck size={15} />
-                <span>
-                  Twoje talie zostają w Twojej przeglądarce. Zapisz plik projektu, żeby zabrać je ze
-                  sobą.
-                </span>
+                <span>{tr('app.yourDecksStayInYourBrowserSave')}</span>
               </div>
             </>
           ) : mode === 'scanner' ? (
             <>
               <section className="page-heading">
                 <div>
-                  <div className="eyebrow">JEDEN SKAN. KOLEJNY HIT.</div>
+                  <div className="eyebrow">{tr('app.oneScanAnotherHit')}</div>
                   <h1>
-                    {card ? 'Słuchaj i zgaduj' : 'Skanuj i graj'}
+                    {card ? tr('app.listenAndGuess') : tr('app.scanAndPlay')}
                     <span className="heading-star">✳</span>
                   </h1>
-                  {!card && (
+                  {!card && output !== 'local' && (
                     <p>
                       {gameReady
-                        ? 'Połączenie gotowe. Włącz aparat i zeskanuj kartę.'
-                        : 'Najpierw wybierz, skąd ma grać muzyka. Potem włącz aparat i skanuj karty.'}
+                        ? tr('app.playbackIsReadyStartTheCameraAnd')
+                        : tr('app.firstChooseWhereMusicShouldPlayThen')}
                     </p>
                   )}
                 </div>
@@ -2206,93 +2286,118 @@ export default function App() {
                       <span className={gameReady ? 'live-dot' : 'warn-dot'} />
                       {gameReady
                         ? output === 'spotify'
-                          ? `Gramy na: ${spotifyRemote.devices.find((d) => d.id === spotifyRemote.device)?.name || 'Spotify'}`
-                          : 'Połączono z odtwarzaczem'
-                        : 'Przygotuj odtwarzanie'}
+                          ? tr('app.playingOnDevice', {
+                              name:
+                                spotifyRemote.devices.find((d) => d.id === spotifyRemote.device)
+                                  ?.name || 'Spotify',
+                            })
+                          : output === 'local'
+                            ? tr('app.playingOnThisDevice')
+                            : tr('app.connectedToPlayer')
+                        : tr('app.setUpPlayback')}
                       <Settings2 size={16} />
                     </summary>
-                    <div className="output-switch" role="group" aria-label="Sposób odtwarzania">
+                    <div
+                      className="output-switch"
+                      role="group"
+                      aria-label={tr('app.playbackMethod')}
+                    >
+                      <button
+                        className={output === 'local' ? 'active' : ''}
+                        aria-pressed={output === 'local'}
+                        onClick={() => setOutput('local')}
+                      >
+                        {tr('app.onThisDevice')}
+                      </button>
                       <button
                         className={output === 'browser' ? 'active' : ''}
+                        aria-pressed={output === 'browser'}
                         onClick={() => setOutput('browser')}
                       >
-                        Drugi ekran
+                        {tr('app.secondScreen')}
                       </button>
                       <button
                         className={output === 'spotify' ? 'active' : ''}
+                        aria-pressed={output === 'spotify'}
                         onClick={() => setOutput('spotify')}
                       >
-                        Moje Spotify
+                        {tr('app.mySpotify')}
                       </button>
                     </div>
-                    <details
-                      className="mode-help"
-                      key={output}
-                      open={
-                        !(
-                          (output === 'spotify' && spotifyRemote.ready) ||
-                          (output === 'browser' && room.connected)
-                        )
-                      }
-                    >
-                      <summary>
-                        {output === 'spotify'
-                          ? 'Jak zagrać przez Spotify?'
-                          : 'Jak połączyć drugi ekran?'}
-                      </summary>
-                      {output === 'spotify' ? (
-                        <>
-                          <ol>
-                            <li>Otwórz Spotify na urządzeniu, na którym ma grać muzyka.</li>
-                            <li>Zaloguj się poniżej i wybierz to urządzenie z listy.</li>
-                            <li>Włącz aparat. Każdy QR z karty uruchomi kolejną piosenkę.</li>
-                          </ol>
-                          <p>
-                            Potrzebujesz Spotify Premium. Jeśli konto jest już połączone w tej
-                            karcie przeglądarki, użyj tej samej sesji.
-                          </p>
-                        </>
-                      ) : (
-                        <>
-                          <ol>
-                            <li>
-                              Na urządzeniu do odtwarzania otwórz Hiciarza i wybierz „Otwórz
-                              odtwarzacz”.
-                            </li>
-                            <li>Kliknij tam „Połącz skaner”, żeby wyświetlić QR parowania.</li>
-                            <li>
-                              Tutaj włącz aparat: zeskanuj QR z ekranu, a potem kody z muzycznych
-                              kart.
-                            </li>
-                          </ol>
-                          <p>
-                            Do parowania nie potrzeba logowania. Oba urządzenia muszą pozostać
-                            otwarte i mieć internet.
-                          </p>
-                        </>
-                      )}
-                    </details>
-                    <div className="status-bar">
-                      <span
-                        className={
-                          (output === 'spotify' ? spotifyRemote.linked : room.connected)
-                            ? 'live-dot'
-                            : 'warn-dot'
+                    {output === 'local' ? (
+                      <>
+                        <label className="source-picker">
+                          {tr('app.preferredSource')}
+                          <select
+                            value={preferred}
+                            onChange={(e) => setPreferred(e.target.value as 'spotify' | 'youtube')}
+                          >
+                            <option value="spotify">{tr('app.spotify')}</option>
+                            <option value="youtube">{tr('app.youtube')}</option>
+                          </select>
+                        </label>
+                        <p className="hint">{tr('app.theSpotifyOrYoutubePlayerMayShow')}</p>
+                      </>
+                    ) : (
+                      <details
+                        className="mode-help"
+                        key={output}
+                        open={
+                          !(
+                            (output === 'spotify' && spotifyRemote.ready) ||
+                            (output === 'browser' && room.connected)
+                          )
                         }
-                      />
-                      <strong>
-                        {output === 'spotify'
-                          ? spotifyRemote.linked
-                            ? 'Konto Spotify połączone'
-                            : 'Połącz konto Spotify'
-                          : room.status}
-                      </strong>
-                      {output === 'browser' && room.connected && (
-                        <button className="text-button" onClick={room.disconnect}>
-                          Rozłącz
-                        </button>
-                      )}
-                    </div>
+                      >
+                        <summary>
+                          {output === 'spotify'
+                            ? tr('app.howToPlayThroughSpotify')
+                            : tr('app.howToConnectASecondScreen')}
+                        </summary>
+                        {output === 'spotify' ? (
+                          <>
+                            <ol>
+                              <li>{tr('app.openSpotifyOnTheDeviceWhereYou')}</li>
+                              <li>{tr('app.signInBelowAndSelectThatDevice')}</li>
+                              <li>{tr('app.startTheCameraEveryCardQrCode')}</li>
+                            </ol>
+                            <p>{tr('app.youNeedSpotifyPremiumIfYourAccount')}</p>
+                          </>
+                        ) : (
+                          <>
+                            <ol>
+                              <li>{tr('app.openHiciarzOnThePlaybackDeviceAnd')}</li>
+                              <li>{tr('app.clickConnectScannerThereToShowThe')}</li>
+                              <li>{tr('app.startTheCameraHereScanTheScreen')}</li>
+                            </ol>
+                            <p>{tr('app.pairingNeedsNoSignInBothDevices')}</p>
+                          </>
+                        )}
+                      </details>
+                    )}
+                    {output !== 'local' && (
+                      <div className="status-bar">
+                        <span
+                          className={
+                            (output === 'spotify' ? spotifyRemote.linked : room.connected)
+                              ? 'live-dot'
+                              : 'warn-dot'
+                          }
+                        />
+                        <strong>
+                          {output === 'spotify'
+                            ? spotifyRemote.linked
+                              ? tr('app.spotifyAccountConnected')
+                              : tr('app.connectSpotifyAccount')
+                            : room.status}
+                        </strong>
+                        {output === 'browser' && room.connected && (
+                          <button className="text-button" onClick={room.disconnect}>
+                            {tr('app.disconnect')}
+                          </button>
+                        )}
+                      </div>
+                    )}
                     {output === 'spotify' && <SpotifyRemotePanel remote={spotifyRemote} />}
                     {card && (
                       <button
@@ -2300,22 +2405,48 @@ export default function App() {
                         disabled={!gameReady}
                         onClick={() => sendPlaybackCommand('stop')}
                       >
-                        Zatrzymaj odtwarzanie
+                        {tr('app.stopPlayback')}
                       </button>
                     )}
                   </details>
                   {card ? (
-                    <PlayingCard
-                      card={card}
-                      back={playingBack}
-                      state={playbackState}
-                      message={playState}
-                      disabled={!gameReady}
-                      onToggle={togglePlayback}
-                      onNext={nextCard}
-                    />
+                    <>
+                      {output === 'local' && (
+                        <div className="scanner-local-player">
+                          <Players
+                            key={playerRevision}
+                            card={card}
+                            source={source}
+                            command={command}
+                            onState={reportPlayback}
+                          />
+                          <div className="source-buttons">
+                            {(['spotify', 'youtube'] as const).map((s) => (
+                              <button
+                                disabled={!card.sources[s]}
+                                className={source === s ? 'secondary active-source' : 'secondary'}
+                                key={s}
+                                onClick={() => setSource(s)}
+                              >
+                                {s === 'spotify' ? tr('app.spotify') : tr('app.youtube')}
+                                {source === s && <Check size={15} />}
+                              </button>
+                            ))}
+                          </div>
+                        </div>
+                      )}
+                      <PlayingCard
+                        card={card}
+                        back={playingBack}
+                        state={playbackState}
+                        message={displayTranslation(playState)}
+                        disabled={!gameReady}
+                        onToggle={togglePlayback}
+                        onNext={nextCard}
+                      />
+                    </>
                   ) : (
-                    <Suspense fallback={<p className="hint">Przygotowuję skaner…</p>}>
+                    <Suspense fallback={<p className="hint">{tr('app.preparingScanner')}</p>}>
                       <Camera
                         onScan={handleScan}
                         onStart={() => {
@@ -2325,37 +2456,39 @@ export default function App() {
                         pairingRequired={output === 'browser'}
                         paired={room.connected}
                         ready={
-                          modal !== 'spotify-setup' && (output === 'browser' || spotifyRemote.ready)
+                          modal !== 'spotify-setup' && (output !== 'spotify' || spotifyRemote.ready)
                         }
                       />
                     </Suspense>
                   )}
-                  {!card && (
+                  {!card && output !== 'local' && (
                     <p className="ack" aria-live="polite">
-                      {output === 'spotify'
-                        ? playState
+                      {output !== 'browser'
+                        ? displayTranslation(playState)
                         : room.ack ||
                           (room.connected
-                            ? 'Połączono. Zeskanuj muzyczną kartę.'
-                            : 'Sterowanie będzie dostępne po sparowaniu urządzeń.')}
+                            ? tr('app.connectedScanAMusicCard')
+                            : tr('app.controlsWillBeAvailableAfterPairingDevices'))}
                     </p>
                   )}
                 </section>
                 <aside className="surface instructions">
-                  {output === 'spotify' ? (
+                  {output === 'local' ? (
+                    <>
+                      <span className="mini-icon">
+                        <Headphones size={23} />
+                      </span>
+                      <h2>{tr('app.scanAndListenHere')}</h2>
+                      <p>{tr('app.scannedTrackPlaysHere')}</p>
+                    </>
+                  ) : output === 'spotify' ? (
                     <>
                       <span className="mini-icon">
                         <Music2 size={23} />
                       </span>
-                      <h2>Twoje urządzenie. Twoje hity.</h2>
-                      <p>
-                        Po połączeniu konta i wybraniu urządzenia włącz aparat. Skanuj karty
-                        pojedynczo — muzyka zagra tam, gdzie wybierzesz.
-                      </p>
-                      <p className="hint">
-                        Przy odtwarzaniu przez Spotify nie potrzebujesz drugiego urządzenia ani kodu
-                        parowania. Karty muszą zawierać utwory ze Spotify.
-                      </p>
+                      <h2>{tr('app.yourDeviceYourHits')}</h2>
+                      <p>{tr('app.connectYourAccountSelectADeviceAnd')}</p>
+                      <p className="hint">{tr('app.spotifyPlaybackNeedsNoSecondDeviceOr')}</p>
                     </>
                   ) : (
                     <>
@@ -2363,36 +2496,27 @@ export default function App() {
                         <Link2 />
                       </span>
                       <h2>
-                        Jedno połączenie.
+                        {tr('app.oneConnection')}
                         <br />
-                        Cały wieczór muzyki.
+                        {tr('app.aWholeEveningOfMusic')}
                       </h2>
                       <ol>
                         <li>
-                          <strong>Otwórz odtwarzacz</strong>
-                          <p>Na tej samej stronie wybierz „Odtwarzacz”.</p>
+                          <strong>{tr('app.openPlayer')}</strong>
+                          <p>{tr('app.choosePlayerOnThisSamePage')}</p>
                         </li>
                         <li>
-                          <strong>Zeskanuj QR parowania</strong>
-                          <p>
-                            W odtwarzaczu wybierz „Połącz skaner”, a następnie zeskanuj wyświetlony
-                            kod.
-                          </p>
+                          <strong>{tr('app.scanThePairingQrCode')}</strong>
+                          <p>{tr('app.inThePlayerChooseConnectScannerThen')}</p>
                         </li>
                         <li>
-                          <strong>Skanuj muzyczne karty</strong>
-                          <p>
-                            Skaner wysyła polecenia, a połączony odtwarzacz uruchamia muzykę. Tytuł
-                            pozostaje ukryty na ekranie skanera.
-                          </p>
+                          <strong>{tr('app.scanYourMusicCards')}</strong>
+                          <p>{tr('app.theScannerSendsCommandsAndTheConnected')}</p>
                         </li>
                       </ol>
                       <div className="hint-box">
                         <Wifi size={18} />
-                        <span>
-                          Oba urządzenia potrzebują internetu. Pozostaw skaner i odtwarzacz otwarte
-                          podczas gry.
-                        </span>
+                        <span>{tr('app.bothDevicesNeedInternetKeepTheScanner')}</span>
                       </div>
                     </>
                   )}
@@ -2403,46 +2527,52 @@ export default function App() {
             <>
               <section className="page-heading">
                 <div>
-                  <div className="eyebrow">DOBRE BRZMIENIE ZACZYNA SIĘ TUTAJ</div>
+                  <div className="eyebrow">{tr('app.greatSoundStartsHere')}</div>
                   <h1>
-                    Odtwarzacz<span className="heading-star">✳</span>
+                    {tr('app.player')}
+                    <span className="heading-star">✳</span>
                   </h1>
                   <p>
                     {output === 'spotify'
-                      ? 'Zaloguj się i wybierz urządzenie Spotify Connect.'
-                      : 'Połącz skaner i odtwarzaj muzykę na tym urządzeniu.'}
+                      ? tr('app.signInAndChooseASpotifyConnect')
+                      : tr('app.connectAScannerAndPlayMusicOn')}
                   </p>
                 </div>
                 <button className="primary" onClick={room.host}>
-                  <Smartphone size={18} /> {room.pairUrl ? 'Nowy kod parowania' : 'Połącz skaner'}
+                  <Smartphone size={18} />{' '}
+                  {room.pairUrl ? tr('app.newPairingCode') : tr('app.connectScanner')}
                 </button>
               </section>
               <div className={'play-layout' + (card && gameReady ? ' game-ready' : '')}>
                 <section className="surface player-surface">
                   <details className="mode-help">
-                    <summary>Inny sposób odtwarzania</summary>
-                    <div className="output-switch" role="group" aria-label="Miejsce odtwarzania">
+                    <summary>{tr('app.anotherPlaybackMethod')}</summary>
+                    <div
+                      className="output-switch"
+                      role="group"
+                      aria-label={tr('app.playbackLocation')}
+                    >
                       <button
                         className={output === 'browser' ? 'active' : ''}
                         onClick={() => setOutput('browser')}
                       >
-                        Na tym urządzeniu
+                        {tr('app.onThisDevice')}
                       </button>
                       <button
                         className={output === 'spotify' ? 'active' : ''}
                         onClick={() => setOutput('spotify')}
                       >
-                        Moje Spotify
+                        {tr('app.mySpotify')}
                       </button>
                     </div>
                     {card && output === 'browser' && (
                       <button className="quiet" onClick={() => sendPlaybackCommand('stop')}>
-                        Zatrzymaj odtwarzanie
+                        {tr('app.stopPlayback')}
                       </button>
                     )}
                     {room.connected && (
                       <button className="quiet" onClick={room.disconnect}>
-                        Rozłącz skaner
+                        {tr('app.disconnectScanner')}
                       </button>
                     )}
                   </details>
@@ -2458,16 +2588,16 @@ export default function App() {
                       <strong>
                         {output === 'spotify'
                           ? spotifyRemote.ready
-                            ? 'Spotify gotowe do gry'
+                            ? tr('app.spotifyReady')
                             : spotifyRemote.linked
-                              ? 'Wybierz urządzenie Spotify'
-                              : 'Połącz konto Spotify'
+                              ? tr('app.selectSpotifyDevice')
+                              : tr('app.connectSpotifyAccount')
                           : room.status}
                       </strong>
                     </div>
                     {output === 'browser' && (
                       <label className="source-picker">
-                        Preferowane źródło
+                        {tr('app.preferredSource')}
                         <select
                           value={preferred}
                           onChange={(e) => {
@@ -2476,8 +2606,8 @@ export default function App() {
                               setSource(e.target.value as 'spotify' | 'youtube');
                           }}
                         >
-                          <option value="spotify">Spotify</option>
-                          <option value="youtube">YouTube</option>
+                          <option value="spotify">{tr('app.spotify')}</option>
+                          <option value="youtube">{tr('app.youtube')}</option>
                         </select>
                       </label>
                     )}
@@ -2489,7 +2619,7 @@ export default function App() {
                     >
                       <summary>
                         <span className={spotifyRemote.ready ? 'live-dot' : 'warn-dot'} />
-                        Urządzenie Spotify
+                        {tr('app.spotifyDevice')}
                         <Settings2 size={16} />
                       </summary>
                       <SpotifyRemotePanel remote={spotifyRemote} />
@@ -2499,7 +2629,7 @@ export default function App() {
                           disabled={!spotifyRemote.ready}
                           onClick={() => sendPlaybackCommand('stop')}
                         >
-                          Zatrzymaj odtwarzanie
+                          {tr('app.stopPlayback')}
                         </button>
                       )}
                     </details>
@@ -2516,7 +2646,7 @@ export default function App() {
                   {!card && (
                     <div className="play-state" role="status">
                       <Radio size={17} />
-                      {playState}
+                      {displayTranslation(playState)}
                     </div>
                   )}
                   {card && (
@@ -2525,13 +2655,14 @@ export default function App() {
                         card={card}
                         back={playingBack}
                         state={playbackState}
-                        message={playState}
+                        message={displayTranslation(playState)}
                         disabled={output === 'spotify' && !spotifyRemote.ready}
                         onToggle={togglePlayback}
                       />
                       {output === 'browser' && (
                         <Players
                           card={card}
+                          key={playerRevision}
                           source={source}
                           command={command}
                           onState={reportPlayback}
@@ -2546,7 +2677,7 @@ export default function App() {
                               key={s}
                               onClick={() => setSource(s)}
                             >
-                              {s === 'spotify' ? 'Spotify' : 'YouTube'}
+                              {s === 'spotify' ? tr('app.spotify') : tr('app.youtube')}
                               {source === s && <Check size={15} />}
                             </button>
                           ))}
@@ -2559,38 +2690,32 @@ export default function App() {
                   <span className="mini-icon">
                     <ScanLine />
                   </span>
-                  <h2>{room.connected ? 'Skaner połączony.' : 'Połącz skaner.\nZacznij grać.'}</h2>
+                  <h2>
+                    {room.connected
+                      ? tr('app.scannerConnected')
+                      : tr('app.connectAScannerStartPlaying')}
+                  </h2>
                   {room.pairUrl ? (
                     <>
                       <div className="pair-qr">
                         <QR value={room.pairUrl} />
                       </div>
-                      <p>
-                        Otwórz Skaner kart na drugim urządzeniu i zeskanuj kod, aby dołączyć do tej
-                        sesji.
-                      </p>
+                      <p>{tr('app.openCardScannerOnTheOtherDevice')}</p>
                       <button className="secondary full" onClick={room.disconnect}>
-                        Zakończ sesję
+                        {tr('app.endSession')}
                       </button>
                     </>
                   ) : (
                     <>
-                      <p>
-                        Kliknij „Połącz skaner”, aby wyświetlić kod QR. Nie potrzebujesz konta
-                        Hiciarza.
-                      </p>
+                      <p>{tr('app.clickConnectScannerToShowAQr')}</p>
                       <button className="secondary full" onClick={room.host}>
-                        Przygotuj QR parowania
+                        {tr('app.preparePairingQrCode')}
                       </button>
                     </>
                   )}
                   <details className="audio-help">
-                    <summary>Jak wybrać głośnik?</summary>
-                    <p>
-                      W trybie Spotify wybierz urządzenie z listy. W trybie „Na tym urządzeniu”
-                      dźwiękiem zarządza przeglądarka i ustawienia tego urządzenia. Dostępne sposoby
-                      połączenia z głośnikiem zależą od używanego sprzętu.
-                    </p>
+                    <summary>{tr('app.howDoIChooseASpeaker')}</summary>
+                    <p>{tr('app.inSpotifyModeSelectADeviceFrom')}</p>
                   </details>
                 </aside>
               </div>
@@ -2598,9 +2723,9 @@ export default function App() {
           )}
         </main>
         <footer className="workspace-footer">
-          <span>Stworzone dla muzyki. I dobrego towarzystwa.</span>
+          <span>{tr('app.madeForMusicAndGoodCompany')}</span>
           <button className="text-button" onClick={() => setModal('about')}>
-            O aplikacji
+            {tr('app.about')}
           </button>
           <button
             className="text-button version-check"
@@ -2609,44 +2734,37 @@ export default function App() {
                 await checkForUpdates();
                 notify(
                   updateIsReady()
-                    ? 'Nowa wersja jest gotowa. Wybierz „Wczytaj nową wersję”.'
-                    : 'Sprawdzanie aktualizacji uruchomione. Powiadomimy Cię, gdy nowa wersja będzie gotowa.',
+                    ? tr('app.aNewVersionIsReadyChooseLoad')
+                    : tr('app.updateCheckStartedWeWillLetYou'),
                 );
               } catch {
-                notify('Nie udało się sprawdzić aktualizacji. Sprawdź połączenie z internetem.');
+                notify(tr('app.couldNotCheckForUpdatesCheckYour'));
               }
             }}
           >
-            Wersja {appVersion} · Sprawdź aktualizacje
+            {tr('app.version')} {appVersion} {tr('app.checkForUpdates')}
           </button>
           <span>
-            Hiciarz <span>✳</span> open source
+            {tr('app.hiciarz3')} <span>✳</span> {tr('app.openSource')}
           </span>
         </footer>
       </div>
       <input
         ref={fileRef}
+        aria-label={tr('app.importFile')}
         className="sr-only"
         type="file"
         accept=".json,.csv,application/json,text/csv"
-        onChange={async (e) => {
-          const f = e.target.files?.[0];
-          if (!f) return;
-          try {
-            if (f.size > 8 * 1024 * 1024) throw new Error('Plik jest za duży. Limit wynosi 8 MB.');
-            setPending({ data: parseImport(await f.text(), f.name), name: f.name });
-            setImportMode('append');
-            setModal('file');
-          } catch (err) {
-            notify((err as Error).message);
-          }
-          e.target.value = '';
+        onChange={(event) => {
+          const file = event.target.files?.[0];
+          if (file) void readImportFile(file);
+          event.target.value = '';
         }}
       />
       <div
         className="scan-announcement"
         role="status"
-        aria-label="Potwierdzenie skanowania"
+        aria-label={tr('app.scanConfirmation')}
         aria-atomic="true"
       >
         {mode === 'scanner' && scanFeedback && (
@@ -2655,36 +2773,38 @@ export default function App() {
               <Check size={18} />
             </span>
             <span>
-              {scanFeedback.kind === 'card' ? 'Karta zeskanowana' : 'Kod parowania odczytany'}
+              {scanFeedback.kind === 'card' ? tr('app.cardScanned') : tr('app.pairingCodeRead')}
             </span>
           </div>
         )}
       </div>
       {message && (
         <div className="toast" role="status">
-          <span>{message}</span>
-          <button className="icon" aria-label="Zamknij komunikat" onClick={() => setMessage('')}>
+          <span>{displayTranslation(message)}</span>
+          <button
+            className="icon"
+            aria-label={tr('app.closeMessage')}
+            onClick={() => setMessage('')}
+          >
             <X size={17} />
           </button>
         </div>
       )}
       <PDFExportProgress onCancel={() => pdfAbort.current?.abort()} />
       {modal === 'print-cards' && (
-        <Modal title="Wydrukuj swoją talię" onClose={() => setModal(null)} wide>
+        <Modal title={tr('app.printYourDeck')} onClose={() => setModal(null)} wide>
           <PrintCards
             count={printCount}
             selected={selected.size > 0}
             settings={deck.print}
-            error={printError}
+            error={displayTranslation(printError)}
             onDownload={() => void exportPDF('download')}
             onPreview={() => void exportPDF('print')}
             onSettings={() => {
               setTab('print');
               setModal(null);
               requestAnimationFrame(() =>
-                document
-                  .querySelector('[aria-label="Ustawienia talii"]')
-                  ?.scrollIntoView({ block: 'start' }),
+                document.querySelector('[data-deck-settings]')?.scrollIntoView({ block: 'start' }),
               );
             }}
           />
@@ -2716,15 +2836,21 @@ export default function App() {
         />
       )}
       {modal === 'examples' && (
-        <Modal title="Przykładowe playlisty" onClose={() => setModal(null)}>
-          <PlaylistExamples onChoose={chooseExample} />
+        <Modal title={tr('app.examplePlaylists')} onClose={() => setModal(null)}>
+          <PlaylistExamples
+            onChoose={chooseExample}
+            initialMode={deck.gameMode || 'music'}
+            currentMode={deck.gameMode || 'music'}
+          />
         </Modal>
       )}
       {modal === 'file' && pending && (
-        <Modal title="Wczytaj plik" onClose={() => setModal(null)}>
+        <Modal title={tr('app.importFile')} onClose={() => setModal(null)}>
           <p className="muted">
             {pending.name} ·{' '}
-            {Array.isArray(pending.data) ? pending.data.length : pending.data.songs.length} utworów
+            {trackCount(
+              Array.isArray(pending.data) ? pending.data.length : pending.data.songs.length,
+            )}
           </p>
           <div className="choice-list">
             {!Array.isArray(pending.data) && (
@@ -2735,8 +2861,8 @@ export default function App() {
                   onChange={() => setImportMode('replace')}
                 />
                 <span>
-                  <strong>Otwórz pełny projekt jako nową talię</strong>
-                  <small>Wczytaj utwory, tło, motyw i ustawienia druku.</small>
+                  <strong>{tr('app.openFullProjectAsANewDeck')}</strong>
+                  <small>{tr('app.importTracksBackgroundThemeAndPrintSettings')}</small>
                 </span>
               </label>
             )}
@@ -2748,8 +2874,8 @@ export default function App() {
                   onChange={() => setImportMode('replace')}
                 />
                 <span>
-                  <strong>Zastąp obecną listę utworów</strong>
-                  <small>Obecne utwory zostaną zastąpione.</small>
+                  <strong>{tr('app.replaceTheCurrentTrackList')}</strong>
+                  <small>{tr('app.theCurrentTracksWillBeReplaced')}</small>
                 </span>
               </label>
             )}
@@ -2760,14 +2886,14 @@ export default function App() {
                 onChange={() => setImportMode('append')}
               />
               <span>
-                <strong>Dodaj utwory na końcu obecnej talii</strong>
-                <small>Zachowaj poprawki i pomiń duplikaty.</small>
+                <strong>{tr('app.appendTracksToTheCurrentDeck')}</strong>
+                <small>{tr('app.keepEditsAndSkipDuplicates')}</small>
               </span>
             </label>
           </div>
           <div className="modal-actions">
             <button className="secondary" onClick={() => setModal(null)}>
-              Anuluj
+              {tr('app.cancel')}
             </button>
             <button
               className="primary"
@@ -2776,7 +2902,7 @@ export default function App() {
                   const d = { ...pending.data, id: crypto.randomUUID() };
                   setDecks([...decks, d]);
                   setActiveId(d.id);
-                  notify('Otworzono pełny projekt.');
+                  notify(tr('app.fullProjectOpened'));
                 } else
                   importSongs(
                     Array.isArray(pending.data) ? pending.data : pending.data.songs,
@@ -2786,19 +2912,21 @@ export default function App() {
                 setModal(null);
               }}
             >
-              Wczytaj
+              {tr('app.import')}
             </button>
           </div>
         </Modal>
       )}
       {modal === 'delete' && (
-        <Modal title="Usunąć tę talię?" onClose={() => setModal(null)}>
+        <Modal title={tr('app.deleteThisDeck')} onClose={() => setModal(null)}>
           <p>
-            Usuniesz „{deck.name}” z tej przeglądarki. Wcześniej możesz zapisać projekt do pliku.
+            {tr('app.youWillDelete')}
+            {deck.name}
+            {tr('app.fromThisBrowserYouCanSaveA')}
           </p>
           <div className="modal-actions">
             <button className="secondary" onClick={() => setModal(null)}>
-              Zachowaj talię
+              {tr('app.keepDeck')}
             </button>
             <button
               className="danger"
@@ -2810,22 +2938,20 @@ export default function App() {
                 setModal(null);
               }}
             >
-              Usuń talię
+              {tr('app.deleteDeck')}
             </button>
           </div>
         </Modal>
       )}
       {modal === 'check' && (
-        <Modal title="Sprawdzenie źródeł" onClose={() => setModal(null)} wide>
-          <p className="hint">
-            Sprawdzamy metadane linków. Dostępne metadane nie gwarantują odtwarzania w Twoim
-            regionie. Błąd sieci lub blokada przeglądarki oznacza brak potwierdzenia, a nie
-            usunięcie utworu.
-          </p>
+        <Modal title={tr('app.sourceCheck')} onClose={() => setModal(null)} wide>
+          <p className="hint">{tr('app.weCheckLinkMetadataAvailableMetadataDoes')}</p>
           {checking ? (
             <div className="check-progress">
               <LoaderCircle className="spin" size={22} />
-              <span>Sprawdzam źródła… {checkProgress}</span>
+              <span>
+                {tr('app.checkingSources')} {checkProgress}
+              </span>
             </div>
           ) : (
             <div className="check-results">
@@ -2833,7 +2959,7 @@ export default function App() {
                 <div key={c.songId + c.source}>
                   <span>
                     <strong>{deck.songs.find((s) => s.id === c.songId)?.title || c.songId}</strong>
-                    <small>{c.source === 'spotify' ? 'Spotify' : 'YouTube'}</small>
+                    <small>{c.source === 'spotify' ? tr('app.spotify') : tr('app.youtube')}</small>
                   </span>
                   <span
                     className={
@@ -2852,19 +2978,16 @@ export default function App() {
           )}
           <div className="modal-actions">
             <button className="secondary" onClick={() => setModal(null)}>
-              Zamknij
+              {tr('app.close')}
             </button>
           </div>
         </Modal>
       )}
       {modal === 'prompt' && (
-        <Modal title="Prompt do przygotowania listy" onClose={() => setModal(null)} wide>
-          <p>
-            Schowek jest niedostępny. Zaznacz i skopiuj tekst, a następnie wklej go do wybranego
-            asystenta.
-          </p>
+        <Modal title={tr('app.promptForPreparingATrackList')} onClose={() => setModal(null)} wide>
+          <p>{tr('app.theClipboardIsUnavailableSelectAndCopy')}</p>
           <label>
-            Treść promptu
+            {tr('app.promptText')}
             <textarea
               rows={16}
               readOnly
@@ -2876,7 +2999,7 @@ export default function App() {
       )}
       {modal === 'spotify-setup' && (
         <Modal
-          title="Spotify w Hiciarzu"
+          title={tr('app.spotifyInHiciarz')}
           wide
           onClose={() => setModal(spotifySetup.purpose === 'import' ? 'spotify' : null)}
         >
@@ -2892,11 +3015,22 @@ export default function App() {
         </Modal>
       )}
       {modal === 'about' && (
-        <Modal title="Hiciarz — muzyka nas łączy" onClose={() => setModal(null)}>
-          <p>
-            Twoje piosenki, Twoje karty, Wasz dobry wieczór. Twórz talie, drukuj karty i odkrywaj
-            muzykę ze znajomymi.
-          </p>
+        <Modal title={tr('app.settingsAndAbout')} onClose={() => setModal(null)}>
+          <label className="language-setting">
+            {tr('app.language')}
+            <select
+              aria-label={tr('app.language')}
+              value={language}
+              onChange={(event) => setLanguage(event.target.value as Language)}
+            >
+              {Object.entries(languageNames).map(([value, name]) => (
+                <option key={value} value={value}>
+                  {name}
+                </option>
+              ))}
+            </select>
+          </label>
+          <p>{tr('app.yourSongsYourCardsYourGreatEvening')}</p>
           <div className="about-links">
             <a
               className="primary"
@@ -2904,7 +3038,7 @@ export default function App() {
               target="_blank"
               rel="noopener noreferrer"
             >
-              <Coffee size={18} /> Postaw mi kawę <ArrowUpRight size={16} />
+              <Coffee size={18} /> {tr('app.buyMeACoffee')} <ArrowUpRight size={16} />
             </a>
             <a
               className="secondary"
@@ -2912,13 +3046,13 @@ export default function App() {
               target="_blank"
               rel="noopener noreferrer"
             >
-              <FileJson size={18} /> Repozytorium projektu <ArrowUpRight size={16} />
+              <FileJson size={18} /> {tr('app.projectRepository')} <ArrowUpRight size={16} />
             </a>
             <button className="secondary" onClick={() => setModal('help')}>
-              Jak grać i przygotować talię?
+              {tr('app.howToPlayAndPrepareADeck')}
             </button>
             <button className="secondary" onClick={() => openSpotifySetup()}>
-              <Settings2 size={18} /> Ustawienia Spotify
+              <Settings2 size={18} /> {tr('app.spotifySettings')}
             </button>
           </div>
           <label className="check-line">
@@ -2930,52 +3064,38 @@ export default function App() {
                 localStorage.setItem('hiciarz-hide-coffee', e.target.checked ? '0' : '1');
               }}
             />
-            <span>Pokazuj baner „Postaw mi kawę”</span>
+            <span>{tr('app.showTheBuyMeACoffeeBanner')}</span>
           </label>
-          <p className="hint">
-            Twoje talie są zapisane w tej przeglądarce. Pobierz plik projektu, aby mieć kopię lub
-            przenieść go na inne urządzenie.
-          </p>
-          <small>Wersja {appVersion}</small>
+          <p className="hint">{tr('app.yourDecksAreSavedInThisBrowser')}</p>
+          <small>
+            {tr('app.version')} {appVersion}
+          </small>
         </Modal>
       )}
       {modal === 'help' && (
-        <Modal title="Od playlisty do dobrego wieczoru" onClose={() => setModal(null)} wide>
+        <Modal title={tr('app.fromPlaylistToAGreatEvening')} onClose={() => setModal(null)} wide>
           <div className="help-grid">
             <div>
               <span>01</span>
-              <h3>Przygotuj talię</h3>
-              <p>
-                Dodaj utwory ręcznie, z pliku lub przez import Spotify. Sprawdź lata wydania,
-                wybierz motyw i pobierz PDF.
-              </p>
+              <h3>{tr('app.prepareADeck')}</h3>
+              <p>{tr('app.addTracksManuallyFromAFileOr')}</p>
             </div>
             <div>
               <span>02</span>
-              <h3>Wydrukuj i wytnij</h3>
-              <p>
-                A4, druk dwustronny, skala 100%. Najpierw wydrukuj kalibrację i wybierz właściwą
-                krawędź obrotu.
-              </p>
+              <h3>{tr('app.printAndCutOut')}</h3>
+              <p>{tr('app.a4DoubleSidedPrinting100ScalePrint')}</p>
             </div>
             <div>
               <span>03</span>
-              <h3>Połącz i skanuj</h3>
-              <p>
-                Połącz konto Spotify i wybierz urządzenie albo sparuj skaner ze zdalnym odtwarzaczem
-                przez QR. Następnie skanuj muzyczne karty.
-              </p>
+              <h3>{tr('app.connectAndScan')}</h3>
+              <p>{tr('app.connectSpotifyAndChooseADeviceOr')}</p>
             </div>
           </div>
           <div className="notice">
             <FileJson size={22} />
             <div>
-              <strong>Wczytaj listę utworów z pliku</strong>
-              <p>
-                JSON: tablica obiektów z polami title, artist, year, sources.spotify i/lub
-                sources.youtube. Motyw theme jest opcjonalny. CSV: title, artist, year, spotify,
-                youtube, theme. Pliki przykładowe znajdziesz poniżej.
-              </p>
+              <strong>{tr('app.importATrackListFromAFile')}</strong>
+              <p>{tr('app.jsonAnArrayOfObjectsWithTitle')}</p>
               <div className="inline-actions">
                 <button
                   className="text-button"
@@ -2983,7 +3103,7 @@ export default function App() {
                     download(JSON.stringify(newDeck(), null, 2), 'hiciarz-szablon.json')
                   }
                 >
-                  Pobierz szablon JSON
+                  {tr('app.downloadJsonTemplate')}
                 </button>
                 <button
                   className="text-button"
@@ -2995,16 +3115,12 @@ export default function App() {
                     )
                   }
                 >
-                  Pobierz szablon CSV
+                  {tr('app.downloadCsvTemplate')}
                 </button>
               </div>
             </div>
           </div>
-          <p className="hint">
-            Projekty i własne tła są zapisane w tej przeglądarce. Pobierz plik projektu, żeby mieć
-            kopię. PDF nie zawiera muzyki ani danych logowania. Karty można skanować bez wczytywania
-            talii do odtwarzacza.
-          </p>
+          <p className="hint">{tr('app.projectsAndCustomBackgroundsAreSavedIn')}</p>
         </Modal>
       )}
     </div>

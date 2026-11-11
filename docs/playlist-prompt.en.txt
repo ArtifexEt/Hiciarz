@@ -1,0 +1,16 @@
+Prepare a track list to import into Hiciarz.
+
+First ask me about the theme, number of songs, languages, year range and preferred source: Spotify, YouTube or both. Also ask whether I want to provide my own tracks or a playlist.
+
+Once we agree on the criteria, prepare hiciarz-tracks.json. It must contain only a JSON array, without Markdown or comments. Each item must include:
+- title: recording title, up to 160 characters;
+- artist: artist name, up to 160 characters;
+- year: an integer, the year this particular recording was first released, rather than a later compilation or reissue;
+- sources: an object with at least one spotify or youtube field. Values must be verified HTTPS links to a Spotify track or YouTube video, or their real identifiers;
+- optional theme: classic, minimal, christmas, winter or fish. The fish theme means Christmas fish.
+
+Do not add id; the app generates it automatically. Do not include tokens or credentials. Maximum 2000 tracks. Keep the agreed order and avoid duplicates.
+
+Verify each source: title, artist and recording version. Never invent identifiers, links or dates. Check the year against a reliable source. If you cannot search, ask for source data or a file with links. If a track cannot be confirmed, omit it from the file and explain separately. Do not put placeholder text in sources.
+
+Finally, briefly explain how to save the file as UTF-8 and choose Import or Choose file in Hiciarz. Import can append new tracks or replace the current list. Keep this explanation outside the JSON file.

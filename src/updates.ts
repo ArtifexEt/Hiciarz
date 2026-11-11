@@ -3,7 +3,7 @@ import { registerSW } from 'virtual:pwa-register';
 let ready = false;
 let registration: ServiceWorkerRegistration | undefined;
 const listeners = new Set<() => void>();
-export const appVersion = (import.meta.env.VITE_APP_VERSION || 'lokalna').slice(0, 7);
+export const appVersion = (import.meta.env.VITE_APP_VERSION || 'dev').slice(0, 7);
 export const subscribeToUpdates = (listener: () => void) => {
   listeners.add(listener);
   return () => {

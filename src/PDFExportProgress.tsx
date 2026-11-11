@@ -1,3 +1,4 @@
+import { t, useTranslation } from './i18n';
 import { useSyncExternalStore } from 'react';
 import { LoaderCircle } from 'lucide-react';
 import type { PDFProgress } from './pdf';
@@ -17,34 +18,39 @@ function subscribe(listener: () => void) {
 
 /** Progress updates render this small panel without rendering the entire song editor. */
 export default function PDFExportProgress({ onCancel }: { onCancel: () => void }) {
+  useTranslation();
   const progress = useSyncExternalStore(subscribe, () => current);
   if (!progress) return null;
   return (
-    <section className="pdf-export" aria-label="Generowanie PDF">
+    <section className="pdf-export" aria-label={t('components.PDFExportProgress.generatingPDF')}>
       <div className="pdf-export-heading">
         <LoaderCircle size={21} className="spin" aria-hidden="true" />
         <strong aria-live="polite">
           {progress.phase === 'preparing'
-            ? 'Przygotowuję wydruk…'
+            ? t('components.PDFExportProgress.preparingThePrintLayout')
             : progress.phase === 'saving'
-              ? 'Kończę plik PDF…'
-              : 'Tworzę Twoje karty…'}
+              ? t('components.PDFExportProgress.finishingThePDF')
+              : t('components.PDFExportProgress.creatingYourCards')}
         </strong>
         <span>{progress.percent}%</span>
       </div>
-      <progress aria-label="Postęp generowania PDF" max={100} value={progress.percent} />
+      <progress
+        aria-label={t('components.PDFExportProgress.pDFGenerationProgress')}
+        max={100}
+        value={progress.percent}
+      />
       <div className="pdf-export-detail">
         <span>
-          Gotowe karty:{' '}
+          {t('components.PDFExportProgress.cardsReady')}{' '}
           <strong>
             {progress.completed} / {progress.total}
           </strong>
         </span>
         <button className="text-button" onClick={onCancel}>
-          Anuluj
+          {t('components.PDFExportProgress.cancel')}
         </button>
       </div>
-      <p>Przygotowuję obie strony kart w układzie do druku dwustronnego.</p>
+      <p>{t('components.PDFExportProgress.preparingBothSidesOfTheCards')}</p>
     </section>
   );
 }

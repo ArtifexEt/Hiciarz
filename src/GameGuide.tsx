@@ -1,8 +1,10 @@
+import { t, useTranslation } from './i18n';
 import { useState } from 'react';
 import { ArrowUpRight, Monitor, Radio, ScanLine, Smartphone } from 'lucide-react';
 import { spotifyConfigured } from './spotify';
 
 export function GameGuide({ onStart }: { onStart: (route: 'spotify' | 'laptop') => void }) {
+  useTranslation();
   const [route, setRoute] = useState<'spotify' | 'laptop'>(
     spotifyConfigured() ? 'spotify' : 'laptop',
   );
@@ -10,39 +12,33 @@ export function GameGuide({ onStart }: { onStart: (route: 'spotify' | 'laptop') 
   const steps = laptop
     ? [
         [
-          'Uruchom odtwarzacz',
-          'Na urządzeniu, które ma odtwarzać muzykę, otwórz Odtwarzacz → Na tym urządzeniu → Połącz skaner. Pojawi się kod QR.',
+          t('components.GameGuide.startThePlayer'),
+          t('components.GameGuide.onTheDeviceThatWillPlay'),
         ],
         [
-          'Połącz skaner',
-          'Na drugim urządzeniu otwórz Skaner kart → Zdalny odtwarzacz → Włącz aparat. Zeskanuj kod z ekranu odtwarzacza.',
+          t('components.GameGuide.connectTheScanner'),
+          t('components.GameGuide.onTheOtherDeviceOpenCard'),
         ],
-        [
-          'Zeskanuj kartę',
-          'Skanuj kody QR z kart. Muzyka uruchomi się na połączonym odtwarzaczu. Jeśli przeglądarka poprosi o zgodę na dźwięk, kliknij odtwarzanie na jego ekranie.',
-        ],
+        [t('components.GameGuide.scanACard'), t('components.GameGuide.scanTheQRCodesOnYour')],
       ]
     : [
         [
-          'Przygotuj Spotify',
-          'Otwórz Spotify na wybranym urządzeniu i uruchom dowolny utwór, żeby pojawiło się na liście.',
+          t('components.GameGuide.prepareSpotify'),
+          t('components.GameGuide.openSpotifyOnTheDeviceYou'),
         ],
         [
-          'Połącz konto',
-          'Wybierz Graj przez Spotify, zaloguj się i wskaż urządzenie, na którym ma grać muzyka.',
+          t('components.GameGuide.connectAccount'),
+          t('components.GameGuide.choosePlayThroughSpotifySignIn'),
         ],
-        [
-          'Zeskanuj kartę',
-          'Włącz aparat i zeskanuj QR z karty. Utwór zagra na wybranym urządzeniu Spotify. Skanerem i odtwarzaczem może być to samo urządzenie.',
-        ],
+        [t('components.GameGuide.scanACard'), t('components.GameGuide.startTheCameraAndScanA')],
       ];
   return (
     <section className="game-guide" aria-labelledby="game-guide-title">
       <div className="game-guide-heading">
         <div>
-          <span className="eyebrow">PIERWSZY RAZ? ZACZNIJ TUTAJ</span>
-          <h2 id="game-guide-title">Skanuj karty. Odkrywaj muzykę.</h2>
-          <p>Przygotuj i wydrukuj talię w kreatorze poniżej. Potem wybierz, jak chcesz słuchać.</p>
+          <span className="eyebrow">{t('components.GameGuide.fIRSTTIMESTARTHERE')}</span>
+          <h2 id="game-guide-title">{t('components.GameGuide.scanCardsDiscoverMusic')}</h2>
+          <p>{t('components.GameGuide.prepareAndPrintADeckIn')}</p>
         </div>
         <div className="guide-device-art" aria-hidden="true">
           <Smartphone size={29} />
@@ -50,7 +46,11 @@ export function GameGuide({ onStart }: { onStart: (route: 'spotify' | 'laptop') 
           {laptop ? <Monitor size={37} /> : <Radio size={37} />}
         </div>
       </div>
-      <div className="guide-tabs" role="tablist" aria-label="Instrukcja odtwarzania">
+      <div
+        className="guide-tabs"
+        role="tablist"
+        aria-label={t('components.GameGuide.playbackGuide')}
+      >
         <button
           id="guide-laptop"
           role="tab"
@@ -58,7 +58,7 @@ export function GameGuide({ onStart }: { onStart: (route: 'spotify' | 'laptop') 
           aria-controls="guide-steps"
           onClick={() => setRoute('laptop')}
         >
-          <Monitor size={17} /> Przez odtwarzacz · Spotify / YouTube
+          <Monitor size={17} /> {t('components.GameGuide.throughThePlayerSpotifyYouTube')}
         </button>
         <button
           id="guide-spotify"
@@ -67,7 +67,7 @@ export function GameGuide({ onStart }: { onStart: (route: 'spotify' | 'laptop') 
           aria-controls="guide-steps"
           onClick={() => setRoute('spotify')}
         >
-          <Radio size={17} /> Bezpośrednio w Spotify
+          <Radio size={17} /> {t('components.GameGuide.directlyInSpotify')}
         </button>
       </div>
       <div
@@ -87,21 +87,19 @@ export function GameGuide({ onStart }: { onStart: (route: 'spotify' | 'laptop') 
         <div className="guide-bottom">
           <p>
             {laptop
-              ? 'Dźwięk odtwarza połączone urządzenie. Jeśli chcesz użyć zewnętrznego głośnika, połącz go z tym urządzeniem w jego ustawieniach dźwięku.'
-              : 'Potrzebujesz Spotify Premium i kart ze źródłem Spotify. Wybierz swój odtwarzacz z listy — kolejne karty będą grały właśnie tam.'}
+              ? t('components.GameGuide.theConnectedDevicePlaysTheSound')
+              : t('components.GameGuide.youNeedSpotifyPremiumAndCards')}
           </p>
           <button className="secondary" onClick={() => onStart(route)}>
             {laptop ? <Monitor size={17} /> : <ScanLine size={17} />}
-            {laptop ? 'Otwórz odtwarzacz' : 'Otwórz skaner Spotify'}
+            {laptop
+              ? t('components.GameGuide.openPlayer')
+              : t('components.GameGuide.openSpotifyScanner')}
             <ArrowUpRight size={16} />
           </button>
         </div>
         {laptop && (
-          <p className="guide-note">
-            Spotify na stronie może odtworzyć tylko podgląd utworu. Do pełnego odtwarzania przez
-            konto Premium wybierz „Bezpośrednio w Spotify”. YouTube wymaga nagrania dostępnego do
-            odtworzenia na stronie.
-          </p>
+          <p className="guide-note">{t('components.GameGuide.spotifyOnThisPageMayOnly')}</p>
         )}
       </div>
     </section>

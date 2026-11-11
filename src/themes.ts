@@ -1,18 +1,9 @@
-import type { Theme } from './model';
+import { localizedRecord } from './i18n';
+import { themes, type Theme } from './model';
 export const asset = (path: string) => import.meta.env.BASE_URL + path;
 export const themeArt = (theme: Theme | 'laser') =>
   asset(`themes/${theme === 'fish' ? 'fish-santa.webp' : theme + '.svg'}`);
-export const themeDescriptions: Record<Theme, string> = {
-  classic: 'Kolor, rytm i dobry hit',
-  minimal: 'Prosto i spokojnie',
-  vinyl: 'Rowki płyt i ciepłe brzmienie',
-  mixtape: 'Kasety, słońce i wspomnienia',
-  memphis: 'Zygzaki i kolory lat 90.',
-  disco: 'Lustrzana kula i parkiet',
-  christmas: 'Zieleń, złoto i świąteczny blask',
-  winter: 'Chłodny błękit i płatki śniegu',
-  fish: 'Autorskie rybki w czapkach',
-};
+export const themeDescriptions = localizedRecord(themes, 'themes.descriptions.');
 export const themeColors: Record<Theme | 'laser', { dark: string; light: string; accent: string }> =
   {
     laser: { dark: '#26332e', light: '#ffffff', accent: '#638876' },

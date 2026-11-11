@@ -1,3 +1,4 @@
+import { t as translate } from './i18n';
 import { spotifyId, type Song } from './model';
 import {
   spotifyClientId as id,
@@ -12,7 +13,7 @@ async function spotifyFetch(url: string, options: RequestInit): Promise<Response
   try {
     return await fetch(url, options);
   } catch {
-    throw new Error('Nie można połączyć się ze Spotify. Sprawdź internet i spróbuj ponownie.');
+    throw new Error(translate('spotify.network'));
   }
 }
 const b64 = (buffer: ArrayBuffer) =>
@@ -62,7 +63,7 @@ export async function beginSpotifyLogin(purpose: SpotifyPurpose = 'import') {
 export async function authorizeSpotify(purpose: 'import' | 'player' = 'import') {
   const clientId = id(),
     redirectUri = redirect();
-  if (!clientId) throw new Error('Dodaj Client ID w ustawieniach Spotify w Hiciarzu.');
+  if (!clientId) throw new Error(translate('spotify.missingClientId'));
   const verifier = b64(crypto.getRandomValues(new Uint8Array(48)).buffer),
     state = crypto.randomUUID();
   sessionStorage.setItem(
@@ -76,8 +77,7 @@ export async function authorizeSpotify(purpose: 'import' | 'player' = 'import') 
     ...new Set([...required.split(' '), ...(existing?.scope || '').split(' ').filter(Boolean)]),
   ].join(' ');
   const challenge = b64(await crypto.subtle.digest('SHA-256', new TextEncoder().encode(verifier)));
-  if (clientId !== id())
-    throw new Error('Zmieniono połączenie Spotify. Spróbuj zalogować się ponownie.');
+  if (clientId !== id()) throw new Error(translate('spotify.changedLogin'));
   const q = new URLSearchParams({
     client_id: clientId,
     response_type: 'code',
@@ -95,12 +95,10 @@ export async function finishSpotify() {
   const saved = JSON.parse(sessionStorage.getItem('spotify-oauth') || 'null');
   history.replaceState(null, '', redirect());
   sessionStorage.removeItem('spotify-oauth');
-  if (q.has('error')) throw new Error('Logowanie Spotify zostało anulowane.');
-  if (!saved || q.get('state') !== saved.state)
-    throw new Error('Sesja logowania wygasła. Połącz Spotify ponownie.');
+  if (q.has('error')) throw new Error(translate('spotify.cancelledLogin'));
+  if (!saved || q.get('state') !== saved.state) throw new Error(translate('spotify.expiredLogin'));
   const clientId = saved.clientId || id();
-  if (clientId !== id())
-    throw new Error('Zmieniono Client ID podczas logowania. Połącz Spotify ponownie.');
+  if (clientId !== id()) throw new Error(translate('spotify.changedClientDuringLogin'));
   const r = await spotifyFetch('https://accounts.spotify.com/api/token', {
     method: 'POST',
     headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
@@ -112,9 +110,9 @@ export async function finishSpotify() {
       code_verifier: saved.verifier,
     }),
   });
-  if (!r.ok) throw new Error('Nie udało się połączyć ze Spotify. Spróbuj ponownie.');
+  if (!r.ok) throw new Error(translate('spotify.loginFailed'));
   const granted = await r.json();
-  if (clientId !== id()) throw new Error('Zmieniono połączenie Spotify. Zaloguj się ponownie.');
+  if (clientId !== id()) throw new Error(translate('spotify.changedConnection'));
   sessionStorage.setItem(
     'spotify-token',
     JSON.stringify({ ...granted, client_id: clientId, expires: Date.now() + 3500000 }),
@@ -125,10 +123,10 @@ export async function finishSpotify() {
 async function token() {
   const clientId = id();
   let t = JSON.parse(sessionStorage.getItem('spotify-token') || 'null');
-  if (!t) throw new Error('Najpierw połącz Spotify.');
+  if (!t) throw new Error(translate('spotify.connectFirst'));
   if (t.client_id && t.client_id !== clientId) {
     disconnectSpotify();
-    throw new Error('Zmieniono Client ID. Połącz konto Spotify ponownie.');
+    throw new Error(translate('spotify.changedClient'));
   }
   if (t.expires < Date.now()) {
     const r = await spotifyFetch('https://accounts.spotify.com/api/token', {
@@ -140,20 +138,21 @@ async function token() {
         client_id: clientId,
       }),
     });
-    if (clientId !== id()) throw new Error('Zmieniono połączenie Spotify. Zaloguj się ponownie.');
+    if (clientId !== id()) throw new Error(translate('spotify.changedConnection'));
     if (!r.ok) {
       disconnectSpotify();
-      throw new Error('Sesja Spotify wygasła. Zaloguj się ponownie.');
+      throw new Error(translate('spotify.sessionExpired'));
     }
     const refreshed = await r.json();
-    if (clientId !== id()) throw new Error('Zmieniono połączenie Spotify. Zaloguj się ponownie.');
+    if (clientId !== id()) throw new Error(translate('spotify.changedConnection'));
     t = { ...t, ...refreshed, client_id: clientId, expires: Date.now() + 3500000 };
     sessionStorage.setItem('spotify-token', JSON.stringify(t));
   }
   return t.access_token;
 }
 async function api(url: string) {
-  if (!url.startsWith('https://api.spotify.com/v1/')) throw new Error('Nieprawidłowy adres API.');
+  if (!url.startsWith('https://api.spotify.com/v1/'))
+    throw new Error(translate('spotify.invalidApi'));
   const r = await spotifyFetch(url, {
     headers: { Authorization: 'Bearer ' + (await token()) },
     signal: AbortSignal.timeout(20000),
@@ -161,12 +160,12 @@ async function api(url: string) {
   if (!r.ok)
     throw new Error(
       r.status === 403
-        ? 'Spotify odmówił dostępu (403). Sprawdź wybrany Client ID w ustawieniach Hiciarza i dostęp konta w Users Management. Tryb deweloperski pozwala odczytywać utwory z własnych lub współtworzonych playlist.'
+        ? translate('spotify.playlistForbidden')
         : r.status === 404
-          ? 'Nie znaleziono playlisty lub nie jest dostępna dla tego konta.'
+          ? translate('spotify.playlistNotFound')
           : r.status === 429
-            ? 'Spotify ograniczył liczbę zapytań. Spróbuj później.'
-            : 'Spotify nie odpowiedział poprawnie. Spróbuj ponownie.',
+            ? translate('spotify.importRateLimit')
+            : translate('spotify.invalidResponse'),
     );
   return r.json();
 }
@@ -180,8 +179,7 @@ export async function importPlaylist(
   let skipped = 0;
   const visited = new Set<string>();
   while (url) {
-    if (visited.has(url) || visited.size >= 40)
-      throw new Error('Playlista przekracza limit 2000 utworów.');
+    if (visited.has(url) || visited.size >= 40) throw new Error(translate('spotify.playlistLimit'));
     visited.add(url);
     const page = await api(url);
     for (const item of page.items || []) {
@@ -206,7 +204,7 @@ export async function importPlaylist(
     }
     url = page.next || '';
   }
-  return { songs, skipped, name: meta.name || 'Playlista Spotify' };
+  return { songs, skipped, name: meta.name || translate('spotify.playlist') };
 }
 
 export type SpotifyDevice = {
@@ -221,7 +219,7 @@ export async function spotifyProfile(): Promise<{ name: string; avatar?: string 
   const avatar = profile?.images?.find(
     (image: { url?: string }) => typeof image.url === 'string' && image.url.startsWith('https://'),
   )?.url;
-  return { name: profile?.display_name || 'Konto Spotify', avatar };
+  return { name: profile?.display_name || translate('spotify.account'), avatar };
 }
 async function playerRequest(path: string, method = 'GET', body?: unknown): Promise<any> {
   const response = await spotifyFetch('https://api.spotify.com/v1/' + path, {
@@ -241,27 +239,20 @@ async function playerRequest(path: string, method = 'GET', body?: unknown): Prom
   if (!response.ok) {
     if (response.status === 401) {
       disconnectSpotify();
-      throw new Error('Sesja Spotify wygasła. Połącz konto ponownie.');
+      throw new Error(translate('spotify.reconnectExpired'));
     }
     if (response.status === 403)
       throw new Error(
         path === 'me/player/devices' || path === 'me'
-          ? 'Spotify odmówił dostępu do urządzeń (403). To nie jest pusta lista. Sprawdź, czy zalogowane konto ma dostęp w Users Management aplikacji Spotify, i połącz je ponownie.'
-          : 'Spotify odmówił sterowania (403). Sprawdź Premium i dostęp konta w Users Management aplikacji Spotify.',
+          ? translate('spotify.devicesForbidden')
+          : translate('spotify.controlsForbidden'),
       );
     if (response.status === 404 && path.startsWith('me/player'))
-      throw new Error(
-        'Urządzenie nie jest aktywne. Otwórz Spotify, uruchom utwór i odśwież listę urządzeń.',
-      );
-    if (response.status === 429)
-      throw new Error('Spotify ograniczył zapytania. Odczekaj chwilę i spróbuj ponownie.');
+      throw new Error(translate('spotify.inactiveDevice'));
+    if (response.status === 429) throw new Error(translate('spotify.rateLimit'));
     if (response.status === 404 && path.startsWith('tracks/'))
-      throw new Error(
-        'Nie znaleziono utworu. Wybierz inne nagranie w kreatorze i wydrukuj kartę ponownie.',
-      );
-    throw new Error(
-      'Nie udało się wykonać polecenia Spotify. Sprawdź połączenie i spróbuj ponownie.',
-    );
+      throw new Error(translate('spotify.trackNotFound'));
+    throw new Error(translate('spotify.commandFailed'));
   }
   return data;
 }
@@ -270,20 +261,18 @@ export async function spotifyDevices(): Promise<SpotifyDevice[]> {
   return (d?.devices || []).filter((x: SpotifyDevice) => Boolean(x.id) && !x.is_restricted);
 }
 export async function playSpotifyTrack(track: string, device: string) {
-  if (!device) throw new Error('Wybierz urządzenie Spotify.');
+  if (!device) throw new Error(translate('spotify.chooseDevice'));
   const valid = spotifyId(track);
   const info = await playerRequest('tracks/' + valid);
   if (info?.is_playable === false || info?.restrictions?.reason === 'market')
-    throw new Error(
-      'Utwór jest niedostępny dla tego konta lub regionu. Popraw źródło w kreatorze i wydrukuj kartę ponownie.',
-    );
+    throw new Error(translate('spotify.trackUnavailable'));
   await playerRequest('me/player/play?device_id=' + encodeURIComponent(device), 'PUT', {
     uris: ['spotify:track:' + valid],
     position_ms: 0,
   });
 }
 export async function spotifyPlaybackCommand(command: 'pause' | 'resume' | 'stop', device: string) {
-  if (!device) throw new Error('Wybierz urządzenie Spotify.');
+  if (!device) throw new Error(translate('spotify.chooseDevice'));
   await playerRequest(
     'me/player/' +
       (command === 'resume' ? 'play' : 'pause') +

@@ -50,6 +50,12 @@ Własny PeerServer (HTTPS/WSS) można wskazać publicznymi zmiennymi GitHub Acti
 
 Odtwarzacz korzysta z oficjalnych, widocznych embedów Spotify i YouTube. Nie wymaga naszego Spotify Client ID do osadzenia. Pełna długość, automatyczny start, logowanie w ramce i dostępność zależą od dostawcy, konta i przeglądarki. Niektóre nagrania blokują osadzanie; Spotify może odtwarzać tylko podgląd. Nie traktujemy ogólnego błędu jako dowodu usunięcia piosenki.
 
+Skaner oferuje trzy niezależne miejsca odtwarzania: **Na tym urządzeniu** (`local`, osadzony `Players` w skanerze), **Drugi ekran** (`browser`, karty i sterowanie przez PeerJS) oraz **Moje Spotify** (`spotify`, Web API i Spotify Connect). Wartość `browser` zachowuje dotychczasowe znaczenie w zapisanych preferencjach. Nowa instalacja bez konfiguracji Spotify zaczyna od odtwarzania lokalnego; istniejący wybór jest zachowany w `hiciarz-output`.
+
+Lokalny skan lub link do karty uruchamia odtwarzacz bez połączenia PeerJS. Wybierane jest preferowane źródło, a jeśli karta go nie zawiera — dostępny serwis. Powrót do skanowania lub wyjście z widoku niszczy osadzony odtwarzacz; aparat jest zwalniany po odczycie karty. Przy zablokowanym automatycznym starcie użytkownik uruchamia dźwięk przyciskiem. Spotify Embed nie gwarantuje pełnego nagrania ani autoplay; [dokumentacja iFrame API](https://developer.spotify.com/documentation/embeds/references/iframe-api).
+
+Osadzone kontrolki dostawcy pozostają widoczne i mogą ujawnić odpowiedź na muzyczną zagadkę. W trybie drugiego ekranu skaner nadal pokazuje tylko rewers oraz pytanie. Pełny lokalny odtwarzacz Spotify z własnymi kontrolkami wymagałby osobnej integracji [Web Playback SDK](https://developer.spotify.com/documentation/web-playback-sdk/tutorials/getting-started), konta Premium i obsługi ograniczeń mobilnego autoplay.
+
 **Import playlist jest osobny od odtwarzania widgetu.** Administrator ustawia sekret repozytorium Actions `SPOTIFY_CLIENT_ID`. Adres powrotu w Spotify Developer Dashboard musi być dokładnie adresem strony, np. `https://artifexet.github.io/Hiciarz/` (sprawdź wielkość liter w faktycznym adresie). Logowanie używa PKCE; Client Secret nie występuje. Token jest w sessionStorage i znika po zakończeniu sesji przeglądarki. Import pyta o dopisanie na końcu lub zastąpienie listy. Pobiera strony playlisty do 2000 utworów. Zakres playlist i dostęp kont zależą od uprawnień integracji Spotify.
 
 Przy dopisywaniu zachowujemy istniejące rekordy i poprawki. Duplikaty identyfikujemy po źródle Spotify albo YouTube. Utwory z różnych serwisów bez wspólnego identyfikatora mogą wymagać ręcznego uporządkowania. Rok z albumu Spotify jest oznaczany do sprawdzenia.
@@ -57,6 +63,16 @@ Przy dopisywaniu zachowujemy istniejące rekordy i poprawki. Duplikaty identyfik
 Obecna integracja w trybie deweloperskim Spotify pobiera zawartość playlist, których zalogowana osoba jest właścicielem lub współtwórcą. Inne playlisty, nawet publiczne, nie udostępniają jej listy utworów. Samo zapisanie playlisty w Bibliotece tego nie zmienia. [Zasady dostępu Spotify](https://developer.spotify.com/documentation/web-api/tutorials/february-2026-migration-guide).
 
 Sprawdzenie linków przez oEmbed potwierdza dostępność metadanych, nie gwarantuje odtwarzania ani dostępności w konkretnym regionie. Brak odpowiedzi może wynikać z CORS, limitów lub sieci.
+
+## Tłumaczenia JSON
+
+Pliki `src/locales/*.pl.json` / `*.en.json` i bazowe `pl.json` / `en.json` zawierają płaskie słowniki o wspólnych kluczach, np. `components.Camera.startCamera`. Każdy klucz ma polską i angielską wartość; tekst dynamiczny używa parametrów `{{name}}`. Zachowuj te same nazwy parametrów w obu językach i tłumacz całe zdania, aby szyk zdania można było zmieniać bez składania fragmentów w kodzie.
+
+`src/i18n.ts` ładuje słowniki przy budowaniu aplikacji, dzięki czemu działają także w zapisanej PWA. Komponenty korzystają z `useTranslation()` i `t(key, params)`. Zwykłe moduły mogą wywołać `t`, a zadania asynchroniczne używają `createTranslator()` do utrzymania jednego języka przez cały eksport PDF. Brak angielskiego wpisu korzysta z polskiego odpowiednika; nieznany klucz pozostaje widoczny jako klucz, aby łatwo znaleźć błąd.
+
+Język jest zapisywany w localStorage pod `hiciarz-language`. Kolejność wyboru: zapisane `pl` / `en`, pierwszy obsługiwany wpis `navigator.languages`, polski. Przełączenie działa bez przeładowania i synchronizuje wybór między kartami tej samej przeglądarki. Aktualizowane są również `html.lang`, tytuł strony i opis. Dane użytkownika i identyfikatory formatu JSON/CSV oraz QR pozostają niezależne od języka.
+
+Przy dodawaniu tekstu uzupełnij oba pliki słownika z odpowiedniej grupy oraz użyj klucza w kodzie. Wykonaj `pnpm test` i `pnpm build`; testy sprawdzają między innymi zgodność kluczy i parametrów. Dłuższe angielskie etykiety warto sprawdzić w widoku mobilnym, w modalach i na wygenerowanym PDF.
 
 ## Pliki dla AI
 
@@ -99,7 +115,7 @@ Gotowe listy znajdują się w folderze [examples/playlists](../examples/playlist
 
 Gdy nowa wersja aplikacji jest gotowa, pojawi się przycisk **Wczytaj nową wersję**. Przed odświeżeniem aplikacja zapisuje talie. W stopce znajdziesz numer wersji i **Sprawdź aktualizacje**. Aktualizacja nie wymaga czyszczenia danych strony.
 
-Talie i zdjęcia: IndexedDB. Preferencje wyglądu: localStorage. Dane sesji OAuth: sessionStorage. Eksporty nie zawierają tokenów. Czyszczenie danych strony usuwa lokalne talie — zapisuj JSON. Przy awarii zapisu aplikacja wyświetla komunikat. Kreator i eksport PDF korzystają z zasobów lokalnych po zapisaniu ich przez service worker; muzyka, API i parowanie wymagają sieci.
+Talie i zdjęcia: IndexedDB. Preferencje wyglądu, języka i miejsca odtwarzania: localStorage. Dane sesji OAuth: sessionStorage. Eksporty nie zawierają tokenów. Czyszczenie danych strony usuwa lokalne talie — zapisuj JSON. Przy awarii zapisu aplikacja wyświetla komunikat. Kreator i eksport PDF korzystają z zasobów lokalnych po zapisaniu ich przez service worker; muzyka, API i parowanie wymagają sieci.
 
 Nie ma kont Hiciarza, analityki ani backendu przechowującego talie. Po wybraniu źródła przeglądarka kontaktuje się z tym dostawcą; parowanie kontaktuje się z usługami PeerJS/ICE.
 

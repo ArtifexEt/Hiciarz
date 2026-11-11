@@ -1,3 +1,4 @@
+import { displayTranslation, t, useTranslation } from './i18n';
 import { useState, type CSSProperties } from 'react';
 import {
   ArrowRight,
@@ -20,6 +21,7 @@ import { preparePDFPreview } from './pdf-preview';
 import './bingo.css';
 
 export default function BingoGame({ onScanner }: { onScanner: () => void }) {
+  useTranslation();
   const [level, setLevel] = useState<BingoLevel>('beginner');
   const [selected, setSelected] = useState<number>();
   const [draws, setDraws] = useState(0);
@@ -43,7 +45,7 @@ export default function BingoGame({ onScanner }: { onScanner: () => void }) {
     const controller = new AbortController();
     const viewer = preview ? preparePDFPreview(() => controller.abort()) : null;
     if (preview && !viewer) {
-      setError('Nie udało się otworzyć podglądu. Pobierz PDF i otwórz go do druku.');
+      setError(t('components.BingoGame.couldNotOpenThePreviewDownload'));
       return;
     }
     setBusy(true);
@@ -64,26 +66,28 @@ export default function BingoGame({ onScanner }: { onScanner: () => void }) {
     } catch (e) {
       viewer?.close();
       setError(
-        controller.signal.aborted ? 'Anulowano przygotowanie plansz.' : (e as Error).message,
+        controller.signal.aborted
+          ? t('components.BingoGame.boardPreparationCancelled')
+          : (e as Error).message,
       );
     } finally {
       setBusy(false);
     }
   }
   return (
-    <section className="bingo-shell" aria-label="Muzyczne Bingo">
+    <section className="bingo-shell" aria-label={t('components.BingoGame.musicBingo')}>
       <header className="bingo-heading">
-        <span className="eyebrow">MUZYCZNE BINGO</span>
+        <span className="eyebrow">{t('components.BingoGame.mUSICBINGO')}</span>
         <h1>
-          Jaka zagadka
+          {t('components.BingoGame.whichChallenge')}
           <br />
-          będzie następna?
+          {t('components.BingoGame.comesNext')}
         </h1>
-        <p>Wylosujcie pytanie, posłuchajcie utworu i sprawdźcie odpowiedzi na odwrocie karty.</p>
+        <p>{t('components.BingoGame.drawAQuestionListenToThe')}</p>
       </header>
       <div className="bingo-draw-panel">
         <label className="bingo-level">
-          Poziom pytań
+          {t('components.BingoGame.questionLevel')}
           <select
             value={level}
             onChange={(e) => {
@@ -113,7 +117,8 @@ export default function BingoGame({ onScanner }: { onScanner: () => void }) {
           {category ? (
             <>
               <span className="bingo-category-number">
-                Losowanie {draws} · Kategoria {selected! + 1}
+                {t('components.BingoGame.draw')} {draws} {t('components.BingoGame.category')}{' '}
+                {selected! + 1}
               </span>
               <h2>{category.name}</h2>
               <p>{category.hint}</p>
@@ -122,50 +127,45 @@ export default function BingoGame({ onScanner }: { onScanner: () => void }) {
             <>
               <Disc3 size={46} aria-hidden="true" />
               <h2>
-                Pięć kategorii.
+                {t('components.BingoGame.fiveCategories')}
                 <br />
-                Jedno losowanie.
+                {t('components.BingoGame.oneDraw')}
               </h2>
-              <p>Naciśnij przycisk i przekonajcie się, co tym razem trzeba odgadnąć.</p>
+              <p>{t('components.BingoGame.pressTheButtonToFindOut')}</p>
             </>
           )}
         </div>
         <button className="primary bingo-draw-button" onClick={draw}>
           <Shuffle size={21} />
-          {category ? 'Losuj kolejną zagadkę' : 'Losuj zagadkę'}
+          {category
+            ? t('components.BingoGame.drawAnotherChallenge')
+            : t('components.BingoGame.drawAChallenge')}
         </button>
         <button className="bingo-scanner-link" onClick={onScanner}>
-          <ScanLine size={17} /> Przejdź do skanera kart <ArrowRight size={16} />
+          <ScanLine size={17} /> {t('components.BingoGame.goToTheCardScanner')}{' '}
+          <ArrowRight size={16} />
         </button>
       </div>
       {error && (
         <p className="error" role="alert">
-          {error}
+          {displayTranslation(error)}
         </p>
       )}
       <details className="bingo-details">
         <summary>
-          <CircleHelp size={18} /> Jak grać?
+          <CircleHelp size={18} /> {t('components.BingoGame.howToPlay')}
         </summary>
-        <p>
-          Wylosujcie kategorię i zeskanujcie muzyczną kartę jak zwykle. Dajcie sobie 25 sekund na
-          odpowiedź, a potem odwróćcie kartę. Trafienie pozwala zaznaczyć jedno wolne pole danej
-          kategorii. Pełny rząd, kolumna lub przekątna daje Bingo.
-        </p>
-        <p>
-          Na początkowym poziomie dokładny rok w kategoriach ±2 i ±4 daje dodatkowo możliwość
-          usunięcia jednego krzyżyka przeciwnika. Każde losowanie jest niezależne, więc kategoria
-          może się powtórzyć.
-        </p>
+        <p>{t('components.BingoGame.drawACategoryAndScanA')}</p>
+        <p>{t('components.BingoGame.atBeginnerLevelGuessingTheExact')}</p>
       </details>
       <details className="bingo-details bingo-print">
         <summary>
-          <Printer size={18} /> Plansze do druku
+          <Printer size={18} /> {t('components.BingoGame.printableBoards')}
         </summary>
-        <p>Po dwie różne plansze 5 × 5 na arkuszu A4, z numerami i kolorami kategorii.</p>
+        <p>{t('components.BingoGame.twoDifferent55BoardsPer')}</p>
         <div className="bingo-print-row">
           <label>
-            Liczba plansz
+            {t('components.BingoGame.numberOfBoards')}
             <input
               type="number"
               min={1}
@@ -175,7 +175,7 @@ export default function BingoGame({ onScanner }: { onScanner: () => void }) {
             />
           </label>
           <span>
-            Poziom: <strong>{bingoLevels[level]}</strong>
+            {t('components.BingoGame.level')} <strong>{bingoLevels[level]}</strong>
           </span>
         </div>
         <div className="bingo-print-actions">
@@ -185,17 +185,21 @@ export default function BingoGame({ onScanner }: { onScanner: () => void }) {
             onClick={() => void print()}
           >
             {busy ? <LoaderCircle className="spin" size={17} /> : <Download size={17} />}{' '}
-            {busy ? 'Przygotowuję plansze…' : 'Pobierz plansze PDF'}
+            {busy
+              ? t('components.BingoGame.preparingBoards')
+              : t('components.BingoGame.downloadBoardPDF')}
           </button>
           <button
             className="quiet"
             disabled={busy || !Number.isInteger(count) || count < 1 || count > 24}
             onClick={() => void print(true)}
           >
-            <Printer size={17} /> Otwórz do druku
+            <Printer size={17} /> {t('components.BingoGame.openForPrinting')}
           </button>
         </div>
-        <p className="bingo-print-hint">Druk jednostronny · skala 100% · oszczędny kolor.</p>
+        <p className="bingo-print-hint">
+          {t('components.BingoGame.singlesidedPrinting100ScaleLightUse')}
+        </p>
       </details>
     </section>
   );

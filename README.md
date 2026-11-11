@@ -25,26 +25,36 @@
 
 Hiciarz łączy kreator kart, skaner QR i odtwarzacz w jednej aplikacji przeglądarkowej. Przygotuj swoją kolekcję piosenek, dobierz oprawę i wydrukuj talię. Podczas gry zeskanuj kartę, posłuchaj nagrania i spróbuj odgadnąć jego miejsce na muzycznej osi czasu.
 
-| Przygotuj                                                                                  | Nadaj charakter                                              | Zagraj                                                                              |
-| ------------------------------------------------------------------------------------------ | ------------------------------------------------------------ | ----------------------------------------------------------------------------------- |
-| Dodawaj i edytuj piosenki, wczytuj JSON lub CSV, korzystaj z przykładów i importu Spotify. | Wybierz motyw, wgraj własny rewers i pobierz dwustronny PDF. | Skanuj QR telefonem i steruj Spotify albo połącz się z odtwarzaczem w przeglądarce. |
+| Przygotuj                                                                                  | Nadaj charakter                                              | Zagraj                                                                               |
+| ------------------------------------------------------------------------------------------ | ------------------------------------------------------------ | ------------------------------------------------------------------------------------ |
+| Dodawaj i edytuj piosenki, wczytuj JSON lub CSV, korzystaj z przykładów i importu Spotify. | Wybierz motyw, wgraj własny rewers i pobierz dwustronny PDF. | Skanuj QR i słuchaj na tym samym urządzeniu, steruj Spotify albo połącz drugi ekran. |
 
 ## Pierwsza rozgrywka
 
 1. **[Otwórz Hiciarza](https://artifexet.github.io/Hiciarz/).** Na ekranie startowym wybierz **Skanuj i graj** albo **Twórz karty**.
 2. **Wybierz piosenki.** Zacznij od **Przykładowych playlist** lub przygotuj własną listę. Tytuł, wykonawcę i rok możesz poprawić przed drukiem.
 3. **Wydrukuj karty.** Wybierz **Pobierz / drukuj karty**. Pobierz PDF lub otwórz go do druku, a w podglądzie wybierz ikonę drukarki. Instrukcja pokazuje właściwą krawędź obrotu, format A4 i skalę 100%. Najpierw wykonaj próbę kalibracyjną przez **Ustawienia druku i wydruk próbny**. Po wydrukowaniu obu stron wytnij karty.
-4. **Wybierz sposób słuchania.** Połącz Spotify albo uruchom odtwarzacz na drugim urządzeniu — oba warianty opisano poniżej.
+4. **Wybierz sposób słuchania.** W skanerze wybierz **Na tym urządzeniu**, **Moje Spotify** albo **Drugi ekran** — warianty opisano poniżej.
 5. **Skanuj i zgaduj.** QR z karty wskazuje nagranie i motyw. Jeśli aparat udostępnia zoom, przybliżysz obraz suwakiem lub przyciskami − / +.
 
 ## Muzyka tam, gdzie gracie
 
-|                   | Spotify Connect                                                                   | Odtwarzacz w przeglądarce                                                                                               |
-| ----------------- | --------------------------------------------------------------------------------- | ----------------------------------------------------------------------------------------------------------------------- |
-| **Przygotowanie** | Wybierz **Skanuj i graj → Moje Spotify**, zaloguj się i wskaż aktywne urządzenie. | Na urządzeniu do odtwarzania otwórz **Odtwarzacz → Na tym urządzeniu → Połącz skaner**.                                 |
-| **Skanowanie**    | Włącz aparat na telefonie i skanuj karty ze źródłem Spotify.                      | Telefonem zeskanuj QR parowania, a następnie kody z kart.                                                               |
-| **Dźwięk**        | Muzyka gra na wybranym urządzeniu Spotify.                                        | Spotify lub YouTube odtwarza na połączonym urządzeniu; wyjście dźwięku wybierasz w systemie.                            |
-| **Wymagania**     | Spotify Premium i urządzenie dostępne dla zalogowanego konta.                     | Nagranie dostępne do osadzenia. Spotify może odtwarzać tylko podgląd; przeglądarka może wymagać kliknięcia odtwarzania. |
+|                   | Na tym urządzeniu                                                                                                         | Spotify Connect                                                                   | Drugi ekran                                                                             |
+| ----------------- | ------------------------------------------------------------------------------------------------------------------------- | --------------------------------------------------------------------------------- | --------------------------------------------------------------------------------------- |
+| **Przygotowanie** | Wybierz **Skanuj i graj → Na tym urządzeniu**.                                                                            | Wybierz **Skanuj i graj → Moje Spotify**, zaloguj się i wskaż aktywne urządzenie. | Na urządzeniu do odtwarzania otwórz **Odtwarzacz → Na tym urządzeniu → Połącz skaner**. |
+| **Skanowanie**    | Włącz aparat i zeskanuj kartę; parowanie nie jest potrzebne.                                                              | Włącz aparat na telefonie i skanuj karty ze źródłem Spotify.                      | Wybierz **Drugi ekran**, zeskanuj QR parowania, a następnie kody z kart.                |
+| **Dźwięk**        | Spotify lub YouTube odtwarza bezpośrednio w widoku skanera.                                                               | Muzyka gra na wybranym urządzeniu Spotify.                                        | Spotify lub YouTube odtwarza na połączonym urządzeniu.                                  |
+| **Wymagania**     | Nagranie dostępne do osadzenia. Spotify może udostępnić tylko fragment; przeglądarka może wymagać kliknięcia odtwarzania. | Spotify Premium i urządzenie dostępne dla zalogowanego konta.                     | Nagranie dostępne do osadzenia; oba urządzenia pozostają otwarte i mają internet.       |
+
+W trybie **Na tym urządzeniu** odtwarzacz dostawcy może pokazać tytuł i okładkę. Jeśli zgadujecie nagranie, skorzystajcie ze Spotify Connect lub drugiego ekranu. Wyjście dźwięku lokalnego wybierasz w ustawieniach systemu, np. podłączając głośnik Bluetooth.
+
+Po skanie możesz zatrzymać lub wznowić odtwarzanie, zmienić źródło dostępne na karcie i wybrać **Skanuj kolejną kartę**. Powrót do aparatu zatrzymuje lokalny odtwarzacz.
+
+## Język aplikacji
+
+Hiciarz obsługuje **polski i angielski**. Zmienisz język polem **Język / Language** w **Ustawieniach** (ikona suwaków u góry lub menu na telefonie); wybór jest zapamiętywany w tej przeglądarce. Przy pierwszym uruchomieniu aplikacja wybiera obsługiwany język przeglądarki, a jeśli go nie znajdzie — polski.
+
+Zmiana obejmuje interfejs, komunikaty i napisy generowane na kartach oraz planszach PDF. Tytuły utworów, wykonawcy, nazwy talii i własne odpowiedzi pozostają treścią wpisaną przez użytkownika. Słowniki JSON i zasady rozbudowy opisano w [dokumentacji technicznej](docs/configuration.md#tłumaczenia-json).
 
 ## Połącz swoje Spotify
 
@@ -76,7 +86,16 @@ Opcjonalne **Plansze do druku** są schowane pod rozwijanym nagłówkiem. PDF za
 
 ### Zgadnij film lub grę
 
-W kreatorze wybierz domyślny tryb nowych kart: **Zgadnij film** albo **Zgadnij grę**. W edytorze utworu wpisz tytuł produkcji w polu odpowiedzi i dodaj nagranie ze Spotify lub YouTube. Tryb istniejącej karty zmienisz w jej edytorze. Na skanerze po odczycie QR pojawi się właściwe pytanie, a odpowiedź sprawdzicie po odwróceniu wydrukowanej karty. Punkt otrzymuje osoba, która odgadnie film lub grę; przed rozpoczęciem ustalcie liczbę rund.
+W kreatorze wybierz **W co gramy? → Inne warianty → Zgadnij grę** lub **Zgadnij film**. Klasyczna oś czasu pozostaje głównym wariantem. Przy dodawaniu karty wskaż nazwę gry lub filmu w wyróżnionym polu odpowiedzi, a następnie nagranie do odsłuchu. Rok opisuje nagranie; w tych wariantach zgadujecie tytuł gry lub filmu.
+
+Przygotowanie talii prowadzi przez **1. Utwory → 2. Wygląd → 3. Druk**. Przyciski **Dalej** i **Wróć** pozwalają przechodzić po kolei, a pasek etapów wrócić do dowolnego miejsca. Zmiana wariantu talii dotyczy nowych kart; już dodane zachowują swój wariant, który zmienisz w edytorze konkretnej karty.
+
+W **Wybierz gotową talię** są dwa zestawy do zgadywania gier:
+
+- **Oryginalne nagrania: 294 karty z 93 gier.** Rozpoznawalne motywy z oryginalnych soundtracków, m.in. DOOM, Skyrim, Final Fantasy, Wiedźmin, Minecraft, Portal, Halo, NieR i Persona. Nagrania z jednej gry są rozdzielone innymi grami.
+- **Symfonicznie: 34 karty z 34 gier.** London Philharmonic Orchestra, z podanym przykładem z Assassin’s Creed: Revelations jako pierwszą kartą.
+
+Każda karta ma gotową odpowiedź i własny link Spotify. Dane pochodzą z metadanych konkretnych nagrań; spisy źródeł znajdziesz w [dokumentacji przykładów](examples/playlists/README.md). Dostępność odsłuchu zależy od konta i regionu Spotify. Po odczycie QR skaner pokazuje pytanie o grę, a odpowiedź sprawdzicie po odwróceniu wydrukowanej karty. Punkt otrzymuje osoba, która odgadnie grę lub film; przed rozpoczęciem ustalcie liczbę rund.
 
 JSON i CSV obsługują pola `gameMode` (`music`, `movie`, `game`) oraz `answer` (wymagane dla filmu i gry). Import Spotify dostarcza dane nagrania; tytuł produkcji uzupełnia się ręcznie. Odpowiedź pozostaje w projekcie i na stronie odpowiedzi PDF — QR jej nie zawiera. Rok nagrania jest zachowany w projekcie, ale na kartach tych trybów zastępuje go etykieta FILM lub GRA. Starsze karty i talie nadal działają.
 

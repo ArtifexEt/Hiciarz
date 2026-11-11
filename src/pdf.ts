@@ -1,3 +1,4 @@
+import { t as translate, createTranslator } from './i18n';
 import { jsPDF } from 'jspdf';
 import { qrImage } from './qr';
 import { drawFront } from './front';
@@ -8,7 +9,7 @@ let fontPromise: Promise<string> | undefined;
 export function pdfFont() {
   return (fontPromise ??= fetch(asset('fonts/NotoSans-Regular.ttf'))
     .then((r) => {
-      if (!r.ok) throw new Error('Nie udało się wczytać czcionki PDF.');
+      if (!r.ok) throw new Error(translate('pdf.fontFailed'));
       return r.arrayBuffer();
     })
     .then((b) => {
@@ -27,7 +28,7 @@ async function raster(url: string): Promise<string> {
       ctx.drawImage(image, 0, 0, 900, 900);
       resolve(c.toDataURL('image/jpeg', 0.92));
     };
-    image.onerror = () => reject(new Error('Nie udało się wczytać tła kart.'));
+    image.onerror = () => reject(new Error(translate('pdf.backgroundFailed')));
     image.src = url;
   });
 }
@@ -76,7 +77,8 @@ export async function buildPDF(
   base: string,
   options: PDFOptions = {},
 ): Promise<jsPDF> {
-  if (!songs.length) throw new Error('Wybierz co najmniej jedną kartę.');
+  const translate = createTranslator();
+  if (!songs.length) throw new Error(translate('pdf.chooseCards'));
   const checkAbort = () => options.signal?.throwIfAborted();
   const report = (phase: PDFProgress['phase'], completed: number, sides: number) =>
     options.onProgress?.({
@@ -105,7 +107,11 @@ export async function buildPDF(
     const sheet = songs.slice(start, start + 12);
     doc.setFontSize(8);
     doc.setTextColor('#777777');
-    doc.text(`${deck.name} / odpowiedzi / arkusz ${Math.floor(start / 12) + 1}`, 15, 15);
+    doc.text(
+      translate('pdf.frontSheet', { name: deck.name, sheet: Math.floor(start / 12) + 1 }),
+      15,
+      15,
+    );
     for (let i = 0; i < sheet.length; i++) {
       checkAbort();
       const s = sheet[i],
@@ -116,7 +122,11 @@ export async function buildPDF(
       doc.text('HICIARZ', x + 7, y + 8, { charSpace: 0.4 });
       doc.setFontSize(s.gameMode && s.gameMode !== 'music' ? 22 : 34);
       doc.text(
-        s.gameMode === 'movie' ? 'FILM' : s.gameMode === 'game' ? 'GRA' : String(s.year),
+        s.gameMode === 'movie'
+          ? translate('cards.film')
+          : s.gameMode === 'game'
+            ? translate('cards.game')
+            : String(s.year),
         x + 30,
         y + 22,
         { align: 'center' },
@@ -150,7 +160,10 @@ export async function buildPDF(
     doc.setFontSize(8);
     doc.setTextColor('#777777');
     doc.text(
-      `${deck.name} / QR / ${deck.print.edge === 'long' ? 'długa' : 'krótka'} krawędź / druk 100%`,
+      translate('pdf.backSheet', {
+        name: deck.name,
+        edge: translate('pdf.edge.' + deck.print.edge),
+      }),
       15,
       15,
     );
@@ -198,10 +211,10 @@ export async function buildPDF(
       doc.setFontSize(4.5);
       doc.text(
         s.gameMode === 'movie'
-          ? 'ZGADNIJ FILM'
+          ? translate('cards.guessFilm')
           : s.gameMode === 'game'
-            ? 'ZGADNIJ GRĘ'
-            : 'ZESKANUJ · POSŁUCHAJ · ZGADNIJ',
+            ? translate('cards.guessGame')
+            : translate('cards.scanListenGuess'),
         x + 30,
         y + 55.2,
         { align: 'center' },
@@ -216,9 +229,10 @@ export async function buildPDF(
   return doc;
 }
 export async function calibrationPDF(edge: 'long' | 'short') {
+  const translate = createTranslator();
   const d = new jsPDF({ unit: 'mm', format: 'a4' });
   d.setFontSize(12);
-  d.text('HICIARZ / A4 / 100% / duplex calibration', 15, 15);
+  d.text(translate('pdf.calibrationHeading'), 15, 15);
   for (let i = 0; i < 12; i++) {
     const x = 15 + (i % 3) * 60,
       y = 28 + Math.floor(i / 3) * 60;
@@ -229,7 +243,7 @@ export async function calibrationPDF(edge: 'long' | 'short') {
   }
   d.addPage();
   d.setFontSize(12);
-  d.text(`HICIARZ / ${edge} edge / back`, 15, 15);
+  d.text(translate('pdf.calibrationBack', { edge: translate('pdf.edge.' + edge) }), 15, 15);
   for (let i = 0; i < 12; i++) {
     const p = backPosition(i, edge),
       x = 15 + p.col * 60,

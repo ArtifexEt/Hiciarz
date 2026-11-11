@@ -1,0 +1,13 @@
+{
+  "examples.game-symphonic.name": "Guess the game — symphonic",
+  "examples.game-symphonic.description": "Game themes performed by the London Philharmonic Orchestra. Includes the supplied Assassin’s Creed: Revelations theme.",
+  "examples.game-symphonic.yearNote": "Years refer to Spotify releases of the orchestral arrangements, not game launches. Guess the game; the year is not the question.",
+  "examples.game-originals.name": "Guess the game — original recordings",
+  "examples.game-originals.description": "Recognizable themes and songs from original game soundtracks. Classics, major series and independent games.",
+  "examples.game-originals.yearNote": "Years come from soundtrack releases and may indicate a reissue. The answer is the game; the year is not the question.",
+  "examples.gallery.curatedOn": "Selection prepared on {{date}}. ",
+  "examples.gallery.sources": "Recording sources",
+  "examples.gallery.mixedAppend": "These cards use a different question from the current deck variant. Each keeps its own variant. Create a new deck to play with one question type.",
+  "examples.gallery.cardCount": "{{count}} cards",
+  "examples.catalog.sourceHttps": "The example source must be a valid public HTTPS URL."
+}

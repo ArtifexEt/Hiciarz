@@ -236,10 +236,15 @@ small {
   place-items: center;
   width: 38px;
   height: 38px;
-  background: var(--accent);
+  background: transparent;
   color: #202b1b;
   border-radius: 11px;
-  transform: rotate(-7deg);
+  overflow: hidden;
+}
+.brand-icon img {
+  display: block;
+  width: 100%;
+  height: 100%;
 }
 .brand-star {
   color: var(--accent);
@@ -1218,7 +1223,7 @@ main {
   font-size: 9px;
 }
 .prompt-copy {
-  margin: 16px 20px 18px;
+  margin: 16px 20px 4px;
   padding: 10px 12px;
   display: inline-flex;
   align-items: center;
@@ -1227,6 +1232,10 @@ main {
 }
 .prompt-copy svg {
   flex-shrink: 0;
+}
+.hint.prompt-copy-help {
+  margin: 0 32px 20px;
+  font-size: 11px;
 }
 .file-drop {
   margin: 0 22px 22px;
@@ -4089,6 +4098,16 @@ label.check-line {
   max-width: 410px;
   margin: 12px auto 0;
 }
+.scanner-local-player {
+  margin-top: 16px;
+  min-width: 0;
+}
+.scanner-local-player + .playing-card .playing-cover {
+  display: none;
+}
+.mode-scanner .output-switch {
+  flex-wrap: wrap;
+}
 .playing-cover {
   position: relative;
   width: clamp(150px, 40vw, 230px);
@@ -4512,4 +4531,253 @@ label.check-line {
 }
 .music-card.front .card-bottomline > span:last-child {
   font-size: inherit;
+}
+
+.language-setting {
+  margin-bottom: 20px;
+}
+.file-drop.is-dragging,
+.upload-panel.is-dragging {
+  outline: 2px solid var(--accent, #b18541);
+  outline-offset: 3px;
+  background: var(--soft);
+}
+.file-drop {
+  flex-wrap: wrap;
+}
+.file-drop > div {
+  flex: 1;
+  min-width: 150px;
+}
+.file-drop span {
+  display: block;
+}
+
+.creator-steps {
+  padding: 18px 22px;
+  border-bottom: 1px solid var(--line);
+  scroll-margin-top: 20px;
+}
+.creator-steps ol {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: flex;
+  align-items: center;
+}
+.creator-steps li {
+  display: flex;
+  align-items: center;
+  flex: 1;
+  min-width: 0;
+  gap: 6px;
+}
+.creator-steps li:last-child {
+  flex: 0.85;
+}
+.creator-steps li > svg {
+  flex-shrink: 0;
+  color: var(--muted);
+}
+.creator-steps button {
+  display: flex;
+  align-items: center;
+  gap: 9px;
+  border-radius: 8px;
+  width: 100%;
+  padding: 8px;
+  text-align: left;
+  color: var(--muted);
+  background: transparent;
+  font-size: 12px;
+}
+.creator-steps button[aria-current='step'] {
+  background: var(--soft);
+  color: var(--ink);
+  font-weight: 700;
+}
+.creator-step-number {
+  display: grid;
+  place-items: center;
+  width: 27px;
+  height: 27px;
+  flex-shrink: 0;
+  border: 1px solid var(--line);
+  border-radius: 7px;
+  font:
+    600 12px ui-monospace,
+    monospace;
+}
+[aria-current='step'] .creator-step-number {
+  background: var(--accent);
+  color: var(--accent-ink);
+  border-color: transparent;
+}
+.creator-game-choice {
+  padding: 22px 22px 0;
+}
+.game-variants {
+  border: 0;
+  padding: 0;
+  margin: 0;
+  min-width: 0;
+}
+.game-variants legend {
+  padding: 0;
+  font-weight: 700;
+  font-size: 15px;
+  margin-bottom: 12px;
+}
+.game-variants .game-variant {
+  display: flex;
+  flex-direction: row;
+  align-items: center;
+  gap: 12px;
+  cursor: pointer;
+  padding: 15px;
+  margin: 0;
+  border: 1px solid var(--line);
+  border-radius: 10px;
+  background: var(--surface);
+  color: var(--ink);
+}
+.game-variant.is-selected {
+  background: var(--soft);
+  border-color: var(--accent-ink);
+}
+.game-variant:has(input:focus-visible) {
+  outline: 2px solid var(--accent-ink);
+  outline-offset: 3px;
+}
+.game-variant input {
+  accent-color: var(--accent-ink);
+  margin: 0;
+  flex-shrink: 0;
+}
+.game-variant > svg {
+  flex-shrink: 0;
+}
+.game-variant > span {
+  display: grid;
+  gap: 4px;
+}
+.game-variant strong {
+  font-size: 13px;
+}
+.game-variant small {
+  color: var(--muted);
+  font-weight: 400;
+  line-height: 1.5;
+  font-size: 11px;
+}
+.game-variants details > summary {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  width: fit-content;
+  padding: 14px 0 10px;
+  cursor: pointer;
+  list-style: none;
+  font-size: 12px;
+}
+.game-variants details > summary::-webkit-details-marker {
+  display: none;
+}
+.game-variants details > summary strong {
+  font-size: 11px;
+  color: var(--muted);
+}
+.game-variants details[open] > summary > svg {
+  transform: rotate(180deg);
+}
+.game-variation-options {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 10px;
+}
+.game-variants.is-compact {
+  margin-bottom: 20px;
+}
+.game-variants.is-compact .game-variant {
+  padding: 12px;
+  gap: 7px;
+  flex-wrap: wrap;
+}
+.game-variants.is-compact .game-variation-options {
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+}
+.game-variants.is-compact .game-variant strong {
+  font-size: 11px;
+}
+.game-variants.is-compact .game-variant > span {
+  width: 100%;
+}
+.form-grid .answer-entry {
+  grid-column: 1 / -1;
+  padding: 16px;
+  border-radius: 10px;
+  background: var(--soft);
+  color: var(--ink);
+  font-size: 13px;
+}
+.creator-navigation {
+  border-top: 1px solid var(--line);
+  padding: 20px 22px;
+  display: flex;
+  gap: 12px;
+  align-items: center;
+  justify-content: space-between;
+}
+.creator-navigation > .primary:last-child {
+  margin-left: auto;
+}
+.creator-navigation p {
+  color: var(--muted);
+  font-size: 11px;
+  max-width: 260px;
+}
+.mode-editor .song-table {
+  max-height: 560px;
+  overflow-y: auto;
+  scrollbar-gutter: stable;
+}
+.mode-editor .song-table .table-head {
+  position: sticky;
+  top: 0;
+  z-index: 1;
+}
+.mode-editor .song-row button,
+.mode-editor .song-row input {
+  scroll-margin-top: 44px;
+}
+@media (max-width: 700px) {
+  .creator-steps {
+    padding: 12px;
+  }
+  .creator-steps button {
+    font-size: 11px;
+    gap: 6px;
+    padding: 6px 4px;
+  }
+  .creator-steps li {
+    gap: 2px;
+  }
+  .creator-step-number {
+    width: 23px;
+    height: 23px;
+  }
+  .creator-game-choice {
+    padding: 18px 17px 0;
+  }
+  .game-variation-options {
+    grid-template-columns: 1fr;
+  }
+  .creator-navigation {
+    padding: 17px;
+    flex-wrap: wrap;
+  }
+  .creator-navigation .primary,
+  .creator-navigation .secondary {
+    flex: 1;
+  }
 }

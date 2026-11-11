@@ -1,3 +1,4 @@
+import { t as translate, useTranslation } from './i18n';
 import { useEffect, useRef, useState } from 'react';
 import Peer, { type DataConnection } from 'peerjs';
 import { readQR, type Card } from './model';
@@ -17,7 +18,8 @@ export function useConnection(
   onCommand: (c: Command) => void,
   onPlayback?: (feedback: PlaybackFeedback) => void,
 ) {
-  const [status, setStatus] = useState('Rozłączono'),
+  useTranslation();
+  const [status, setStatus] = useState('connection.disconnected'),
     [connected, setConnected] = useState(false),
     [pairUrl, setPairUrl] = useState(''),
     [ack, setAck] = useState('');
@@ -43,7 +45,7 @@ export function useConnection(
   function disconnect() {
     clear();
     token.current = '';
-    setStatus('Rozłączono');
+    setStatus('connection.disconnected');
   }
   useEffect(
     () => () => {
@@ -59,7 +61,7 @@ export function useConnection(
     const t = setInterval(() => {
       if (Date.now() - lastPong.current > 18000) {
         disconnect();
-        setStatus('Utracono połączenie. Sparuj urządzenia ponownie.');
+        setStatus('connection.lost');
         return;
       }
       connection.current?.send({
@@ -76,19 +78,19 @@ export function useConnection(
       if (connection.current !== conn) return;
       clearTimeout(timer.current);
       setConnected(true);
-      setStatus('Połączono');
+      setStatus('connection.connected');
       lastPong.current = Date.now();
     });
     conn.on('close', () => {
       if (connection.current === conn) {
         setConnected(false);
         connection.current = null;
-        setStatus('Urządzenie rozłączone. Sparuj ponownie.');
+        setStatus('connection.deviceDisconnected');
       }
     });
     conn.on('error', () => {
       setConnected(false);
-      setStatus('Błąd połączenia. Spróbuj ponownie.');
+      setStatus('connection.error');
     });
     conn.on('data', (raw) => {
       const p = raw as Packet;
@@ -111,7 +113,7 @@ export function useConnection(
         return;
       }
       if (p.type === 'ack') {
-        setAck('Polecenie dotarło do odtwarzacza');
+        setAck('connection.acknowledged');
         return;
       }
       if (seen.current.has(p.id)) return;
@@ -128,7 +130,7 @@ export function useConnection(
         else return;
         conn.send({ v: 1, type: 'ack', id: p.id, token: token.current });
       } catch {
-        setStatus('Odrzucono nieprawidłową kartę.');
+        setStatus('connection.invalidCard');
       }
     });
   }
@@ -148,21 +150,21 @@ export function useConnection(
     peer.current = p;
     p.on('error', () => {
       setConnected(false);
-      setStatus('Nie udało się połączyć urządzeń. Sprawdź internet i spróbuj ponownie.');
+      setStatus('connection.failed');
     });
     p.on('disconnected', () => {
-      if (!connection.current?.open) setStatus('Brak połączenia z usługą parowania.');
+      if (!connection.current?.open) setStatus('connection.serviceUnavailable');
     });
     return p;
   }
   function host() {
     clear();
     token.current = crypto.randomUUID().replace(/-/g, '');
-    setStatus('Przygotowuję kod parowania…');
+    setStatus('connection.preparing');
     const p = createPeer();
     p.on('open', (id) => {
       setPairUrl(location.origin + location.pathname + `#pair=${id}&token=${token.current}`);
-      setStatus('Czekam na skaner');
+      setStatus('connection.waiting');
     });
     p.on('connection', (conn) => {
       if (conn.metadata?.token !== token.current || connection.current?.open) {
@@ -176,11 +178,11 @@ export function useConnection(
   function join(id: string, secret: string) {
     clear();
     token.current = secret;
-    setStatus('Łączę z odtwarzaczem…');
+    setStatus('connection.joining');
     const p = createPeer();
     timer.current = setTimeout(() => {
       clear();
-      setStatus('Nie udało się połączyć. Wygeneruj nowy QR w odtwarzaczu.');
+      setStatus('connection.timeout');
     }, 20000);
     p.on('open', () => {
       const conn = p.connect(id, { reliable: true, metadata: { token: secret } });
@@ -190,10 +192,10 @@ export function useConnection(
   }
   function send(card?: Card, command?: Command) {
     if (!connection.current?.open) {
-      setStatus('Najpierw zeskanuj QR parowania z odtwarzacza.');
+      setStatus('connection.pairFirst');
       return false;
     }
-    setAck('Wysyłam polecenie…');
+    setAck('connection.sending');
     connection.current.send({
       v: 1,
       type: card ? 'card' : 'command',
@@ -214,5 +216,15 @@ export function useConnection(
         playback,
       });
   }
-  return { status, connected, pairUrl, ack, host, join, disconnect, send, reportPlayback };
+  return {
+    status: translate(status),
+    connected,
+    pairUrl,
+    ack: ack ? translate(ack) : '',
+    host,
+    join,
+    disconnect,
+    send,
+    reportPlayback,
+  };
 }

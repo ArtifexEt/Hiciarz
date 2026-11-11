@@ -1,3 +1,4 @@
+import { t, useTranslation } from './i18n';
 import { useEffect, useState, type CSSProperties } from 'react';
 import { ArrowRight, Grid3X3, Headphones, LayoutGrid, RotateCcw, ScanLine } from 'lucide-react';
 import { type Deck, type Song, type Theme, cardUrl, defaultPrint, themes } from './model';
@@ -32,6 +33,7 @@ const exampleCards: Song[] = [
 ];
 
 function AnswerCard({ song, deck, side = false }: { song: Song; deck: Deck; side?: boolean }) {
+  useTranslation();
   return (
     <div
       className={'home-paper-card home-answer' + (side ? ' home-side-card' : '')}
@@ -49,12 +51,13 @@ function AnswerCard({ song, deck, side = false }: { song: Song; deck: Deck; side
 }
 
 function ExampleRound({ theme }: { theme: Theme }) {
+  useTranslation();
   const [revealed, setRevealed] = useState(false);
   const [code, setCode] = useState('');
   const deck: Deck = {
     version: 1,
     id: 'home-example',
-    name: 'Przykładowe karty',
+    name: t('components.Landing.sampleCards'),
     theme,
     songs: exampleCards,
     print: defaultPrint,
@@ -67,21 +70,27 @@ function ExampleRound({ theme }: { theme: Theme }) {
   return (
     <figure className="home-example" aria-labelledby="home-example-title">
       <div className="home-example-heading">
-        <span>Przykładowa runda</span>
-        <span>Karty 60 × 60 mm</span>
+        <span>{t('components.Landing.aSampleRound')}</span>
+        <span>{t('components.Landing.6060MmCards')}</span>
       </div>
       <p id="home-example-title" className="home-example-title">
-        Każdy hit ma swoje miejsce.
+        {t('components.Landing.everyHitHasItsPlace')}
       </p>
       <div className="home-demo-cards">
-        <div className="home-known-card" role="img" aria-label="Dancing Queen, ABBA, rok 1976">
+        <div
+          className="home-known-card"
+          role="img"
+          aria-label={t('components.Landing.dancingQueenABBAYear1976')}
+        >
           <AnswerCard song={exampleCards[0]} deck={deck} side />
         </div>
         <button
           className="home-flip-card"
           type="button"
           aria-label={
-            revealed ? 'Zakryj odpowiedź przykładowej karty' : 'Odkryj rok przykładowej karty'
+            revealed
+              ? t('components.Landing.hideTheSampleCardsAnswer')
+              : t('components.Landing.revealTheSampleCardsYear')
           }
           aria-describedby="home-example-result"
           onClick={() => setRevealed(!revealed)}
@@ -102,32 +111,37 @@ function ExampleRound({ theme }: { theme: Theme }) {
               >
                 <span className="home-back-brand">HICIARZ</span>
                 <span className="home-sample-qr">{code && <img src={code} alt="" />}</span>
-                <span className="home-back-caption">SŁUCHAJ · ZGADUJ</span>
+                <span className="home-back-caption">{t('components.Landing.lISTENGUESS')}</span>
               </span>
             )}
           </span>
           <span className="home-flip-label">
             <RotateCcw size={14} aria-hidden="true" />
-            {revealed ? 'Zakryj odpowiedź' : 'Odkryj rok'}
+            {revealed ? t('components.Landing.hideAnswer') : t('components.Landing.revealYear')}
           </span>
         </button>
-        <div className="home-known-card" role="img" aria-label="Take on Me, a-ha, rok 1985">
+        <div
+          className="home-known-card"
+          role="img"
+          aria-label={t('components.Landing.takeOnMeAhaYear1985')}
+        >
           <AnswerCard song={exampleCards[2]} deck={deck} side />
         </div>
       </div>
       <div className="home-time-rule" aria-hidden="true">
-        <span>Wcześniej</span>
+        <span>{t('components.Landing.earlier')}</span>
         <span />
-        <span>Później</span>
+        <span>{t('components.Landing.later')}</span>
       </div>
       <figcaption id="home-example-result" aria-live="polite" aria-atomic="true">
         {revealed ? (
           <>
-            <strong>1984.</strong> „Last Christmas” pasuje między 1976 a 1985.
+            <strong>1984.</strong> {t('components.Landing.lastChristmasFitsBetween1976And')}
           </>
         ) : (
           <>
-            Rok jest po drugiej stronie. <strong>Odwróć środkową kartę.</strong>
+            {t('components.Landing.theYearIsOnTheOther')}{' '}
+            <strong>{t('components.Landing.flipTheMiddleCard')}</strong>
           </>
         )}
       </figcaption>
@@ -142,36 +156,36 @@ export default function Landing({
   onChoose: (mode: 'editor' | 'scanner' | 'player' | 'bingo') => void;
   theme?: Theme;
 }) {
+  useTranslation();
   const activeTheme = themes.includes(theme) ? theme : 'classic';
   return (
     <div className="home-landing">
       <section className="home-hero" aria-labelledby="home-title">
         <div className="home-intro">
-          <p className="home-kicker">Gra muzyczna z własnymi kartami</p>
+          <p className="home-kicker">{t('components.Landing.aMusicGameWithYourOwn')}</p>
           <h1 id="home-title">
-            Znasz ten numer.
+            {t('components.Landing.youKnowThisSong')}
             <br />
-            <em>A który to rok?</em>
+            <em>{t('components.Landing.butWhichYearWasIt')}</em>
           </h1>
-          <p className="home-description">
-            Skanuj karty, słuchaj piosenek i układaj je na osi czasu. Swoją talię przygotujesz w
-            kreatorze.
-          </p>
-          <div className="home-actions" role="group" aria-label="Wybierz, od czego zaczynasz">
+          <p className="home-description">{t('components.Landing.scanCardsListenToSongsAnd')}</p>
+          <div
+            className="home-actions"
+            role="group"
+            aria-label={t('components.Landing.chooseWhereToStart')}
+          >
             <button className="home-action home-action-play" onClick={() => onChoose('scanner')}>
               <ScanLine size={20} aria-hidden="true" />
-              Skanuj karty
+              {t('components.Landing.scanCards')}
               <ArrowRight size={18} aria-hidden="true" />
             </button>
             <button className="home-action home-action-create" onClick={() => onChoose('editor')}>
               <LayoutGrid size={19} aria-hidden="true" />
-              Twórz karty
+              {t('components.Landing.createCards')}
               <ArrowRight size={18} aria-hidden="true" />
             </button>
           </div>
-          <p className="home-start-hint">
-            Konto Spotify pozwala importować playlisty i sterować muzyką.
-          </p>
+          <p className="home-start-hint">{t('components.Landing.aSpotifyAccountLetsYouImport')}</p>
         </div>
         <ExampleRound theme={activeTheme} />
       </section>
@@ -180,21 +194,21 @@ export default function Landing({
         <div>
           <Grid3X3 size={30} aria-hidden="true" />
           <div>
-            <h2 id="home-bingo-title">A może muzyczne Bingo?</h2>
-            <p>Losujcie kategorie, zgadujcie wspólnie i zbierajcie pola na planszy.</p>
+            <h2 id="home-bingo-title">{t('components.Landing.howAboutMusicBingo')}</h2>
+            <p>{t('components.Landing.drawCategoriesGuessTogetherAndMark')}</p>
           </div>
         </div>
         <button onClick={() => onChoose('bingo')}>
-          Zagraj w Bingo <ArrowRight size={18} aria-hidden="true" />
+          {t('components.Landing.playBingo')} <ArrowRight size={18} aria-hidden="true" />
         </button>
       </section>
       <section className="home-rules" aria-labelledby="home-rules-title">
         <div className="home-section-heading">
-          <p className="home-kicker">Jak gramy</p>
+          <p className="home-kicker">{t('components.Landing.howToPlay')}</p>
           <h2 id="home-rules-title">
-            Posłuchaj.
+            {t('components.Landing.listen')}
             <br />
-            Ułóż. Sprawdź.
+            {t('components.Landing.placeCheck')}
           </h2>
         </div>
         <ol>
@@ -203,10 +217,8 @@ export default function Landing({
               01
             </span>
             <div>
-              <h3>Zeskanuj kartę</h3>
-              <p>
-                Połącz muzykę i skieruj aparat na kod QR. Utwór uruchomi się na wybranym urządzeniu.
-              </p>
+              <h3>{t('components.Landing.scanACard')}</h3>
+              <p>{t('components.Landing.connectYourMusicAndPointThe')}</p>
             </div>
           </li>
           <li>
@@ -214,10 +226,8 @@ export default function Landing({
               02
             </span>
             <div>
-              <h3>Znajdź miejsce na osi czasu</h3>
-              <p>
-                Kiedy ukazała się ta piosenka? Połóż kartę między utworami, których lata już znacie.
-              </p>
+              <h3>{t('components.Landing.findItsPlaceOnTheTimeline')}</h3>
+              <p>{t('components.Landing.whenWasThisSongReleasedPlace')}</p>
             </div>
           </li>
           <li>
@@ -225,8 +235,8 @@ export default function Landing({
               03
             </span>
             <div>
-              <h3>Odwróć i sprawdź</h3>
-              <p>Rok, wykonawca i tytuł są po drugiej stronie. Teraz kolej na następny hit.</p>
+              <h3>{t('components.Landing.flipAndCheck')}</h3>
+              <p>{t('components.Landing.theYearArtistAndTitleAre')}</p>
             </div>
           </li>
         </ol>
@@ -234,38 +244,30 @@ export default function Landing({
 
       <section className="home-questions" aria-labelledby="home-questions-title">
         <div className="home-section-heading">
-          <p className="home-kicker">Przed pierwszą rundą</p>
-          <h2 id="home-questions-title">Warto wiedzieć</h2>
+          <p className="home-kicker">{t('components.Landing.beforeYourFirstRound')}</p>
+          <h2 id="home-questions-title">{t('components.Landing.goodToKnow')}</h2>
         </div>
         <div className="home-answers">
           <details>
             <summary>
-              Skąd wziąć karty?<span aria-hidden="true">+</span>
+              {t('components.Landing.whereDoIGetCards')}
+              <span aria-hidden="true">+</span>
             </summary>
-            <p>
-              W kreatorze wybierzesz przykładową playlistę, dodasz własne piosenki lub wczytasz
-              plik. Potem dobierzesz wygląd i pobierzesz PDF do druku dwustronnego. Tytuły,
-              wykonawców i lata możesz poprawić przed wydrukiem.
-            </p>
+            <p>{t('components.Landing.inTheEditorChooseASample')}</p>
           </details>
           <details>
             <summary>
-              Do czego potrzebne jest konto Spotify?<span aria-hidden="true">+</span>
+              {t('components.Landing.whatIsASpotifyAccountFor')}
+              <span aria-hidden="true">+</span>
             </summary>
-            <p>
-              Połącz konto Spotify, aby importować swoje playlisty i sterować muzyką na telefonie,
-              komputerze lub głośniku. Do odtwarzania przez Spotify Connect potrzebujesz konta
-              Premium.
-            </p>
+            <p>{t('components.Landing.connectSpotifyToImportYourPlaylists')}</p>
           </details>
           <details>
             <summary>
-              Czy telefon musi odtwarzać muzykę?<span aria-hidden="true">+</span>
+              {t('components.Landing.doesThePhoneHaveToPlay')}
+              <span aria-hidden="true">+</span>
             </summary>
-            <p>
-              Może sterować Twoim Spotify albo wysyłać karty do odtwarzacza Hiciarza otwartego na
-              drugim urządzeniu. Drugi ekran połączysz z telefonem przez zeskanowanie kodu QR.
-            </p>
+            <p>{t('components.Landing.itCanControlSpotifyPlayMusic')}</p>
           </details>
         </div>
       </section>
@@ -274,12 +276,12 @@ export default function Landing({
         <div>
           <Headphones size={22} aria-hidden="true" />
           <p>
-            <strong>To urządzenie ma odtwarzać muzykę?</strong>
-            <span>Otwórz odtwarzacz i połącz go z telefonem przez QR.</span>
+            <strong>{t('components.Landing.shouldThisDevicePlayTheMusic')}</strong>
+            <span>{t('components.Landing.openThePlayerAndPairIt')}</span>
           </p>
         </div>
         <button onClick={() => onChoose('player')}>
-          Otwórz odtwarzacz
+          {t('components.Landing.openPlayer')}
           <ArrowRight size={18} aria-hidden="true" />
         </button>
       </div>

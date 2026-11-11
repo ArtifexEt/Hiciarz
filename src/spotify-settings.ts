@@ -1,3 +1,4 @@
+import { t as translate } from './i18n';
 const clientKey = 'hiciarz-spotify-client-id';
 const guideKey = 'hiciarz-spotify-guide';
 export const spotifyAccountEvent = 'hiciarz-spotify-account';
@@ -18,8 +19,7 @@ export const needsSpotifySetup = () =>
 
 export function validateSpotifyClientId(raw: string) {
   const value = raw.trim();
-  if (!/^[a-f0-9]{32}$/.test(value))
-    throw new Error('Wklej Client ID z panelu Spotify: 32 małe litery a–f i cyfry.');
+  if (!/^[a-f0-9]{32}$/.test(value)) throw new Error(translate('spotify.invalidClientId'));
   return value;
 }
 export function acknowledgeSpotifySetup() {

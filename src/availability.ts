@@ -1,3 +1,4 @@
+import { t as translate } from './i18n';
 import type { Song } from './model';
 export type SourceCheck = {
   songId: string;
@@ -41,17 +42,17 @@ export async function checkSources(
           state,
           message:
             state === 'metadata'
-              ? 'Metadane dostępne'
+              ? translate('availability.metadata')
               : state === 'unavailable'
-                ? 'Nie znaleziono materiału'
-                : 'Serwis nie potwierdził dostępności',
+                ? translate('availability.unavailable')
+                : translate('availability.unknown'),
         });
       } catch {
         results.push({
           songId: song.id,
           source,
           state: 'unknown',
-          message: 'Brak odpowiedzi lub przeglądarka blokuje sprawdzenie',
+          message: translate('availability.noResponse'),
         });
       }
       onProgress(results.length);

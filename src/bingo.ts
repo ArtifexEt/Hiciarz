@@ -1,58 +1,119 @@
+import { t as translate, localizedRecord } from './i18n';
 export type BingoLevel = 'beginner' | 'expert';
-export const bingoLevels = { beginner: 'Na dobry początek', expert: 'Dla znawców' };
+export const bingoLevels = localizedRecord(['beginner', 'expert'] as const, 'bingo.levels.');
 export const bingoCategories = {
   beginner: [
     {
-      name: 'Zespół czy solista?',
-      short: 'Zespół / solo',
-      hint: 'Czy słyszycie solistę, czy zespół? Duety i gościnne występy liczymy jako zespół.',
+      get name() {
+        return translate('bingo.categories.beginner.0.name');
+      },
+      get short() {
+        return translate('bingo.categories.beginner.0.short');
+      },
+      get hint() {
+        return translate('bingo.categories.beginner.0.hint');
+      },
     },
     {
-      name: 'Przed rokiem 2000?',
-      short: 'Przed 2000',
-      hint: 'Tak: do 1999 włącznie. Nie: od 2000 roku.',
+      get name() {
+        return translate('bingo.categories.beginner.1.name');
+      },
+      get short() {
+        return translate('bingo.categories.beginner.1.short');
+      },
+      get hint() {
+        return translate('bingo.categories.beginner.1.hint');
+      },
     },
     {
-      name: 'Rok z dokładnością ±4',
-      short: 'Rok ±4',
-      hint: 'Podaj rok wydania. Pomyłka o najwyżej 4 lata daje punkt.',
+      get name() {
+        return translate('bingo.categories.beginner.2.name');
+      },
+      get short() {
+        return translate('bingo.categories.beginner.2.short');
+      },
+      get hint() {
+        return translate('bingo.categories.beginner.2.hint');
+      },
     },
     {
-      name: 'Z jakiej dekady?',
-      short: 'Dekada',
-      hint: 'Zgadnij dekadę, np. lata 80. albo lata 2000.',
+      get name() {
+        return translate('bingo.categories.beginner.3.name');
+      },
+      get short() {
+        return translate('bingo.categories.beginner.3.short');
+      },
+      get hint() {
+        return translate('bingo.categories.beginner.3.hint');
+      },
     },
     {
-      name: 'Rok z dokładnością ±2',
-      short: 'Rok ±2',
-      hint: 'Podaj rok wydania. Pomyłka o najwyżej 2 lata daje punkt.',
+      get name() {
+        return translate('bingo.categories.beginner.4.name');
+      },
+      get short() {
+        return translate('bingo.categories.beginner.4.short');
+      },
+      get hint() {
+        return translate('bingo.categories.beginner.4.hint');
+      },
     },
   ],
   expert: [
     {
-      name: 'Jaki to tytuł?',
-      short: 'Tytuł',
-      hint: 'Podaj tytuł piosenki. Przy drobnej pomyłce zdecydujcie wspólnie, czy uznajecie odpowiedź.',
+      get name() {
+        return translate('bingo.categories.expert.0.name');
+      },
+      get short() {
+        return translate('bingo.categories.expert.0.short');
+      },
+      get hint() {
+        return translate('bingo.categories.expert.0.hint');
+      },
     },
     {
-      name: 'Dokładny rok',
-      short: 'Dokładny rok',
-      hint: 'Tym razem potrzebny jest dokładny rok wydania.',
+      get name() {
+        return translate('bingo.categories.expert.1.name');
+      },
+      get short() {
+        return translate('bingo.categories.expert.1.short');
+      },
+      get hint() {
+        return translate('bingo.categories.expert.1.hint');
+      },
     },
     {
-      name: 'Kto to wykonuje?',
-      short: 'Wykonawca',
-      hint: 'Podaj wykonawcę. Przy współpracy wystarczy główny artysta.',
+      get name() {
+        return translate('bingo.categories.expert.2.name');
+      },
+      get short() {
+        return translate('bingo.categories.expert.2.short');
+      },
+      get hint() {
+        return translate('bingo.categories.expert.2.hint');
+      },
     },
     {
-      name: 'Z jakiej dekady?',
-      short: 'Dekada',
-      hint: 'Zgadnij dekadę, np. lata 80. albo lata 2000.',
+      get name() {
+        return translate('bingo.categories.expert.3.name');
+      },
+      get short() {
+        return translate('bingo.categories.expert.3.short');
+      },
+      get hint() {
+        return translate('bingo.categories.expert.3.hint');
+      },
     },
     {
-      name: 'Rok z dokładnością ±3',
-      short: 'Rok ±3',
-      hint: 'Podaj rok wydania. Pomyłka o najwyżej 3 lata daje punkt.',
+      get name() {
+        return translate('bingo.categories.expert.4.name');
+      },
+      get short() {
+        return translate('bingo.categories.expert.4.short');
+      },
+      get hint() {
+        return translate('bingo.categories.expert.4.hint');
+      },
     },
   ],
 } as const;
@@ -68,7 +129,7 @@ export function randomBingoCategory(
 ): number {
   const value = random();
   if (!Number.isFinite(value) || value < 0 || value >= 1)
-    throw new Error('Nie udało się wylosować kategorii. Spróbuj ponownie.');
+    throw new Error(translate('bingo.randomFailed'));
   return Math.floor(value * 5);
 }
 /** Each paper board has five cells of each category, in a reproducible shuffled layout. */

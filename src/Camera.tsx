@@ -1,3 +1,4 @@
+import { displayTranslation, t, useTranslation } from './i18n';
 import { useEffect, useRef, useState } from 'react';
 import { BrowserQRCodeReader, type IScannerControls } from '@zxing/browser';
 import { Camera as CameraIcon, CameraOff, ScanLine } from 'lucide-react';
@@ -17,6 +18,7 @@ export default function Camera({
   ready?: boolean;
   purpose?: 'card' | 'setup';
 }) {
+  useTranslation();
   const video = useRef<HTMLVideoElement>(null),
     controls = useRef<IScannerControls | null>(null),
     handler = useRef(onScan),
@@ -69,10 +71,10 @@ export default function Camera({
         if (cancelled) return;
         setError(
           e.name === 'NotAllowedError'
-            ? 'Brak zgody na aparat. Zezwól na dostęp w ustawieniach przeglądarki.'
+            ? t('components.Camera.cameraAccessDeniedAllowAccessIn')
             : e.name === 'NotFoundError'
-              ? 'Nie znaleziono aparatu.'
-              : 'Nie udało się uruchomić aparatu. Sprawdź uprawnienia i połączenie HTTPS.',
+              ? t('components.Camera.noCameraFound')
+              : t('components.Camera.couldNotStartTheCameraCheck'),
         );
         setActive(false);
       });
@@ -88,7 +90,13 @@ export default function Camera({
   return (
     <div className="camera-wrap">
       <div className="camera-view">
-        <video ref={video} playsInline muted autoPlay aria-label="Podgląd aparatu" />
+        <video
+          ref={video}
+          playsInline
+          muted
+          autoPlay
+          aria-label={t('components.Camera.cameraPreview')}
+        />
         <div className="scan-frame">
           <i />
           <i />
@@ -101,27 +109,27 @@ export default function Camera({
             <ScanLine size={52} />
             <h3>
               {purpose === 'setup'
-                ? 'Zeskanuj konfigurację Spotify'
+                ? t('components.Camera.scanSpotifyConfiguration')
                 : ready && (!pairingRequired || paired)
-                  ? 'Zeskanuj muzyczną kartę'
-                  : 'Przygotuj skaner'}
+                  ? t('components.Camera.scanAMusicCard')
+                  : t('components.Camera.prepareTheScanner')}
             </h3>
             <p>
               {purpose === 'setup' ? (
-                'Skieruj aparat na QR konfiguracji wyświetlony na drugim urządzeniu.'
+                t('components.Camera.pointTheCameraAtTheConfiguration')
               ) : ready && (!pairingRequired || paired) ? (
-                'Skieruj aparat na QR z karty. Muzyka zagra automatycznie.'
+                t('components.Camera.pointTheCameraAtTheCards')
               ) : pairingRequired ? (
                 <>
-                  Najpierw QR parowania z odtwarzacza,
+                  {t('components.Camera.firstScanThePlayersPairingQR')}
                   <br />
-                  potem QR z muzycznej karty.
+                  {t('components.Camera.thenTheMusicCardsQRCode')}
                 </>
               ) : (
                 <>
-                  Połącz konto Spotify i wybierz urządzenie,
+                  {t('components.Camera.connectSpotifyAndChooseADevice')}
                   <br />
-                  potem zeskanuj QR z muzycznej karty.
+                  {t('components.Camera.thenScanTheMusicCardsQR')}
                 </>
               )}
             </p>
@@ -134,7 +142,10 @@ export default function Camera({
                 setActive(true);
               }}
             >
-              <CameraIcon size={18} /> {ready ? 'Włącz aparat' : 'Najpierw przygotuj Spotify'}
+              <CameraIcon size={18} />{' '}
+              {ready
+                ? t('components.Camera.startCamera')
+                : t('components.Camera.setUpSpotifyFirst')}
             </button>
           </div>
         )}
@@ -142,12 +153,12 @@ export default function Camera({
       {active && track && <CameraZoom track={track} />}
       {error && (
         <p className="error" role="alert">
-          {error}
+          {displayTranslation(error)}
         </p>
       )}
       {active && (
         <button className="quiet" onClick={() => setActive(false)}>
-          <CameraOff size={16} /> Wyłącz aparat
+          <CameraOff size={16} /> {t('components.Camera.stopCamera')}
         </button>
       )}
     </div>

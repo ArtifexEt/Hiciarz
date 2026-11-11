@@ -1,3 +1,4 @@
+import { displayTranslation, t, useTranslation, getLanguage } from './i18n';
 import { useEffect, useRef, useState } from 'react';
 import { Minus, Plus } from 'lucide-react';
 import {
@@ -8,6 +9,7 @@ import {
 } from './camera-zoom';
 
 export default function CameraZoom({ track }: { track: MediaStreamTrack }) {
+  useTranslation();
   const [range, setRange] = useState<ZoomRange | null>(null);
   const [value, setValue] = useState(1);
   const [error, setError] = useState('');
@@ -21,7 +23,7 @@ export default function CameraZoom({ track }: { track: MediaStreamTrack }) {
     const control = cameraZoomController(track, supported, setValue, () => {
       const current = cameraZoomRange(track);
       if (current) setValue(current.value);
-      setError('Nie udało się zmienić przybliżenia. Spróbuj ponownie lub przysuń kartę.');
+      setError(t('components.CameraZoom.couldNotChangeTheZoomTry'));
     });
     controller.current = control;
     return () => {
@@ -36,12 +38,13 @@ export default function CameraZoom({ track }: { track: MediaStreamTrack }) {
     setError('');
     controller.current?.request(zoom);
   };
-  const label = new Intl.NumberFormat('pl-PL', { maximumFractionDigits: 2 }).format(value) + '×';
+  const label =
+    new Intl.NumberFormat(getLanguage(), { maximumFractionDigits: 2 }).format(value) + '×';
   const increment = Math.max(range.step, (range.max - range.min) / 10);
   return (
     <div className="camera-zoom">
       <div className="camera-zoom-heading">
-        <label htmlFor="camera-zoom">Przybliżenie aparatu</label>
+        <label htmlFor="camera-zoom">{t('components.CameraZoom.cameraZoom')}</label>
         <output htmlFor="camera-zoom" aria-live="off">
           {label}
         </output>
@@ -49,7 +52,7 @@ export default function CameraZoom({ track }: { track: MediaStreamTrack }) {
       <div className="camera-zoom-controls">
         <button
           className="icon"
-          aria-label="Oddal obraz aparatu"
+          aria-label={t('components.CameraZoom.zoomCameraOut')}
           disabled={value <= range.min}
           onClick={() => change(value - increment)}
         >
@@ -67,7 +70,7 @@ export default function CameraZoom({ track }: { track: MediaStreamTrack }) {
         />
         <button
           className="icon"
-          aria-label="Przybliż obraz aparatu"
+          aria-label={t('components.CameraZoom.zoomCameraIn')}
           disabled={value >= range.max}
           onClick={() => change(value + increment)}
         >
@@ -76,7 +79,7 @@ export default function CameraZoom({ track }: { track: MediaStreamTrack }) {
       </div>
       {error && (
         <p className="error" role="alert">
-          {error}
+          {displayTranslation(error)}
         </p>
       )}
     </div>

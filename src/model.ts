@@ -1,3 +1,4 @@
+import { t as translate, localizedRecord } from './i18n';
 import Papa from 'papaparse';
 export const themes = [
   'classic',
@@ -11,31 +12,17 @@ export const themes = [
   'fish',
 ] as const;
 export type Theme = (typeof themes)[number];
-export const themeNames: Record<Theme, string> = {
-  classic: 'Klasyczny',
-  minimal: 'Minimalistyczny',
-  vinyl: 'Winylowy wieczór',
-  mixtape: 'Lato z kasetą',
-  memphis: 'Domówka 90s',
-  disco: 'Noc disco',
-  christmas: 'Świąteczna noc',
-  winter: 'Zimowa opowieść',
-  fish: 'Rybki świąteczne',
-};
+export const themeNames = localizedRecord(themes, 'themes.names.');
 export type Sources = { spotify?: string; youtube?: string };
 export const gameModes = ['music', 'movie', 'game'] as const;
 export type GameMode = (typeof gameModes)[number];
-export const gameModeNames = {
-  music: 'Muzyczna oś czasu',
-  movie: 'Zgadnij film',
-  game: 'Zgadnij grę',
-};
+export const gameModeNames = localizedRecord(gameModes, 'gameModes.');
 export const cardQuestion = (mode?: GameMode) =>
   mode === 'movie'
-    ? 'Z jakiego filmu pochodzi ta muzyka?'
+    ? translate('model.question.movie')
     : mode === 'game'
-      ? 'Z jakiej gry pochodzi ta muzyka?'
-      : 'Co to za hit?';
+      ? translate('model.question.game')
+      : translate('model.question.music');
 export type Song = {
   id: string;
   title: string;
@@ -88,14 +75,14 @@ export const defaultPrint: PrintSettings = {
 export const newDeck = (): Deck => ({
   version: 1,
   id: crypto.randomUUID(),
-  name: 'Moja nowa talia',
+  name: translate('model.newDeck'),
   theme: 'classic',
   songs: [],
   print: { ...defaultPrint },
 });
 export const demoDeck = (): Deck => ({
   ...newDeck(),
-  name: 'Wieczór dobrych hitów',
+  name: translate('model.demoDeck'),
   songs: [
     {
       id: 'demo-1',
@@ -147,7 +134,11 @@ export function spotifyId(raw: string, kind = 'track'): string {
     const match = u.pathname.match(new RegExp(`/(?:intl-[^/]+/)?${kind}/([A-Za-z0-9]{22})/?$`));
     if (u.protocol === 'https:' && u.hostname === 'open.spotify.com' && match) return match[1];
   } catch {}
-  throw new Error(`Nieprawidłowy link Spotify (${kind === 'playlist' ? 'playlista' : 'utwór'}).`);
+  throw new Error(
+    translate('model.invalidSpotify', {
+      kind: translate(kind === 'playlist' ? 'model.playlist' : 'model.track'),
+    }),
+  );
 }
 export function youtubeId(raw: string): string {
   const s = raw.trim();
@@ -163,7 +154,7 @@ export function youtubeId(raw: string): string {
         u.searchParams.get('v') || u.pathname.match(/^\/(?:embed|shorts)\/([\w-]{11})/)?.[1] || '';
     if (/^[\w-]{11}$/.test(id)) return id;
   } catch {}
-  throw new Error('Nieprawidłowy link YouTube.');
+  throw new Error(translate('model.invalidYoutube'));
 }
 export function normalizeSources(raw: unknown): Sources {
   if (!raw || typeof raw !== 'object') return {};
@@ -175,25 +166,26 @@ export function normalizeSources(raw: unknown): Sources {
 }
 export function validateSong(raw: unknown, index = 0): Song {
   if (!raw || typeof raw !== 'object')
-    throw new Error(`Wiersz ${index + 1}: nieprawidłowy rekord.`);
+    throw new Error(translate('model.row.invalid', { row: index + 1 }));
   const r = raw as Record<string, unknown>;
   const title = String(r.title || '').trim(),
     artist = String(r.artist || '').trim(),
     year = Number(r.year);
   if (!title || !artist || title.length > 200 || artist.length > 200)
-    throw new Error(`Wiersz ${index + 1}: uzupełnij tytuł i wykonawcę (maks. 200 znaków).`);
+    throw new Error(translate('model.row.titleArtist', { row: index + 1 }));
   if (!Number.isInteger(year) || year < 1000 || year > 2100)
-    throw new Error(`Wiersz ${index + 1}: rok musi być liczbą od 1000 do 2100.`);
+    throw new Error(translate('model.row.year', { row: index + 1 }));
   if (r.theme !== undefined && r.theme !== '' && !themes.includes(r.theme as Theme))
-    throw new Error(`Wiersz ${index + 1}: nieznany motyw.`);
+    throw new Error(translate('model.row.theme', { row: index + 1 }));
   const sources = normalizeSources(r.sources || { spotify: r.spotify, youtube: r.youtube });
   const gameMode = r.gameMode || 'music';
-  if (!gameModes.includes(gameMode as GameMode)) throw new Error('Nieznany tryb gry.');
+  if (!gameModes.includes(gameMode as GameMode))
+    throw new Error(translate('model.unknownGameMode'));
   const answer = String(r.answer || '').trim();
   if (answer.length > 200 || (gameMode !== 'music' && !answer))
-    throw new Error('Uzupełnij nazwę filmu lub gry (maks. 200 znaków).');
+    throw new Error(translate('model.missingAnswer'));
   if (!sources.spotify && !sources.youtube)
-    throw new Error(`Wiersz ${index + 1}: dodaj źródło Spotify lub YouTube.`);
+    throw new Error(translate('model.row.source', { row: index + 1 }));
   return {
     id: typeof r.id === 'string' && r.id.length < 100 ? r.id : crypto.randomUUID(),
     title,
@@ -206,14 +198,14 @@ export function validateSong(raw: unknown, index = 0): Song {
   };
 }
 export function validateDeck(raw: unknown): Deck {
-  if (!raw || typeof raw !== 'object') throw new Error('Plik nie jest projektem Hiciarza.');
+  if (!raw || typeof raw !== 'object') throw new Error(translate('model.notProject'));
   const r = raw as Record<string, any>;
   if (r.version !== 1 || !Array.isArray(r.songs) || r.songs.length > 2000)
-    throw new Error('Wymagany format projektu version: 1, maksymalnie 2000 utworów.');
-  if (!themes.includes(r.theme)) throw new Error('Nieznany motyw talii.');
+    throw new Error(translate('model.projectFormat'));
+  if (!themes.includes(r.theme)) throw new Error(translate('model.unknownTheme'));
   const songs = r.songs.map(validateSong);
   if (new Set(songs.map((s) => s.id)).size !== songs.length)
-    throw new Error('Identyfikatory kart muszą być unikalne.');
+    throw new Error(translate('model.duplicateIds'));
   if (
     r.back &&
     !(
@@ -222,12 +214,12 @@ export function validateDeck(raw: unknown): Deck {
       r.back.length < 4000000
     )
   )
-    throw new Error('Nieprawidłowe tło karty.');
+    throw new Error(translate('model.invalidBack'));
   const p = r.print || {};
   return {
     version: 1,
     id: typeof r.id === 'string' ? r.id : crypto.randomUUID(),
-    name: String(r.name || 'Zaimportowana talia').slice(0, 100),
+    name: String(r.name || translate('model.importedDeck')).slice(0, 100),
     ...(gameModes.includes(r.gameMode) ? { gameMode: r.gameMode } : {}),
     theme: r.theme,
     back: r.back,
@@ -252,7 +244,12 @@ export function parseImport(text: string, filename: string): Deck | Song[] {
     if (result.errors.length) throw new Error(`CSV: ${result.errors[0].message}`);
     return result.data.map(validateSong);
   }
-  const data = JSON.parse(text);
+  let data: unknown;
+  try {
+    data = JSON.parse(text);
+  } catch {
+    throw new Error(translate('model.invalidJson'));
+  }
   if (Array.isArray(data)) return data.map(validateSong);
   return validateDeck(data);
 }
@@ -294,7 +291,7 @@ export function mergeSongs(existing: Song[], incoming: Song[], mode: 'append' | 
   return { songs: output, skipped };
 }
 function decode(s: string) {
-  if (s.length > 4000) throw new Error('Zbyt duży kod QR.');
+  if (s.length > 4000) throw new Error(translate('model.qrTooLarge'));
   return JSON.parse(
     new TextDecoder().decode(
       Uint8Array.from(atob(s.replace(/-/g, '+').replace(/_/g, '/')), (c) => c.charCodeAt(0)),
@@ -309,7 +306,7 @@ export function cardUrl(
   const sources = normalizeSources(song.sources);
   const skin = song.theme || theme;
   if (!themes.includes(skin) || (!sources.spotify && !sources.youtube))
-    throw new Error('Karta wymaga poprawnego motywu i źródła odtwarzania.');
+    throw new Error(translate('model.invalidCardSource'));
   return (
     base.split(/[?#]/)[0] +
     '#2' +
@@ -346,7 +343,7 @@ export function readQR(
   try {
     hash = new URL(raw).hash.slice(1);
   } catch {
-    throw new Error('To nie jest kod QR Hiciarza.');
+    throw new Error(translate('model.notHiciarzQr'));
   }
   const compact = hash.match(/^2([cmxwfvtpd])(?:s([A-Za-z0-9]{22}))?(?:y([\w-]{11}))?([mg])?$/);
   if (compact && (compact[2] || compact[3])) {
@@ -374,17 +371,17 @@ export function readQR(
     const peer = q.get('pair')!,
       token = q.get('token') || '';
     if (!/^[\w-]{1,100}$/.test(peer) || !/^[a-f0-9]{32}$/.test(token))
-      throw new Error('Nieprawidłowy kod parowania.');
+      throw new Error(translate('model.invalidPairQr'));
     return { kind: 'pair', peer, token };
   }
   if (q.has('card')) {
     const c = decode(q.get('card')!);
     if (c.v !== 1 || typeof c.id !== 'string' || c.id.length > 100 || !themes.includes(c.theme))
-      throw new Error('Nieobsługiwana karta.');
+      throw new Error(translate('model.unsupportedCard'));
     const sources = normalizeSources(c.sources);
-    if (!sources.spotify && !sources.youtube)
-      throw new Error('Karta nie zawiera źródła odtwarzania.');
-    if (c.gameMode && !gameModes.includes(c.gameMode)) throw new Error('Nieznany tryb gry.');
+    if (!sources.spotify && !sources.youtube) throw new Error(translate('model.cardMissingSource'));
+    if (c.gameMode && !gameModes.includes(c.gameMode))
+      throw new Error(translate('model.unknownGameMode'));
     return {
       kind: 'card',
       card: {
@@ -396,7 +393,7 @@ export function readQR(
       },
     };
   }
-  throw new Error('To nie jest kod QR Hiciarza.');
+  throw new Error(translate('model.notHiciarzQr'));
 }
 export function backPosition(index: number, edge: 'long' | 'short') {
   const col = index % 3,

@@ -1,3 +1,4 @@
+import { displayTranslation, t, useTranslation } from './i18n';
 import { useEffect, useRef, useState } from 'react';
 import { LogOut, RefreshCw, UserRound, Settings2 } from 'lucide-react';
 import { openSpotifySetup } from './spotify-settings';
@@ -9,6 +10,7 @@ import {
 } from './spotify';
 
 export default function SpotifyAccount() {
+  useTranslation();
   const connected = () => spotifyConnected('player') || spotifyConnected('import');
   const [linked, setLinked] = useState(connected);
   const [profile, setProfile] = useState<{ name: string; avatar?: string }>();
@@ -37,10 +39,7 @@ export default function SpotifyAccount() {
           if (current) setProfile(p);
         })
         .catch(() => {
-          if (current)
-            setError(
-              'Nie udało się wczytać profilu Spotify. Możesz ponowić próbę lub wylogować konto.',
-            );
+          if (current) setError(t('components.SpotifyAccount.couldNotLoadYourSpotifyProfile'));
         });
     return () => {
       current = false;
@@ -66,16 +65,16 @@ export default function SpotifyAccount() {
     <div className="spotify-account" ref={container}>
       <button
         className="account-avatar"
-        aria-label="Konto Spotify"
+        aria-label={t('components.SpotifyAccount.spotifyAccount')}
         aria-expanded={open}
         aria-controls="spotify-account-menu"
-        title={profile?.name || 'Konto Spotify'}
+        title={profile?.name || t('components.SpotifyAccount.spotifyAccount')}
         onClick={() => setOpen(!open)}
       >
         {profile?.avatar && !failedImage ? (
           <img
             src={profile.avatar}
-            alt="Awatar Spotify"
+            alt={t('components.SpotifyAccount.spotifyAvatar')}
             referrerPolicy="no-referrer"
             onError={() => setFailedImage(true)}
           />
@@ -86,13 +85,13 @@ export default function SpotifyAccount() {
       </button>
       {open && (
         <div className="account-menu" id="spotify-account-menu">
-          <small>POŁĄCZONO ZE SPOTIFY</small>
-          <strong>{profile?.name || 'Konto Spotify'}</strong>
+          <small>{t('components.SpotifyAccount.cONNECTEDTOSPOTIFY')}</small>
+          <strong>{profile?.name || t('components.SpotifyAccount.spotifyAccount')}</strong>
           {error && (
             <>
-              <p role="alert">{error}</p>
+              <p role="alert">{displayTranslation(error)}</p>
               <button onClick={() => setRetry((n) => n + 1)}>
-                <RefreshCw size={16} /> Odśwież profil
+                <RefreshCw size={16} /> {t('components.SpotifyAccount.refreshProfile')}
               </button>
             </>
           )}
@@ -102,14 +101,12 @@ export default function SpotifyAccount() {
               openSpotifySetup();
             }}
           >
-            <Settings2 size={17} /> Ustawienia Spotify
+            <Settings2 size={17} /> {t('components.SpotifyAccount.spotifySettings')}
           </button>
           <button onClick={disconnectSpotify}>
-            <LogOut size={17} /> Wyloguj ze Spotify
+            <LogOut size={17} /> {t('components.SpotifyAccount.signOutOfSpotify')}
           </button>
-          <p>
-            Wylogujesz konto z Hiciarza w tej karcie przeglądarki. Twoje talie zostaną zapisane.
-          </p>
+          <p>{t('components.SpotifyAccount.thisSignsYourAccountOutOf')}</p>
         </div>
       )}
     </div>

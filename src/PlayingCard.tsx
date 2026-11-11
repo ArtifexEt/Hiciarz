@@ -1,3 +1,4 @@
+import { displayTranslation, t, useTranslation } from './i18n';
 import { LoaderCircle, Music2, Pause, Play, RotateCcw, ScanLine } from 'lucide-react';
 import type { Card } from './model';
 import { themeNames, cardQuestion } from './model';
@@ -21,14 +22,18 @@ export default function PlayingCard({
   onToggle: () => void;
   onNext?: () => void;
 }) {
+  useTranslation();
   const loading = state === 'loading';
   return (
-    <section className={'playing-card is-' + state} aria-label="Zeskanowana karta">
+    <section
+      className={'playing-card is-' + state}
+      aria-label={t('components.PlayingCard.scannedCard')}
+    >
       <div
         className="playing-cover"
         style={{ backgroundImage: `url("${back || themeArt(card.theme)}")` }}
         role="img"
-        aria-label={'Rewers karty · ' + themeNames[card.theme]}
+        aria-label={t('components.PlayingCard.cardBack') + themeNames[card.theme]}
       >
         <span className="playing-wordmark">
           hiciarz <span aria-hidden="true">✳</span>
@@ -36,27 +41,29 @@ export default function PlayingCard({
         <span className="playing-record">
           <Music2 size={42} aria-hidden="true" />
         </span>
-        <span className="playing-cover-caption">SŁUCHAJ · ZGADUJ · BAW SIĘ</span>
+        <span className="playing-cover-caption">
+          {t('components.PlayingCard.lISTENGUESSHAVEFUN')}
+        </span>
       </div>
       <div className="playing-copy">
         <span className="eyebrow">
           {card.gameMode === 'movie'
-            ? 'ZGADNIJ FILM'
+            ? t('components.PlayingCard.guessTheMovie')
             : card.gameMode === 'game'
-              ? 'ZGADNIJ GRĘ'
-              : 'TWOJA MUZYCZNA ZAGADKA'}
+              ? t('components.PlayingCard.gUESSTHEGAME')
+              : t('components.PlayingCard.yourMusicChallenge')}
         </span>
         <h2>
           {state === 'paused' || state === 'stopped'
-            ? 'Chwila przerwy.'
+            ? t('components.PlayingCard.takingABreak')
             : state === 'error'
-              ? 'Spróbujmy jeszcze raz.'
+              ? t('components.PlayingCard.letsTryAgain')
               : loading
-                ? 'Za chwilę muzyka…'
+                ? t('components.PlayingCard.musicInAMoment')
                 : cardQuestion(card.gameMode)}
         </h2>
         <p className="playing-message" role={state === 'error' ? 'alert' : 'status'}>
-          {message}
+          {displayTranslation(message)}
         </p>
       </div>
       <button className="primary playback-toggle" disabled={disabled || loading} onClick={onToggle}>
@@ -70,16 +77,16 @@ export default function PlayingCard({
           <Play size={24} />
         )}
         {loading
-          ? 'Łączę…'
+          ? t('components.PlayingCard.connecting')
           : state === 'playing'
-            ? 'Pauza'
+            ? t('components.PlayingCard.pause')
             : state === 'error'
-              ? 'Spróbuj ponownie'
-              : 'Wznów'}
+              ? t('components.PlayingCard.tryAgain')
+              : t('components.PlayingCard.resume')}
       </button>
       {onNext && (
         <button className="quiet scan-next" onClick={onNext}>
-          <ScanLine size={19} /> Skanuj kolejną kartę
+          <ScanLine size={19} /> {t('components.PlayingCard.scanTheNextCard')}
         </button>
       )}
     </section>

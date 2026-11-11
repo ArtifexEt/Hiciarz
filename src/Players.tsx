@@ -1,3 +1,4 @@
+import { t, useTranslation } from './i18n';
 import { useEffect, useRef } from 'react';
 import type { Card } from './model';
 import type { Command } from './connection';
@@ -10,33 +11,73 @@ declare global {
   }
 }
 let spotifyApi: Promise<any> | undefined, youtubeApi: Promise<any> | undefined;
-function spotify() {
-  return (spotifyApi ??= new Promise((resolve, reject) => {
-    window.onSpotifyIframeApiReady = resolve;
-    const s = document.createElement('script');
-    s.src = 'https://open.spotify.com/embed/iframe-api/v1';
-    s.onerror = () => {
-      spotifyApi = undefined;
-      reject(new Error('Nie można wczytać Spotify.'));
+export function loadSpotifyAPI() {
+  if (spotifyApi) return spotifyApi;
+  const request = new Promise<any>((resolve, reject) => {
+    const script = document.createElement('script');
+    let settled = false;
+    const finish = (api?: any, error?: Error) => {
+      if (settled) return;
+      settled = true;
+      clearTimeout(timeout);
+      script.onerror = null;
+      if (window.onSpotifyIframeApiReady === ready) window.onSpotifyIframeApiReady = undefined;
+      if (error) {
+        script.remove();
+        reject(error);
+      } else resolve(api);
     };
-    document.head.append(s);
-  }));
+    const ready = (api: any) => finish(api);
+    const timeout = setTimeout(
+      () => finish(undefined, new Error(t('components.Players.couldNotLoadSpotify'))),
+      20000,
+    );
+    window.onSpotifyIframeApiReady = ready;
+    script.src = 'https://open.spotify.com/embed/iframe-api/v1';
+    script.onerror = () =>
+      finish(undefined, new Error(t('components.Players.couldNotLoadSpotify')));
+    document.head.append(script);
+  });
+  spotifyApi = request;
+  // Component cleanup must not cancel a script another player is still waiting for.
+  void request.catch(() => {
+    if (spotifyApi === request) spotifyApi = undefined;
+  });
+  return request;
 }
-function youtube() {
-  return (youtubeApi ??= new Promise((resolve, reject) => {
-    if (window.YT?.Player) {
-      resolve(window.YT);
-      return;
-    }
-    window.onYouTubeIframeAPIReady = () => resolve(window.YT);
-    const s = document.createElement('script');
-    s.src = 'https://www.youtube.com/iframe_api';
-    s.onerror = () => {
-      youtubeApi = undefined;
-      reject(new Error('Nie można wczytać YouTube.'));
+export function loadYouTubeAPI() {
+  if (window.YT?.Player) return Promise.resolve(window.YT);
+  if (youtubeApi) return youtubeApi;
+  const request = new Promise<any>((resolve, reject) => {
+    const script = document.createElement('script');
+    let settled = false;
+    const finish = (api?: any, error?: Error) => {
+      if (settled) return;
+      settled = true;
+      clearTimeout(timeout);
+      script.onerror = null;
+      if (window.onYouTubeIframeAPIReady === ready) window.onYouTubeIframeAPIReady = undefined;
+      if (error) {
+        script.remove();
+        reject(error);
+      } else resolve(api);
     };
-    document.head.append(s);
-  }));
+    const ready = () => finish(window.YT);
+    const timeout = setTimeout(
+      () => finish(undefined, new Error(t('components.Players.couldNotLoadYouTube'))),
+      20000,
+    );
+    window.onYouTubeIframeAPIReady = ready;
+    script.src = 'https://www.youtube.com/iframe_api';
+    script.onerror = () =>
+      finish(undefined, new Error(t('components.Players.couldNotLoadYouTube')));
+    document.head.append(script);
+  });
+  youtubeApi = request;
+  void request.catch(() => {
+    if (youtubeApi === request) youtubeApi = undefined;
+  });
+  return request;
 }
 export default function Players({
   card,
@@ -49,6 +90,7 @@ export default function Players({
   command: { type: Command; seq: number } | null;
   onState: (text: string, state?: PlaybackState) => void;
 }) {
+  useTranslation();
   const container = useRef<HTMLDivElement>(null),
     controller = useRef<any>(null),
     callback = useRef(onState),
@@ -56,15 +98,36 @@ export default function Players({
   callback.current = onState;
   current.current = { card, source };
   const hasCard = Boolean(card);
+  const playbackTimeout = useRef<ReturnType<typeof setTimeout> | undefined>(undefined);
+  const playbackTimedOut = useRef(false);
+  function clearPlaybackTimeout() {
+    clearTimeout(playbackTimeout.current);
+    playbackTimeout.current = undefined;
+    playbackTimedOut.current = false;
+  }
+  function report(text: string, state?: PlaybackState) {
+    if (state === 'loading') {
+      // Repeated buffering events belong to the same wait, not a new 20-second window.
+      if (playbackTimedOut.current) return;
+      if (!playbackTimeout.current)
+        playbackTimeout.current = setTimeout(() => {
+          playbackTimeout.current = undefined;
+          playbackTimedOut.current = true;
+          callback.current(t('components.Players.thePlayerIsNotRespondingCheck'), 'error');
+        }, 20000);
+    } else clearPlaybackTimeout();
+    callback.current(text, state);
+  }
   function load(c: any) {
     const { card, source } = current.current;
     if (!card) return;
     const id = card.sources[source];
     if (!id) {
-      callback.current('Ta karta nie ma wybranego źródła. Wybierz dostępne źródło.', 'error');
+      report(t('components.Players.thisCardHasNoSelectedSource'), 'error');
       return;
     }
-    callback.current('Ładowanie utworu…', 'loading');
+    clearPlaybackTimeout();
+    report(t('components.Players.loadingTrack'), 'loading');
     if (source === 'youtube') c.loadVideoById(id);
     else {
       if (c.loadEntity) c.loadEntity('spotify:track:' + id);
@@ -76,20 +139,12 @@ export default function Players({
     if (!hasCard || !container.current) return;
     let dead = false,
       instance: any = null;
-    let timeout: ReturnType<typeof setTimeout> | undefined;
     const mount = document.createElement('div');
     container.current.replaceChildren(mount);
     controller.current = null;
-    callback.current('Ładowanie odtwarzacza…', 'loading');
-    timeout = setTimeout(() => {
-      if (!dead)
-        callback.current(
-          'Odtwarzacz nie odpowiada. Sprawdź internet albo wybierz inne źródło.',
-          'error',
-        );
-    }, 20000);
+    report(t('components.Players.loadingPlayer'), 'loading');
     if (source === 'spotify' && current.current.card?.sources.spotify) {
-      spotify()
+      loadSpotifyAPI()
         .then((api) => {
           if (dead) return;
           const initialId = current.current.card?.sources.spotify;
@@ -103,21 +158,20 @@ export default function Players({
               }
               instance = c;
               c.addListener('ready', () => {
-                clearTimeout(timeout);
                 if (dead) return;
                 controller.current = c;
-                callback.current('Gotowy. Jeśli muzyka nie ruszy, kliknij Wznów.', 'paused');
+                report(t('components.Players.readyIfTheMusicDoesNot'), 'paused');
                 if (current.current.card?.sources.spotify !== initialId) load(c);
                 else c.play();
               });
               c.addListener('playback_update', (e: any) => {
                 if (!dead)
-                  callback.current(
+                  report(
                     e.data.isBuffering
-                      ? 'Buforowanie…'
+                      ? t('components.Players.buffering')
                       : e.data.isPaused
-                        ? 'Pauza / gotowy do odtwarzania'
-                        : 'Odtwarzanie',
+                        ? t('components.Players.pausedReadyToPlay')
+                        : t('components.Players.playing'),
                     e.data.isBuffering ? 'loading' : e.data.isPaused ? 'paused' : 'playing',
                   );
               });
@@ -125,10 +179,10 @@ export default function Players({
           );
         })
         .catch((e) => {
-          if (!dead) callback.current(e.message, 'error');
+          if (!dead) report(e.message, 'error');
         });
     } else if (source === 'youtube' && current.current.card?.sources.youtube) {
-      youtube()
+      loadYouTubeAPI()
         .then((YT) => {
           if (dead) return;
           const c = new YT.Player(mount, {
@@ -138,7 +192,6 @@ export default function Players({
             playerVars: { autoplay: 1, playsinline: 1, origin: location.origin },
             events: {
               onReady: () => {
-                clearTimeout(timeout);
                 if (dead) {
                   c.destroy();
                   return;
@@ -148,16 +201,16 @@ export default function Players({
               },
               onStateChange: (e: any) => {
                 if (!dead)
-                  callback.current(
+                  report(
                     (
                       {
-                        1: 'Odtwarzanie',
-                        2: 'Pauza',
-                        0: 'Zakończono',
-                        3: 'Buforowanie…',
-                        5: 'Gotowy do odtwarzania',
+                        1: t('components.Players.playing'),
+                        2: t('components.Players.paused'),
+                        0: t('components.Players.finished'),
+                        3: t('components.Players.buffering'),
+                        5: t('components.Players.readyToPlay'),
                       } as Record<number, string>
-                    )[e.data] || 'Kliknij Odtwórz w odtwarzaczu.',
+                    )[e.data] || t('components.Players.pressPlayInThePlayer'),
                     e.data === 1
                       ? 'playing'
                       : e.data === 3
@@ -168,18 +221,16 @@ export default function Players({
                   );
               },
               onAutoplayBlocked: () => {
-                if (!dead)
-                  callback.current('Kliknij Odtwórz w odtwarzaczu, aby włączyć dźwięk.', 'paused');
+                if (!dead) report(t('components.Players.pressPlayInThePlayerTo'), 'paused');
               },
               onError: (e: any) => {
-                clearTimeout(timeout);
                 if (!dead)
-                  callback.current(
+                  report(
                     [100, 101, 150].includes(e.data)
-                      ? 'Materiał jest niedostępny lub nie pozwala na osadzanie. Wybierz inne źródło albo popraw kartę i wydrukuj ją ponownie.'
+                      ? t('components.Players.thisVideoIsUnavailableOrDoes')
                       : e.data === 153
-                        ? 'YouTube nie potwierdził strony odtwarzacza. Odśwież stronę i sprawdź blokady prywatności.'
-                        : 'Nie udało się odtworzyć materiału. Sprawdź połączenie lub wybierz inne źródło.',
+                        ? t('components.Players.youTubeCouldNotVerifyThePlayers')
+                        : t('components.Players.couldNotPlayThisContentCheck'),
                     'error',
                   );
               },
@@ -188,15 +239,14 @@ export default function Players({
           instance = c;
         })
         .catch((e) => {
-          if (!dead) callback.current(e.message, 'error');
+          if (!dead) report(e.message, 'error');
         });
     } else {
-      clearTimeout(timeout);
-      callback.current('Ta karta nie ma wybranego źródła. Wybierz dostępne źródło.', 'error');
+      report(t('components.Players.thisCardHasNoSelectedSource'), 'error');
     }
     return () => {
       dead = true;
-      clearTimeout(timeout);
+      clearPlaybackTimeout();
       try {
         instance?.destroy();
       } catch {}
@@ -218,16 +268,17 @@ export default function Players({
         if (command.type === 'resume') c.resume();
         else c.pause();
       }
-      callback.current(
+      report(
         command.type === 'resume'
-          ? 'Wznawiam odtwarzanie…'
+          ? t('components.Players.resumingPlayback')
           : command.type === 'stop'
-            ? 'Zatrzymano'
-            : 'Pauza',
-        command.type === 'resume' ? 'playing' : command.type === 'stop' ? 'stopped' : 'paused',
+            ? t('components.Players.stopped')
+            : t('components.Players.paused'),
+        // Autoplay can be blocked. Only an SDK event confirms that sound is playing.
+        command.type === 'stop' ? 'stopped' : 'paused',
       );
     } catch {
-      callback.current('Polecenie nie zostało wykonane. Użyj przycisków odtwarzacza.', 'error');
+      report(t('components.Players.theCommandFailedUseThePlayers'), 'error');
     }
   }, [command]);
   return (
@@ -238,9 +289,9 @@ export default function Players({
             <i />
           </span>
           <p>
-            Twoja następna piosenka
+            {t('components.Players.yourNextSong')}
             <br />
-            <strong>czeka na pierwszy skan.</strong>
+            <strong>{t('components.Players.isWaitingForTheFirstScan')}</strong>
           </p>
         </div>
       )}

@@ -1,3 +1,4 @@
+import { displayTranslation, t, useTranslation } from './i18n';
 import { lazy, Suspense, useRef, useState } from 'react';
 import {
   ArrowLeft,
@@ -38,6 +39,7 @@ export default function SpotifySetup({
   incomingClientId?: string;
   onDone: () => void;
 }) {
+  useTranslation();
   const defaultId = defaultSpotifyClientId();
   const [step, setStep] = useState(purpose && !incomingClientId ? 0 : 1);
   const [choice, setChoice] = useState<'default' | 'own'>(
@@ -73,13 +75,13 @@ export default function SpotifySetup({
       await navigator.clipboard.writeText(redirectUri);
       setCopied(true);
     } catch {
-      setError('Zaznacz adres powrotu poniżej i skopiuj go do panelu Spotify.');
+      setError(t('components.SpotifySetup.selectTheReturnAddressBelowAnd'));
     }
   }
   function save() {
     try {
       if (choice === 'default' && !defaultId)
-        throw new Error('Ta strona nie ma domyślnego Client ID. Wpisz własny identyfikator.');
+        throw new Error(t('components.SpotifySetup.thisSiteHasNoDefaultClient'));
       saveSpotifyClientId(choice === 'default' ? null : validateSpotifyClientId(clientId));
       acknowledgeSpotifySetup();
       setSharing(false);
@@ -91,8 +93,15 @@ export default function SpotifySetup({
   }
   return (
     <div className="spotify-onboarding">
-      <ol className="connection-progress" aria-label="Konfiguracja Spotify">
-        {['Wybierz połączenie', 'Skonfiguruj', 'Zabierz na telefon'].map((label, i) => (
+      <ol
+        className="connection-progress"
+        aria-label={t('components.SpotifySetup.spotifyConfiguration')}
+      >
+        {[
+          t('components.SpotifySetup.chooseConnection'),
+          t('components.SpotifySetup.configure'),
+          t('components.SpotifySetup.takeItToYourPhone'),
+        ].map((label, i) => (
           <li
             key={label}
             aria-current={step === i ? 'step' : undefined}
@@ -105,16 +114,15 @@ export default function SpotifySetup({
       </ol>
       <h3 ref={heading} tabIndex={-1} className="connection-title">
         {step === 0
-          ? 'Twoja muzyka. Twoje połączenie.'
+          ? t('components.SpotifySetup.yourMusicYourConnection')
           : step === 1
-            ? 'Przygotuj swoje połączenie.'
-            : 'Konfiguracja zapisana. Co dalej?'}
+            ? t('components.SpotifySetup.prepareYourConnection')
+            : t('components.SpotifySetup.configurationSavedWhatsNext')}
       </h3>
       {step === 0 && (
         <>
           <p className="connection-lead">
-            Spotify pozwala importować Twoje playlisty i sterować muzyką na telefonie, komputerze
-            lub głośniku. Wybierz, z którego połączenia chcesz skorzystać.
+            {t('components.SpotifySetup.spotifyLetsYouImportPlaylistsAnd')}
           </p>
           <div className="connection-options">
             {defaultId && (
@@ -126,8 +134,8 @@ export default function SpotifySetup({
                   onChange={() => setChoice('default')}
                 />
                 <span>
-                  <strong>Domyślne połączenie Hiciarza</strong>
-                  <small>Dla kont dopisanych przez osobę prowadzącą tę stronę.</small>
+                  <strong>{t('components.SpotifySetup.hiciarzsDefaultConnection')}</strong>
+                  <small>{t('components.SpotifySetup.forAccountsAddedByThePerson')}</small>
                 </span>
               </label>
             )}
@@ -139,30 +147,22 @@ export default function SpotifySetup({
                 onChange={() => setChoice('own')}
               />
               <span>
-                <strong>Moje własne połączenie</strong>
-                <small>Masz Client ID albo chcesz przygotować osobistą integrację Spotify.</small>
+                <strong>{t('components.SpotifySetup.myOwnConnection')}</strong>
+                <small>{t('components.SpotifySetup.youHaveAClientIDOr')}</small>
               </span>
             </label>
           </div>
           <details className="connection-story">
-            <summary>Dlaczego Spotify wymaga konfiguracji?</summary>
-            <p>
-              Od lutego 2026 nowe integracje w trybie deweloperskim mają limit do 5 dopisanych kont.
-              Właściciel integracji musi mieć Premium. Dlatego samo zalogowanie się do domyślnego
-              połączenia nie zawsze daje dostęp do playlist i urządzeń.
-            </p>
-            <p>
-              Hiciarz ma publiczny kod i możesz postawić własną kopię. Osobiste połączenie Spotify
-              rozpoznawane jest po Client ID. Własny identyfikator nadal podlega limitom Spotify;
-              nie zmienia integracji w usługę dla nieograniczonej liczby osób.
-            </p>
+            <summary>{t('components.SpotifySetup.whyDoesSpotifyNeedConfiguration')}</summary>
+            <p>{t('components.SpotifySetup.sinceFebruary2026NewDevelopmentmodeIntegrations')}</p>
+            <p>{t('components.SpotifySetup.hiciarzIsOpenSourceAndYou')}</p>
             <a href={rules} target="_blank" rel="noopener noreferrer">
-              Zasady dostępu Spotify <ExternalLink size={13} />
+              {t('components.SpotifySetup.spotifyAccessRules')} <ExternalLink size={13} />
             </a>
           </details>
           <div className="connection-actions">
             <button className="primary" onClick={() => go(1)}>
-              Dalej <ArrowRight size={17} />
+              {t('components.SpotifySetup.next')} <ArrowRight size={17} />
             </button>
           </div>
         </>
@@ -171,12 +171,15 @@ export default function SpotifySetup({
         <>
           {scanned && (
             <p className="connection-confirm" role="status">
-              <Check size={17} /> Odczytano konfigurację z QR. Sprawdź Client ID i zapisz, aby go
-              użyć.
+              <Check size={17} /> {t('components.SpotifySetup.configurationReadFromQRCheckThe')}
             </p>
           )}
           {defaultId && (
-            <div className="connection-source-switch" role="group" aria-label="Źródło Client ID">
+            <div
+              className="connection-source-switch"
+              role="group"
+              aria-label={t('components.SpotifySetup.clientIDSource')}
+            >
               <button
                 aria-pressed={choice === 'default'}
                 onClick={() => {
@@ -184,7 +187,7 @@ export default function SpotifySetup({
                   setError('');
                 }}
               >
-                Domyślne połączenie
+                {t('components.SpotifySetup.defaultConnection')}
               </button>
               <button
                 aria-pressed={choice === 'own'}
@@ -193,36 +196,31 @@ export default function SpotifySetup({
                   setError('');
                 }}
               >
-                Własny Client ID
+                {t('components.SpotifySetup.myOwnClientID')}
               </button>
             </div>
           )}
           {choice === 'default' ? (
             <>
               <p className="connection-lead">
-                Użyjesz połączenia dołączonego do tej wersji Hiciarza. Twoje konto Spotify musi być
-                dopisane do jego listy użytkowników.
+                {t('components.SpotifySetup.youWillUseTheConnectionBundled')}
               </p>
               <div className="connection-id-summary">
                 <Settings2 size={20} />
                 <div>
-                  <strong>Client ID tej strony</strong>
+                  <strong>{t('components.SpotifySetup.thisSitesClientID')}</strong>
                   <code>{defaultId}</code>
                 </div>
               </div>
-              <p className="hint">
-                Jeśli Spotify odmawia dostępu, poproś osobę prowadzącą stronę o dodanie konta w
-                Users Management albo wybierz własny Client ID.
-              </p>
+              <p className="hint">{t('components.SpotifySetup.ifSpotifyDeniesAccessAskThe')}</p>
             </>
           ) : (
             <>
               <p className="connection-lead">
-                Masz już Client ID? Wklej go poniżej. Jeśli zaczynasz od zera, przejdź przez te trzy
-                kroki.
+                {t('components.SpotifySetup.alreadyHaveAClientIDPaste')}
               </p>
               <label className="connection-client-input">
-                Twój Client ID
+                {t('components.SpotifySetup.yourClientID')}
                 <input
                   ref={clientInput}
                   value={clientId}
@@ -234,29 +232,30 @@ export default function SpotifySetup({
                   autoComplete="off"
                   spellCheck={false}
                   autoCapitalize="none"
-                  placeholder="32 znaki z panelu Spotify"
+                  placeholder={t('components.SpotifySetup.32CharactersFromTheSpotifyDashboard')}
                   aria-invalid={Boolean(idError)}
                   aria-describedby="client-id-help client-id-error"
                 />
               </label>
               {idError && (
                 <p className="error" id="client-id-error" role="alert">
-                  {idError}
+                  {displayTranslation(idError)}
                 </p>
               )}
               <p className="hint" id="client-id-help">
-                Client ID jest publicznym identyfikatorem aplikacji. Wklej Client ID, nie Client
-                Secret. Logowanie Hiciarza używa PKCE i nie wymaga sekretu.
+                {t('components.SpotifySetup.clientIDIsAPublicApplication')}
               </p>
               <button
                 className="text-button connection-scan"
                 onClick={() => setScanning(!scanning)}
               >
                 <QrCode size={17} />
-                {scanning ? 'Zamknij skaner konfiguracji' : 'Zeskanuj QR konfiguracji'}
+                {scanning
+                  ? t('components.SpotifySetup.closeConfigurationScanner')
+                  : t('components.SpotifySetup.scanConfigurationQR')}
               </button>
               {scanning && (
-                <Suspense fallback={<p>Przygotowuję skaner…</p>}>
+                <Suspense fallback={<p>{t('components.SpotifySetup.preparingScanner')}</p>}>
                   <Camera
                     purpose="setup"
                     pairingRequired={false}
@@ -264,9 +263,7 @@ export default function SpotifySetup({
                       try {
                         const value = readQR(raw);
                         if (value.kind !== 'spotify-setup')
-                          throw new Error(
-                            'To kod karty lub parowania. Zeskanuj QR konfiguracji Spotify.',
-                          );
+                          throw new Error(t('components.SpotifySetup.thisIsACardOrPairing'));
                         setClientId(value.clientId);
                         setScanned(true);
                         setScanning(false);
@@ -286,44 +283,39 @@ export default function SpotifySetup({
                 open={instructionsOpen}
                 onToggle={(event) => setInstructionsOpen(event.currentTarget.open)}
               >
-                <summary>Nie mam Client ID — pokaż instrukcję</summary>
+                <summary>{t('components.SpotifySetup.iDontHaveAClientID')}</summary>
                 <ol className="connection-instructions">
                   <li>
-                    <strong>Utwórz lub otwórz aplikację Spotify.</strong>
+                    <strong>{t('components.SpotifySetup.createOrOpenASpotifyApp')}</strong>
                     <p>
-                      W{' '}
+                      {t('components.SpotifySetup.in')}{' '}
                       <a href={dashboard} target="_blank" rel="noopener noreferrer">
                         Spotify Developer Dashboard <ExternalLink size={12} />
                       </a>{' '}
-                      wybierz Web API. Możesz użyć swojej istniejącej aplikacji. Jej właściciel
-                      potrzebuje Premium.
+                      {t('components.SpotifySetup.selectWebAPIYouCanUse')}
                     </p>
                   </li>
                   <li>
-                    <strong>Dodaj adres powrotu.</strong>
-                    <p>
-                      W ustawieniach aplikacji dodaj poniższy adres do Redirect URIs, dokładnie z
-                      wielkością liter i końcowym ukośnikiem.
-                    </p>
+                    <strong>{t('components.SpotifySetup.addTheReturnAddress')}</strong>
+                    <p>{t('components.SpotifySetup.inTheAppSettingsAddThe')}</p>
                     <div className="connection-redirect">
                       <input
-                        aria-label="Adres powrotu Spotify"
+                        aria-label={t('components.SpotifySetup.spotifyReturnAddress')}
                         value={redirectUri}
                         readOnly
                         onFocus={(e) => e.currentTarget.select()}
                       />
                       <button className="secondary" onClick={copyRedirect}>
                         {copied ? <Check size={16} /> : <Copy size={16} />}{' '}
-                        {copied ? 'Skopiowano' : 'Kopiuj adres'}
+                        {copied
+                          ? t('components.SpotifySetup.copied')
+                          : t('components.SpotifySetup.copyAddress')}
                       </button>
                     </div>
                   </li>
                   <li>
-                    <strong>Sprawdź dostęp konta i skopiuj Client ID.</strong>
-                    <p>
-                      W Users Management dodaj konta, które będą korzystać z integracji. Następnie
-                      znajdź Client ID w ustawieniach aplikacji i wklej go tutaj.
-                    </p>
+                    <strong>{t('components.SpotifySetup.checkAccountAccessAndCopyThe')}</strong>
+                    <p>{t('components.SpotifySetup.inUsersManagementAddTheAccounts')}</p>
                   </li>
                 </ol>
               </details>
@@ -331,10 +323,10 @@ export default function SpotifySetup({
           )}
           <div className="connection-actions">
             <button className="secondary" onClick={() => go(0)}>
-              <ArrowLeft size={16} /> Wstecz
+              <ArrowLeft size={16} /> {t('components.SpotifySetup.back')}
             </button>
             <button className="primary" onClick={save}>
-              Zapisz konfigurację <ArrowRight size={17} />
+              {t('components.SpotifySetup.saveConfiguration')} <ArrowRight size={17} />
             </button>
           </div>
         </>
@@ -342,24 +334,22 @@ export default function SpotifySetup({
       {step === 2 && (
         <>
           <p className="connection-confirm">
-            <Check size={18} /> Używasz{' '}
-            {customSpotifyClientId() ? 'własnego połączenia' : 'domyślnego połączenia tej strony'}.
+            <Check size={18} /> {t('components.SpotifySetup.youAreUsing')}{' '}
+            {customSpotifyClientId()
+              ? t('components.SpotifySetup.yourOwnConnection')
+              : t('components.SpotifySetup.thisSitesDefaultConnection')}
+            .
           </p>
           <p className="connection-lead">
-            Client ID jest zapisany na tym urządzeniu. Zmienisz go później w{' '}
-            <strong>O aplikacji → Ustawienia Spotify</strong> lub w menu konta.
+            {t('components.SpotifySetup.theClientIDIsSavedOn')}{' '}
+            <strong>{t('components.SpotifySetup.aboutSpotifySettings')}</strong>{' '}
+            {t('components.SpotifySetup.orInTheAccountMenu')}
           </p>
           <div className="connection-phone">
             <div>
-              <h4>Ten sam Client ID na telefonie</h4>
-              <p>
-                Po instalacji Hiciarza otwórz Ustawienia Spotify i zeskanuj ten kod. Możesz też użyć
-                aparatu telefonu — link otworzy Hiciarza z podglądem konfiguracji do zapisania.
-              </p>
-              <p className="hint">
-                QR przenosi publiczny Client ID. Na każdym urządzeniu logujesz się do Spotify
-                osobno.
-              </p>
+              <h4>{t('components.SpotifySetup.theSameClientIDOnYour')}</h4>
+              <p>{t('components.SpotifySetup.afterInstallingHiciarzOpenSpotifySettings')}</p>
+              <p className="hint">{t('components.SpotifySetup.theQRCodeTransfersAPublic')}</p>
               <button
                 className="secondary"
                 onClick={() => {
@@ -376,7 +366,10 @@ export default function SpotifySetup({
                   }
                 }}
               >
-                <QrCode size={17} /> {sharing ? 'Ukryj kod QR' : 'Pokaż QR konfiguracji'}
+                <QrCode size={17} />{' '}
+                {sharing
+                  ? t('components.SpotifySetup.hideQRCode')
+                  : t('components.SpotifySetup.showConfigurationQR')}
               </button>
             </div>
             {sharing && (
@@ -384,16 +377,16 @@ export default function SpotifySetup({
                 <img
                   className="connection-config-qr"
                   src={shareImage}
-                  alt="QR konfiguracji Spotify"
+                  alt={t('components.SpotifySetup.spotifyConfigurationQR')}
                   data-qr-value={spotifySetupUrl()}
                 />
-                <figcaption>Zeskanuj i potwierdź zapis na telefonie.</figcaption>
+                <figcaption>{t('components.SpotifySetup.scanAndConfirmSavingOnYour')}</figcaption>
               </figure>
             )}
           </div>
           <div className="connection-actions">
             <button className="secondary" onClick={() => go(1)}>
-              <ArrowLeft size={16} /> Edytuj Client ID
+              <ArrowLeft size={16} /> {t('components.SpotifySetup.editClientID')}
             </button>
             {purpose ? (
               <button
@@ -415,11 +408,13 @@ export default function SpotifySetup({
                 ) : (
                   <ArrowRight size={17} />
                 )}{' '}
-                {connecting ? 'Otwieram Spotify…' : 'Zaloguj się do Spotify'}
+                {connecting
+                  ? t('components.SpotifySetup.openingSpotify')
+                  : t('components.SpotifySetup.signInToSpotify')}
               </button>
             ) : (
               <button className="primary" onClick={onDone}>
-                Gotowe <Check size={17} />
+                {t('components.SpotifySetup.done')} <Check size={17} />
               </button>
             )}
           </div>
@@ -427,7 +422,7 @@ export default function SpotifySetup({
       )}
       {error && (
         <p className="error" role="alert">
-          {error}
+          {displayTranslation(error)}
         </p>
       )}
     </div>

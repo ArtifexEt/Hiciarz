@@ -1,9 +1,10 @@
+import { t as translate } from './i18n';
 import { get, set } from 'idb-keyval';
 import { validateDeck, type Deck } from './model';
 export async function loadDecks(): Promise<Deck[]> {
   const data = await get('hiciarz-decks-v1');
   if (!data) return [];
-  if (!Array.isArray(data)) throw new Error('Nieprawidłowy zapis lokalny.');
+  if (!Array.isArray(data)) throw new Error(translate('storage.invalid'));
   return data.map(validateDeck);
 }
 export async function saveDecks(decks: Deck[]) {
@@ -14,7 +15,7 @@ export async function imageData(file: File): Promise<string> {
     !['image/png', 'image/jpeg', 'image/webp'].includes(file.type) ||
     file.size > 12 * 1024 * 1024
   )
-    throw new Error('Wybierz PNG, JPG lub WebP do 12 MB.');
+    throw new Error(translate('storage.image'));
   const bitmap = await createImageBitmap(file);
   const c = document.createElement('canvas');
   c.width = 1200;
