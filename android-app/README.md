@@ -2,6 +2,18 @@
 
 Natywna aplikacja Kotlin / Jetpack Compose do skanowania drukowanych kart, grania w Bingo i korzystania z własnych talii. Spotify odtwarza muzykę w swojej aplikacji, a Hiciarz steruje nim przez oficjalny App Remote SDK. Kreator kart i druk PDF pozostają w [`../web/`](../web/).
 
+## Ekrany aplikacji
+
+Zrzuty z emulatora AOSP pokazują polski interfejs na telefonie i angielski w szerokim oknie. W tym środowisku testowym Spotify nie jest zainstalowane.
+
+| Skaner · telefon | Talie · telefon |
+| --- | --- |
+| <img src="docs/screenshots/phone-scan-pl.png" width="240" alt="Natywny skaner kart z przyciskiem aparatu i dolną nawigacją" /> | <img src="docs/screenshots/phone-decks-pl.png" width="240" alt="Biblioteka talii z importem JSON lub CSV i playlistą z 294 utworami z gier" /> |
+
+| Bingo · szerokie okno | Ustawienia · szerokie okno |
+| --- | --- |
+| <img src="docs/screenshots/tablet-bingo-en.png" width="480" alt="Dwukolumnowy widok Bingo z wyborem poziomu, pytaniem i odtwarzaniem" /> | <img src="docs/screenshots/tablet-settings-en.png" width="480" alt="Dwukolumnowe ustawienia Spotify, odtwarzania i języka" /> |
+
 ## Instalacja wydania testowego
 
 1. Pobierz `hiciarz-android-…-test.apk` z [GitHub Releases](https://github.com/ArtifexEt/Hiciarz/releases), z wydania oznaczonego **Pre-release**.
@@ -77,6 +89,8 @@ Ustaw `ANDROID_HOME` na lokalizację Android SDK albo dodaj `sdk.dir=…` do lok
 | Raport lint | `app/build/reports/lint-results-release.html` |
 
 Testy obejmują zgodność kart QR i importu JSON/CSV z kreatorem web oraz reguły Bingo. Nie potwierdzają autoryzacji Spotify na prawdziwym urządzeniu; tę część należy sprawdzić ręcznie.
+
+CI uruchamia też natywny scenariusz Compose na emulatorze AOSP: wklejenie kodu, odkrycie karty, losowanie Bingo i zmianę języka. Sprawdza widoki telefonu i szerokiego okna, a 11 zrzutów PNG zapisuje w artefakcie `android-native-ui-…` obok raportu testu.
 
 Przykładowe talie są kopiowane z `../web/examples/playlists/` podczas `preBuild`. Opcjonalna zmienna `HICIARZ_BUILD_ROOT` przenosi katalogi wynikowe Gradle na inny dysk; podane wyżej ścieżki dotyczą standardowego buildu bez tej zmiennej.
 
