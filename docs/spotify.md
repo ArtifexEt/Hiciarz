@@ -39,7 +39,7 @@ Stan dokumentacji sprawdzony **11 listopada 2026**:
 - Od lipca 2026 można tworzyć do **25 aplikacji / Client IDs na konto dewelopera**; wcześniejszy limit jednego Client ID jest nieaktualny. Limity zapytań aplikacji deweloperskich są współdzielone na poziomie konta. [Zmiany z lipca 2026](https://developer.spotify.com/documentation/web-api/references/changes/july-2026).
 - Starsze integracje mogą zachować istniejące Client IDs i użytkowników ponad nowe limity. Spotify odroczyło część zmian endpointów dla istniejących integracji; ich dostęp może różnić się od nowych aplikacji. [Aktualizacja komunikatu Spotify](https://developer.spotify.com/blog/2026-02-06-update-on-developer-access-and-platform-security), [przewodnik migracji](https://developer.spotify.com/documentation/web-api/tutorials/february-2026-migration-guide).
 
-Własny Client ID i publikacja open source nadal podlegają zasadom Spotify. Publiczny dostęp dla szerszej grupy wymaga odpowiedniego trybu przyznanego przez Spotify.
+Własny Client ID nie znosi ograniczeń Spotify. Publiczny dostęp dla szerszej grupy wymaga odpowiedniego trybu przyznanego przez Spotify.
 
 ## Przygotuj własny Client ID
 

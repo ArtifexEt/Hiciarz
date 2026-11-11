@@ -1,0 +1,11 @@
+{
+  "printPreview.front": "Answer side: {{title}}",
+  "printPreview.back": "QR side: {{title}}",
+  "printPreview.preparing": "Preparing preview…",
+  "printPreview.failed": "Could not load the card preview.",
+  "printPreview.retry": "Try again",
+  "printPreview.ownTheme": "This card has its own theme: {{theme}}.",
+  "printPreview.overrides": "Cards with their own theme: {{count}}. Changing the deck theme does not change these cards.",
+  "printPreview.applyAll": "Apply the deck theme to all cards",
+  "printPreview.loadingBackground": "Loading background…"
+}

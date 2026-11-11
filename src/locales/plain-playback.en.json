@@ -1,0 +1,18 @@
+{
+  "plainPlayback.state.loading": "Loading track…",
+  "plainPlayback.state.playing": "Playing.",
+  "plainPlayback.state.paused": "Playback paused.",
+  "plainPlayback.state.stopped": "Playback stopped.",
+  "plainPlayback.state.error": "Could not play this recording.",
+  "plainPlayback.loadingAction": "Loading…",
+  "plainPlayback.prepareSpotify": "Connect Spotify",
+  "plainPlayback.chooseSpotifyDevice": "Open Sound to connect your Spotify account and choose a device.",
+  "plainPlayback.scanPairingCode": "Scan the pairing code",
+  "plainPlayback.pairingCodeLocation": "Show the code in the player on the other device.",
+  "plainPlayback.pointAtCard": "Point the camera at the card's QR code.",
+  "plainPlayback.remoteScanner": "Phone scanner",
+  "plainPlayback.pairPlayerDescription": "Connect the phone you will use to scan cards.",
+  "plainPlayback.pairingInstructions": "Open Card scanner on your phone and scan this code.",
+  "plainPlayback.scanOnConnectedDevice": "Scan cards on the connected device.",
+  "plainPlayback.pairingCode": "Pairing code"
+}

@@ -56,3 +56,27 @@
   max-width: 100%;
   margin-top: 12px;
 }
+
+.report-issue-link {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  min-height: 44px;
+  padding: 8px 0;
+  color: var(--ink);
+  font-size: 14px;
+  line-height: 1.5;
+  text-decoration: none;
+}
+.report-issue-link span {
+  flex: 1;
+}
+.report-issue-link:hover {
+  text-decoration: underline;
+  text-underline-offset: 3px;
+}
+.report-issue-link:focus-visible {
+  outline: 2px solid var(--accent-ink);
+  outline-offset: 3px;
+  border-radius: 2px;
+}

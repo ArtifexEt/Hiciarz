@@ -1,0 +1,12 @@
+{
+  "uiPrint.summary": "A4 sheets: {{sheets}} · PDF pages: {{pages}} · 60 × 60 mm cards",
+  "uiPrint.paper": "Paper",
+  "uiPrint.sides": "Printing",
+  "uiPrint.duplexLong": "Double-sided · flip on the long edge",
+  "uiPrint.duplexShort": "Double-sided · flip on the short edge",
+  "uiPrint.scale": "Scale",
+  "uiPrint.actualSize": "100%, without fitting to page",
+  "uiPrint.previewHint": "The PDF preview opens in a new tab. You can print from there.",
+  "uiPrint.testPrint": "Test print and calibration",
+  "uiPrint.calibrationHelp": "Print one sheet double-sided first. If the sides do not line up, print a calibration sheet and adjust the QR offsets."
+}

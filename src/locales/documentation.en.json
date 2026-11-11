@@ -4,5 +4,6 @@
   "documentation.spotify": "Spotify: setup and playback",
   "documentation.playlists": "Playlist format and AI help",
   "documentation.configuration": "Technical configuration",
-  "documentation.spotifyGuide": "Spotify guide"
+  "documentation.spotifyGuide": "Spotify guide",
+  "documentation.reportIssue": "Report a bug"
 }

@@ -41,43 +41,25 @@ export default function PlayingCard({
         <span className="playing-record">
           <Music2 size={42} aria-hidden="true" />
         </span>
-        <span className="playing-cover-caption">
-          {t('components.PlayingCard.lISTENGUESSHAVEFUN')}
-        </span>
       </div>
       <div className="playing-copy">
-        <span className="eyebrow">
-          {card.gameMode === 'movie'
-            ? t('components.PlayingCard.guessTheMovie')
-            : card.gameMode === 'game'
-              ? t('components.PlayingCard.gUESSTHEGAME')
-              : t('components.PlayingCard.yourMusicChallenge')}
-        </span>
-        <h2>
-          {state === 'paused' || state === 'stopped'
-            ? t('components.PlayingCard.takingABreak')
-            : state === 'error'
-              ? t('components.PlayingCard.letsTryAgain')
-              : loading
-                ? t('components.PlayingCard.musicInAMoment')
-                : cardQuestion(card.gameMode)}
-        </h2>
+        <h2>{cardQuestion(card.gameMode)}</h2>
         <p className="playing-message" role={state === 'error' ? 'alert' : 'status'}>
-          {displayTranslation(message)}
+          {message ? displayTranslation(message) : t('plainPlayback.state.' + state)}
         </p>
       </div>
       <button className="primary playback-toggle" disabled={disabled || loading} onClick={onToggle}>
         {loading ? (
-          <LoaderCircle className="spin" size={24} />
+          <LoaderCircle className="spin" size={24} aria-hidden="true" />
         ) : state === 'playing' ? (
-          <Pause size={24} />
+          <Pause size={24} aria-hidden="true" />
         ) : state === 'error' ? (
-          <RotateCcw size={23} />
+          <RotateCcw size={23} aria-hidden="true" />
         ) : (
-          <Play size={24} />
+          <Play size={24} aria-hidden="true" />
         )}
         {loading
-          ? t('components.PlayingCard.connecting')
+          ? t('plainPlayback.loadingAction')
           : state === 'playing'
             ? t('components.PlayingCard.pause')
             : state === 'error'
@@ -86,7 +68,7 @@ export default function PlayingCard({
       </button>
       {onNext && (
         <button className="quiet scan-next" onClick={onNext}>
-          <ScanLine size={19} /> {t('components.PlayingCard.scanTheNextCard')}
+          <ScanLine size={19} aria-hidden="true" /> {t('components.PlayingCard.scanTheNextCard')}
         </button>
       )}
     </section>

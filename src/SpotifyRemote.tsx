@@ -10,6 +10,7 @@ import {
   Settings2,
 } from 'lucide-react';
 import { openSpotifySetup } from './spotify-settings';
+import SpotifyLoginNotice, { usesDefaultSpotifyConnection } from './SpotifyLoginNotice';
 import type { Card } from './model';
 import type { Command } from './connection';
 import type { PlaybackState } from './playback';
@@ -232,22 +233,32 @@ export function useSpotifyRemote(
     connect,
   };
 }
-export function SpotifyRemotePanel({ remote }: { remote: ReturnType<typeof useSpotifyRemote> }) {
+export function SpotifyRemotePanel({
+  remote,
+  compact = false,
+}: {
+  remote: ReturnType<typeof useSpotifyRemote>;
+  compact?: boolean;
+}) {
   useTranslation();
   return (
-    <div className="spotify-remote">
-      <span className="mini-icon">
-        <Headphones size={23} />
-      </span>
-      <h2>
-        {remote.ready
-          ? t('components.SpotifyRemote.musicIsReadyTimeForCards')
-          : remote.linked
-            ? t('components.SpotifyRemote.chooseWhereWePlay')
-            : t('components.SpotifyRemote.connectSpotifyToPlay')}
-      </h2>
-      {!remote.ready && <p>{t('components.SpotifyRemote.signInOnceChooseAPhone')}</p>}
-      {!remote.ready && (
+    <div className={'spotify-remote' + (compact ? ' is-compact' : '')}>
+      {!compact && (
+        <>
+          <span className="mini-icon">
+            <Headphones size={23} />
+          </span>
+          <h2>
+            {remote.ready
+              ? t('components.SpotifyRemote.musicIsReadyTimeForCards')
+              : remote.linked
+                ? t('components.SpotifyRemote.chooseWhereWePlay')
+                : t('components.SpotifyRemote.connectSpotifyToPlay')}
+          </h2>
+          {!remote.ready && <p>{t('components.SpotifyRemote.signInOnceChooseAPhone')}</p>}
+        </>
+      )}
+      {!compact && !remote.ready && (
         <ol className="spotify-setup-steps" aria-label={t('components.SpotifyRemote.spotifySetup')}>
           <li className={remote.linked ? 'done' : 'current'}>
             <span>{remote.linked ? <Check size={14} /> : '1'}</span>
@@ -265,6 +276,7 @@ export function SpotifyRemotePanel({ remote }: { remote: ReturnType<typeof useSp
       )}
       {!remote.linked ? (
         <>
+          <SpotifyLoginNotice purpose="player" />
           <button className="primary full" disabled={remote.connecting} onClick={remote.connect}>
             {remote.connecting ? (
               <LoaderCircle className="spin" size={18} />
@@ -352,9 +364,11 @@ export function SpotifyRemotePanel({ remote }: { remote: ReturnType<typeof useSp
           {displayTranslation(remote.error)}
         </p>
       )}
-      <button className="spotify-settings-link" onClick={() => openSpotifySetup('player')}>
-        <Settings2 size={15} /> {t('components.SpotifyRemote.spotifyConnectionSettings')}
-      </button>
+      {(remote.linked || !usesDefaultSpotifyConnection()) && (
+        <button className="spotify-settings-link" onClick={() => openSpotifySetup('player')}>
+          <Settings2 size={15} /> {t('components.SpotifyRemote.spotifyConnectionSettings')}
+        </button>
+      )}
     </div>
   );
 }

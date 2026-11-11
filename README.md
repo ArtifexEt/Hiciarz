@@ -33,7 +33,7 @@ Ekran startowy na komputerze:
     <th>Odtwarzanie na komputerze</th>
   </tr>
   <tr>
-    <td width="50%" align="center"><a href="docs/screenshots/editor-desktop.png"><img src="docs/screenshots/editor-desktop.png" alt="Kreator talii z listą utworów, podglądem karty i etapami przygotowania wydruku" width="560"></a></td>
+    <td width="50%" align="center"><a href="docs/screenshots/editor-desktop.png"><img src="docs/screenshots/editor-desktop.png" alt="Edytor talii z podglądem karty zgodnym z układem PDF do druku" width="560"></a></td>
     <td width="50%" align="center"><a href="docs/screenshots/sound-desktop.png"><img src="docs/screenshots/sound-desktop.png" alt="Panel Dźwięk na komputerze z trzema opcjami: Na tym urządzeniu, Spotify Connect i Drugi ekran" width="560"></a></td>
   </tr>
 </table>
@@ -97,8 +97,8 @@ Dokładne kroki, poprawny Redirect URI, ustawienia forka oraz pomoc przy błęda
 
 - **Klasyczna oś czasu:** zgaduj rok nagrania i układaj muzyczną chronologię.
 - **Zgadnij film / Zgadnij grę:** wybierz wariant przez **W co gramy? → Inne warianty** i uzupełnij tytuł produkcji jako odpowiedź. Import Spotify dostarcza metadane nagrania; odpowiedź wpisujesz samodzielnie. Jest drukowana na stronie odpowiedzi karty i nie trafia do QR.
-- **Muzyczne Bingo:** otwórz **Bingo**, wybierz poziom i użyj **Losuj zagadkę**. Zestawy **Na dobry początek** i **Dla znawców** zawierają po pięć kategorii pytań. Każde losowanie jest niezależne. Odpowiedzi sprawdzacie na kartach, punkty zaznaczacie na papierze; pełny rząd, kolumna lub przekątna daje Bingo. W **Plansze do druku** przygotujesz różne plansze 5 × 5, po dwie na A4.
-- **Wygląd kart:** dziewięć motywów, własne rewersy z obsługą przeciągania plików, presety i oszczędny wydruk **Laser — lekki kolor**. Skórka strony jest wybierana osobno w ustawieniach; nie zmienia motywu zapisanej talii.
+- **Muzyczne Bingo:** otwórz **Bingo**, wybierz poziom i użyj **Losuj kategorię**. Zestawy **Na dobry początek** i **Dla znawców** zawierają po pięć kategorii pytań. Każde losowanie jest niezależne. Odpowiedzi sprawdzacie na kartach, punkty zaznaczacie na papierze; pełny rząd, kolumna lub przekątna daje Bingo. Ikona drukarki otwiera **Plansze do druku** — różne plansze 5 × 5, po dwie na A4.
+- **Wygląd kart:** dziewięć motywów, własne rewersy z obsługą przeciągania plików, presety i oszczędny wydruk **Laser — lekki kolor**. Podgląd karty odzwierciedla układ PDF. Karty z własnym motywem zachowują go przy zmianie motywu talii; ujednolica je przycisk **Zastosuj motyw talii do wszystkich kart**. Skórka strony jest wybierana osobno w ustawieniach; nie zmienia motywu zapisanej talii.
 
 **Wybierz gotową talię** udostępnia przykłady bez logowania:
 
@@ -115,6 +115,8 @@ Import JSON/CSV lub Spotify pyta o dopisanie na końcu albo zastąpienie listy. 
 ## Telefon, PWA i zapis danych
 
 Na telefonie dolny pasek zawiera **Skaner**, **Bingo**, **Talie**, **Dźwięk** i **Więcej**. Na komputerze widoki są w bocznym pasku. Logo wraca do startu, a **Wstecz** zamyka okno lub wraca do poprzedniego widoku. **Dźwięk** jest dostępny także podczas Bingo.
+
+Skaner i Bingo wypełniają ekran telefonu, z głównymi przyciskami nad dolnym menu. Miejsce odtwarzania zmienisz też w górnym pasku skanera. Pomoc i druk w Bingo otwierają dolne panele; powrót ze skanera zachowuje wylosowaną kategorię. W układzie poziomym plansza lub aparat są obok kontrolek. Do startu wrócisz przez **Więcej → Start**.
 
 W **Ustawieniach** zmienisz skórkę strony i język (**polski / angielski**), połączysz Spotify, sprawdzisz aktualizacje i zainstalujesz Hiciarza. Na iOS aplikacja pokazuje instrukcję dodania do ekranu początkowego przez menu udostępniania. Zmiana języka obejmuje interfejs oraz napisy na PDF; dane wpisane do talii pozostają bez zmian. [Słowniki JSON](docs/configuration.md#tłumaczenia-json).
 
@@ -150,21 +152,21 @@ Zmienna repozytorium Actions **`SPOTIFY_ONBOARDING`** (`Settings → Secrets and
 | Wartość       | Zachowanie                                                                 |
 | ------------- | -------------------------------------------------------------------------- |
 | `true`        | Pokaż przewodnik przed pierwszym logowaniem dla wybranego Client ID.       |
-| `false`       | Przejdź do logowania; zmiana połączenia i instrukcja pozostają dostępne. |
+| `false`       | Przejdź do logowania; zmiana połączenia i instrukcja pozostają dostępne.   |
 | Brak zmiennej | Przewodnik włączony dla ArtifexEt/Hiciarz, domyślnie wyłączony dla forków. |
 
 Po zmianie uruchom workflow publikacji. Gdy nie ma Client ID, aplikacja zawsze proponuje konfigurację. Informacja o ograniczeniach domyślnego połączenia pojawia się przed logowaniem niezależnie od tego przełącznika. Lokalny odpowiednik to `VITE_SPOTIFY_ONBOARDING=true` lub `false`.
 
 ## Dokumentacja
 
-| Dokument                                              | Zawartość                                                                    |
-| ----------------------------------------------------- | ---------------------------------------------------------------------------- |
+| Dokument                                              | Zawartość                                                                      |
+| ----------------------------------------------------- | ------------------------------------------------------------------------------ |
 | [Spotify](docs/spotify.md)                            | Zmiana połączenia, Client ID, logowanie, Connect, import i pomoc przy błędach. |
-| [Konfiguracja techniczna](docs/configuration.md)      | Publikacja, zmienne Actions, parowanie, PWA, tłumaczenia i zasoby.           |
-| [Przygotowanie listy utworów](docs/playlist-guide.md) | JSON/CSV i przygotowanie playlisty z pomocą AI.                              |
-| [Gotowy prompt](docs/playlist-prompt.txt)             | Instrukcja do skopiowania do wybranego AI.                                   |
-| [Przykładowe playlisty](examples/playlists/README.md) | Gotowe pliki, źródła nagrań i dodawanie kolejnych zestawów.                  |
+| [Konfiguracja techniczna](docs/configuration.md)      | Publikacja, zmienne Actions, parowanie, PWA, tłumaczenia i zasoby.             |
+| [Przygotowanie listy utworów](docs/playlist-guide.md) | JSON/CSV i przygotowanie playlisty z pomocą AI.                                |
+| [Gotowy prompt](docs/playlist-prompt.txt)             | Instrukcja do skopiowania do wybranego AI.                                     |
+| [Przykładowe playlisty](examples/playlists/README.md) | Gotowe pliki, źródła nagrań i dodawanie kolejnych zestawów.                    |
 
 Linki do dokumentacji znajdziesz też w aplikacji: **Jak grać** (na telefonie **Więcej → Jak grać**). Przewodnik Spotify jest dostępny bezpośrednio w **Ustawieniach Spotify**.
 
-Pomysły i błędy zgłaszaj w [Issues](https://github.com/ArtifexEt/Hiciarz/issues). Jeśli Hiciarz uprzyjemnił Wam wieczór, możesz [postawić autorowi kawę](https://buymeacoffee.com/szymonrybka).
+[Zgłoś usterkę](https://github.com/ArtifexEt/Hiciarz/issues/new) lub przejrzyj pomysły w [Issues](https://github.com/ArtifexEt/Hiciarz/issues). Jeśli Hiciarz uprzyjemnił Wam wieczór, możesz [postawić autorowi kawę](https://buymeacoffee.com/szymonrybka).

@@ -12,7 +12,6 @@ import {
   useRef,
   useState,
   useSyncExternalStore,
-  type ReactNode,
   Suspense,
   lazy,
 } from 'react';
@@ -24,21 +23,16 @@ import {
   ChevronDown,
   ChevronLeft,
   ChevronRight,
-  Coffee,
   Copy,
   Download,
   FileJson,
   FolderOpen,
-  Grid3X3,
   Headphones,
+  House,
   Info,
-  LayoutGrid,
-  Link2,
   LoaderCircle,
-  Monitor,
   MoreHorizontal,
   Music2,
-  Menu,
   Palette,
   Play,
   Plus,
@@ -53,15 +47,28 @@ import {
   Sparkles,
   Trash2,
   Upload,
-  Wifi,
   X,
 } from 'lucide-react';
 import { qrImage } from './qr';
 import Landing from './Landing';
+import Modal from './Modal';
+import AppNavigation from './AppNavigation';
+import PlaybackSettings from './PlaybackSettings';
+import AppInstall, { ConnectionNotice } from './AppInstall';
+import {
+  parseAppView,
+  keepScannerPairing,
+  urlForView,
+  navigationState,
+  readNavigationState,
+  type AppView,
+  type AppModal,
+} from './navigation';
 import FishFestivities from './FishFestivities';
 import SpotifyAccount from './SpotifyAccount';
+import SpotifyLoginNotice from './SpotifyLoginNotice';
 import SpotifySetup from './SpotifySetup';
-import DocumentationLinks from './DocumentationLinks';
+import DocumentationLinks, { ReportIssueLink } from './DocumentationLinks';
 import {
   isSpotifySettingsStorageKey,
   openSpotifySetup,
@@ -85,7 +92,7 @@ import PlaylistExamples from './PlaylistExamples';
 import { createExampleDeck } from './examples';
 import playlistPromptPl from '../docs/playlist-prompt.txt?raw';
 import playlistPromptEn from '../docs/playlist-prompt.en.txt?raw';
-import { frontDesign, frontImage } from './front';
+import CardPreview from './CardPreview';
 import {
   appVersion,
   applyUpdate,
@@ -98,7 +105,6 @@ import {
   type Deck,
   type Song,
   type Theme,
-  cardUrl,
   csvExport,
   download,
   findDeckForCard,
@@ -112,6 +118,7 @@ import {
   validateSong,
 } from './model';
 import { imageData, loadDecks, saveDecks } from './storage';
+import { createLatestRequest } from './latest-request';
 import PDFExportProgress, { setPDFProgress } from './PDFExportProgress';
 import PrintCards from './PrintCards';
 import { preparePDFPreview } from './pdf-preview';
@@ -131,44 +138,10 @@ import {
   spotifyConnected,
   spotifyLoginPurpose,
 } from './spotify';
-type Mode = 'home' | 'editor' | 'scanner' | 'player' | 'bingo';
+type Mode = AppView;
 function trackCount(count: number) {
   const form = new Intl.PluralRules(getLanguage()).select(count);
   return tr('app.trackCount.' + form, { count });
-}
-function Modal({
-  title,
-  children,
-  onClose,
-  wide = false,
-}: {
-  title: string;
-  children: ReactNode;
-  onClose: () => void;
-  wide?: boolean;
-}) {
-  const ref = useRef<HTMLDialogElement>(null);
-  useEffect(() => {
-    ref.current?.showModal();
-  }, []);
-  return (
-    <dialog
-      ref={ref}
-      className={wide ? 'modal wide' : 'modal'}
-      onCancel={onClose}
-      onClick={(e) => {
-        if (e.target === e.currentTarget) onClose();
-      }}
-    >
-      <div className="modal-heading">
-        <h2>{title}</h2>
-        <button className="icon" aria-label={tr('app.close')} onClick={onClose}>
-          <X size={20} />
-        </button>
-      </div>
-      {children}
-    </dialog>
-  );
 }
 export function QR({ value, className = '' }: { value: string; className?: string }) {
   const [url, setUrl] = useState('');
@@ -207,73 +180,20 @@ function ThemePicker({ value, onChange }: { value: Theme; onChange: (t: Theme) =
     </div>
   );
 }
-function CardPreview({ song, deck, back = false }: { song: Song; deck: Deck; back?: boolean }) {
-  const theme = deck.print.style === 'laser' ? 'laser' : song.theme || deck.theme;
-  return (
-    <div
-      className={'music-card ' + (back ? 'back' : 'front') + ' card-' + theme}
-      style={
-        back
-          ? {
-              backgroundImage: `url("${theme === 'laser' ? themeArt('laser') : deck.back || themeArt(theme)}")`,
-            }
-          : {
-              backgroundImage: `url("${frontImage(song, deck)}")`,
-              backgroundSize: 'cover',
-              backgroundRepeat: 'no-repeat',
-              color: frontDesign(song, deck).ink,
-            }
-      }
-    >
-      {back ? (
-        <>
-          <span className="card-wordmark">
-            {tr('app.hiciarz')}
-            <span>✳</span>
-          </span>
-          <div className="card-qr">
-            <QR value={cardUrl(song, deck.theme)} />
-          </div>
-          <small>
-            {song.gameMode === 'movie'
-              ? tr('app.guessTheMovie')
-              : song.gameMode === 'game'
-                ? tr('app.guessTheGame')
-                : tr('app.scanListenGuess')}
-          </small>
-        </>
-      ) : (
-        <>
-          <div className="card-topline">
-            <span>{tr('app.hiciarz2')}</span>
-          </div>
-          <strong className="card-year">
-            {song.gameMode === 'movie'
-              ? tr('app.movie')
-              : song.gameMode === 'game'
-                ? tr('app.game')
-                : song.year}
-          </strong>
-          <h3>{song.gameMode && song.gameMode !== 'music' ? song.answer : song.title}</h3>
-          <p>{song.gameMode && song.gameMode !== 'music' ? song.title : song.artist}</p>
-          <div className="card-bottomline">
-            <span>{song.id.slice(0, 12)}</span>
-          </div>
-        </>
-      )}
-    </div>
-  );
-}
 function SongForm({
   song,
   defaultMode = 'music',
   onSave,
   onClose,
+  onDelete,
+  onMove,
 }: {
   song?: Song;
   defaultMode?: GameMode;
   onSave: (s: Song) => void;
   onClose: () => void;
+  onDelete?: () => void;
+  onMove?: { up?: () => void; down?: () => void };
 }) {
   const [error, setError] = useState('');
   const [gameMode, setGameMode] = useState<GameMode>(song ? song.gameMode || 'music' : defaultMode);
@@ -425,6 +345,35 @@ function SongForm({
             {gameMode === 'music' ? tr('app.saveTrack') : tr('creator.saveCard')}
           </button>
         </div>
+        {song && (
+          <details className="song-extra-options">
+            <summary>{tr('shell.moreSongOptions')}</summary>
+            <div>
+              <button
+                type="button"
+                className="secondary"
+                disabled={!onMove?.up}
+                onClick={onMove?.up}
+              >
+                <ArrowUp size={18} />
+                {tr('shell.moveUp')}
+              </button>
+              <button
+                type="button"
+                className="secondary"
+                disabled={!onMove?.down}
+                onClick={onMove?.down}
+              >
+                <ArrowDown size={18} />
+                {tr('shell.moveDown')}
+              </button>
+              <button type="button" className="danger" onClick={onDelete}>
+                <Trash2 size={18} />
+                {tr('shell.deleteSong')}
+              </button>
+            </div>
+          </details>
+        )}
       </form>
     </Modal>
   );
@@ -476,16 +425,19 @@ function SpotifyImport({
         </label>
       </div>
       {!spotifyConnected() ? (
-        <button
-          className="primary full"
-          onClick={() => {
-            sessionStorage.setItem('spotify-import-mode', mode);
-            sessionStorage.setItem('spotify-import-playlist', playlist);
-            beginSpotifyLogin().catch((e) => setError(e.message));
-          }}
-        >
-          {spotifyConfigured() ? tr('app.connectToSpotify') : tr('app.setUpSpotifyConnection')}
-        </button>
+        <>
+          <SpotifyLoginNotice purpose="import" />
+          <button
+            className="primary full"
+            onClick={() => {
+              sessionStorage.setItem('spotify-import-mode', mode);
+              sessionStorage.setItem('spotify-import-playlist', playlist);
+              beginSpotifyLogin().catch((e) => setError(e.message));
+            }}
+          >
+            {spotifyConfigured() ? tr('app.connectToSpotify') : tr('app.setUpSpotifyConnection')}
+          </button>
+        </>
       ) : (
         <form
           onSubmit={async (e) => {
@@ -560,40 +512,25 @@ export default function App() {
   const playlistPrompt = language === 'en' ? playlistPromptEn : playlistPromptPl;
   const [draggingFile, setDraggingFile] = useState(false);
   const [draggingImage, setDraggingImage] = useState(false);
-  const [isMobile, setIsMobile] = useState(() => window.matchMedia('(max-width: 700px)').matches);
-  const [appMenuOpen, setAppMenuOpen] = useState(false);
+  const [backgroundBusy, setBackgroundBusy] = useState(false);
   const [bingoOpened, setBingoOpened] = useState(false);
-  const [showCoffee, setShowCoffee] = useState(localStorage.getItem('hiciarz-hide-coffee') !== '1');
   const updateAvailable = useSyncExternalStore(subscribeToUpdates, updateIsReady);
   const [updating, setUpdating] = useState(false);
   const [decks, setDecks] = useState<Deck[]>([]),
     [loaded, setLoaded] = useState(false),
-    [activeId, setActiveId] = useState(''),
-    [mode, setMode] = useState<Mode>('home'),
+    [activeId, setActiveIdState] = useState(''),
+    [mode, setMode] = useState<Mode>(() => parseAppView(location.href)),
     [tab, setTab] = useState<CreatorStep>('songs');
   useEffect(() => {
     if (mode === 'bingo') setBingoOpened(true);
   }, [mode]);
-  const focusedScanner = isMobile && mode === 'scanner';
-  const [modal, setModal] = useState<
-      | 'song'
-      | 'spotify'
-      | 'spotify-setup'
-      | 'print-cards'
-      | 'examples'
-      | 'file'
-      | 'help'
-      | 'about'
-      | 'delete'
-      | 'check'
-      | 'prompt'
-      | null
-    >(null),
+  const [modal, setModal] = useState<AppModal>(null),
     [editSong, setEditSong] = useState<Song>(),
     [filter, setFilter] = useState(''),
     [selected, setSelected] = useState<Set<string>>(new Set()),
     [previewIndex, setPreviewIndex] = useState(0),
     [showBack, setShowBack] = useState(false),
+    [previewOpen, setPreviewOpen] = useState(false),
     [message, setMessage] = useState(''),
     [storageError, setStorageError] = useState(''),
     [busy, setBusy] = useState(false),
@@ -617,13 +554,16 @@ export default function App() {
   const [playbackState, setPlaybackState] = useState<PlaybackState>('paused');
   const [playerRevision, setPlayerRevision] = useState(0);
   const playbackTransition = useRef(false);
+  const historyPopPending = useRef(false);
   const [scanFeedback, setScanFeedback] = useState<{ sequence: number; kind: 'card' | 'pair' }>();
   const reportPlayback = useCallback((text: string, state?: PlaybackState) => {
     setPlayState(text);
     if (state) setPlaybackState(state);
   }, []);
   const [output, setOutputState] = useState<PlaybackOutput>(() =>
-    initialPlaybackOutput(localStorage.getItem('hiciarz-output'), spotifyConfigured()),
+    mode === 'player'
+      ? 'browser'
+      : initialPlaybackOutput(localStorage.getItem('hiciarz-output'), spotifyConfigured()),
   );
   const setOutput = async (value: PlaybackOutput) => {
     if (playbackTransition.current) return false;
@@ -633,7 +573,7 @@ export default function App() {
       if (outputRef.current === 'spotify' && card) await spotifyRemote.stop();
       if (card && mode === 'scanner' && outputRef.current === 'browser')
         room.send(undefined, 'stop');
-      if (mode === 'scanner' && value !== 'browser' && (room.connected || room.pairUrl))
+      if (mode !== 'player' && value !== 'browser' && (room.connected || room.pairUrl))
         room.disconnect();
       clearRound();
       outputRef.current = value;
@@ -645,17 +585,37 @@ export default function App() {
       return false;
     } finally {
       playbackTransition.current = false;
+      if (historyPopPending.current) {
+        historyPopPending.current = false;
+        setTimeout(
+          () => popNavigation.current(new PopStateEvent('popstate', { state: history.state })),
+          0,
+        );
+      }
     }
   };
   const spotifyRemote = useSpotifyRemote(
     card,
     command,
-    output === 'spotify' && (mode === 'scanner' || mode === 'player'),
+    output === 'spotify' && (mode === 'scanner' || mode === 'player' || modal === 'playback'),
     reportPlayback,
-    mode === 'scanner' ? 'scanner' : 'player',
+    mode === 'player' ? 'player' : 'scanner',
   );
   const outputRef = useRef(output);
   outputRef.current = output;
+  const backgroundRequests = useRef(createLatestRequest()).current;
+  const invalidateBackground = useCallback(() => {
+    backgroundRequests.invalidate();
+    setBackgroundBusy(false);
+  }, [backgroundRequests]);
+  const setActiveId = useCallback(
+    (id: string) => {
+      invalidateBackground();
+      setActiveIdState(id);
+    },
+    [invalidateBackground],
+  );
+  useEffect(() => () => backgroundRequests.invalidate(), [backgroundRequests]);
   const fileRef = useRef<HTMLInputElement>(null),
     lastScan = useRef({ id: '', time: 0 }),
     incomingCard = useRef<Card | null>(null),
@@ -702,12 +662,19 @@ export default function App() {
     }
   }
   async function readBackground(file: File) {
-    try {
-      updateDeck({ back: await imageData(file) });
-      setShowBack(true);
-    } catch (error) {
-      notify((error as Error).message);
-    }
+    setBackgroundBusy(true);
+    await backgroundRequests.run(
+      () => imageData(file),
+      (back) => {
+        setBackgroundBusy(false);
+        updateDeck({ back });
+        setShowBack(true);
+      },
+      (error) => {
+        setBackgroundBusy(false);
+        notify((error as Error).message);
+      },
+    );
   }
   function clearScanFeedback() {
     clearTimeout(scanFeedbackTimer.current);
@@ -782,6 +749,13 @@ export default function App() {
       notify((error as Error).message);
     } finally {
       playbackTransition.current = false;
+      if (historyPopPending.current) {
+        historyPopPending.current = false;
+        setTimeout(
+          () => popNavigation.current(new PopStateEvent('popstate', { state: history.state })),
+          0,
+        );
+      }
     }
   }
   function togglePlayback() {
@@ -804,18 +778,12 @@ export default function App() {
     } else playerCommand(action);
   }
   useEffect(() => {
-    const query = window.matchMedia('(max-width: 700px)');
-    const resized = () => setIsMobile(query.matches);
-    query.addEventListener('change', resized);
-    return () => query.removeEventListener('change', resized);
-  }, []);
-  useEffect(() => {
     const show = (event: Event) => {
       const purpose = (event as CustomEvent<{ purpose?: SpotifyPurpose }>).detail?.purpose;
       if (purpose === 'player')
         sessionStorage.setItem(
           'hiciarz-spotify-return-mode',
-          mode === 'scanner' ? 'scanner' : 'player',
+          mode === 'player' ? 'player' : 'scanner',
         );
       setSpotifySetup((previous) => ({ purpose, revision: previous.revision + 1 }));
       setModal('spotify-setup');
@@ -841,15 +809,6 @@ export default function App() {
       window.removeEventListener('storage', storageChanged);
     };
   }, []);
-  useEffect(() => {
-    if (!appMenuOpen) return;
-    const dismiss = (e: PointerEvent) => {
-      if (!(e.target as Element).closest('.mobile-app-menu, .mobile-menu-toggle'))
-        setAppMenuOpen(false);
-    };
-    document.addEventListener('pointerdown', dismiss);
-    return () => document.removeEventListener('pointerdown', dismiss);
-  }, [appMenuOpen]);
   useEffect(() => {
     let live = true;
     loadDecks()
@@ -941,7 +900,7 @@ export default function App() {
     try {
       const q = readQR(raw);
       if (q.kind === 'spotify-setup') {
-        if (!(await setOutput('spotify'))) return;
+        if (!(await setOutput('spotify')) || location.href !== raw) return;
         setMode('scanner');
         sessionStorage.setItem('hiciarz-spotify-return-mode', 'scanner');
         setSpotifySetup((previous) => ({
@@ -951,7 +910,7 @@ export default function App() {
         }));
         setModal('spotify-setup');
       } else if (q.kind === 'pair') {
-        if (!(await setOutput('browser'))) return;
+        if (!(await setOutput('browser')) || location.href !== raw) return;
         setMode('scanner');
         room.join(q.peer, q.token);
       } else {
@@ -963,8 +922,12 @@ export default function App() {
           receive(q.card);
         else incomingCard.current = q.card;
       }
-      if (location.href === raw)
-        history.replaceState(null, '', location.pathname + location.search);
+      if (location.href === raw) {
+        const consumed = new URL(urlForView(location.href, 'scanner'));
+        consumed.hash = '';
+        history.replaceState(navigationState(history.state, 'scanner', null), '', consumed.href);
+        if (q.kind !== 'spotify-setup') setModal(null);
+      }
     } catch {
       // Ignore hashes that are not valid Hiciarz QR payloads.
     }
@@ -987,9 +950,20 @@ export default function App() {
       incomingCard.current = null;
     }
   }, [room.connected, output]);
+  function moveEditedSong(direction: -1 | 1) {
+    if (!editSong) return;
+    const index = deck.songs.findIndex((song) => song.id === editSong.id);
+    const target = index + direction;
+    if (index < 0 || target < 0 || target >= deck.songs.length) return;
+    const songs = [...deck.songs];
+    [songs[index], songs[target]] = [songs[target], songs[index]];
+    updateDeck({ songs });
+    setPreviewIndex(target);
+  }
   function goToCreatorStep(next: CreatorStep) {
     if (next !== 'songs' && !deck.songs.length) return;
     setTab(next);
+    if (next === 'design') setPreviewOpen(true);
     requestAnimationFrame(() =>
       document
         .querySelector('[data-deck-settings]')
@@ -1040,7 +1014,8 @@ export default function App() {
       if (lastScan.current.id === scanId && now - lastScan.current.time < 7000) return;
       if (q.kind === 'pair') {
         lastScan.current = { id: scanId, time: now };
-        if (!(await setOutput('browser'))) return;
+        const scanLocation = location.href;
+        if (!(await setOutput('browser')) || location.href !== scanLocation) return;
         room.join(q.peer, q.token);
         confirmScan('pair');
         return;
@@ -1073,7 +1048,7 @@ export default function App() {
     }
   }
   async function exportPDF(destination: 'download' | 'print' = 'download') {
-    if (pdfAbort.current) return;
+    if (pdfAbort.current || backgroundBusy) return;
     const songs = selected.size ? deck.songs.filter((s) => selected.has(s.id)) : deck.songs;
     if (!songs.length) return;
     const controller = new AbortController();
@@ -1121,36 +1096,142 @@ export default function App() {
       setBusy(false);
     }
   }
-  async function changeMode(next: Mode) {
-    setAppMenuOpen(false);
-    if (next === mode || playbackTransition.current) return;
+  async function changeMode(next: Mode, recordHistory = true) {
+    if (playbackTransition.current) return false;
+    if (next === mode) {
+      setModal(null);
+      return true;
+    }
     playbackTransition.current = true;
     try {
-      if (outputRef.current === 'spotify' && card) await spotifyRemote.stop();
+      if (outputRef.current === 'spotify' && card) {
+        try {
+          await spotifyRemote.stop();
+        } catch (error) {
+          notify((error as Error).message);
+        }
+      }
       if (mode === 'scanner' && outputRef.current === 'browser' && card)
         room.send(undefined, 'stop');
-      if (room.connected || room.pairUrl) room.disconnect();
+      const shouldRecord = recordHistory && !historyPopPending.current;
+      const destination = shouldRecord ? next : parseAppView(location.href);
+      if (!keepScannerPairing(mode, destination) && (room.connected || room.pairUrl))
+        room.disconnect();
       clearRound();
       incomingCard.current = null;
-      setMode(next);
-      if (next === 'player') {
+      historyPopPending.current = false;
+      if (shouldRecord) {
+        const method = readNavigationState(history.state).modal ? 'replaceState' : 'pushState';
+        history[method](
+          navigationState(history.state, destination, null),
+          '',
+          urlForView(location.href, destination),
+        );
+        setModal(null);
+      }
+      if (!shouldRecord) {
+        const nextModal = availableModal(readNavigationState(history.state).modal, destination);
+        history.replaceState(
+          navigationState(history.state, destination, nextModal),
+          '',
+          urlForView(location.href, destination),
+        );
+        setModal(nextModal);
+      }
+      setMode(destination);
+      if (destination === 'player') {
         outputRef.current = 'browser';
         setOutputState('browser');
         localStorage.setItem('hiciarz-output', 'browser');
       }
+      return true;
     } catch (error) {
       notify((error as Error).message);
+      if (!recordHistory)
+        history.replaceState(
+          navigationState(history.state, mode, modal),
+          '',
+          urlForView(location.href, mode),
+        );
+      return false;
     } finally {
       playbackTransition.current = false;
+      if (historyPopPending.current) {
+        historyPopPending.current = false;
+        setTimeout(
+          () => popNavigation.current(new PopStateEvent('popstate', { state: history.state })),
+          0,
+        );
+      }
     }
   }
+  const historyReady = useRef(false);
+  const popNavigation = useRef<(event: PopStateEvent) => void>(() => {});
+  function availableModal(candidate: AppModal, view = mode): AppModal {
+    if ((candidate === 'bingo-help' || candidate === 'bingo-print') && view !== 'bingo')
+      return null;
+    if (candidate === 'file' && !pending) return null;
+    if (candidate === 'print-cards' && !printCount) return null;
+    if (candidate === 'song' && editSong && !deck?.songs.some((song) => song.id === editSong.id))
+      return null;
+    return candidate;
+  }
+  popNavigation.current = (event) => {
+    if (playbackTransition.current) {
+      historyPopPending.current = true;
+      return;
+    }
+    const target = parseAppView(location.href);
+    const candidate = readNavigationState(event.state).modal;
+    const nextModal = availableModal(candidate, target);
+    if (nextModal !== candidate)
+      history.replaceState(navigationState(history.state, target, nextModal), '', location.href);
+    setModal(nextModal);
+    if (target !== mode) void changeMode(target, false);
+  };
+  useEffect(() => {
+    const activeModal = historyReady.current ? readNavigationState(history.state).modal : null;
+    history.replaceState(
+      navigationState(history.state, mode, activeModal),
+      '',
+      urlForView(location.href, mode),
+    );
+    historyReady.current = true;
+  }, [mode]);
+  useEffect(() => {
+    const activeModal = readNavigationState(history.state).modal;
+    if (modal === activeModal) return;
+    if (modal) {
+      const method = activeModal ? 'replaceState' : 'pushState';
+      history[method](
+        navigationState(history.state, mode, modal),
+        '',
+        urlForView(location.href, mode),
+      );
+    } else if (activeModal) history.back();
+  }, [modal, mode]);
+  useEffect(() => {
+    const onPop = (event: PopStateEvent) => popNavigation.current(event);
+    window.addEventListener('popstate', onPop);
+    return () => window.removeEventListener('popstate', onPop);
+  }, []);
   const filtered =
     deck?.songs.filter((s) =>
-      (s.title + ' ' + s.artist + ' ' + s.year)
+      [s.title, s.artist, s.year, s.answer]
+        .filter(Boolean)
+        .join(' ')
         .toLocaleLowerCase(language)
         .includes(filter.toLocaleLowerCase(language)),
     ) || [];
+  const themeOverrides = deck?.songs.filter((song) => song.theme).length || 0;
   const previewSong = deck?.songs[Math.min(previewIndex, Math.max(0, deck.songs.length - 1))];
+  const playbackDestination =
+    output === 'local' || (mode === 'player' && output === 'browser')
+      ? tr('app.onThisDevice')
+      : output === 'spotify'
+        ? spotifyRemote.devices.find((device) => device.id === spotifyRemote.device)?.name ||
+          'Spotify Connect'
+        : tr('app.secondScreen');
   if (!loaded || !deck)
     return (
       <div className="boot">
@@ -1162,245 +1243,66 @@ export default function App() {
       className={
         'app-shell mode-' +
         mode +
-        (focusedScanner ? ' focused-scanner' : '') +
         ((mode === 'scanner' || mode === 'player') && card ? ' playback-active' : '')
       }
     >
-      <aside className="sidebar">
-        <a className="brand" href={import.meta.env.BASE_URL} aria-label={tr('app.hiciarzHome')}>
-          <span className="brand-icon">
-            <img src={asset('icon.svg')} alt="" aria-hidden="true" width="38" height="38" />
-          </span>
-          {tr('app.hiciarz')}
-          <span className="brand-star">✳</span>
-        </a>
-        <div className="sidebar-group">
-          <span className="eyebrow">{tr('app.yourMusicSpace')}</span>
-          <nav aria-label={tr('app.appModes')}>
-            <button
-              className={mode === 'editor' ? 'nav active' : 'nav'}
-              onClick={() => changeMode('editor')}
-            >
-              <LayoutGrid size={19} /> {tr('app.cardCreator')} <span className="nav-dot" />
-            </button>
-            <button
-              className={mode === 'scanner' ? 'nav active' : 'nav'}
-              onClick={() => changeMode('scanner')}
-            >
-              <ScanLine size={19} /> {tr('app.cardScanner')}
-            </button>
-            <button
-              className={mode === 'player' ? 'nav active' : 'nav'}
-              onClick={() => changeMode('player')}
-            >
-              <Headphones size={19} /> {tr('app.player')}{' '}
-              {room.connected && <span className="live-dot" />}
-            </button>
-            {!isMobile && (
-              <button
-                className={mode === 'bingo' ? 'nav active' : 'nav'}
-                onClick={() => changeMode('bingo')}
-              >
-                <Grid3X3 size={19} /> {tr('app.bingo')}
-              </button>
-            )}
-          </nav>
-        </div>
-        <div className="sidebar-group decks">
-          <div className="label-row">
-            <span className="eyebrow">{tr('app.yourDecks')}</span>
-            <button
-              className="icon small"
-              aria-label={tr('app.createANewDeck')}
-              onClick={() => {
-                const d = newDeck();
-                setDecks([...decks, d]);
-                setActiveId(d.id);
-                void changeMode('editor');
-              }}
-            >
-              <Plus size={17} />
-            </button>
-          </div>
-          {decks.map((d) => (
-            <button
-              key={d.id}
-              className={'deck-nav ' + (d.id === deck.id ? 'selected' : '')}
-              onClick={() => {
-                setActiveId(d.id);
-                changeMode('editor');
-              }}
-            >
-              <span className={'deck-dot ' + d.theme} />
-              <span>{d.name}</span>
-              <small>{d.songs.length}</small>
-            </button>
-          ))}
-        </div>
-        <div className="sidebar-bottom">
-          <div className="sidebar-note">
-            <Sparkles size={20} />
-            <strong>
-              {tr('app.aGreatEveningStarts')}
-              <br />
-              {tr('app.withGreatMusic')}
-            </strong>
-            <p>{tr('app.createSomethingThatBringsYouTogether')}</p>
-          </div>
-          <a href="https://buymeacoffee.com/szymonrybka" target="_blank" rel="noreferrer">
-            <Coffee size={17} /> {tr('app.buyACoffee')} <ArrowUpRight size={14} />
-          </a>
-          <a href="https://github.com/ArtifexEt/Hiciarz" target="_blank" rel="noreferrer">
-            <FileJson size={17} /> {tr('app.openSourceCode')} <ArrowUpRight size={14} />
-          </a>
-          <button className="help-link" onClick={() => setModal('help')}>
-            <Info size={17} /> {tr('app.howDoesItWork')}
-          </button>
-          <span className="version">{tr('app.hiciarzStudio01')}</span>
-        </div>
-      </aside>
+      <a className="skip-content" href="#app-content">
+        {tr('shell.skipContent')}
+      </a>
+      <AppNavigation
+        current={mode}
+        menuOpen={modal === 'menu'}
+        playbackOpen={modal === 'playback'}
+        onChoose={changeMode}
+        onMenu={() => setModal('menu')}
+        onPlayback={() => setModal('playback')}
+        onSettings={() => setModal('about')}
+        onHelp={() => setModal('help')}
+      />
       <div className="workspace">
-        <header className="topbar">
-          <div className="breadcrumb">
-            {mode === 'home' ? (
-              <span className="start-brand">
-                {tr('app.hiciarz')} <span aria-hidden="true">✳</span>
-              </span>
-            ) : (
-              <>
-                <button
-                  className="start-link"
-                  onClick={() => changeMode('home')}
-                  aria-label={tr('app.backToHome')}
-                >
-                  <ChevronLeft size={16} />
-                  {tr('app.home')}
-                </button>
-                <ChevronRight size={13} />
-                <strong>
-                  {mode === 'editor'
-                    ? tr('app.cardCreator')
-                    : mode === 'scanner'
-                      ? tr('app.cardScanner')
-                      : mode === 'bingo'
-                        ? tr('app.bingo')
-                        : tr('app.player')}
-                </strong>
-              </>
-            )}
-          </div>
-          <div className="topbar-right">
-            <span className="save-status">
-              <span className={storageError ? 'warn-dot' : 'live-dot'} />
-              {storageError ? tr('app.savingUnavailable') : tr('app.savedLocally')}
-            </span>
-            <label className="theme-select">
-              <Palette size={16} />
-              <select
-                aria-label={tr('app.appTheme')}
-                value={uiTheme}
-                onChange={(e) => setUiTheme(e.target.value as Theme)}
+        <header className="app-header">
+          {mode === 'scanner' && (
+            <div className="scanner-app-toolbar">
+              <span className="game-view-title">{tr('shell.view.scanner')}</span>
+              <button
+                className="scanner-output-chip"
+                aria-label={tr('sound.title') + ': ' + playbackDestination}
+                aria-haspopup="dialog"
+                onClick={() => setModal('playback')}
               >
-                {themes.map((t) => (
-                  <option key={t} value={t}>
-                    {themeNames[t]}
-                  </option>
-                ))}
-              </select>
-            </label>
+                <span className={gameReady ? 'live-dot' : 'warn-dot'} aria-hidden="true" />
+                <span>{playbackDestination}</span>
+                <ChevronDown size={16} aria-hidden="true" />
+              </button>
+            </div>
+          )}
+          <button
+            className="header-brand"
+            onClick={() => changeMode('home')}
+            aria-label={tr('app.hiciarzHome')}
+          >
+            <img src={asset('icon.svg')} width="32" height="32" alt="" />
+            <span>hiciarz</span>
+          </button>
+          <span className="app-current-view">{tr('shell.view.' + mode)}</span>
+          <div className="app-header-actions">
+            {mode === 'editor' && (
+              <span className="save-status">
+                <span className={storageError ? 'warn-dot' : 'live-dot'} />
+                {storageError ? tr('app.savingUnavailable') : tr('shell.saved')}
+              </span>
+            )}
             <button
-              className="icon about-button"
+              className="icon"
               aria-label={tr('app.settings')}
               title={tr('app.settings')}
               onClick={() => setModal('about')}
             >
-              <Settings2 size={20} />
+              <Settings2 size={21} />
             </button>
-            <button
-              className="icon mobile-menu-toggle"
-              aria-label={tr('app.appMenu')}
-              aria-expanded={appMenuOpen}
-              aria-controls="mobile-app-menu"
-              onClick={() => setAppMenuOpen(!appMenuOpen)}
-            >
-              <Menu size={21} />
-            </button>
-            <SpotifyAccount />
           </div>
-          {appMenuOpen && (
-            <nav
-              id="mobile-app-menu"
-              className="mobile-app-menu"
-              aria-label={tr('app.appMenu')}
-              onKeyDown={(e) => {
-                if (e.key === 'Escape') setAppMenuOpen(false);
-              }}
-            >
-              <div className="label-row">
-                <strong>{tr('app.hiciarz3')}</strong>
-                <button
-                  className="icon"
-                  aria-label={tr('app.closeMenu')}
-                  onClick={() => setAppMenuOpen(false)}
-                >
-                  <X size={18} />
-                </button>
-              </div>
-              <button onClick={() => changeMode('home')}>
-                <Music2 size={18} /> {tr('app.homePage')}
-              </button>
-              <button
-                onClick={() => {
-                  changeMode('scanner');
-                  setAppMenuOpen(false);
-                }}
-              >
-                <ScanLine size={18} /> {tr('app.scanAndPlay')}
-              </button>
-              <button
-                onClick={() => {
-                  changeMode('editor');
-                  setAppMenuOpen(false);
-                }}
-              >
-                <LayoutGrid size={18} /> {tr('app.createCards')}
-              </button>
-              <button
-                onClick={() => {
-                  changeMode('player');
-                  setAppMenuOpen(false);
-                }}
-              >
-                <Headphones size={18} /> {tr('app.player')}
-              </button>
-              <button onClick={() => changeMode('bingo')}>
-                <Grid3X3 size={18} /> {tr('app.bingo')}
-              </button>
-              <label>
-                {tr('app.appearance')}
-                <select
-                  aria-label={tr('app.menuTheme')}
-                  value={uiTheme}
-                  onChange={(e) => setUiTheme(e.target.value as Theme)}
-                >
-                  {themes.map((t) => (
-                    <option key={t} value={t}>
-                      {themeNames[t]}
-                    </option>
-                  ))}
-                </select>
-              </label>
-              <button
-                onClick={() => {
-                  setModal('about');
-                  setAppMenuOpen(false);
-                }}
-              >
-                <Settings2 size={18} /> {tr('app.settings')}
-              </button>
-            </nav>
-          )}
         </header>
+        <ConnectionNotice />
         {updateAvailable && (
           <div className="update-banner" role="status">
             <span>
@@ -1426,42 +1328,23 @@ export default function App() {
             </button>
           </div>
         )}
-        {showCoffee && mode === 'editor' && (
-          <div className="coffee-support">
-            <a
-              href="https://buymeacoffee.com/szymonrybka"
-              target="_blank"
-              rel="noopener noreferrer"
-            >
-              <Coffee size={20} aria-hidden="true" />
-              <span>
-                {tr('app.enjoyingHiciarz')} <strong>{tr('app.buyMeACoffee')}</strong>
-              </span>
-              <ArrowUpRight size={18} aria-hidden="true" />
-            </a>
-            <button
-              className="icon"
-              aria-label={tr('app.hideCoffeeBanner')}
-              title={tr('app.hideCoffeeBanner')}
-              onClick={() => {
-                setShowCoffee(false);
-                localStorage.setItem('hiciarz-hide-coffee', '1');
-              }}
-            >
-              <X size={18} />
-            </button>
-          </div>
-        )}
-        <main>
+        <main id="app-content" tabIndex={-1}>
           {uiTheme === 'fish' &&
             mode !== 'bingo' &&
-            !((mode === 'scanner' || mode === 'player') && card) && (
-              <FishFestivities compact={mode !== 'home'} />
-            )}
+            mode !== 'scanner' &&
+            !(mode === 'player' && card) && <FishFestivities compact={mode !== 'home'} />}
           {(bingoOpened || mode === 'bingo') && (
             <div className="bingo-container" hidden={mode !== 'bingo'}>
               <Suspense fallback={<p className="hint">{tr('app.preparingBingo')}</p>}>
-                <BingoGame onScanner={() => changeMode('scanner')} />
+                <BingoGame
+                  onScanner={() => changeMode('scanner')}
+                  sheet={modal === 'bingo-help' ? 'help' : modal === 'bingo-print' ? 'print' : null}
+                  onSheetChange={(sheet) =>
+                    setModal(
+                      sheet === 'help' ? 'bingo-help' : sheet === 'print' ? 'bingo-print' : null,
+                    )
+                  }
+                />
               </Suspense>
             </div>
           )}
@@ -1469,29 +1352,7 @@ export default function App() {
             <Landing onChoose={changeMode} theme={uiTheme} />
           ) : mode === 'editor' ? (
             <>
-              <section className="page-heading">
-                <div>
-                  <div className="eyebrow">
-                    <span className="tiny-line" /> {tr('app.makeMusicAGreatEvening')}
-                  </div>
-                  <h1>
-                    {tr('app.createYourOwnCards')}
-                    <span className="heading-star">✳</span>
-                  </h1>
-                </div>
-                <div className="heading-actions print-action">
-                  <button
-                    className="primary"
-                    disabled={!printCount || busy}
-                    onClick={openPrintCards}
-                    aria-haspopup="dialog"
-                  >
-                    {busy ? <LoaderCircle size={18} className="spin" /> : <Printer size={18} />}{' '}
-                    {busy ? tr('app.preparingCards') : tr('app.downloadPrintCards')}{' '}
-                    <ChevronDown size={16} aria-hidden="true" />
-                  </button>
-                </div>
-              </section>
+              <h1 className="sr-only">{tr('shell.view.editor')}</h1>
               {printReady?.deck === deck && (
                 <section className="print-ready-note" role="status">
                   <Printer size={22} aria-hidden="true" />
@@ -1522,82 +1383,90 @@ export default function App() {
                   {displayTranslation(storageError)}
                 </div>
               )}
-              <section className="deck-toolbar">
-                <label className="mobile-deck-picker">
-                  {tr('app.yourDecks2')}
-                  <select
-                    aria-label={tr('app.selectADeck')}
-                    value={activeId}
-                    onChange={(e) => {
-                      setActiveId(e.target.value);
-                    }}
-                  >
-                    {decks.map((d) => (
-                      <option key={d.id} value={d.id}>
-                        {d.name} · {trackCount(d.songs.length)}
-                      </option>
-                    ))}
-                  </select>
-                </label>
+              <section
+                className="deck-toolbar deck-workspace-bar"
+                inert={busy}
+                aria-label={tr('shell.deckChoose')}
+              >
                 <div className="deck-title">
-                  <span
-                    className="deck-art"
-                    style={{ backgroundImage: `url("${themeArt(deck.theme)}")` }}
-                  >
-                    <Music2 size={22} />
-                  </span>
-                  <div>
-                    <label className="sr-only" htmlFor="deck-name">
-                      {tr('app.deckName')}
-                    </label>
-                    <input
-                      id="deck-name"
-                      value={deck.name}
-                      maxLength={100}
-                      onChange={(e) => updateDeck({ name: e.target.value })}
-                    />
-                    <div className="deck-meta">
-                      <span>{trackCount(deck.songs.length)}</span>
-                      <i /> <span>{themeNames[deck.theme]}</span>
-                      <i />
-                      <span>{tr('app.a46060Mm')}</span>
-                    </div>
-                  </div>
+                  <label className="sr-only" htmlFor="deck-name">
+                    {tr('app.deckName')}
+                  </label>
+                  <input
+                    id="deck-name"
+                    value={deck.name}
+                    maxLength={100}
+                    onChange={(event) => updateDeck({ name: event.target.value })}
+                  />
+                  <span className="deck-count">{trackCount(deck.songs.length)}</span>
                 </div>
-                <div className="toolbar-buttons">
-                  <button
-                    className="secondary"
-                    aria-label={tr('app.newDeck')}
-                    onClick={() => {
-                      const d = newDeck();
-                      setDecks([...decks, d]);
-                      setActiveId(d.id);
-                      void changeMode('editor');
-                    }}
-                  >
-                    <Plus size={17} /> {tr('app.newDeck')}
-                  </button>
-                  <button className="secondary" onClick={() => fileRef.current?.click()}>
-                    <FolderOpen size={17} /> {tr('app.import')}
-                  </button>
-                  <button
-                    className="secondary"
-                    onClick={() =>
-                      download(JSON.stringify(deck, null, 2), `${deck.name || 'talia'}.json`)
-                    }
-                  >
-                    <Download size={17} /> {tr('app.saveProject')}
-                  </button>
-                  <button
-                    className="secondary delete-deck-button"
-                    aria-label={tr('app.deleteDeck')}
-                    onClick={() => setModal('delete')}
-                  >
-                    <Trash2 size={17} /> {tr('app.deleteDeck')}
-                  </button>
+                <div className="deck-controls">
+                  <details className="deck-actions-menu">
+                    <summary aria-label={tr('shell.deckMenu')} title={tr('shell.deckMenu')}>
+                      <MoreHorizontal size={22} />
+                    </summary>
+                    <div className="deck-actions-list">
+                      {' '}
+                      {decks.length > 1 && (
+                        <select
+                          aria-label={tr('shell.deckChoose')}
+                          value={activeId}
+                          onChange={(event) => {
+                            setActiveId(event.target.value);
+                            event.currentTarget.closest('details')?.removeAttribute('open');
+                          }}
+                        >
+                          {decks.map((item) => (
+                            <option key={item.id} value={item.id}>
+                              {item.name}
+                            </option>
+                          ))}
+                        </select>
+                      )}
+                      <button
+                        onClick={(event) => {
+                          event.currentTarget.closest('details')?.removeAttribute('open');
+                          const next = newDeck();
+                          setDecks([...decks, next]);
+                          setActiveId(next.id);
+                        }}
+                      >
+                        <Plus size={18} />
+                        {tr('shell.newDeck')}
+                      </button>
+                      <button
+                        onClick={(event) => {
+                          event.currentTarget.closest('details')?.removeAttribute('open');
+                          fileRef.current?.click();
+                        }}
+                      >
+                        <FolderOpen size={18} />
+                        {tr('shell.importDeck')}
+                      </button>
+                      <button
+                        onClick={(event) => {
+                          event.currentTarget.closest('details')?.removeAttribute('open');
+                          download(JSON.stringify(deck, null, 2), `${deck.name || 'talia'}.json`);
+                        }}
+                      >
+                        <Download size={18} />
+                        {tr('shell.saveDeck')}
+                      </button>
+                      <button
+                        className="delete-action"
+                        onClick={(event) => {
+                          event.currentTarget.closest('details')?.removeAttribute('open');
+                          setModal('delete');
+                        }}
+                      >
+                        <Trash2 size={18} />
+                        {tr('shell.deleteDeck')}
+                      </button>
+                    </div>
+                  </details>
                 </div>
               </section>
-              <div className="studio-grid">
+              <div className="studio-grid" inert={busy} aria-busy={busy}>
                 <section className="editor-panel">
                   <CreatorSteps
                     current={tab}
@@ -1607,10 +1476,24 @@ export default function App() {
                   {tab === 'songs' ? (
                     <>
                       <div className="creator-game-choice">
-                        <GameModePicker
-                          value={deck.gameMode || 'music'}
-                          onChange={(gameMode) => updateDeck({ gameMode })}
-                        />
+                        {deck.songs.length ? (
+                          <details className="deck-variation">
+                            <summary>
+                              {tr('creator.variant.' + (deck.gameMode || 'music'))}
+                              <ChevronDown size={17} aria-hidden="true" />
+                            </summary>
+                            <GameModePicker
+                              value={deck.gameMode || 'music'}
+                              onChange={(gameMode) => updateDeck({ gameMode })}
+                              compact
+                            />
+                          </details>
+                        ) : (
+                          <GameModePicker
+                            value={deck.gameMode || 'music'}
+                            onChange={(gameMode) => updateDeck({ gameMode })}
+                          />
+                        )}
                         {deck.songs.some(
                           (song) => (song.gameMode || 'music') !== (deck.gameMode || 'music'),
                         ) && <p className="hint">{tr('creator.mixedModes')}</p>}
@@ -1629,25 +1512,6 @@ export default function App() {
                           <Plus size={17} /> {tr('creator.add.' + (deck.gameMode || 'music'))}
                         </button>
                       </div>
-                      <div className="import-banner">
-                        <span className="spotify-mark">≋</span>
-                        <div>
-                          <strong>{tr('app.yourPlaylistYourDeck')}</strong>
-                          <p>
-                            {deck.gameMode && deck.gameMode !== 'music'
-                              ? tr('creator.importRecordingNote')
-                              : tr('app.importYourOwnOrACollaborativeSpotify')}
-                          </p>
-                        </div>
-                        <button
-                          onClick={() => {
-                            sessionStorage.removeItem('spotify-import-playlist');
-                            setModal('spotify');
-                          }}
-                        >
-                          {tr('app.importPlaylist')} <ArrowUpRight size={17} />
-                        </button>
-                      </div>
                       <button className="example-entry" onClick={() => setModal('examples')}>
                         <Sparkles size={20} aria-hidden="true" />
                         <span>
@@ -1658,49 +1522,117 @@ export default function App() {
                         </span>
                         <ChevronRight size={18} aria-hidden="true" />
                       </button>
-                      <div className="table-tools">
-                        <label className="search">
-                          <Search size={17} />
-                          <input
-                            aria-label={tr('app.searchTracks')}
-                            placeholder={tr('app.searchByTitleArtistOrYear')}
-                            value={filter}
-                            onChange={(e) => setFilter(e.target.value)}
-                          />
-                        </label>
+                      <details className="creator-import-options">
+                        <summary>
+                          {tr('shell.addFrom')}
+                          <ChevronDown size={17} aria-hidden="true" />
+                        </summary>
                         <button
-                          className="icon"
-                          aria-label={tr('app.checkSourceAvailability')}
-                          title={tr('app.checkSources')}
-                          disabled={!deck.songs.length || checking}
-                          onClick={verifySources}
-                        >
-                          <ShieldCheck size={17} />
-                        </button>
-                        <button
-                          className="icon"
-                          aria-label={tr('app.shuffleTrackOrder')}
-                          title={tr('app.shuffleTracks')}
+                          className="secondary spotify-import-button"
                           onClick={() => {
-                            const songs = [...deck.songs];
-                            for (let i = songs.length - 1; i > 0; i--) {
-                              const random = new Uint32Array(1);
-                              crypto.getRandomValues(random);
-                              const j = random[0] % (i + 1);
-                              [songs[i], songs[j]] = [songs[j], songs[i]];
-                            }
-                            updateDeck({ songs });
+                            sessionStorage.removeItem('spotify-import-playlist');
+                            setModal('spotify');
                           }}
                         >
-                          <Shuffle size={17} />
+                          <Music2 size={18} />
+                          {tr('shell.spotify')}
                         </button>
-                      </div>
+                        <div
+                          className={'file-drop' + (draggingFile ? ' is-dragging' : '')}
+                          onDragOver={(event) => {
+                            event.preventDefault();
+                            event.dataTransfer.dropEffect = 'copy';
+                            setDraggingFile(true);
+                          }}
+                          onDragLeave={(event) => {
+                            if (
+                              !(event.relatedTarget instanceof Node) ||
+                              !event.currentTarget.contains(event.relatedTarget)
+                            )
+                              setDraggingFile(false);
+                          }}
+                          onDrop={(event) => {
+                            event.preventDefault();
+                            setDraggingFile(false);
+                            const file = event.dataTransfer.files[0];
+                            if (file) void readImportFile(file);
+                          }}
+                        >
+                          <FileJson size={22} />
+                          <div>
+                            <strong>{tr('shell.file')}</strong>
+                            <span>{tr('shell.dropFile')}</span>
+                          </div>
+                          <button className="text-button" onClick={() => fileRef.current?.click()}>
+                            {tr('app.chooseFile')} <ArrowUpRight size={15} />
+                          </button>
+                        </div>
+                        <button
+                          className="secondary prompt-copy"
+                          aria-describedby="playlist-ai-help"
+                          onClick={async () => {
+                            try {
+                              await navigator.clipboard.writeText(playlistPrompt);
+                              notify(tr('app.promptCopiedPasteItIntoYourPreferred'));
+                            } catch {
+                              setModal('prompt');
+                            }
+                          }}
+                        >
+                          <Copy size={16} /> {tr('app.copyPromptForYourAi')}
+                        </button>
+                        <p id="playlist-ai-help" className="hint prompt-copy-help">
+                          {tr('app.playlistAiHelp')}
+                        </p>{' '}
+                      </details>
+                      {deck.songs.length > 0 && (
+                        <div className="table-tools">
+                          <label className="search">
+                            <Search size={17} />
+                            <input
+                              aria-label={tr('shell.searchCards')}
+                              placeholder={tr('shell.searchCards')}
+                              value={filter}
+                              onChange={(e) => setFilter(e.target.value)}
+                            />
+                          </label>
+                          <button
+                            className="icon"
+                            aria-label={tr('app.checkSourceAvailability')}
+                            title={tr('app.checkSources')}
+                            disabled={!deck.songs.length || checking}
+                            onClick={verifySources}
+                          >
+                            <ShieldCheck size={17} />
+                          </button>
+                          <button
+                            className="icon"
+                            aria-label={tr('app.shuffleTrackOrder')}
+                            title={tr('app.shuffleTracks')}
+                            onClick={() => {
+                              const songs = [...deck.songs];
+                              for (let i = songs.length - 1; i > 0; i--) {
+                                const random = new Uint32Array(1);
+                                crypto.getRandomValues(random);
+                                const j = random[0] % (i + 1);
+                                [songs[i], songs[j]] = [songs[j], songs[i]];
+                              }
+                              updateDeck({ songs });
+                            }}
+                          >
+                            <Shuffle size={17} />
+                          </button>
+                        </div>
+                      )}
                       {selected.size > 0 && (
                         <div className="selection-bar">
                           <span>
                             {tr('app.selected')} {selected.size}
                           </span>
-                          <button onClick={openPrintCards} disabled={busy || !printCount}>
+                          <button
+                            onClick={openPrintCards}
+                            disabled={busy || backgroundBusy || !printCount}
+                          >
                             {tr('app.downloadPrintSelected')}
                           </button>
                           <button
@@ -1716,215 +1648,170 @@ export default function App() {
                           </button>
                         </div>
                       )}
-                      <div
-                        className="song-table"
-                        role="region"
-                        aria-label={tr('creator.collection.' + (deck.gameMode || 'music'))}
-                        tabIndex={filtered.length > 8 ? 0 : -1}
-                      >
-                        <div className="table-head">
-                          <input
-                            type="checkbox"
-                            aria-label={tr('app.selectVisibleTracks')}
-                            checked={
-                              filtered.length > 0 && filtered.every((s) => selected.has(s.id))
-                            }
-                            onChange={(e) => {
-                              const set = new Set(selected);
-                              filtered.forEach((s) =>
-                                e.target.checked ? set.add(s.id) : set.delete(s.id),
-                              );
-                              setSelected(set);
-                            }}
-                          />
-                          <span>#</span>
-                          <span>{tr('app.trackArtist')}</span>
-                          <span>{tr('app.year')}</span>
-                          <span>{tr('app.sources')}</span>
-                          <span />
-                        </div>
-                        {filtered.map((s) => {
-                          const i = deck.songs.findIndex((x) => x.id === s.id);
-                          return (
-                            <div
-                              className={
-                                'song-row ' + (previewSong?.id === s.id ? 'previewed' : '')
-                              }
-                              key={s.id}
-                            >
+                      {deck.songs.length > 0 && (
+                        <div
+                          className="song-table"
+                          role="region"
+                          aria-label={tr('creator.collection.' + (deck.gameMode || 'music'))}
+                          tabIndex={filtered.length > 8 ? 0 : -1}
+                        >
+                          <div className="table-head">
+                            <label className="track-select">
                               <input
                                 type="checkbox"
-                                aria-label={tr('app.select') + s.title}
-                                checked={selected.has(s.id)}
+                                aria-label={tr('shell.selectTracks')}
+                                checked={
+                                  filtered.length > 0 && filtered.every((s) => selected.has(s.id))
+                                }
                                 onChange={(e) => {
                                   const set = new Set(selected);
-                                  e.target.checked ? set.add(s.id) : set.delete(s.id);
+                                  filtered.forEach((s) =>
+                                    e.target.checked ? set.add(s.id) : set.delete(s.id),
+                                  );
                                   setSelected(set);
                                 }}
                               />
-                              <span className="row-index">{String(i + 1).padStart(2, '0')}</span>
-                              <button
-                                className="song-name"
-                                onClick={() => {
-                                  setPreviewIndex(i);
-                                  setEditSong(s);
-                                  setModal('song');
-                                }}
-                              >
-                                <strong>{s.answer ? s.answer + ' · ' + s.title : s.title}</strong>
-                                <small>{s.artist}</small>
-                              </button>
-                              <span
-                                className={'year-pill ' + (s.review ? 'review' : '')}
-                                title={s.review ? tr('app.yearFromAlbumMetadataCheckIt') : ''}
-                              >
-                                {s.year}
-                                {s.review && <span>•</span>}
-                              </span>
-                              <span className="source-icons">
-                                {s.sources.spotify && (
-                                  <span title={tr('app.spotify')} className="source-spotify">
-                                    ≋
-                                  </span>
-                                )}
-                                {s.sources.youtube && (
-                                  <span title={tr('app.youtube')} className="source-youtube">
-                                    <Play size={10} fill="currentColor" />
-                                  </span>
-                                )}
-                              </span>
-                              <div className="row-actions">
-                                <button
-                                  className="icon tiny"
-                                  aria-label={tr('app.moveUp') + s.title}
-                                  disabled={i === 0}
-                                  onClick={() => {
-                                    const songs = [...deck.songs];
-                                    [songs[i - 1], songs[i]] = [songs[i], songs[i - 1]];
-                                    updateDeck({ songs });
-                                  }}
-                                >
-                                  <ArrowUp size={13} />
-                                </button>
-                                <button
-                                  className="icon tiny"
-                                  aria-label={tr('app.moveDown') + s.title}
-                                  disabled={i === deck.songs.length - 1}
-                                  onClick={() => {
-                                    const songs = [...deck.songs];
-                                    [songs[i + 1], songs[i]] = [songs[i], songs[i + 1]];
-                                    updateDeck({ songs });
-                                  }}
-                                >
-                                  <ArrowDown size={13} />
-                                </button>
-                                <button
-                                  className="icon tiny"
-                                  aria-label={tr('app.delete') + s.title}
-                                  onClick={() => {
-                                    updateDeck({ songs: deck.songs.filter((x) => x.id !== s.id) });
-                                    setSelected(new Set([...selected].filter((id) => id !== s.id)));
-                                  }}
-                                >
-                                  <Trash2 size={14} />
-                                </button>
-                              </div>
-                            </div>
-                          );
-                        })}
-                        {!filtered.length && (
-                          <div className="empty-list">
-                            <Music2 size={28} />
-                            <h3>
-                              {filter ? tr('app.noTracksFound') : tr('app.theFirstHitIsYours')}
-                            </h3>
-                            <p>
-                              {filter
-                                ? tr('app.tryChangingYourSearch')
-                                : tr('app.addASongImportAFileOr')}
-                            </p>
+                            </label>
+                            <span>#</span>
+                            <span>{tr('app.trackArtist')}</span>
+                            <span>{tr('app.year')}</span>
+                            <span>{tr('app.sources')}</span>
+                            <span />
                           </div>
-                        )}
-                      </div>
-                      <div className="table-footer">
-                        <span>
-                          {filtered.length} {tr('app.of')} {trackCount(deck.songs.length)}
-                        </span>
-                        <button
-                          className="text-button"
-                          onClick={() =>
-                            download(
-                              csvExport(deck.songs),
-                              'hiciarz-utwory.csv',
-                              'text/csv;charset=utf-8',
-                            )
-                          }
-                        >
-                          {tr('app.exportCsv')} <ArrowUpRight size={14} />
-                        </button>
-                      </div>
-                      <div
-                        className={'file-drop' + (draggingFile ? ' is-dragging' : '')}
-                        onDragOver={(event) => {
-                          event.preventDefault();
-                          event.dataTransfer.dropEffect = 'copy';
-                          setDraggingFile(true);
-                        }}
-                        onDragLeave={(event) => {
-                          if (
-                            !(event.relatedTarget instanceof Node) ||
-                            !event.currentTarget.contains(event.relatedTarget)
-                          )
-                            setDraggingFile(false);
-                        }}
-                        onDrop={(event) => {
-                          event.preventDefault();
-                          setDraggingFile(false);
-                          const file = event.dataTransfer.files[0];
-                          if (file) void readImportFile(file);
-                        }}
-                      >
-                        <FileJson size={22} />
-                        <div>
-                          <strong>{tr('app.alreadyHaveATrackList')}</strong>
-                          <span>{tr('app.dropTrackFile')}</span>
+                          {filtered.map((s) => {
+                            const i = deck.songs.findIndex((x) => x.id === s.id);
+                            return (
+                              <div
+                                className={
+                                  'song-row ' + (previewSong?.id === s.id ? 'previewed' : '')
+                                }
+                                key={s.id}
+                              >
+                                <label className="track-select">
+                                  <input
+                                    type="checkbox"
+                                    aria-label={tr('app.select') + s.title}
+                                    checked={selected.has(s.id)}
+                                    onChange={(e) => {
+                                      const set = new Set(selected);
+                                      e.target.checked ? set.add(s.id) : set.delete(s.id);
+                                      setSelected(set);
+                                    }}
+                                  />
+                                </label>
+                                <span className="row-index">{String(i + 1).padStart(2, '0')}</span>
+                                <button
+                                  className="song-name"
+                                  onClick={() => {
+                                    setPreviewIndex(i);
+                                    setEditSong(s);
+                                    setModal('song');
+                                  }}
+                                >
+                                  <strong>{s.answer ? s.answer + ' · ' + s.title : s.title}</strong>
+                                  <small>{s.artist}</small>
+                                </button>
+                                <span
+                                  className={'year-pill ' + (s.review ? 'review' : '')}
+                                  title={s.review ? tr('app.yearFromAlbumMetadataCheckIt') : ''}
+                                >
+                                  {s.year}
+                                  {s.review && <span>•</span>}
+                                </span>
+                                <span className="source-icons">
+                                  {s.sources.spotify && (
+                                    <span title={tr('app.spotify')} className="source-spotify">
+                                      ≋
+                                    </span>
+                                  )}
+                                  {s.sources.youtube && (
+                                    <span title={tr('app.youtube')} className="source-youtube">
+                                      <Play size={10} fill="currentColor" />
+                                    </span>
+                                  )}
+                                </span>
+                                <div className="row-actions">
+                                  <button
+                                    className="icon"
+                                    aria-label={tr('shell.editSong', { title: s.title })}
+                                    onClick={() => {
+                                      setPreviewIndex(i);
+                                      setEditSong(s);
+                                      setModal('song');
+                                    }}
+                                  >
+                                    <MoreHorizontal size={20} />
+                                  </button>
+                                </div>
+                              </div>
+                            );
+                          })}
+                          {!filtered.length && (
+                            <div className="empty-list">
+                              <Music2 size={28} />
+                              <h3>{filter ? tr('app.noTracksFound') : tr('shell.emptyDeck')}</h3>
+                              <p>
+                                {filter ? tr('app.tryChangingYourSearch') : tr('shell.emptyHint')}
+                              </p>
+                            </div>
+                          )}
                         </div>
-                        <button className="text-button" onClick={() => fileRef.current?.click()}>
-                          {tr('app.chooseFile')} <ArrowUpRight size={15} />
-                        </button>
-                      </div>
-                      <button
-                        className="text-button prompt-copy"
-                        aria-describedby="playlist-ai-help"
-                        onClick={async () => {
-                          try {
-                            await navigator.clipboard.writeText(playlistPrompt);
-                            notify(tr('app.promptCopiedPasteItIntoYourPreferred'));
-                          } catch {
-                            setModal('prompt');
-                          }
-                        }}
-                      >
-                        <Copy size={16} /> {tr('app.copyPromptForYourAi')}
-                      </button>
-                      <p id="playlist-ai-help" className="hint prompt-copy-help">
-                        {tr('app.playlistAiHelp')}
-                      </p>
+                      )}
+                      {deck.songs.length > 0 && (
+                        <div className="table-footer">
+                          <span>
+                            {tr('shell.visibleTracks', {
+                              shown: filtered.length,
+                              total: deck.songs.length,
+                            })}
+                          </span>
+                          <button
+                            className="text-button"
+                            onClick={() =>
+                              download(
+                                csvExport(deck.songs),
+                                'hiciarz-utwory.csv',
+                                'text/csv;charset=utf-8',
+                              )
+                            }
+                          >
+                            {tr('app.exportCsv')} <ArrowUpRight size={14} />
+                          </button>
+                        </div>
+                      )}
                     </>
                   ) : tab === 'design' ? (
                     <div className="design-content">
                       <div className="panel-heading">
                         <div>
-                          <h2>{tr('app.giveYourDeckCharacter')}</h2>
-                          <p>{tr('app.chooseACardBackgroundSetThePage')}</p>
+                          <h2>{tr('shell.designTitle')}</h2>
+                          <p>{tr('shell.designHint')}</p>
                         </div>
                       </div>
                       <ThemePicker
                         value={deck.theme}
                         onChange={(theme) => {
+                          invalidateBackground();
                           updateDeck({ theme, back: undefined });
                         }}
                       />
+                      {themeOverrides > 0 && (
+                        <div className="theme-override-notice">
+                          <span>{tr('printPreview.overrides', { count: themeOverrides })}</span>
+                          <button
+                            className="text-button"
+                            onClick={() =>
+                              updateDeck({
+                                songs: deck.songs.map((song) =>
+                                  song.theme ? { ...song, theme: undefined } : song,
+                                ),
+                              })
+                            }
+                          >
+                            {tr('printPreview.applyAll')}
+                          </button>
+                        </div>
+                      )}
                       <label className="front-color-choice">
                         {tr('app.answerSideColours')}
                         <select
@@ -1982,6 +1869,11 @@ export default function App() {
                           />
                         </label>
                       </div>
+                      {backgroundBusy && (
+                        <p className="hint" role="status">
+                          {tr('printPreview.loadingBackground')}
+                        </p>
+                      )}
                       {deck.back && (
                         <div className="notice">
                           <span>
@@ -1990,7 +1882,10 @@ export default function App() {
                           </span>
                           <button
                             className="text-button"
-                            onClick={() => updateDeck({ back: undefined })}
+                            onClick={() => {
+                              invalidateBackground();
+                              updateDeck({ back: undefined });
+                            }}
                           >
                             {tr('app.removeBackground')}
                           </button>
@@ -2031,8 +1926,8 @@ export default function App() {
                       )}
                       <div className="panel-heading">
                         <div>
-                          <h2>{tr('app.readyToCutOut')}</h2>
-                          <p>{tr('app.a412CardsPerSheet6060')}</p>
+                          <h2>{tr('shell.printTitle')}</h2>
+                          <p>{tr('shell.printHint')}</p>
                         </div>
                       </div>
                       <div className="print-diagram">
@@ -2064,71 +1959,74 @@ export default function App() {
                           <option value="short">{tr('app.flipOnShortEdge')}</option>
                         </select>
                       </label>
-                      <div className="form-grid">
-                        <label>
-                          {tr('app.horizontalQrOffsetMm')}
-                          <input
-                            type="number"
-                            min="-10"
-                            max="10"
-                            step="0.5"
-                            value={deck.print.offsetX}
-                            onChange={(e) =>
-                              updateDeck({
-                                print: {
-                                  ...deck.print,
-                                  offsetX: Math.max(-10, Math.min(10, Number(e.target.value))),
-                                },
-                              })
-                            }
-                          />
-                        </label>
-                        <label>
-                          {tr('app.verticalQrOffsetMm')}
-                          <input
-                            type="number"
-                            min="-10"
-                            max="10"
-                            step="0.5"
-                            value={deck.print.offsetY}
-                            onChange={(e) =>
-                              updateDeck({
-                                print: {
-                                  ...deck.print,
-                                  offsetY: Math.max(-10, Math.min(10, Number(e.target.value))),
-                                },
-                              })
-                            }
-                          />
-                        </label>
-                      </div>
-                      <label className="check-label">
-                        <input
-                          type="checkbox"
-                          checked={deck.print.cuts}
-                          onChange={(e) =>
-                            updateDeck({ print: { ...deck.print, cuts: e.target.checked } })
-                          }
-                        />{' '}
-                        {tr('app.showCuttingMarks')}
-                      </label>
-                      <div className="notice">
-                        <Printer size={22} />
-                        <div>
-                          <strong>{tr('app.startWithASingleSheet')}</strong>
-                          <p>{tr('app.printCalibrationDoubleSidedCheckTheNumbers')}</p>
+                      <details className="advanced-print">
+                        <summary>{tr('shell.advancedPrint')}</summary>
+                        <div className="form-grid">
+                          <label>
+                            {tr('app.horizontalQrOffsetMm')}
+                            <input
+                              type="number"
+                              min="-10"
+                              max="10"
+                              step="0.5"
+                              value={deck.print.offsetX}
+                              onChange={(e) =>
+                                updateDeck({
+                                  print: {
+                                    ...deck.print,
+                                    offsetX: Math.max(-10, Math.min(10, Number(e.target.value))),
+                                  },
+                                })
+                              }
+                            />
+                          </label>
+                          <label>
+                            {tr('app.verticalQrOffsetMm')}
+                            <input
+                              type="number"
+                              min="-10"
+                              max="10"
+                              step="0.5"
+                              value={deck.print.offsetY}
+                              onChange={(e) =>
+                                updateDeck({
+                                  print: {
+                                    ...deck.print,
+                                    offsetY: Math.max(-10, Math.min(10, Number(e.target.value))),
+                                  },
+                                })
+                              }
+                            />
+                          </label>
                         </div>
-                      </div>
-                      <button
-                        className="secondary"
-                        onClick={() =>
-                          import('./pdf')
-                            .then((m) => m.calibrationPDF(deck.print.edge))
-                            .catch((e) => notify(e.message))
-                        }
-                      >
-                        <Printer size={17} /> {tr('app.downloadCalibrationSheet')}
-                      </button>
+                        <label className="check-label">
+                          <input
+                            type="checkbox"
+                            checked={deck.print.cuts}
+                            onChange={(e) =>
+                              updateDeck({ print: { ...deck.print, cuts: e.target.checked } })
+                            }
+                          />{' '}
+                          {tr('app.showCuttingMarks')}
+                        </label>
+                        <div className="notice">
+                          <Printer size={22} />
+                          <div>
+                            <strong>{tr('app.startWithASingleSheet')}</strong>
+                            <p>{tr('app.printCalibrationDoubleSidedCheckTheNumbers')}</p>
+                          </div>
+                        </div>
+                        <button
+                          className="secondary"
+                          onClick={() =>
+                            import('./pdf')
+                              .then((m) => m.calibrationPDF(deck.print.edge))
+                              .catch((e) => notify(e.message))
+                          }
+                        >
+                          <Printer size={17} /> {tr('app.downloadCalibrationSheet')}
+                        </button>
+                      </details>
                     </div>
                   )}
                   <div className="creator-navigation">
@@ -2145,7 +2043,7 @@ export default function App() {
                     {tab === 'print' ? (
                       <button
                         className="primary"
-                        disabled={!printCount || busy}
+                        disabled={!printCount || busy || backgroundBusy}
                         onClick={openPrintCards}
                       >
                         <Printer size={18} />
@@ -2163,253 +2061,100 @@ export default function App() {
                     )}
                   </div>
                 </section>
-                <aside className="preview-panel">
+                <aside className={'preview-panel' + (previewOpen ? ' is-open' : '')}>
                   <div className="preview-heading">
-                    <span className="eyebrow">{tr('app.howItWillLook')}</span>
-                    <span className="live-tag">
-                      <span /> {tr('app.livePreview')}
-                    </span>
+                    <h2>{tr('shell.preview')}</h2>
+                    <button
+                      className="icon preview-toggle"
+                      aria-expanded={previewOpen}
+                      aria-label={tr(previewOpen ? 'shell.previewClose' : 'shell.previewOpen')}
+                      onClick={() => setPreviewOpen(!previewOpen)}
+                    >
+                      <ChevronDown size={20} />
+                    </button>
                   </div>
-                  <div className="preview-stage">
-                    {previewSong ? (
-                      <>
-                        <div className="ghost-card" />
-                        <div className="main-card">
+                  <div className="preview-content">
+                    <div className="preview-stage">
+                      {previewSong ? (
+                        <div className="print-preview-card">
                           <CardPreview song={previewSong} deck={deck} back={showBack} />
                         </div>
-                      </>
-                    ) : (
-                      <div className="empty-preview">
-                        <Music2 size={40} />
-                        <p>
-                          {tr('app.addYourFirstTrack')}
-                          <br />
-                          {tr('app.toSeeYourCard')}
-                        </p>
-                      </div>
+                      ) : (
+                        <div className="empty-preview">
+                          <Music2 size={40} />
+                          <p>
+                            {tr('app.addYourFirstTrack')}
+                            <br />
+                            {tr('app.toSeeYourCard')}
+                          </p>
+                        </div>
+                      )}
+                    </div>
+                    <div className="side-switch">
+                      <button
+                        className={!showBack ? 'active' : ''}
+                        onClick={() => setShowBack(false)}
+                      >
+                        {tr('app.answer')}
+                      </button>
+                      <button
+                        className={showBack ? 'active' : ''}
+                        onClick={() => setShowBack(true)}
+                      >
+                        {tr('app.qrCode')}
+                      </button>
+                    </div>
+                    {previewSong?.theme && previewSong.theme !== deck.theme && (
+                      <p className="card-theme-note">
+                        {tr('printPreview.ownTheme', { theme: themeNames[previewSong.theme] })}
+                      </p>
                     )}
+                    <div className="preview-pagination">
+                      <button
+                        className="icon"
+                        aria-label={tr('app.previousCard')}
+                        disabled={!deck.songs.length}
+                        onClick={() =>
+                          setPreviewIndex((i) => (i - 1 + deck.songs.length) % deck.songs.length)
+                        }
+                      >
+                        <ChevronLeft size={18} />
+                      </button>
+                      <span>
+                        {tr('app.card')}{' '}
+                        <strong>
+                          {deck.songs.length ? Math.min(previewIndex + 1, deck.songs.length) : 0}
+                        </strong>{' '}
+                        / {deck.songs.length}
+                      </span>
+                      <button
+                        className="icon"
+                        aria-label={tr('app.nextCard')}
+                        disabled={!deck.songs.length}
+                        onClick={() => setPreviewIndex((i) => (i + 1) % deck.songs.length)}
+                      >
+                        <ChevronRight size={18} />
+                      </button>
+                    </div>
                   </div>
-                  <div className="side-switch">
-                    <button
-                      className={!showBack ? 'active' : ''}
-                      onClick={() => setShowBack(false)}
-                    >
-                      {tr('app.answer')}
-                    </button>
-                    <button className={showBack ? 'active' : ''} onClick={() => setShowBack(true)}>
-                      {tr('app.qrCode')}
-                    </button>
-                  </div>
-                  <div className="preview-pagination">
-                    <button
-                      className="icon"
-                      aria-label={tr('app.previousCard')}
-                      disabled={!deck.songs.length}
-                      onClick={() =>
-                        setPreviewIndex((i) => (i - 1 + deck.songs.length) % deck.songs.length)
-                      }
-                    >
-                      <ChevronLeft size={18} />
-                    </button>
-                    <span>
-                      {tr('app.card')}{' '}
-                      <strong>
-                        {deck.songs.length ? Math.min(previewIndex + 1, deck.songs.length) : 0}
-                      </strong>{' '}
-                      / {deck.songs.length}
-                    </span>
-                    <button
-                      className="icon"
-                      aria-label={tr('app.nextCard')}
-                      disabled={!deck.songs.length}
-                      onClick={() => setPreviewIndex((i) => (i + 1) % deck.songs.length)}
-                    >
-                      <ChevronRight size={18} />
-                    </button>
-                  </div>
-                  <div className="preview-spec">
-                    <span>
-                      {tr('app.cardSize')}
-                      <strong>{tr('app.6060Mm')}</strong>
-                    </span>
-                    <span>
-                      {tr('app.printLayout')}
-                      <strong>{tr('app.12CardsA4')}</strong>
-                    </span>
-                  </div>
-                  <div className="preview-tip">
-                    <span>✳</span>
-                    <p>
-                      <strong>{tr('app.smallCardGreatMemories')}</strong>
-                      <br />
-                      {tr('app.yearArtistAndTitleOnOneSide')}
-                    </p>
-                  </div>
-                  <button
-                    className="text-button full preview-theme"
-                    disabled={!deck.songs.length}
-                    onClick={() => goToCreatorStep('design')}
-                  >
-                    <Palette size={16} /> {tr('app.exploreAllThemes')} <ArrowUpRight size={16} />
-                  </button>
                 </aside>
-              </div>
-              <div className="bottom-note">
-                <ShieldCheck size={15} />
-                <span>{tr('app.yourDecksStayInYourBrowserSave')}</span>
               </div>
             </>
           ) : mode === 'scanner' ? (
             <>
-              <section className="page-heading">
-                <div>
-                  <div className="eyebrow">{tr('app.oneScanAnotherHit')}</div>
-                  <h1>
-                    {card ? tr('app.listenAndGuess') : tr('app.scanAndPlay')}
-                    <span className="heading-star">✳</span>
-                  </h1>
-                  {!card && output !== 'local' && (
-                    <p>
-                      {gameReady
-                        ? tr('app.playbackIsReadyStartTheCameraAnd')
-                        : tr('app.firstChooseWhereMusicShouldPlayThen')}
-                    </p>
-                  )}
-                </div>
-              </section>
+              <h1 className="sr-only">{tr('app.cardScanner')}</h1>
               <div className={'play-layout' + (gameReady ? ' game-ready' : '')}>
                 <section className="surface scan-surface">
-                  <details
-                    className="playback-setup"
-                    open={!gameReady || Boolean(spotifyRemote.error && output === 'spotify')}
+                  <button
+                    className="playback-location-button scanner-sound-button"
+                    aria-haspopup="dialog"
+                    onClick={() => setModal('playback')}
                   >
-                    <summary>
-                      <span className={gameReady ? 'live-dot' : 'warn-dot'} />
-                      {gameReady
-                        ? output === 'spotify'
-                          ? tr('app.playingOnDevice', {
-                              name:
-                                spotifyRemote.devices.find((d) => d.id === spotifyRemote.device)
-                                  ?.name || 'Spotify',
-                            })
-                          : output === 'local'
-                            ? tr('app.playingOnThisDevice')
-                            : tr('app.connectedToPlayer')
-                        : tr('app.setUpPlayback')}
-                      <Settings2 size={16} />
-                    </summary>
-                    <div
-                      className="output-switch"
-                      role="group"
-                      aria-label={tr('app.playbackMethod')}
-                    >
-                      <button
-                        className={output === 'local' ? 'active' : ''}
-                        aria-pressed={output === 'local'}
-                        onClick={() => setOutput('local')}
-                      >
-                        {tr('app.onThisDevice')}
-                      </button>
-                      <button
-                        className={output === 'browser' ? 'active' : ''}
-                        aria-pressed={output === 'browser'}
-                        onClick={() => setOutput('browser')}
-                      >
-                        {tr('app.secondScreen')}
-                      </button>
-                      <button
-                        className={output === 'spotify' ? 'active' : ''}
-                        aria-pressed={output === 'spotify'}
-                        onClick={() => setOutput('spotify')}
-                      >
-                        {tr('app.mySpotify')}
-                      </button>
-                    </div>
-                    {output === 'local' ? (
-                      <>
-                        <label className="source-picker">
-                          {tr('app.preferredSource')}
-                          <select
-                            value={preferred}
-                            onChange={(e) => setPreferred(e.target.value as 'spotify' | 'youtube')}
-                          >
-                            <option value="spotify">{tr('app.spotify')}</option>
-                            <option value="youtube">{tr('app.youtube')}</option>
-                          </select>
-                        </label>
-                        <p className="hint">{tr('app.theSpotifyOrYoutubePlayerMayShow')}</p>
-                      </>
-                    ) : (
-                      <details
-                        className="mode-help"
-                        key={output}
-                        open={
-                          !(
-                            (output === 'spotify' && spotifyRemote.ready) ||
-                            (output === 'browser' && room.connected)
-                          )
-                        }
-                      >
-                        <summary>
-                          {output === 'spotify'
-                            ? tr('app.howToPlayThroughSpotify')
-                            : tr('app.howToConnectASecondScreen')}
-                        </summary>
-                        {output === 'spotify' ? (
-                          <>
-                            <ol>
-                              <li>{tr('app.openSpotifyOnTheDeviceWhereYou')}</li>
-                              <li>{tr('app.signInBelowAndSelectThatDevice')}</li>
-                              <li>{tr('app.startTheCameraEveryCardQrCode')}</li>
-                            </ol>
-                            <p>{tr('app.youNeedSpotifyPremiumIfYourAccount')}</p>
-                          </>
-                        ) : (
-                          <>
-                            <ol>
-                              <li>{tr('app.openHiciarzOnThePlaybackDeviceAnd')}</li>
-                              <li>{tr('app.clickConnectScannerThereToShowThe')}</li>
-                              <li>{tr('app.startTheCameraHereScanTheScreen')}</li>
-                            </ol>
-                            <p>{tr('app.pairingNeedsNoSignInBothDevices')}</p>
-                          </>
-                        )}
-                      </details>
-                    )}
-                    {output !== 'local' && (
-                      <div className="status-bar">
-                        <span
-                          className={
-                            (output === 'spotify' ? spotifyRemote.linked : room.connected)
-                              ? 'live-dot'
-                              : 'warn-dot'
-                          }
-                        />
-                        <strong>
-                          {output === 'spotify'
-                            ? spotifyRemote.linked
-                              ? tr('app.spotifyAccountConnected')
-                              : tr('app.connectSpotifyAccount')
-                            : room.status}
-                        </strong>
-                        {output === 'browser' && room.connected && (
-                          <button className="text-button" onClick={room.disconnect}>
-                            {tr('app.disconnect')}
-                          </button>
-                        )}
-                      </div>
-                    )}
-                    {output === 'spotify' && <SpotifyRemotePanel remote={spotifyRemote} />}
-                    {card && (
-                      <button
-                        className="quiet"
-                        disabled={!gameReady}
-                        onClick={() => sendPlaybackCommand('stop')}
-                      >
-                        {tr('app.stopPlayback')}
-                      </button>
-                    )}
-                  </details>
+                    <span className={gameReady ? 'live-dot' : 'warn-dot'} aria-hidden="true" />
+                    <strong>{playbackDestination}</strong>
+                    <span>{tr('sound.change')}</span>
+                    <Settings2 size={18} aria-hidden="true" />
+                  </button>
                   {card ? (
                     <>
                       {output === 'local' && (
@@ -2449,6 +2194,8 @@ export default function App() {
                   ) : (
                     <Suspense fallback={<p className="hint">{tr('app.preparingScanner')}</p>}>
                       <Camera
+                        immersive
+                        onConfigure={() => setModal('playback')}
                         onScan={handleScan}
                         onStart={() => {
                           clearScanFeedback();
@@ -2462,194 +2209,28 @@ export default function App() {
                       />
                     </Suspense>
                   )}
-                  {!card && output !== 'local' && (
-                    <p className="ack" aria-live="polite">
-                      {output !== 'browser'
-                        ? displayTranslation(playState)
-                        : room.ack ||
-                          (room.connected
-                            ? tr('app.connectedScanAMusicCard')
-                            : tr('app.controlsWillBeAvailableAfterPairingDevices'))}
-                    </p>
-                  )}
                 </section>
-                <aside className="surface instructions">
-                  {output === 'local' ? (
-                    <>
-                      <span className="mini-icon">
-                        <Headphones size={23} />
-                      </span>
-                      <h2>{tr('app.scanAndListenHere')}</h2>
-                      <p>{tr('app.scannedTrackPlaysHere')}</p>
-                    </>
-                  ) : output === 'spotify' ? (
-                    <>
-                      <span className="mini-icon">
-                        <Music2 size={23} />
-                      </span>
-                      <h2>{tr('app.yourDeviceYourHits')}</h2>
-                      <p>{tr('app.connectYourAccountSelectADeviceAnd')}</p>
-                      <p className="hint">{tr('app.spotifyPlaybackNeedsNoSecondDeviceOr')}</p>
-                    </>
-                  ) : (
-                    <>
-                      <span className="mini-icon">
-                        <Link2 />
-                      </span>
-                      <h2>
-                        {tr('app.oneConnection')}
-                        <br />
-                        {tr('app.aWholeEveningOfMusic')}
-                      </h2>
-                      <ol>
-                        <li>
-                          <strong>{tr('app.openPlayer')}</strong>
-                          <p>{tr('app.choosePlayerOnThisSamePage')}</p>
-                        </li>
-                        <li>
-                          <strong>{tr('app.scanThePairingQrCode')}</strong>
-                          <p>{tr('app.inThePlayerChooseConnectScannerThen')}</p>
-                        </li>
-                        <li>
-                          <strong>{tr('app.scanYourMusicCards')}</strong>
-                          <p>{tr('app.theScannerSendsCommandsAndTheConnected')}</p>
-                        </li>
-                      </ol>
-                      <div className="hint-box">
-                        <Wifi size={18} />
-                        <span>{tr('app.bothDevicesNeedInternetKeepTheScanner')}</span>
-                      </div>
-                    </>
-                  )}
-                </aside>
               </div>
             </>
           ) : (
             <>
               <section className="page-heading">
                 <div>
-                  <div className="eyebrow">{tr('app.greatSoundStartsHere')}</div>
-                  <h1>
-                    {tr('app.player')}
-                    <span className="heading-star">✳</span>
-                  </h1>
-                  <p>
-                    {output === 'spotify'
-                      ? tr('app.signInAndChooseASpotifyConnect')
-                      : tr('app.connectAScannerAndPlayMusicOn')}
-                  </p>
+                  <h1>{tr('app.player')}</h1>
                 </div>
-                <button className="primary" onClick={room.host}>
-                  <Smartphone size={18} />{' '}
-                  {room.pairUrl ? tr('app.newPairingCode') : tr('app.connectScanner')}
-                </button>
               </section>
               <div className={'play-layout' + (card && gameReady ? ' game-ready' : '')}>
                 <section className="surface player-surface">
-                  <details className="mode-help">
-                    <summary>{tr('app.anotherPlaybackMethod')}</summary>
-                    <div
-                      className="output-switch"
-                      role="group"
-                      aria-label={tr('app.playbackLocation')}
-                    >
-                      <button
-                        className={output === 'browser' ? 'active' : ''}
-                        onClick={() => setOutput('browser')}
-                      >
-                        {tr('app.onThisDevice')}
-                      </button>
-                      <button
-                        className={output === 'spotify' ? 'active' : ''}
-                        onClick={() => setOutput('spotify')}
-                      >
-                        {tr('app.mySpotify')}
-                      </button>
-                    </div>
-                    {card && output === 'browser' && (
-                      <button className="quiet" onClick={() => sendPlaybackCommand('stop')}>
-                        {tr('app.stopPlayback')}
-                      </button>
-                    )}
-                    {room.connected && (
-                      <button className="quiet" onClick={room.disconnect}>
-                        {tr('app.disconnectScanner')}
-                      </button>
-                    )}
-                  </details>
-                  <div className="player-top">
-                    <div className="status-bar">
-                      <span
-                        className={
-                          (output === 'spotify' ? spotifyRemote.ready : room.connected)
-                            ? 'live-dot'
-                            : 'warn-dot'
-                        }
-                      />
-                      <strong>
-                        {output === 'spotify'
-                          ? spotifyRemote.ready
-                            ? tr('app.spotifyReady')
-                            : spotifyRemote.linked
-                              ? tr('app.selectSpotifyDevice')
-                              : tr('app.connectSpotifyAccount')
-                          : room.status}
-                      </strong>
-                    </div>
-                    {output === 'browser' && (
-                      <label className="source-picker">
-                        {tr('app.preferredSource')}
-                        <select
-                          value={preferred}
-                          onChange={(e) => {
-                            setPreferred(e.target.value as 'spotify' | 'youtube');
-                            if (card?.sources[e.target.value as 'spotify' | 'youtube'])
-                              setSource(e.target.value as 'spotify' | 'youtube');
-                          }}
-                        >
-                          <option value="spotify">{tr('app.spotify')}</option>
-                          <option value="youtube">{tr('app.youtube')}</option>
-                        </select>
-                      </label>
-                    )}
-                  </div>
-                  {output === 'spotify' ? (
-                    <details
-                      className="playback-setup"
-                      open={!spotifyRemote.ready || Boolean(spotifyRemote.error)}
-                    >
-                      <summary>
-                        <span className={spotifyRemote.ready ? 'live-dot' : 'warn-dot'} />
-                        {tr('app.spotifyDevice')}
-                        <Settings2 size={16} />
-                      </summary>
-                      <SpotifyRemotePanel remote={spotifyRemote} />
-                      {card && (
-                        <button
-                          className="quiet"
-                          disabled={!spotifyRemote.ready}
-                          onClick={() => sendPlaybackCommand('stop')}
-                        >
-                          {tr('app.stopPlayback')}
-                        </button>
-                      )}
-                    </details>
-                  ) : (
-                    !card && (
-                      <Players
-                        card={null}
-                        source={source}
-                        command={command}
-                        onState={reportPlayback}
-                      />
-                    )
-                  )}
-                  {!card && (
-                    <div className="play-state" role="status">
-                      <Radio size={17} />
-                      {displayTranslation(playState)}
-                    </div>
-                  )}
+                  <button
+                    className="playback-location-button"
+                    aria-haspopup="dialog"
+                    onClick={() => setModal('playback')}
+                  >
+                    <span className={gameReady ? 'live-dot' : 'warn-dot'} aria-hidden="true" />
+                    <strong>{playbackDestination}</strong>
+                    <span>{tr('sound.change')}</span>
+                    <Settings2 size={18} aria-hidden="true" />
+                  </button>
                   {card && (
                     <>
                       <PlayingCard
@@ -2694,23 +2275,37 @@ export default function App() {
                   <h2>
                     {room.connected
                       ? tr('app.scannerConnected')
-                      : tr('app.connectAScannerStartPlaying')}
+                      : tr('plainPlayback.remoteScanner')}
                   </h2>
                   {room.pairUrl ? (
                     <>
-                      <div className="pair-qr">
-                        <QR value={room.pairUrl} />
-                      </div>
-                      <p>{tr('app.openCardScannerOnTheOtherDevice')}</p>
+                      {room.connected ? (
+                        <>
+                          <p>{tr('plainPlayback.scanOnConnectedDevice')}</p>
+                          <details>
+                            <summary>{tr('plainPlayback.pairingCode')}</summary>
+                            <div className="pair-qr">
+                              <QR value={room.pairUrl} />
+                            </div>
+                          </details>
+                        </>
+                      ) : (
+                        <>
+                          <div className="pair-qr">
+                            <QR value={room.pairUrl} />
+                          </div>
+                          <p>{tr('plainPlayback.pairingInstructions')}</p>
+                        </>
+                      )}
                       <button className="secondary full" onClick={room.disconnect}>
                         {tr('app.endSession')}
                       </button>
                     </>
                   ) : (
                     <>
-                      <p>{tr('app.clickConnectScannerToShowAQr')}</p>
-                      <button className="secondary full" onClick={room.host}>
-                        {tr('app.preparePairingQrCode')}
+                      <p>{tr('plainPlayback.pairPlayerDescription')}</p>
+                      <button className="primary full" onClick={room.host}>
+                        {tr('app.connectScanner')}
                       </button>
                     </>
                   )}
@@ -2723,32 +2318,6 @@ export default function App() {
             </>
           )}
         </main>
-        <footer className="workspace-footer">
-          <span>{tr('app.madeForMusicAndGoodCompany')}</span>
-          <button className="text-button" onClick={() => setModal('about')}>
-            {tr('app.about')}
-          </button>
-          <button
-            className="text-button version-check"
-            onClick={async () => {
-              try {
-                await checkForUpdates();
-                notify(
-                  updateIsReady()
-                    ? tr('app.aNewVersionIsReadyChooseLoad')
-                    : tr('app.updateCheckStartedWeWillLetYou'),
-                );
-              } catch {
-                notify(tr('app.couldNotCheckForUpdatesCheckYour'));
-              }
-            }}
-          >
-            {tr('app.version')} {appVersion} {tr('app.checkForUpdates')}
-          </button>
-          <span>
-            {tr('app.hiciarz3')} <span>✳</span> {tr('app.openSource')}
-          </span>
-        </footer>
       </div>
       <input
         ref={fileRef}
@@ -2815,6 +2384,29 @@ export default function App() {
         <SongForm
           song={editSong}
           defaultMode={deck.gameMode}
+          onDelete={
+            editSong
+              ? () => {
+                  updateDeck({ songs: deck.songs.filter((song) => song.id !== editSong.id) });
+                  setSelected(new Set([...selected].filter((id) => id !== editSong.id)));
+                  setModal(null);
+                }
+              : undefined
+          }
+          onMove={
+            editSong
+              ? {
+                  up:
+                    deck.songs.findIndex((song) => song.id === editSong.id) > 0
+                      ? () => moveEditedSong(-1)
+                      : undefined,
+                  down:
+                    deck.songs.findIndex((song) => song.id === editSong.id) < deck.songs.length - 1
+                      ? () => moveEditedSong(1)
+                      : undefined,
+                }
+              : undefined
+          }
           onClose={() => setModal(null)}
           onSave={(song) =>
             updateDeck({
@@ -3015,66 +2607,146 @@ export default function App() {
           />
         </Modal>
       )}
+      {modal === 'playback' && (
+        <Modal title={tr('sound.title')} sheet onClose={() => setModal(null)}>
+          <PlaybackSettings
+            output={output}
+            receiver={mode === 'player'}
+            preferred={preferred}
+            paired={room.connected}
+            scanning={mode === 'scanner'}
+            spotify={<SpotifyRemotePanel remote={spotifyRemote} compact />}
+            onOutput={setOutput}
+            onPreferred={(value) => {
+              setPreferred(value);
+              if (mode === 'player' && card?.sources[value]) setSource(value);
+            }}
+            onDisconnect={room.disconnect}
+            onStop={
+              card && (output !== 'spotify' || spotifyRemote.ready)
+                ? () => sendPlaybackCommand('stop')
+                : undefined
+            }
+            onScanner={() => {
+              void changeMode('scanner');
+            }}
+            onClose={() => setModal(null)}
+          />
+        </Modal>
+      )}
+      {modal === 'menu' && (
+        <Modal title={tr('shell.more')} sheet onClose={() => setModal(null)}>
+          <div className="app-more-menu">
+            <button onClick={() => changeMode('home')}>
+              <House size={22} />
+              {tr('shell.view.home')}
+            </button>
+            <button onClick={() => changeMode('player')}>
+              <Headphones size={22} />
+              {tr('shell.view.player')}
+            </button>
+            <button onClick={() => setModal('about')}>
+              <Settings2 size={22} />
+              {tr('app.settings')}
+            </button>
+            <button onClick={() => setModal('help')}>
+              <Info size={22} />
+              {tr('shell.help')}
+            </button>
+          </div>
+        </Modal>
+      )}
       {modal === 'about' && (
-        <Modal title={tr('app.settingsAndAbout')} onClose={() => setModal(null)}>
-          <label className="language-setting">
-            {tr('app.language')}
-            <select
-              aria-label={tr('app.language')}
-              value={language}
-              onChange={(event) => setLanguage(event.target.value as Language)}
-            >
-              {Object.entries(languageNames).map(([value, name]) => (
-                <option key={value} value={value}>
-                  {name}
-                </option>
-              ))}
-            </select>
-          </label>
-          <p>{tr('app.yourSongsYourCardsYourGreatEvening')}</p>
-          <div className="about-links">
+        <Modal title={tr('app.settings')} onClose={() => setModal(null)}>
+          <section className="settings-section">
+            <h3>{tr('shell.appearance')}</h3>
+            <label>
+              {tr('app.language')}
+              <select
+                aria-label={tr('app.language')}
+                value={language}
+                onChange={(event) => setLanguage(event.target.value as Language)}
+              >
+                {Object.entries(languageNames).map(([value, name]) => (
+                  <option key={value} value={value}>
+                    {name}
+                  </option>
+                ))}
+              </select>
+            </label>
+            <label>
+              {tr('app.appearance')}
+              <select value={uiTheme} onChange={(event) => setUiTheme(event.target.value as Theme)}>
+                {themes.map((value) => (
+                  <option key={value} value={value}>
+                    {themeNames[value]}
+                  </option>
+                ))}
+              </select>
+            </label>
+          </section>
+          <section className="settings-section">
+            <div className="settings-row">
+              <h3>Spotify</h3>
+              <SpotifyAccount />
+            </div>
+            <button className="secondary full" onClick={() => openSpotifySetup()}>
+              <Settings2 size={18} />
+              {tr('app.spotifySettings')}
+            </button>
+          </section>
+          <AppInstall />
+          <section className="settings-section">
+            <h3>{tr('shell.data')}</h3>
+            <p>{tr('shell.localData')}</p>
+          </section>
+          <div className="settings-links">
+            <button onClick={() => setModal('help')}>{tr('shell.help')}</button>
+            <ReportIssueLink />
             <a
-              className="primary"
-              href="https://buymeacoffee.com/szymonrybka"
-              target="_blank"
-              rel="noopener noreferrer"
-            >
-              <Coffee size={18} /> {tr('app.buyMeACoffee')} <ArrowUpRight size={16} />
-            </a>
-            <a
-              className="secondary"
               href="https://github.com/ArtifexEt/Hiciarz"
               target="_blank"
               rel="noopener noreferrer"
             >
-              <FileJson size={18} /> {tr('app.projectRepository')} <ArrowUpRight size={16} />
+              {tr('app.projectRepository')}
+              <ArrowUpRight size={16} />
             </a>
-            <button className="secondary" onClick={() => setModal('help')}>
-              {tr('app.howToPlayAndPrepareADeck')}
-            </button>
-            <button className="secondary" onClick={() => openSpotifySetup()}>
-              <Settings2 size={18} /> {tr('app.spotifySettings')}
-            </button>
-          </div>
-          <label className="check-line">
-            <input
-              type="checkbox"
-              checked={showCoffee}
-              onChange={(e) => {
-                setShowCoffee(e.target.checked);
-                localStorage.setItem('hiciarz-hide-coffee', e.target.checked ? '0' : '1');
+            <a
+              href="https://buymeacoffee.com/szymonrybka"
+              target="_blank"
+              rel="noopener noreferrer"
+            >
+              {tr('shell.support')}
+              <ArrowUpRight size={16} />
+            </a>
+            <button
+              onClick={async () => {
+                if (!navigator.onLine) {
+                  notify(tr('shell.updateUnavailable'));
+                  return;
+                }
+                try {
+                  await checkForUpdates();
+                  notify(
+                    updateIsReady()
+                      ? tr('app.aNewVersionIsReadyChooseLoad')
+                      : tr('shell.updateNotReady'),
+                  );
+                } catch {
+                  notify(tr('app.couldNotCheckForUpdatesCheckYour'));
+                }
               }}
-            />
-            <span>{tr('app.showTheBuyMeACoffeeBanner')}</span>
-          </label>
-          <p className="hint">{tr('app.yourDecksAreSavedInThisBrowser')}</p>
-          <small>
-            {tr('app.version')} {appVersion}
-          </small>
+            >
+              {tr('shell.updateCheck')}
+            </button>
+            <small>
+              {tr('app.version')} {appVersion}
+            </small>
+          </div>
         </Modal>
       )}
       {modal === 'help' && (
-        <Modal title={tr('app.fromPlaylistToAGreatEvening')} onClose={() => setModal(null)} wide>
+        <Modal title={tr('shell.help')} onClose={() => setModal(null)} wide>
           <div className="help-grid">
             <div>
               <span>01</span>

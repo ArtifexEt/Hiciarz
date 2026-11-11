@@ -17,10 +17,9 @@ export default defineConfig({
         'fonts/*',
       ],
       manifest: {
-        name: 'Hiciarz — Twoja muzyka',
+        name: 'Hiciarz',
         short_name: 'Hiciarz',
-        description:
-          'Skanuj muzyczne karty, słuchaj i zgaduj hity. Twórz własne talie na wspólne wieczory.',
+        description: 'Gra muzyczna z własnych kart. Skanowanie, talie i druk PDF.',
         id: base,
         start_url: base,
         scope: base,
@@ -30,6 +29,18 @@ export default defineConfig({
         theme_color: '#083b34',
         background_color: '#f6f5f1',
         display: 'standalone',
+        shortcuts: [
+          {
+            name: 'Skanuj karty',
+            url: `${base}?view=scanner`,
+            icons: [{ src: 'icon-192.png', sizes: '192x192', type: 'image/png' }],
+          },
+          {
+            name: 'Twórz karty',
+            url: `${base}?view=editor`,
+            icons: [{ src: 'icon-192.png', sizes: '192x192', type: 'image/png' }],
+          },
+        ],
         icons: [
           { src: 'icon.svg', sizes: 'any', type: 'image/svg+xml', purpose: 'any' },
           { src: 'icon-192.png', sizes: '192x192', type: 'image/png', purpose: 'any' },
@@ -49,7 +60,7 @@ export default defineConfig({
         ],
       },
       workbox: {
-        globPatterns: ['**/*.{js,css,html,svg,png,webp,ttf}'],
+        globPatterns: ['**/*.{js,css,html,svg,png,webp,ttf,json}'],
         maximumFileSizeToCacheInBytes: 4000000,
         navigateFallbackDenylist: [/^\/api/],
         cleanupOutdatedCaches: true,

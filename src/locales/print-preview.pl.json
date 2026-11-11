@@ -1,0 +1,11 @@
+{
+  "printPreview.front": "Strona odpowiedzi: {{title}}",
+  "printPreview.back": "Strona z kodem QR: {{title}}",
+  "printPreview.preparing": "Przygotowywanie podglądu…",
+  "printPreview.failed": "Nie udało się wczytać podglądu karty.",
+  "printPreview.retry": "Spróbuj ponownie",
+  "printPreview.ownTheme": "Ta karta ma własny motyw: {{theme}}.",
+  "printPreview.overrides": "Karty z własnym motywem: {{count}}. Zmiana motywu talii ich nie zmienia.",
+  "printPreview.applyAll": "Zastosuj motyw talii do wszystkich kart",
+  "printPreview.loadingBackground": "Wczytywanie tła…"
+}
