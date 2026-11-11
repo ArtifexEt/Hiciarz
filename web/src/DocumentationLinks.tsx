@@ -4,9 +4,9 @@ import './documentation.css';
 
 export const documentationUrls = {
   readme: 'https://github.com/ArtifexEt/Hiciarz#readme',
-  spotify: 'https://github.com/ArtifexEt/Hiciarz/blob/main/docs/spotify.md',
-  playlists: 'https://github.com/ArtifexEt/Hiciarz/blob/main/docs/playlist-guide.md',
-  configuration: 'https://github.com/ArtifexEt/Hiciarz/blob/main/docs/configuration.md',
+  spotify: 'https://github.com/ArtifexEt/Hiciarz/blob/main/web/docs/spotify.md',
+  playlists: 'https://github.com/ArtifexEt/Hiciarz/blob/main/web/docs/playlist-guide.md',
+  configuration: 'https://github.com/ArtifexEt/Hiciarz/blob/main/web/docs/configuration.md',
 } as const;
 
 export const issueReportUrl = 'https://github.com/ArtifexEt/Hiciarz/issues/new';
