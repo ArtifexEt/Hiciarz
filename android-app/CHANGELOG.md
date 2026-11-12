@@ -4,6 +4,16 @@ Zmiany kolejnych wersji aplikacji Android. Opis GitHub Release jest pobierany z 
 
 ## [Unreleased]
 
+## [0.2.0-alpha.5] - 2026-11-12
+
+- Ukryto systemowy pasek statusu z zegarem i ikonami powiadomień na wszystkich ekranach, także w panelach i dialogach. Tryb pełnoekranowy jest przywracany po powrocie ze Spotify; dolna nawigacja systemowa jest dostępna. Android nadal może chwilowo odsłonić pasek przy wskaźniku aparatu oraz pozwala rozwinąć powiadomienia gestem.
+- Pauza i wznowienie odtwarzania są dostępne bezpośrednio na obrazie karty. Przycisk „Skanuj nową” znajduje się pod nią; karty bez zapisanych danych utworu działają bez aktualizowania biblioteki aplikacji.
+- Bingo ma układ losowania znany z wersji web: duże pole kategorii, pięć pastelowych kolorów i wyróżniony przycisk „Losuj kategorię” pod wynikiem. Kolejne losowanie jest dostępne także po skanie, bez zmiany utworu i numeru rundy. „Plansze do pobrania” są widoczne bez otwierania opcji.
+- Skórki zmieniają kolorystykę całej aplikacji: tła, panele, przyciski i nawigację. Dziewięć palet odpowiada wersji web i ma warianty ciemne. Wybór w Opcjach i motyw zapisany w QR działają również bez danych utworu.
+- Przywrócono animację skórki z rybkami: kołyszące się ozdoby i migoczące lampki. Motyw jest odczytywany z QR także dla utworów nieznanych aplikacji.
+- Skaner zachowuje kwadratowe proporcje na tablecie i rozłożonym ekranie. Pasek odtwarzania w Opcjach uwzględnia dolny obszar nawigacji systemowej.
+- Poprawiono polski opis wymagań Spotify po rozłączeniu i usunięto z panelu połączenia komunikat o wydaniu testowym.
+
 ## [0.2.0-alpha.4] - 2026-11-12
 
 - Przebudowano skaner i Bingo: kwadratowe karty z pełną grafiką, kompaktowe odtwarzanie, pytanie jako główny element rundy i jeden wyróżniony przycisk na każdym etapie. Stała oprawa aplikacji pozostaje niezależna od skórek kart; opcje pomocnicze zajmują mniej miejsca.

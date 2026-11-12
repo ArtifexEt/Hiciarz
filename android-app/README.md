@@ -2,11 +2,13 @@
 
 Natywna aplikacja Kotlin / Jetpack Compose do skanowania drukowanych kart i prowadzenia Bingo. Otwiera się na skanerze, a dolna nawigacja zawiera **Skaner, Bingo i Opcje**. Spotify odtwarza muzykę w swojej aplikacji, a Hiciarz steruje nim przez oficjalny App Remote SDK. Biblioteka talii, kreator i generator PDF pozostają w [`../web/`](../web/). Gry bez kart są na razie wyłączone w Androidzie.
 
-W Bingo telefon prowadzącego najpierw losuje kategorię, a dopiero wybranie „Skanuj kartę” uruchamia aparat. Na szerszym ekranie losowanie od razu przygotowuje skaner, a pełne pytanie pozostaje obok aparatu i sterowania odtwarzaniem. Skan rozpoczyna utwór; gracze zaznaczają odpowiedzi na papierowych planszach. „Plansze do pobrania” otwiera generator z wybranym poziomem i językiem. Zasady każdej gry są dostępne pod „Jak grać”.
+W Bingo telefon prowadzącego najpierw losuje kategorię, a dopiero wybranie „Skanuj kartę” uruchamia aparat. Na szerszym ekranie losowanie od razu przygotowuje skaner, a powiększone pole pytania pozostaje obok aparatu i karty. Duże pole kategorii i wyróżniony przycisk losowania odpowiadają wersji web; przycisk przyjmuje akcent aktywnej skórki. „Losuj kolejną kategorię” zmienia pytanie na inne z tego samego poziomu przed skanem, podczas skanowania i po odtworzeniu karty. „Plansze do pobrania” są od razu widoczne na ekranie Bingo. Zachowuje utwór i numer rundy; widoczność odpowiedzi odpowiada ustawieniu jej ukrywania. Skan rozpoczyna utwór; gracze zaznaczają odpowiedzi na papierowych planszach. „Następna runda” przygotowuje nowe pytanie i kolejną kartę, a „Plansze do pobrania” otwiera generator z wybranym poziomem i językiem. Zasady każdej gry są dostępne pod „Jak grać”.
 
-Skaner i karta zajmują główną część ekranu. Karty zachowują kwadratowe proporcje i pełną grafikę, a sterowanie pod nimi wyróżnia bieżące działanie: odkrycie odpowiedzi lub następną kartę. Odkrywanie w aplikacji jest dostępne, gdy zapisane dane pozwalają sprawdzić odpowiedź; dla pozostałych kart odpowiedź pozostaje na wydruku. Oprawa nawigacji i przycisków jest stała, a skórkę wybiera się w Opcjach.
+Skaner i karta zajmują główną część ekranu i zachowują kwadratowe proporcje również na tablecie. Przycisk pauzy lub wznowienia znajduje się bezpośrednio na obrazie karty; po odkryciu odpowiedzi przechodzi w róg. W skanerze pod kartą jest przycisk „Skanuj nową”. Odtwarzanie i skórka działają na podstawie QR także wtedy, gdy aplikacja nie zna danych utworu, więc utworzenie nowej playlisty nie wymaga aktualizacji APK. Odkrywanie w aplikacji jest dostępne, gdy zapisane dane pozwalają sprawdzić odpowiedź; dla pozostałych kart odpowiedź pozostaje na wydruku. Skórka obejmuje całą aplikację: tła, panele, przyciski, nawigację i okna opcji. Palety odpowiadają wersji web i uwzględniają systemowy tryb ciemny.
 
-QR może automatycznie włączyć jedną z dziewięciu skórek. Android pakuje te same grafiki rewersów co PWA, także rybkę w czapce Mikołaja. Skaner i Bingo zachowują własny motyw karty podczas przełączania. Ustawienia pozwalają wybrać własny wygląd i wyłączyć śledzenie skórki karty. Automatyczna pauza jest domyślnie wyłączona. Na dużym oknie i rozłożonym telefonie nawigacja przechodzi na bok, a niezależne panele uwzględniają zgięcie ekranu. [Porównanie funkcji z PWA](docs/pwa-parity.md) opisuje pełny zakres.
+QR może automatycznie włączyć jedną z dziewięciu skórek. Identyfikator motywu jest zapisany w kodzie, niezależnie od listy piosenek. Android pakuje te same grafiki rewersów co PWA, także rybkę w czapce Mikołaja; rybki mają kołyszące się ozdoby i migoczące lampki. Skaner i Bingo zachowują własny motyw karty podczas przełączania. Ustawienia pozwalają wybrać własny wygląd i wyłączyć śledzenie skórki karty. Automatyczna pauza jest domyślnie wyłączona. Na dużym oknie i rozłożonym telefonie nawigacja przechodzi na bok, a niezależne panele uwzględniają zgięcie ekranu. Pasek odtwarzania w Opcjach pozostaje nad nawigacją systemową. [Porównanie funkcji z PWA](docs/pwa-parity.md) opisuje pełny zakres.
+
+Zegar i systemowy pasek statusu są ukryte w całej aplikacji, również w panelach opcji i oknach dialogowych. Dolna nawigacja systemowa pozostaje dostępna. Android nadal pozwala rozwinąć powiadomienia gestem od góry; tryb pełnoekranowy nie blokuje osobnych wyskakujących powiadomień Spotify. System może też na kilka sekund odsłonić pasek podczas animacji zielonego wskaźnika aparatu, po czym ponownie go ukrywa.
 
 ## Ekrany aplikacji
 
@@ -157,7 +159,7 @@ W **Settings → Secrets and variables → Actions → Secrets** ustaw:
 Publiczne `SPOTIFY_CLIENT_ID` i `ANDROID_SIGNING_CERT_SHA256` umieść osobno w **Variables**. Odcisk może mieć postać 64 znaków szesnastkowych albo zapisu z dwukropkami. Workflow odtwarza magazyn wyłącznie w tymczasowym katalogu runnera, usuwa go po zakończeniu i publikuje tylko APK, sumę kontrolną oraz publiczne metadane podpisu.
 
 ```sh
-./gradlew :app:assembleRelease -PversionName=0.2.0-alpha.4 -PversionCode=100006
+./gradlew :app:assembleRelease -PversionName=0.2.0-alpha.5 -PversionCode=100007
 ```
 
 Do aktualizacji zainstalowanego APK użyj tego samego podpisu i większego `versionCode`. Numer lokalnego buildu powinien być większy od numeru już zainstalowanego wydania, podanego w `BUILD-INFO.txt`.
@@ -191,7 +193,7 @@ Zwykłe CI może działać bez sekretów, np. w forku: wtedy używa efemeryczneg
 Po pobraniu APK i pliku sumy do tego samego katalogu sprawdź integralność na Linuksie:
 
 ```sh
-sha256sum --check hiciarz-android-0.2.0-alpha.4-test.apk.sha256
+sha256sum --check hiciarz-android-0.2.0-alpha.5-test.apk.sha256
 ```
 
 Na macOS odpowiednikiem jest `shasum -a 256 --check …`. Odcisk podpisu można dodatkowo odczytać narzędziem Android SDK `apksigner verify --print-certs <plik.apk>` i porównać z `SIGNING-CERTIFICATE.txt`.

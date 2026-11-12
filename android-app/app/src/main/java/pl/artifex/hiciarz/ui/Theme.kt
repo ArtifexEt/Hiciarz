@@ -2,17 +2,21 @@ package pl.artifex.hiciarz.ui
 
 import androidx.compose.foundation.isSystemInDarkTheme
 import androidx.compose.material3.MaterialTheme
+import androidx.compose.material3.ColorScheme
 import androidx.compose.material3.Typography
 import androidx.compose.material3.darkColorScheme
 import androidx.compose.material3.lightColorScheme
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.remember
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.graphics.lerp
 import androidx.compose.ui.text.TextStyle
 import androidx.compose.ui.text.font.Font
 import androidx.compose.ui.text.font.FontFamily
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.sp
 import pl.artifex.hiciarz.R
+import pl.artifex.hiciarz.model.CardSkin
 
 internal val Barlow = FontFamily(Font(R.font.barlow_condensed_semibold, FontWeight.SemiBold))
 private val Noto = FontFamily(Font(R.font.noto_sans, FontWeight.Normal))
@@ -35,39 +39,73 @@ private val AppTypography = Typography(
     labelSmall = TextStyle(fontFamily = Noto, fontWeight = FontWeight.SemiBold, fontSize = 12.sp, lineHeight = 17.sp),
 )
 
-@Composable
-fun HiciarzTheme(content: @Composable () -> Unit) {
-    // Card artwork owns its palette. App controls keep a familiar identity across every scan.
-    val colors = if (isSystemInDarkTheme()) darkColorScheme(
-        primary = Color(0xFFB2D9CA), onPrimary = Color(0xFF12382D),
-        primaryContainer = Color(0xFF244A3E), onPrimaryContainer = Color(0xFFD7EBE1),
-        secondary = Color(0xFFE2C48E), onSecondary = Color(0xFF3F3017),
-        secondaryContainer = Color(0xFF4D4029), onSecondaryContainer = Color(0xFFF2DFBA),
-        tertiary = Color(0xFFB8CEDB), tertiaryContainer = Color(0xFF2D4553),
-        background = Color(0xFF111C18), onBackground = Color(0xFFE8EEE9),
-        surface = Color(0xFF17251F), onSurface = Color(0xFFE8EEE9),
-        surfaceVariant = Color(0xFF293A31), onSurfaceVariant = Color(0xFFBAC8BE),
-        surfaceContainerLowest = Color(0xFF0D1713), surfaceContainerLow = Color(0xFF17251F),
-        surfaceContainer = Color(0xFF1C2B23), surfaceContainerHigh = Color(0xFF23332A),
-        surfaceContainerHighest = Color(0xFF293A31), surfaceBright = Color(0xFF324139),
-        surfaceDim = Color(0xFF111C18), surfaceTint = Color(0xFFB2D9CA),
-        outline = Color(0xFF84988B), outlineVariant = Color(0xFF34483B),
-        error = Color(0xFFFFB4AB), errorContainer = Color(0xFF633B39),
-    ) else lightColorScheme(
-        primary = Color(0xFF17483D), onPrimary = Color.White,
-        primaryContainer = Color(0xFFDDEAE3), onPrimaryContainer = Color(0xFF173E31),
-        secondary = Color(0xFF725627), onSecondary = Color.White,
-        secondaryContainer = Color(0xFFF0E5CD), onSecondaryContainer = Color(0xFF4B3819),
-        tertiary = Color(0xFF415E6E), tertiaryContainer = Color(0xFFDCE8EE),
-        background = Color(0xFFF5F6F3), onBackground = Color(0xFF1D2B24),
-        surface = Color(0xFFFFFFFF), onSurface = Color(0xFF1D2B24),
-        surfaceVariant = Color(0xFFE8EDE7), onSurfaceVariant = Color(0xFF5B6B60),
-        surfaceContainerLowest = Color.White, surfaceContainerLow = Color(0xFFF0F3EE),
-        surfaceContainer = Color(0xFFEAEFE8), surfaceContainerHigh = Color(0xFFE4EBE2),
-        surfaceContainerHighest = Color(0xFFDDE5DC), surfaceBright = Color.White,
-        surfaceDim = Color(0xFFDDE5DC), surfaceTint = Color(0xFF17483D),
-        outline = Color(0xFF7E8E81), outlineVariant = Color(0xFFD5DED4),
-        error = Color(0xFF9E3D3C), errorContainer = Color(0xFFFFE0DB),
+// App palettes follow web/style.css and app-layout.css. Card artwork has its own
+// print palette: Classic's purple card, for example, still uses the green/gold UI.
+private data class AppSkinPalette(
+    val background: Color,
+    val soft: Color,
+    val accent: Color,
+    val accentInk: Color,
+    val sidebar: Color,
+)
+
+private fun CardSkin.appPalette(): AppSkinPalette = when (this) {
+    CardSkin.CLASSIC -> AppSkinPalette(Color(0xFFF5F4EF), Color(0xFFEDF1EB), Color(0xFFEDBD75), Color(0xFF173F35), Color(0xFF123F36))
+    CardSkin.MINIMAL -> AppSkinPalette(Color(0xFFF8F7F3), Color(0xFFEDF1EB), Color(0xFFE5C599), Color(0xFF41372B), Color(0xFF272A2B))
+    CardSkin.VINYL -> AppSkinPalette(Color(0xFFF6F0E5), Color(0xFFF3EADA), Color(0xFFEEB77B), Color(0xFF442D1E), Color(0xFF342720))
+    CardSkin.MIXTAPE -> AppSkinPalette(Color(0xFFF0F3EC), Color(0xFFE8EEE6), Color(0xFFEFB18B), Color(0xFF473025), Color(0xFF173C43))
+    CardSkin.MEMPHIS -> AppSkinPalette(Color(0xFFF3F1F8), Color(0xFFEDEAF4), Color(0xFFEDCB72), Color(0xFF3C3221), Color(0xFF303053))
+    CardSkin.DISCO -> AppSkinPalette(Color(0xFFF5F0F7), Color(0xFFEEE7F2), Color(0xFFD5BBE8), Color(0xFF3F2B52), Color(0xFF30243E))
+    CardSkin.CHRISTMAS -> AppSkinPalette(Color(0xFFF5F3EB), Color(0xFFF1F3E9), Color(0xFFE5BF78), Color(0xFF453416), Color(0xFF12392F))
+    CardSkin.WINTER -> AppSkinPalette(Color(0xFFF2F5F8), Color(0xFFEDF3F8), Color(0xFFB5D9ED), Color(0xFF1B3853), Color(0xFF1D324A))
+    CardSkin.FISH -> AppSkinPalette(Color(0xFFF4F2E9), Color(0xFFF4F0E4), Color(0xFFEDBD75), Color(0xFF453316), Color(0xFF083935))
+}
+
+internal fun appColorScheme(skin: CardSkin, dark: Boolean): ColorScheme {
+    val palette = skin.appPalette()
+    val background = if (dark) lerp(palette.sidebar, Color.Black, .65f) else palette.background
+    val ink = if (dark) palette.background else Color(0xFF202826)
+    val primary = if (dark) lerp(palette.sidebar, Color.White, .76f) else palette.sidebar
+    val surface = if (dark) lerp(background, primary, .045f) else Color.White
+    val soft = if (dark) lerp(background, primary, .10f) else palette.soft
+    val base = if (dark) darkColorScheme() else lightColorScheme()
+    return base.copy(
+        primary = primary, onPrimary = if (dark) background else Color.White,
+        primaryContainer = if (dark) lerp(palette.sidebar, palette.accent, .12f) else palette.soft,
+        onPrimaryContainer = if (dark) ink else palette.sidebar,
+        secondary = palette.accent, onSecondary = palette.accentInk,
+        secondaryContainer = lerp(palette.accent, background, if (dark) .84f else .70f),
+        onSecondaryContainer = if (dark) lerp(palette.accent, Color.White, .25f) else palette.accentInk,
+        tertiary = if (dark) palette.accent else palette.accentInk,
+        onTertiary = if (dark) palette.accentInk else Color.White,
+        tertiaryContainer = lerp(palette.accent, background, if (dark) .80f else .60f),
+        onTertiaryContainer = if (dark) palette.background else palette.accentInk,
+        background = background, onBackground = ink,
+        surface = surface, onSurface = ink,
+        surfaceVariant = soft,
+        onSurfaceVariant = if (dark) lerp(ink, background, .24f) else Color(0xFF606A64),
+        surfaceContainerLowest = if (dark) lerp(background, Color.Black, .20f) else Color.White,
+        surfaceContainerLow = soft,
+        surfaceContainer = if (dark) lerp(background, primary, .08f) else lerp(palette.soft, Color.White, .35f),
+        surfaceContainerHigh = if (dark) lerp(background, primary, .12f) else palette.soft,
+        surfaceContainerHighest = if (dark) lerp(background, primary, .16f) else lerp(palette.soft, palette.sidebar, .06f),
+        surfaceBright = if (dark) lerp(background, primary, .20f) else Color.White,
+        surfaceDim = if (dark) background else lerp(palette.soft, palette.sidebar, .06f),
+        surfaceTint = primary,
+        inverseSurface = palette.sidebar, inverseOnSurface = palette.background,
+        inversePrimary = palette.accent,
+        outline = lerp(background, if (dark) ink else palette.sidebar, .52f),
+        outlineVariant = lerp(background, if (dark) primary else palette.sidebar, if (dark) .22f else .14f),
+        error = if (dark) Color(0xFFFFB4AB) else Color(0xFF9E3D3C),
+        onError = if (dark) Color(0xFF601410) else Color.White,
+        errorContainer = if (dark) Color(0xFF633B39) else Color(0xFFFFE0DB),
+        onErrorContainer = if (dark) Color(0xFFFFDAD6) else Color(0xFF410002),
     )
+}
+
+@Composable
+fun HiciarzTheme(skin: CardSkin = CardSkin.CLASSIC, content: @Composable () -> Unit) {
+    val dark = isSystemInDarkTheme()
+    val colors = remember(skin, dark) { appColorScheme(skin, dark) }
     MaterialTheme(colorScheme = colors, typography = AppTypography, content = content)
 }

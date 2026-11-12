@@ -3,18 +3,23 @@
 package pl.artifex.hiciarz.ui
 
 import androidx.compose.foundation.layout.*
+import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.rotate
+import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.platform.testTag
 import androidx.compose.ui.semantics.heading
+import androidx.compose.ui.semantics.LiveRegionMode
+import androidx.compose.ui.semantics.liveRegion
 import androidx.compose.ui.semantics.semantics
 import androidx.compose.ui.semantics.stateDescription
 import androidx.compose.ui.unit.dp
+import androidx.compose.ui.unit.sp
 import pl.artifex.hiciarz.model.*
 
 @Composable
@@ -29,6 +34,7 @@ internal fun GamesScreen(state: AppState, copy: UiCopy, onAction: (AppAction) ->
     }
     if (options) ModalBottomSheet(onDismissRequest = { options = false },
         sheetState = rememberModalBottomSheetState(skipPartiallyExpanded = true)) {
+        HideStatusBar()
         GameOptionsSheet(state, copy,
             onLevel = selectLevel,
             onRestart = { options = false; reset = true },
@@ -39,7 +45,10 @@ internal fun GamesScreen(state: AppState, copy: UiCopy, onAction: (AppAction) ->
         onLevel = selectLevel, onOptions = { options = true })
     if (reset) {
         AlertDialog(onDismissRequest = { reset = false },
-            title = { Text(copy.t("Rozpocząć od nowa?", "Start again?")) },
+            title = {
+                HideStatusBar()
+                Text(copy.t("Rozpocząć od nowa?", "Start again?"))
+            },
             text = { Text(copy.t("Bieżąca rozgrywka zostanie zakończona.", "This will end the current game.")) },
             confirmButton = { TextButton(onClick = {
                 onAction(AppAction.ResetBingo); reset = false
@@ -48,7 +57,10 @@ internal fun GamesScreen(state: AppState, copy: UiCopy, onAction: (AppAction) ->
     }
     levelChange?.let { level ->
         AlertDialog(onDismissRequest = { levelChange = null },
-            title = { Text(copy.t("Zmienić poziom pytań?", "Change the question level?")) },
+            title = {
+                HideStatusBar()
+                Text(copy.t("Zmienić poziom pytań?", "Change the question level?"))
+            },
             text = { Text(copy.t("Bieżąca runda zostanie zakończona. Użyj plansz PDF dla nowego poziomu.",
                 "This ends the current round. Use the PDF boards for the new level.")) },
             confirmButton = { TextButton(onClick = { onAction(AppAction.SetBingoLevel(level)); levelChange = null }) {
@@ -67,22 +79,14 @@ private fun HostBingoGame(state: AppState, copy: UiCopy, onAction: (AppAction) -
         val stacked = LocalPaneHeight.current == null
         when (stage) {
             BingoStage.IDLE -> {
-                SectionTitle("Bingo", copy.t("Ustawienia Bingo", "Bingo settings"), onOptions)
-                Column(verticalArrangement = Arrangement.spacedBy(20.dp)) {
-                    Text(copy.t("Wylosuj pytanie, zeskanuj kartę i zagrajcie na papierowych planszach.",
-                        "Draw a question, scan a card and play on printed boards."),
-                        style = MaterialTheme.typography.bodyLarge,
-                        color = MaterialTheme.colorScheme.onSurfaceVariant)
-                    BingoLevelChoice(state.bingoLevel, copy, onLevel)
-                    Button(onClick = { onAction(if (stacked) AppAction.DrawBingo else AppAction.DrawBingoAndScan) },
-                        modifier = Modifier.fillMaxWidth().heightIn(min = 54.dp), shape = ControlShape) {
-                        Icon(AppIcons.Shuffle, null, Modifier.size(20.dp))
-                        Spacer(Modifier.width(10.dp))
-                        Text(copy.t("Wylosuj pytanie", "Draw a question"))
-                    }
-                }
+                BingoHeader(state, copy, onOptions)
+                BingoLevelChoice(state.bingoLevel, copy, onLevel)
+                BingoCategoryDraw(state, copy, onAction, compact = stacked, scanOnDraw = !stacked)
             }
-            BingoStage.RULE -> if (stacked) BingoRuleHeading(state, copy, onOptions) else {
+            BingoStage.RULE -> if (stacked) {
+                BingoHeader(state, copy, onOptions)
+                BingoCategoryDraw(state, copy, onAction, compact = true)
+            } else {
                 Box(Modifier.fillMaxWidth().heightIn(min = 260.dp), contentAlignment = Alignment.Center) {
                     Column(horizontalAlignment = Alignment.CenterHorizontally,
                         verticalArrangement = Arrangement.spacedBy(12.dp)) {
@@ -93,18 +97,28 @@ private fun HostBingoGame(state: AppState, copy: UiCopy, onAction: (AppAction) -
                 }
             }
             BingoStage.SCAN -> {
-                if (stacked) BingoRuleHeading(state, copy, onOptions, compact = true)
+                if (stacked) {
+                    BingoHeader(state, copy, onOptions)
+                    BingoCategoryDraw(state, copy, onAction, compact = true)
+                }
                 CameraViewport(state.scannerEnabled && cameraActive, copy) {
                     onAction(AppAction.ScanCameraCode(it, bingo = true, bingoRound = state.bingoRound))
                 }
             }
             BingoStage.PLAYING -> state.bingoSong?.let { song ->
-                if (stacked) BingoRuleHeading(state, copy, onOptions, compact = true,
-                    showHint = state.question !in listOf(QuestionType.YEAR_WITHIN_TWO,
-                        QuestionType.YEAR_WITHIN_THREE, QuestionType.YEAR_WITHIN_FOUR))
-                BingoTicket(song, state.question,
-                    revealed = state.bingoAnswerRevealed && hasBingoAnswer(song, state.question),
-                    skin = state.activeSkin, copy = copy, compact = stacked)
+                if (stacked) {
+                    BingoHeader(state, copy, onOptions)
+                    BingoCategoryDraw(state, copy, onAction, compact = true,
+                        showHint = state.question !in listOf(QuestionType.YEAR_WITHIN_TWO,
+                            QuestionType.YEAR_WITHIN_THREE, QuestionType.YEAR_WITHIN_FOUR))
+                }
+                CardPlayback(state.playback, song, copy, onAction,
+                    answerVisible = state.bingoAnswerRevealed && hasBingoAnswer(song, state.question),
+                    compact = stacked) {
+                    BingoTicket(song, state.question,
+                        revealed = state.bingoAnswerRevealed && hasBingoAnswer(song, state.question),
+                        skin = state.activeSkin, copy = copy, compact = stacked)
+                }
             }
         }
     }, secondary = {
@@ -112,8 +126,11 @@ private fun HostBingoGame(state: AppState, copy: UiCopy, onAction: (AppAction) -
         when (stage) {
             BingoStage.IDLE -> BingoPreparation(state, copy)
             BingoStage.RULE -> {
-                if (!stacked) BingoRuleHeading(state, copy, onOptions)
-                Button(onClick = { onAction(AppAction.BeginBingoScan) },
+                if (!stacked) {
+                    BingoHeader(state, copy, onOptions)
+                    BingoCategoryDraw(state, copy, onAction)
+                }
+                TextButton(onClick = { onAction(AppAction.BeginBingoScan) },
                     modifier = Modifier.fillMaxWidth().heightIn(min = 54.dp), shape = ControlShape) {
                     Icon(AppIcons.Scan, null, Modifier.size(20.dp))
                     Spacer(Modifier.width(10.dp))
@@ -121,7 +138,10 @@ private fun HostBingoGame(state: AppState, copy: UiCopy, onAction: (AppAction) -
                 }
             }
             BingoStage.SCAN -> {
-                if (!stacked) BingoRuleHeading(state, copy, onOptions)
+                if (!stacked) {
+                    BingoHeader(state, copy, onOptions)
+                    BingoCategoryDraw(state, copy, onAction)
+                }
                 Column {
                     TextButton(onClick = onManual, modifier = Modifier.heightIn(min = 48.dp)) {
                         Icon(AppIcons.Link, null, Modifier.size(18.dp))
@@ -137,14 +157,15 @@ private fun HostBingoGame(state: AppState, copy: UiCopy, onAction: (AppAction) -
                 }
             }
             BingoStage.PLAYING -> state.bingoSong?.let { song ->
-                if (!stacked) BingoRuleHeading(state, copy, onOptions)
+                if (!stacked) {
+                    BingoHeader(state, copy, onOptions)
+                    BingoCategoryDraw(state, copy, onAction)
+                }
                 Column(verticalArrangement = Arrangement.spacedBy(16.dp)) {
-                    PlaybackControls(state.playback, state.settings, copy, onAction,
-                        expectedUri = song.spotifyUri, playAction = AppAction.PlayCard(song))
                     val answerAvailable = hasBingoAnswer(song, state.question)
                     val nextRound = { onAction(if (stacked) AppAction.DrawBingo else AppAction.DrawBingoAndScan) }
                     if (answerAvailable && !state.bingoAnswerRevealed) {
-                        Button(onClick = { onAction(AppAction.RevealBingoAnswer) },
+                        OutlinedButton(onClick = { onAction(AppAction.RevealBingoAnswer) },
                             modifier = Modifier.fillMaxWidth().heightIn(min = 54.dp), shape = ControlShape) {
                             Icon(AppIcons.Eye, null, Modifier.size(20.dp))
                             Spacer(Modifier.width(10.dp))
@@ -159,7 +180,7 @@ private fun HostBingoGame(state: AppState, copy: UiCopy, onAction: (AppAction) -
                         if (!answerAvailable) Text(copy.t("Odpowiedź znajdziesz na drukowanej karcie.",
                             "Read the answer on the printed card."), style = MaterialTheme.typography.bodyMedium,
                             color = MaterialTheme.colorScheme.onSurfaceVariant)
-                        Button(onClick = nextRound, modifier = Modifier.fillMaxWidth().heightIn(min = 54.dp), shape = ControlShape) {
+                        OutlinedButton(onClick = nextRound, modifier = Modifier.fillMaxWidth().heightIn(min = 54.dp), shape = ControlShape) {
                             Text(copy.t("Następna runda", "Next round"))
                             Spacer(Modifier.width(10.dp))
                             Icon(AppIcons.Arrow, null, Modifier.size(20.dp))
@@ -190,16 +211,8 @@ internal fun BingoLevelChoice(level: BingoLevel, copy: UiCopy, onLevel: (BingoLe
 
 @Composable
 private fun BingoPreparation(state: AppState, copy: UiCopy) {
-    val context = LocalContext.current
     var categoriesExpanded by rememberSaveable(state.bingoLevel) { mutableStateOf(false) }
     Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
-        TextButton(onClick = { openUrl(context, bingoBoardUrl(state.bingoLevel, copy.language)) },
-            modifier = Modifier.heightIn(min = 48.dp)) {
-            Icon(AppIcons.Decks, null, Modifier.size(18.dp))
-            Spacer(Modifier.width(8.dp))
-            Text(copy.t("Plansze do pobrania", "Get Bingo boards"))
-        }
-        HorizontalDivider(color = MaterialTheme.colorScheme.outlineVariant)
         TextButton(onClick = { categoriesExpanded = !categoriesExpanded },
             modifier = Modifier.fillMaxWidth().heightIn(min = 48.dp), contentPadding = PaddingValues(horizontal = 0.dp)) {
             Text(copy.t("Kategorie na planszy", "Categories on the board"), modifier = Modifier.weight(1f))
@@ -219,23 +232,76 @@ private fun BingoPreparation(state: AppState, copy: UiCopy) {
 }
 
 @Composable
-private fun BingoRuleHeading(state: AppState, copy: UiCopy, onOptions: () -> Unit,
-                             compact: Boolean = false, showHint: Boolean = true) {
+private fun BingoHeader(state: AppState, copy: UiCopy, onOptions: () -> Unit) {
+    val context = LocalContext.current
+    Row(Modifier.fillMaxWidth(), verticalAlignment = Alignment.CenterVertically) {
+        TextButton(onClick = { openUrl(context, bingoBoardUrl(state.bingoLevel, copy.language)) },
+            modifier = Modifier.weight(1f).heightIn(min = 48.dp).testTag("bingo-boards-download"),
+            contentPadding = PaddingValues(horizontal = 8.dp)) {
+            Icon(AppIcons.Decks, null, Modifier.size(18.dp))
+            Spacer(Modifier.width(8.dp))
+            Text(copy.t("Plansze do pobrania", "Get Bingo boards"))
+        }
+        IconButton(onClick = onOptions, modifier = Modifier.size(48.dp)) {
+            Icon(AppIcons.Settings, copy.t("Ustawienia Bingo", "Bingo settings"), Modifier.size(20.dp))
+        }
+    }
+}
+
+// The category numbers, colors and display type follow web/src/BingoGame.tsx and bingo.ts.
+private val bingoCategoryColors = listOf(
+    Color(0xFFE0EBDF) to Color(0xFF31583D),
+    Color(0xFFF5E5C2) to Color(0xFF745521),
+    Color(0xFFDCE8F4) to Color(0xFF355875),
+    Color(0xFFEEDFEE) to Color(0xFF714570),
+    Color(0xFFF4DDD2) to Color(0xFF804D39),
+)
+
+@Composable
+private fun BingoCategoryDraw(state: AppState, copy: UiCopy, onAction: (AppAction) -> Unit,
+                              compact: Boolean = false, showHint: Boolean = true, scanOnDraw: Boolean = false) {
+    val empty = state.bingoStage == BingoStage.IDLE
     val index = BingoRules.categories(state.bingoLevel).indexOf(state.question).coerceAtLeast(0)
-    Column(Modifier.fillMaxWidth().testTag("bingo-rule-card"), verticalArrangement = Arrangement.spacedBy(8.dp)) {
-        Row(Modifier.fillMaxWidth(), verticalAlignment = Alignment.CenterVertically) {
-            Text(copy.t("Runda ${state.bingoRound} · kategoria ${index + 1}", "Round ${state.bingoRound} · category ${index + 1}"),
-                modifier = Modifier.weight(1f), style = MaterialTheme.typography.labelMedium,
-                color = MaterialTheme.colorScheme.onSurfaceVariant)
-            IconButton(onClick = onOptions, modifier = Modifier.size(48.dp)) {
-                Icon(AppIcons.Settings, copy.t("Ustawienia Bingo", "Bingo settings"), Modifier.size(20.dp))
+    val colors = MaterialTheme.colorScheme
+    val (fill, ink) = if (empty) colors.inverseSurface to colors.inverseOnSurface else bingoCategoryColors[index]
+    Column(Modifier.fillMaxWidth(), verticalArrangement = Arrangement.spacedBy(12.dp)) {
+        Surface(Modifier.fillMaxWidth().testTag(if (empty) "bingo-empty-category" else "bingo-rule-card")
+            .semantics { liveRegion = LiveRegionMode.Polite },
+            shape = RoundedCornerShape(22.dp), color = fill, contentColor = ink) {
+            Column(Modifier.fillMaxWidth().heightIn(min = if (!empty && compact) 164.dp else 224.dp)
+                .padding(if (compact) 22.dp else 28.dp), verticalArrangement = Arrangement.Center) {
+                if (empty) {
+                    Icon(AppIcons.Bingo, null, Modifier.size(40.dp), tint = colors.inversePrimary)
+                    Spacer(Modifier.height(24.dp))
+                    Text(copy.t("Co dziś odgadujemy?", "What are we guessing today?"),
+                        style = if (compact) MaterialTheme.typography.headlineLarge.copy(fontSize = 36.sp, lineHeight = 39.sp)
+                            else MaterialTheme.typography.displaySmall,
+                        modifier = Modifier.semantics { heading() })
+                } else {
+                    Text(copy.t("Runda ${state.bingoRound} · Kategoria ${index + 1}", "Round ${state.bingoRound} · Category ${index + 1}"),
+                        style = MaterialTheme.typography.labelSmall, color = ink.copy(alpha = .8f))
+                    Spacer(Modifier.height(if (compact) 16.dp else 24.dp))
+                    Text(copy.question(state.question),
+                        style = if (compact) MaterialTheme.typography.headlineLarge.copy(fontSize = 36.sp, lineHeight = 39.sp)
+                            else MaterialTheme.typography.displaySmall,
+                        modifier = Modifier.semantics { heading() })
+                    if (showHint) bingoHint(state.question, copy)?.let {
+                        Spacer(Modifier.height(16.dp))
+                        Text(it, style = MaterialTheme.typography.bodyMedium, color = ink)
+                    }
+                }
             }
         }
-        Text(copy.question(state.question), style = if (compact) MaterialTheme.typography.headlineMedium else MaterialTheme.typography.headlineLarge,
-            modifier = Modifier.semantics { heading() })
-        if (showHint) bingoHint(state.question, copy)?.let {
-            Text(it, style = if (compact) MaterialTheme.typography.bodySmall else MaterialTheme.typography.bodyMedium,
-                color = MaterialTheme.colorScheme.onSurfaceVariant)
+        Button(onClick = { onAction(if (empty) {
+            if (scanOnDraw) AppAction.DrawBingoAndScan else AppAction.DrawBingo
+        } else AppAction.RedrawBingoQuestion) },
+            modifier = Modifier.fillMaxWidth().heightIn(min = 56.dp).testTag("bingo-draw-category"),
+            shape = RoundedCornerShape(14.dp),
+            colors = ButtonDefaults.buttonColors(containerColor = colors.secondary, contentColor = colors.onSecondary)) {
+            Icon(AppIcons.Shuffle, null, Modifier.size(21.dp))
+            Spacer(Modifier.width(10.dp))
+            Text(if (empty) copy.t("Losuj kategorię", "Draw a category")
+                else copy.t("Losuj kolejną kategorię", "Draw another category"))
         }
     }
 }
@@ -265,7 +331,7 @@ private fun BingoTicket(song: Song, question: QuestionType, revealed: Boolean, s
         modifier = Modifier.semantics(mergeDescendants = true) {
             stateDescription = copy.t("Skórka: ${copy.skin(skin)}", "Skin: ${copy.skin(skin)}")
         }) { answerVisible ->
-        YearTicket(skin, if (answerVisible) answer.orEmpty() else "?",
+        YearTicket(skin, if (answerVisible) answer.orEmpty() else "",
             eyebrow = if (answerVisible) copy.t("Odpowiedź", "The answer") else "",
             title = when {
                 !answerVisible -> null
@@ -275,7 +341,7 @@ private fun BingoTicket(song: Song, question: QuestionType, revealed: Boolean, s
             },
             subtitle = if (answerVisible && question != QuestionType.TITLE) song.artist.takeUnless { it == answer } else null,
             footer = if (answerVisible && question == QuestionType.BEFORE_2000) song.year?.toString() else null,
-            answerSide = answerVisible, cardId = song.id, compact = compact)
+            answerSide = answerVisible, cardId = song.id, compact = compact, playbackOverlay = true)
     }
 }
 

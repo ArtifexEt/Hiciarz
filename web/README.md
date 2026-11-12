@@ -93,10 +93,10 @@ Całe playlisty wczytasz z pliku JSON/CSV zgodnego z formatem Hiciarza. Link do 
 
 - **Klasyczna oś czasu:** zgaduj rok nagrania i układaj muzyczną chronologię.
 - **Zgadnij film / Zgadnij grę:** wybierz wariant przez **W co gramy? → Inne warianty** i uzupełnij tytuł produkcji jako odpowiedź. Podgląd dostarcza dane nagrania; odpowiedź wpisujesz samodzielnie. Jest drukowana na stronie odpowiedzi karty i nie trafia do QR.
-- **Muzyczne Bingo:** otwórz **Bingo**, wybierz poziom i użyj **Losuj kategorię**. Zestawy **Na dobry początek** i **Dla znawców** zawierają po pięć kategorii pytań. Każde losowanie jest niezależne. Odpowiedzi sprawdzacie na kartach, punkty zaznaczacie na papierze; pełny rząd, kolumna lub przekątna daje Bingo. Przycisk **Plansze PDF** otwiera **Plansze do druku** — różne plansze 5 × 5, po dwie na A4.
+- **Muzyczne Bingo:** otwórz **Bingo**, wybierz poziom i użyj **Losuj kategorię**. Zestawy **Na dobry początek** i **Dla znawców** zawierają po pięć kategorii pytań. Każde losowanie jest niezależne. Odpowiedzi sprawdzacie na kartach, punkty zaznaczacie na papierze; pełny rząd, kolumna lub przekątna daje Bingo. Widoczny od razu przycisk **Plansze do pobrania** otwiera **Plansze do druku** — różne plansze 5 × 5 z wyborem 1, 2 lub 4 plansz na stronie A4.
 - **Wygląd kart:** dziewięć motywów, własne rewersy z obsługą przeciągania plików, presety i oszczędny wydruk **Laser — lekki kolor**. Podgląd karty odzwierciedla układ PDF. Karty z własnym motywem zachowują go przy zmianie motywu talii; ujednolica je przycisk **Zastosuj motyw talii do wszystkich kart**. Skórka strony jest wybierana osobno w ustawieniach; nie zmienia motywu zapisanej talii.
 
-[Otwórz generator plansz Bingo — podstawowy PL](https://artifexet.github.io/Hiciarz/?view=bingo&sheet=print&level=beginner&lang=pl) · [Zaawansowany PL](https://artifexet.github.io/Hiciarz/?view=bingo&sheet=print&level=expert&lang=pl) · [Beginner EN](https://artifexet.github.io/Hiciarz/?view=bingo&sheet=print&level=beginner&lang=en). Linki z aplikacji Android otwierają ten sam generator. Parametry `level=beginner|expert` i `lang=pl|en` wybierają poziom oraz język, a w oknie można ustawić liczbę plansz i pobrać PDF. [Podgląd generatora na telefonie](docs/screenshots/bingo-boards-mobile.png).
+[Otwórz generator plansz Bingo — podstawowy PL](https://artifexet.github.io/Hiciarz/?view=bingo&sheet=print&level=beginner&lang=pl) · [Zaawansowany PL](https://artifexet.github.io/Hiciarz/?view=bingo&sheet=print&level=expert&lang=pl) · [Beginner EN](https://artifexet.github.io/Hiciarz/?view=bingo&sheet=print&level=beginner&lang=en). Linki z aplikacji Android otwierają ten sam generator. Parametry `level=beginner|expert` i `lang=pl|en` wybierają poziom oraz język, a w oknie można ustawić łączną liczbę plansz, wybrać 1, 2 lub 4 plansze na stronie A4 i pobrać PDF. [Podgląd generatora na telefonie](docs/screenshots/bingo-boards-mobile.png).
 
 **Wybierz gotową talię** udostępnia przykłady bez logowania:
 
@@ -128,6 +128,7 @@ Wymagane: **Node.js 22+** i **pnpm 11**.
 
 ```sh
 # Z głównego katalogu repozytorium:
+cd web
 pnpm install
 pnpm dev
 ```
@@ -142,7 +143,7 @@ pnpm preview
 
 Do podglądu Spotify i pobierania metadanych z MusicBrainz nie są potrzebne klucze API ani zmienne Spotify. Opcjonalne ustawienia własnego serwera parowania znajdziesz w [.env.example](.env.example).
 
-GitHub Actions uruchamia testy i budowanie. Workflow **Publish website** publikuje GitHub Pages automatycznie po zmianach web na `main`; można go też uruchomić ręcznie. Zmiany wyłącznie w aplikacji Android nie wdrażają strony. Fork używa nazwy swojego repozytorium jako ścieżki bazowej. [Pełna konfiguracja publikacji](docs/configuration.md).
+GitHub Actions uruchamia testy i budowanie. Workflow **Publish website** publikuje GitHub Pages automatycznie po zmianach w `web/` lub samym workflow na `main`; można go też uruchomić ręcznie. Zmiany wyłącznie w aplikacji Android nie wdrażają strony. Fork używa nazwy swojego repozytorium jako ścieżki bazowej. [Pełna konfiguracja publikacji](docs/configuration.md).
 
 ## Dokumentacja
 

@@ -4,19 +4,19 @@ Audyt dotyczy ekranów `AppNavigation`, `GameGuide`, `PlaybackSettings`, `BingoG
 
 | Funkcja PWA | Kierunek w aplikacji Android |
 | --- | --- |
-| Skanowanie QR z ukryciem odpowiedzi | Natywny aparat CameraX i ML Kit, błąd aparatu z możliwością ponowienia. |
+| Skanowanie QR z ukryciem odpowiedzi | Natywny aparat CameraX i ML Kit, kwadratowy podgląd także na tablecie, błąd aparatu z możliwością ponowienia. |
 | Zbliżenie aparatu | Natywne sterowanie kamerą; zakres zależy od urządzenia. |
-| Muzyka z przypisanej karty | Spotify App Remote, z zachowaniem wcześniej wybranego wyjścia Spotify. |
+| Muzyka z przypisanej karty | Spotify App Remote, z zachowaniem wcześniej wybranego wyjścia Spotify. Pauza i wznowienie na obrazie karty, „Skanuj nową” pod nim. Dane utworu w bibliotece aplikacji nie są potrzebne do odtwarzania QR. |
 | Szybki panel dźwięku | Globalny natywny dolny panel, dostępny z gry i skanera. |
 | Wybór głośnika Spotify | Pozostaje w Spotify; Android nie ma selektora urządzeń, głośników ani źródeł. |
 | Odtwarzacz YouTube, przeglądarka i parowanie drugiego ekranu | Pozostają w PWA; natywna aplikacja korzysta ze Spotify. |
 | „Jak grać” i instrukcja przygotowania | Dostępne ze skanera, Bingo oraz ustawień: drukowane karty QR, Bingo i dźwięk. |
-| Podstawowy i zaawansowany poziom Bingo | Zasada → skan karty → muzyka. Na telefonie osobny krok skanowania; w dwóch panelach pytanie i aparat są obok siebie. Bez losowania utworów i cyfrowej planszy. |
-| Plansze Bingo do druku | Przycisk otwiera generator PDF w PWA, przekazując poziom i język. Gracze nadal zaznaczają odpowiedzi na wydrukach. |
+| Podstawowy i zaawansowany poziom Bingo | Zasada → skan karty → muzyka. Duże pastelowe pole kategorii i przycisk losowania w kolorze aktywnej skórki jak w PWA, dostępny na każdym etapie rundy. Na telefonie osobny krok skanowania; w dwóch panelach pytanie i aparat są obok siebie. Bez losowania utworów i cyfrowej planszy. |
+| Plansze Bingo do druku | Widoczny od razu przycisk „Plansze do pobrania” otwiera generator PDF w PWA, przekazując poziom i język. Generator pozwala wybrać 1, 2 lub 4 plansze na stronę A4. Gracze nadal zaznaczają odpowiedzi na wydrukach. |
 | Warianty muzyka / gra / film | Drukowane karty QR; dla gier i filmów odpowiedzią jest źródło utworu. |
-| Wybór wyglądu i motyw zapisany w QR | Te same dziewięć grafik rewersów co w PWA, w tym rybka Mikołaj; automatyczny odczyt skórki z QR i wybór ręczny. |
+| Wybór wyglądu i motyw zapisany w QR | Te same dziewięć grafik rewersów i palet całej aplikacji co w PWA, z wariantami ciemnymi. Animowane rybki z ozdobami i lampkami. Automatyczny odczyt skórki z QR także dla nieznanego utworu oraz wybór ręczny. |
 | PL / EN | Zachowane w natywnych ekranach i pomocy. |
-| Ukrywanie odpowiedzi | Zachowane; aplikacja nie pobiera tytułu z odtwarzacza jako podpowiedzi. |
+| Ukrywanie odpowiedzi | Zachowane; aplikacja nie pobiera tytułu z odtwarzacza jako podpowiedzi. Systemowy pasek statusu i zegar są ukryte również w dialogach. Wysuwane powiadomienia Spotify pozostają pod kontrolą Androida. |
 | Ograniczenie czasu muzyki | Opcjonalne; domyślnie wyłączone. |
 | Biblioteka talii i import JSON / CSV | Dostępne w PWA. Android otwiera skaner i oferuje Skaner, Bingo i Opcje. Wcześniejsze dane na urządzeniu pozostają zachowane. |
 | Gry bez kart | Na razie wyłączone w Androidzie. |
@@ -30,6 +30,8 @@ Audyt dotyczy ekranów `AppNavigation`, `GameGuide`, `PlaybackSettings`, `BingoG
 2. Prowadzący odczytuje QR drukowanej karty. Wylosowana kategoria zostaje na ekranie, a Spotify odtwarza wskazane nagranie.
 3. Gracze sprawdzają odpowiedzi i zaznaczają trafienia na swoich papierowych planszach. Pełny rząd, kolumna lub przekątna daje Bingo.
 4. Prowadzący zaczyna następną turę od kolejnej kategorii. Ponowne skanowanie tej samej karty jest możliwe, jeśli wynika z decyzji prowadzącego.
+
+„Losuj kolejną kategorię” wybiera inną kategorię bieżącego poziomu zarówno przed skanem, jak i podczas odtwarzania. Zachowuje skanowaną kartę, muzykę, historię i numer rundy; widoczność odpowiedzi odpowiada ustawieniu jej ukrywania. „Następna runda” przechodzi do kolejnej karty.
 
 Historia skanów i etap tury zapisują się na urządzeniu. Obrót lub rozłożenie telefonu nie zmienia zasady ani rundy. Po ponownym uruchomieniu procesu aplikacja wraca do zasady zamiast samoczynnie uruchamiać pozostawiony wcześniej aparat.
 

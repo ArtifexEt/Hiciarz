@@ -10,6 +10,7 @@ import {
   Volume2,
 } from 'lucide-react';
 import { useTranslation } from './i18n';
+import type { ReactNode } from 'react';
 import type { AppView } from './navigation';
 import { asset } from './themes';
 
@@ -22,6 +23,7 @@ export default function AppNavigation({
   onPlayback,
   onSettings,
   onHelp,
+  deckLibrary,
 }: {
   current: AppView;
   menuOpen: boolean;
@@ -31,6 +33,7 @@ export default function AppNavigation({
   onPlayback: () => void;
   onSettings: () => void;
   onHelp: () => void;
+  deckLibrary?: ReactNode;
 }) {
   const { t } = useTranslation();
   const routes = [
@@ -69,6 +72,7 @@ export default function AppNavigation({
             </button>
           ))}
         </nav>
+        {deckLibrary}
         <div className="app-sidebar-bottom">
           <button
             className="app-nav-button"

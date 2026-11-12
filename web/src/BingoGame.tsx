@@ -18,6 +18,7 @@ import {
   type BingoLevel,
 } from './bingo';
 import { preparePDFPreview } from './pdf-preview';
+import type { BingoBoardsPerPage } from './bingo-pdf';
 import Modal from './Modal';
 import './bingo.css';
 
@@ -40,6 +41,7 @@ export default function BingoGame({
   const [selected, setSelected] = useState<number>();
   const [draws, setDraws] = useState(0);
   const [count, setCount] = useState(4);
+  const [boardsPerPage, setBoardsPerPage] = useState<BingoBoardsPerPage>(2);
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState('');
   const category = selected === undefined ? undefined : bingoCategories[level][selected];
@@ -66,6 +68,7 @@ export default function BingoGame({
     try {
       const { buildBingoPDF } = await import('./bingo-pdf');
       const doc = await buildBingoPDF(level, count, crypto.randomUUID(), {
+        boardsPerPage,
         signal: controller.signal,
         onProgress: (completed) =>
           viewer?.update({
@@ -105,7 +108,6 @@ export default function BingoGame({
           <button
             className="bingo-tool bingo-boards-entry"
             type="button"
-            aria-label={t('components.BingoGame.printableBoards')}
             aria-haspopup="dialog"
             onClick={() => onSheetChange('print')}
           >
@@ -208,7 +210,6 @@ export default function BingoGame({
           sheet
         >
           <div className="bingo-print">
-            <p>{t('components.BingoGame.twoDifferent55BoardsPer')}</p>
             <div className="bingo-print-row">
               <label>
                 {t('components.BingoGame.numberOfBoards')}
@@ -216,9 +217,24 @@ export default function BingoGame({
                   type="number"
                   min={1}
                   max={24}
+                  disabled={busy}
                   value={count}
                   onChange={(e) => setCount(Number(e.target.value))}
                 />
+              </label>
+              <label>
+                {t('bingoApp.boardsPerPage')}
+                <select
+                  value={boardsPerPage}
+                  disabled={busy}
+                  onChange={(e) => setBoardsPerPage(Number(e.target.value) as BingoBoardsPerPage)}
+                >
+                  {[1, 2, 4].map((value) => (
+                    <option key={value} value={value}>
+                      {value}
+                    </option>
+                  ))}
+                </select>
               </label>
               <span>
                 {t('components.BingoGame.level')} <strong>{bingoLevels[level]}</strong>

@@ -51,7 +51,19 @@ internal fun ScanScreen(state: AppState, copy: UiCopy, onAction: (AppAction) -> 
                 CameraViewport(state.scannerEnabled && cameraActive, copy, reservedHeight = 44.dp) { onAction(AppAction.ScanCameraCode(it)) }
             }
         } else {
-            ScannedTicket(song, revealed, state.activeSkin, copy)
+            Column(Modifier.fillMaxWidth(), verticalArrangement = Arrangement.spacedBy(12.dp)) {
+                CardPlayback(state.playback, song, copy, onAction, answerVisible = revealed) {
+                    ScannedTicket(song, revealed, state.activeSkin, copy)
+                }
+                Button(onClick = { onAction(AppAction.ScanNext) },
+                    modifier = Modifier.fillMaxWidth().heightIn(min = 52.dp).testTag("scan-new-card"), shape = ControlShape,
+                    colors = ButtonDefaults.buttonColors(containerColor = MaterialTheme.colorScheme.secondary,
+                        contentColor = MaterialTheme.colorScheme.onSecondary)) {
+                    Icon(AppIcons.Scan, null, Modifier.size(20.dp))
+                    Spacer(Modifier.width(10.dp))
+                    Text(copy.t("Skanuj nową", "Scan a new card"))
+                }
+            }
         }
     }, secondary = {
         if (song == null) {
@@ -64,32 +76,12 @@ internal fun ScanScreen(state: AppState, copy: UiCopy, onAction: (AppAction) -> 
             }
         } else {
             Column(Modifier.fillMaxWidth(), verticalArrangement = Arrangement.spacedBy(12.dp)) {
-                PlaybackControls(state.playback, state.settings, copy, onAction,
-                    expectedUri = song.spotifyUri, playAction = AppAction.PlayCard(song))
-                if (!hasAnswer) {
-                    Text(copy.t("Odpowiedź znajdziesz na drukowanej karcie.", "Read the answer on the printed card."),
-                        style = MaterialTheme.typography.bodyMedium,
-                        color = MaterialTheme.colorScheme.onSurfaceVariant)
-                }
                 if (hasAnswer && !revealed) {
-                    Button(onClick = { onAction(AppAction.RevealAnswer) },
-                        modifier = Modifier.fillMaxWidth().heightIn(min = 52.dp), shape = ControlShape) {
+                    OutlinedButton(onClick = { onAction(AppAction.RevealAnswer) },
+                        modifier = Modifier.fillMaxWidth().heightIn(min = 48.dp), shape = ControlShape) {
                         Icon(AppIcons.Eye, null, Modifier.size(20.dp))
                         Spacer(Modifier.width(10.dp))
                         Text(copy.t("Odkryj odpowiedź", "Reveal answer"))
-                    }
-                    TextButton(onClick = { onAction(AppAction.ScanNext) },
-                        modifier = Modifier.fillMaxWidth().heightIn(min = 48.dp)) {
-                        Text(copy.t("Następna karta", "Next card"))
-                        Spacer(Modifier.width(8.dp))
-                        Icon(AppIcons.Scan, null, Modifier.size(18.dp))
-                    }
-                } else {
-                    Button(onClick = { onAction(AppAction.ScanNext) },
-                        modifier = Modifier.fillMaxWidth().heightIn(min = 52.dp), shape = ControlShape) {
-                        Text(copy.t("Następna karta", "Next card"))
-                        Spacer(Modifier.width(10.dp))
-                        Icon(AppIcons.Scan, null, Modifier.size(20.dp))
                     }
                 }
             }
@@ -104,11 +96,6 @@ private fun hasScannedAnswer(song: Song): Boolean = when (song.gameMode) {
 
 @Composable
 internal fun ScannedTicket(song: Song, revealed: Boolean, skin: CardSkin, copy: UiCopy) {
-    val question = when (song.gameMode) {
-        GameMode.CLASSIC -> copy.t("Który to rok?", "Which year?")
-        GameMode.GAME -> copy.t("Jaka to gra?", "Which game?")
-        GameMode.MOVIE -> copy.t("Jaki to film?", "Which film?")
-    }
     FlippingTicket(cardKey = song.spotifyId, revealed = revealed && hasScannedAnswer(song),
         modifier = Modifier.semantics(mergeDescendants = true) {
             stateDescription = copy.t("Skórka: ${copy.skin(skin)}", "Skin: ${copy.skin(skin)}")
@@ -116,16 +103,17 @@ internal fun ScannedTicket(song: Song, revealed: Boolean, skin: CardSkin, copy: 
         YearTicket(
             skin = skin,
             year = when {
-                !answerVisible -> "?"
+                !answerVisible -> ""
                 song.gameMode != GameMode.CLASSIC -> song.answer
                 else -> song.year?.toString() ?: "—"
             },
-            eyebrow = if (answerVisible) copy.t("Odpowiedź", "The answer") else question,
+            eyebrow = if (answerVisible) copy.t("Odpowiedź", "The answer") else "",
             title = if (answerVisible) song.title else null,
             subtitle = if (answerVisible) song.artist else null,
             footer = if (answerVisible && song.gameMode != GameMode.CLASSIC) song.year?.toString() else null,
             answerSide = answerVisible,
             cardId = song.id,
+            playbackOverlay = true,
         )
     }
 }
@@ -155,65 +143,68 @@ internal fun CameraViewport(enabled: Boolean, copy: UiCopy, reservedHeight: Dp =
     val preferredHeight = (LocalConfiguration.current.screenHeightDp * .50f).coerceIn(230f, 500f).dp
     val availableHeight = LocalPaneHeight.current?.let { (it - 36.dp - reservedHeight).coerceAtLeast(180.dp) }
     val height = availableHeight ?: preferredHeight
-    Box(Modifier.fillMaxWidth().height(height).clip(RoundedCornerShape(16.dp))
-        .background(Color(0xFF15211E)).testTag("camera-preview"), contentAlignment = Alignment.Center) {
-        if (permission && enabled && error == null) {
-            key(attempt) {
-                ScannerPreview(enabled = true, onCode = onCode, modifier = Modifier.fillMaxSize(),
-                    onError = { error = it }, torchEnabled = torch, zoomRatio = requestedZoom,
-                    onCameraState = { camera = it; requestedZoom = it.zoomRatio })
-            }
-            Viewfinder(Modifier.fillMaxSize())
-            Row(Modifier.align(Alignment.BottomCenter).padding(14.dp),
-                verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(8.dp)) {
-                val levels = listOf(.5f, 1f, 2f, 4f).filter {
-                    camera != null && it >= camera!!.minZoomRatio && it <= camera!!.maxZoomRatio
+    BoxWithConstraints(Modifier.fillMaxWidth(), contentAlignment = Alignment.TopCenter) {
+        val edge = minOf(maxWidth, height)
+        Box(Modifier.size(edge).clip(RoundedCornerShape(16.dp))
+            .background(Color(0xFF15211E)).testTag("camera-preview"), contentAlignment = Alignment.Center) {
+            if (permission && enabled && error == null) {
+                key(attempt) {
+                    ScannerPreview(enabled = true, onCode = onCode, modifier = Modifier.fillMaxSize(),
+                        onError = { error = it }, torchEnabled = torch, zoomRatio = requestedZoom,
+                        onCameraState = { camera = it; requestedZoom = it.zoomRatio })
                 }
-                if (levels.size > 1) Surface(color = Color(0xC916161D), shape = CircleShape) {
-                    Row {
-                        levels.forEach { value ->
-                            val selected = camera?.zoomRatio?.let { abs(it - value) < .18f } ?: false
-                            TextButton(onClick = { requestedZoom = value }, modifier = Modifier.sizeIn(minWidth = 48.dp, minHeight = 48.dp),
-                                colors = ButtonDefaults.textButtonColors(contentColor = if (selected) Color(0xFFE2B976) else Color.White)) {
-                                Text((if (value % 1f == 0f) value.toInt().toString() else value.toString()) + "×")
+                Viewfinder(Modifier.fillMaxSize())
+                Row(Modifier.align(Alignment.BottomCenter).padding(14.dp),
+                    verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+                    val levels = listOf(.5f, 1f, 2f, 4f).filter {
+                        camera != null && it >= camera!!.minZoomRatio && it <= camera!!.maxZoomRatio
+                    }
+                    if (levels.size > 1) Surface(color = Color(0xC916161D), shape = CircleShape) {
+                        Row {
+                            levels.forEach { value ->
+                                val selected = camera?.zoomRatio?.let { abs(it - value) < .18f } ?: false
+                                TextButton(onClick = { requestedZoom = value }, modifier = Modifier.sizeIn(minWidth = 48.dp, minHeight = 48.dp),
+                                    colors = ButtonDefaults.textButtonColors(contentColor = if (selected) MaterialTheme.colorScheme.secondary else Color.White)) {
+                                    Text((if (value % 1f == 0f) value.toInt().toString() else value.toString()) + "×")
+                                }
                             }
                         }
                     }
-                }
-                if (camera?.hasTorch == true) Surface(color = Color(0xC916161D), shape = CircleShape) {
-                    IconButton(onClick = { torch = !torch }) {
-                        Icon(AppIcons.Flash, copy.t(if (torch) "Wyłącz latarkę" else "Włącz latarkę",
-                            if (torch) "Turn torch off" else "Turn torch on"),
-                            tint = if (torch) Color(0xFFE2B976) else Color.White)
+                    if (camera?.hasTorch == true) Surface(color = Color(0xC916161D), shape = CircleShape) {
+                        IconButton(onClick = { torch = !torch }) {
+                            Icon(AppIcons.Flash, copy.t(if (torch) "Wyłącz latarkę" else "Włącz latarkę",
+                                if (torch) "Turn torch off" else "Turn torch on"),
+                                tint = if (torch) MaterialTheme.colorScheme.secondary else Color.White)
+                        }
                     }
                 }
-            }
-        } else if (permission && !enabled && error == null) {
-            Text(copy.t("Skanowanie wstrzymane", "Scanning paused"),
-                color = Color.White, style = MaterialTheme.typography.bodyMedium)
-        } else {
-            Viewfinder(Modifier.fillMaxSize())
-            val compact = height < 250.dp
-            Column(Modifier.padding(if (compact) 18.dp else 30.dp), horizontalAlignment = Alignment.CenterHorizontally,
-                verticalArrangement = Arrangement.spacedBy(if (compact) 10.dp else 16.dp)) {
-                Icon(if (error == null) AppIcons.Scan else AppIcons.Camera, null,
-                    Modifier.size(if (compact) 28.dp else 34.dp), tint = Color(0xFFE2B976))
-                if (error != null || denied) Text(error?.let(copy::message) ?:
-                    copy.t("Zezwól na aparat w ustawieniach aplikacji.", "Allow camera access in app settings."),
-                    color = Color.White, textAlign = TextAlign.Center,
-                    style = if (compact) MaterialTheme.typography.bodySmall else MaterialTheme.typography.bodyMedium)
-                FilledTonalButton(onClick = {
-                    when {
-                        error != null -> { error = null; attempt++ }
-                        denied -> context.startActivity(Intent(Settings.ACTION_APPLICATION_DETAILS_SETTINGS, Uri.parse("package:" + context.packageName)))
-                        else -> request.launch(Manifest.permission.CAMERA)
+            } else if (permission && !enabled && error == null) {
+                Text(copy.t("Skanowanie wstrzymane", "Scanning paused"),
+                    color = Color.White, style = MaterialTheme.typography.bodyMedium)
+            } else {
+                Viewfinder(Modifier.fillMaxSize())
+                val compact = edge < 250.dp
+                Column(Modifier.padding(if (compact) 18.dp else 30.dp), horizontalAlignment = Alignment.CenterHorizontally,
+                    verticalArrangement = Arrangement.spacedBy(if (compact) 10.dp else 16.dp)) {
+                    Icon(if (error == null) AppIcons.Scan else AppIcons.Camera, null,
+                        Modifier.size(if (compact) 28.dp else 34.dp), tint = MaterialTheme.colorScheme.secondary)
+                    if (error != null || denied) Text(error?.let(copy::message) ?:
+                        copy.t("Zezwól na aparat w ustawieniach aplikacji.", "Allow camera access in app settings."),
+                        color = Color.White, textAlign = TextAlign.Center,
+                        style = if (compact) MaterialTheme.typography.bodySmall else MaterialTheme.typography.bodyMedium)
+                    FilledTonalButton(onClick = {
+                        when {
+                            error != null -> { error = null; attempt++ }
+                            denied -> context.startActivity(Intent(Settings.ACTION_APPLICATION_DETAILS_SETTINGS, Uri.parse("package:" + context.packageName)))
+                            else -> request.launch(Manifest.permission.CAMERA)
+                        }
+                    }, modifier = Modifier.heightIn(min = 48.dp), shape = ControlShape) {
+                        Text(when {
+                            error != null -> copy.t("Spróbuj ponownie", "Try again")
+                            denied -> copy.t("Ustawienia aparatu", "Camera settings")
+                            else -> copy.t("Włącz aparat", "Enable camera")
+                        })
                     }
-                }, modifier = Modifier.heightIn(min = 48.dp), shape = ControlShape) {
-                    Text(when {
-                        error != null -> copy.t("Spróbuj ponownie", "Try again")
-                        denied -> copy.t("Ustawienia aparatu", "Camera settings")
-                        else -> copy.t("Włącz aparat", "Enable camera")
-                    })
                 }
             }
         }

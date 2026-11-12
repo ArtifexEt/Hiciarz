@@ -115,11 +115,13 @@ internal fun PlaybackSheet(state: AppState, copy: UiCopy, onAction: (AppAction) 
                 Text(copy.t("Rozłącz Spotify", "Disconnect Spotify"))
             }
         } else {
-            Text(copy.t("Spotify Premium i aplikacja Spotify na telefonie. Przy pierwszym połączeniu zaakceptuj zgodę na sterowanie.",
-                "You need Spotify Premium and the Spotify app on your phone. Accept the control permission on first connection."),
+            Text(copy.t("Do odtwarzania potrzebujesz konta Spotify Premium i aplikacji Spotify na tym urządzeniu. Przy pierwszym połączeniu zezwól na sterowanie odtwarzaniem.",
+                "You need Spotify Premium and the Spotify app on this device. Allow playback control when connecting for the first time."),
                 style = MaterialTheme.typography.bodyMedium)
             Button(onClick = { connectSpotify(state.playback, context, onAction) }, enabled = !connecting,
-                modifier = Modifier.fillMaxWidth().heightIn(min = 54.dp), shape = ControlShape) {
+                modifier = Modifier.fillMaxWidth().heightIn(min = 54.dp), shape = ControlShape,
+                colors = ButtonDefaults.buttonColors(containerColor = MaterialTheme.colorScheme.secondary,
+                    contentColor = MaterialTheme.colorScheme.onSecondary)) {
                 if (connecting) { CircularProgressIndicator(Modifier.size(18.dp), strokeWidth = 2.dp); Spacer(Modifier.width(10.dp)) }
                 Text(when {
                     connecting -> copy.t("Łączenie…", "Connecting…")
@@ -131,9 +133,6 @@ internal fun PlaybackSheet(state: AppState, copy: UiCopy, onAction: (AppAction) 
                 modifier = Modifier.fillMaxWidth().heightIn(min = 50.dp), shape = ControlShape) {
                 Text(copy.t("Anuluj łączenie", "Cancel connection"))
             }
-            if (BuildConfig.TEST_SIGNING) Text(copy.t("Wydanie testowe: niektóre konta mogą nie zaakceptować połączenia.",
-                "Test build: some accounts may be unable to connect."),
-                style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
         }
         TextButton(onClick = onHelp) { Text(copy.t("Pomoc z odtwarzaniem", "Playback help")) }
     }
@@ -143,7 +142,7 @@ internal fun PlaybackSheet(state: AppState, copy: UiCopy, onAction: (AppAction) 
 internal fun SkinSelectionSheet(state: AppState, copy: UiCopy, onAction: (AppAction) -> Unit) {
     Column(Modifier.fillMaxWidth().heightIn(max = 680.dp).verticalScroll(rememberScrollState())
         .padding(horizontal = 24.dp).padding(bottom = 30.dp), verticalArrangement = Arrangement.spacedBy(16.dp)) {
-        Text(copy.t("Skórki kart", "Card skins"), style = MaterialTheme.typography.headlineLarge)
+        Text(copy.t("Skórki", "Skins"), style = MaterialTheme.typography.headlineLarge)
         SwitchRow(copy.t("Używaj skórki zeskanowanej karty", "Use the scanned card’s skin"), state.settings.followCardSkin,
             onChange = { onAction(AppAction.SetFollowCardSkin(it)) })
         Text(copy.t("Skórka domyślna", "Default skin"), style = MaterialTheme.typography.titleSmall)
@@ -154,7 +153,7 @@ internal fun SkinSelectionSheet(state: AppState, copy: UiCopy, onAction: (AppAct
                     Column(Modifier.weight(1f).selectable(selected, role = Role.RadioButton,
                         onClick = { onAction(AppAction.SetCardSkin(skin)) }), verticalArrangement = Arrangement.spacedBy(5.dp)) {
                         Surface(shape = ControlShape,
-                            border = if (selected) BorderStroke(3.dp, MaterialTheme.colorScheme.secondary) else null,
+                            border = if (selected) BorderStroke(3.dp, MaterialTheme.colorScheme.primary) else null,
                             modifier = Modifier.fillMaxWidth().aspectRatio(.9f)) {
                             Box {
                                 SkinPattern(skin, Modifier.fillMaxSize())
@@ -173,7 +172,10 @@ internal fun SkinSelectionSheet(state: AppState, copy: UiCopy, onAction: (AppAct
 @Composable
 internal fun ManualEntryDialog(copy: UiCopy, onDismiss: () -> Unit, onSubmit: (String) -> Unit) {
     var value by rememberSaveable { mutableStateOf("") }
-    AlertDialog(onDismissRequest = onDismiss, title = { Text(copy.t("Kod lub link do utworu", "Card code or track link")) },
+    AlertDialog(onDismissRequest = onDismiss, title = {
+        HideStatusBar()
+        Text(copy.t("Kod lub link do utworu", "Card code or track link"))
+    },
         text = { OutlinedTextField(value, { if (it.length <= 8000) value = it },
             modifier = Modifier.fillMaxWidth(), minLines = 2, maxLines = 4,
             label = { Text(copy.t("Link Spotify lub kod Hiciarza", "Spotify link or Hiciarz code")) },
@@ -186,7 +188,10 @@ internal fun ManualEntryDialog(copy: UiCopy, onDismiss: () -> Unit, onSubmit: (S
 internal fun FontLicensesDialog(copy: UiCopy, onDismiss: () -> Unit) {
     val context = LocalContext.current
     val licenses = remember { context.resources.openRawResource(R.raw.font_licenses).bufferedReader().use { it.readText() } }
-    AlertDialog(onDismissRequest = onDismiss, title = { Text(copy.t("Licencje krojów pisma", "Font licenses")) },
+    AlertDialog(onDismissRequest = onDismiss, title = {
+        HideStatusBar()
+        Text(copy.t("Licencje krojów pisma", "Font licenses"))
+    },
         text = { Text(licenses, Modifier.heightIn(max = 420.dp).verticalScroll(rememberScrollState()), style = MaterialTheme.typography.bodySmall) },
         confirmButton = { TextButton(onClick = onDismiss) { Text(copy.t("Zamknij", "Close")) } })
 }

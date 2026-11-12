@@ -139,6 +139,7 @@ sealed interface AppAction {
     data class DeleteDeck(val id: String) : AppAction
     data object DrawBingo : AppAction
     data object DrawBingoAndScan : AppAction
+    data object RedrawBingoQuestion : AppAction
     data object BeginBingoScan : AppAction
     data object CancelBingoScan : AppAction
     data object RevealBingoAnswer : AppAction

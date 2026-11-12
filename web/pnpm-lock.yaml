@@ -6,9 +6,7 @@ settings:
 
 importers:
 
-  .: {}
-
-  web:
+  .:
     dependencies:
       '@zxing/browser':
         specifier: ^0.1.5

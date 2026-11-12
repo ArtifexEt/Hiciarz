@@ -149,6 +149,7 @@ internal fun YearTicket(
     footer: String? = null,
     answerSide: Boolean = false,
     cardId: String? = null,
+    playbackOverlay: Boolean = false,
 ) {
     val palette = skin.palette()
     val ink = if (answerSide) palette.ink else palette.paper
@@ -161,7 +162,9 @@ internal fun YearTicket(
             else SkinPattern(skin, Modifier.matchParentSize(), subdued = true)
             Column(
                 Modifier.fillMaxWidth().heightIn(min = cardWidth)
-                    .padding(horizontal = cardWidth * .12f, vertical = cardWidth * .14f),
+                    .padding(horizontal = cardWidth * .12f)
+                    .padding(top = if (answerSide && playbackOverlay) maxOf(60.dp, cardWidth * .14f) else cardWidth * .14f,
+                        bottom = cardWidth * .14f),
                 verticalArrangement = Arrangement.Center,
                 horizontalAlignment = Alignment.CenterHorizontally,
             ) {

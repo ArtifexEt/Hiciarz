@@ -125,6 +125,57 @@ class CardlessViewModelTest {
         assertNotEquals(song.spotifyId, state().timeline.currentSong?.spotifyId)
     }
 
+    @Test fun bingoQuestionCanBeRedrawnBeforeScanningAndWhileTheSameCardIsPlaying() {
+        val idle = state()
+        dispatch(AppAction.RedrawBingoQuestion)
+        assertEquals(idle, state())
+
+        dispatch(AppAction.DrawBingo)
+        val firstQuestion = state().question
+        val round = state().bingoRound
+        dispatch(AppAction.RedrawBingoQuestion)
+        assertNotEquals(firstQuestion, state().question)
+        assertEquals(BingoStage.RULE, state().bingoStage)
+        assertEquals(round, state().bingoRound)
+        assertTrue(state().bingoHistory.isEmpty())
+
+        dispatch(AppAction.BeginBingoScan)
+        val scanQuestion = state().question
+        dispatch(AppAction.RedrawBingoQuestion)
+        assertNotEquals(scanQuestion, state().question)
+        assertEquals(BingoStage.SCAN, state().bingoStage)
+        assertTrue(state().scannerEnabled)
+        assertEquals(round, state().bingoRound)
+        dispatch(AppAction.ScanCameraCode("https://example.org/#2fs0000000000000000000000g",
+            bingo = true, bingoRound = round))
+        dispatch(AppAction.RevealBingoAnswer)
+        val playing = state()
+        assertTrue(playing.bingoAnswerRevealed)
+
+        dispatch(AppAction.RedrawBingoQuestion)
+        val redrawn = state()
+        assertNotEquals(playing.question, redrawn.question)
+        assertTrue(redrawn.question in BingoRules.categories(redrawn.bingoLevel))
+        assertFalse(redrawn.bingoAnswerRevealed)
+        assertEquals(BingoStage.PLAYING, redrawn.bingoStage)
+        assertEquals(playing.bingoSong, redrawn.bingoSong)
+        assertEquals(playing.bingoHistory, redrawn.bingoHistory)
+        assertEquals(playing.bingoRound, redrawn.bingoRound)
+        assertEquals(playing.playback, redrawn.playback)
+        assertEquals(playing.activeSkin, redrawn.activeSkin)
+
+        recreate()
+        dispatch(AppAction.SelectTab(AppTab.BINGO))
+        assertEquals(redrawn.question, state().question)
+        assertEquals(redrawn.bingoSong, state().bingoSong)
+        assertEquals(redrawn.bingoHistory, state().bingoHistory)
+        assertFalse(state().bingoAnswerRevealed)
+
+        dispatch(AppAction.SetHideAnswers(false))
+        dispatch(AppAction.RedrawBingoQuestion)
+        assertTrue("Redraw respects the choice to keep answers visible", state().bingoAnswerRevealed)
+    }
+
     @Test fun combinedBingoDrawStartsScanningAndIgnoresCameraFramesFromThePreviousRound() {
         dispatch(AppAction.SelectTab(AppTab.SETTINGS))
         dispatch(AppAction.SetCardlessMode(CardlessMode.QUIZ))
@@ -203,6 +254,22 @@ class CardlessViewModelTest {
         dispatch(AppAction.NextQuiz)
         assertNotEquals(first.currentSong?.spotifyId, state().quiz.currentSong?.spotifyId)
         assertEquals(2, state().quiz.round)
+    }
+
+    @Test fun anUnknownPrintedRecordingUsesItsQrSkinWithoutPlaylistMetadata() {
+        val unknown = "0123456789abcdefghijkl"
+        assertTrue(state().decks.flatMap { it.songs }.none { it.spotifyId == unknown })
+        dispatch(AppAction.SetCardSkin(CardSkin.VINYL))
+
+        dispatch(AppAction.ScanCode("https://example.org/#2fs$unknown"))
+
+        assertEquals(CardSkin.FISH, state().activeSkin)
+        assertEquals(CardSkin.FISH, state().currentSong?.skin)
+        assertEquals(unknown, state().currentSong?.spotifyId)
+        assertEquals("", state().currentSong?.title)
+        assertNull(state().currentSong?.year)
+        assertEquals("spotify:track:$unknown", state().playback.trackUri)
+        assertTrue(state().playback.isPlaying)
     }
 
     @Test fun cardSkinFollowsTheQrOnlyWhenEnabledAndDoesNotLeakIntoANewGame() {

@@ -1,12 +1,20 @@
 package pl.artifex.hiciarz
 
 import android.graphics.Rect
+import android.view.WindowInsets
+import androidx.activity.compose.setContent
 import androidx.compose.ui.test.*
 import androidx.compose.ui.test.junit4.createEmptyComposeRule
 import androidx.test.core.app.ActivityScenario
 import androidx.test.platform.app.InstrumentationRegistry
 import androidx.lifecycle.ViewModelProvider
 import pl.artifex.hiciarz.model.BingoStage
+import pl.artifex.hiciarz.model.AppSettings
+import pl.artifex.hiciarz.model.AppState
+import pl.artifex.hiciarz.model.AppTab
+import pl.artifex.hiciarz.model.ConnectionStatus
+import pl.artifex.hiciarz.model.PlaybackState
+import pl.artifex.hiciarz.ui.HiciarzApp
 import androidx.window.layout.FoldingFeature
 import androidx.window.layout.WindowLayoutInfo
 import androidx.window.testing.layout.FoldingFeature as TestFoldingFeature
@@ -43,7 +51,7 @@ class AdaptiveNativeTest {
     @Test fun foldCoverInnerAndTabletopKeepContentClearOfTheHinge() {
         resize("1080x2520", 420, 400..430)
         captureNative(compose, "fold-cover-bingo-pl")
-        compose.onNodeWithText("Wylosuj pytanie").performScrollTo().performClick()
+        compose.onNodeWithText("Losuj kategorię").performScrollTo().performClick()
         compose.onNodeWithText("Skanuj kartę").performScrollTo().performClick()
 
         // Fold7 inner display at a representative density: about 750 dp, not just a tablet preset.
@@ -85,17 +93,44 @@ class AdaptiveNativeTest {
         captureNative(compose, "landscape-settings-large-dark-pl")
     }
 
+    @Test fun unfoldedSettingsPlayerStaysAboveSystemNavigation() {
+        resize("1968x2184", 420, 730..770)
+        publishFold(FoldingFeature.Orientation.VERTICAL)
+        activity.onActivity {
+            it.setContent {
+                HiciarzApp(AppState(
+                    tab = AppTab.SETTINGS,
+                    settings = AppSettings(language = "pl"),
+                    playback = PlaybackState(connection = ConnectionStatus.CONNECTED, isPlaying = true),
+                )) {}
+            }
+        }
+        compose.onNodeWithTag("app-mini-player").assertIsDisplayed()
+        val player = compose.onNodeWithTag("app-mini-player").fetchSemanticsNode().boundsInRoot
+        var safeBottom = 0
+        activity.onActivity {
+            val view = it.window.decorView
+            val bottomInset = if (android.os.Build.VERSION.SDK_INT >= 30)
+                view.rootWindowInsets.getInsets(WindowInsets.Type.navigationBars()).bottom
+            else @Suppress("DEPRECATION") view.rootWindowInsets.systemWindowInsetBottom
+            safeBottom = view.height - bottomInset
+        }
+        assertTrue("Settings player overlaps system navigation", player.bottom <= safeBottom + 1f)
+        captureNative(compose, "fold-inner-settings-playing-pl")
+    }
+
     @Test fun tabletDrawShowsTheCameraAndFullRuleTogetherThroughTheRound() {
         resize("2560x1600", 320, 1260..1300)
         val instrumentation = InstrumentationRegistry.getInstrumentation()
         instrumentation.uiAutomation.grantRuntimePermission(instrumentation.targetContext.packageName,
             android.Manifest.permission.CAMERA)
-        compose.onNodeWithText("Wylosuj pytanie").performScrollTo().performClick()
+        compose.onNodeWithText("Losuj kategorię").performScrollTo().performClick()
         compose.onNodeWithTag("camera-preview").assertIsDisplayed()
         compose.onNodeWithTag("bingo-rule-card").assertIsDisplayed()
         compose.onNodeWithText("Skanuj kartę").assertDoesNotExist()
         val camera = compose.onNodeWithTag("camera-preview").fetchSemanticsNode().boundsInRoot
         val rule = compose.onNodeWithTag("bingo-rule-card").fetchSemanticsNode().boundsInRoot
+        assertEquals("Tablet camera must remain square", camera.width, camera.height, 1f)
         assertTrue("Camera and rule must be visible in separate columns", camera.right <= rule.left)
         captureNative(compose, "tablet-bingo-scanner-pl")
 

@@ -8,6 +8,7 @@ export function keepScannerPairing(from: AppView, to: AppView): boolean {
 
 export const modalNames = [
   'song',
+  'decks',
   'print-cards',
   'examples',
   'file',

@@ -7,6 +7,8 @@
 Wymagane Node.js 22+ i pnpm 11.
 
 ```sh
+# Z głównego katalogu repozytorium:
+cd web
 pnpm install
 pnpm dev
 pnpm test
@@ -17,7 +19,7 @@ Otwórz adres wypisany przez Vite z końcówką `/Hiciarz/`. Dla telefonu użyj 
 
 ## GitHub Pages
 
-Workflow [`.github/workflows/pages.yml`](../../.github/workflows/pages.yml) publikuje stronę automatycznie po pushu lub merge do `main`, jeśli zmienił się `web/`, główna konfiguracja package/pnpm lub sam workflow. Commity dotyczące wyłącznie `android-app/` nie uruchamiają wdrożenia. Ręczna publikacja pozostaje dostępna przez **Actions → Publish website → Run workflow**, np. po zmianie zmiennych repozytorium. Budowanie odbywa się z folderu `web/`; wszystkie dotychczasowe funkcje i PWA pozostają dostępne.
+Workflow [`.github/workflows/pages.yml`](../../.github/workflows/pages.yml) publikuje stronę automatycznie po pushu lub merge do `main`, jeśli zmienił się `web/` lub sam workflow. Commity dotyczące wyłącznie `android-app/` nie uruchamiają wdrożenia. Ręczna publikacja pozostaje dostępna przez **Actions → Publish website → Run workflow**, np. po zmianie zmiennych repozytorium. Instalacja zależności, testy i budowanie odbywają się w folderze `web/`, który zawiera konfigurację pnpm i plik blokady zależności.
 
 W Settings → Pages wybierz źródło **GitHub Actions**. Własny fork używa nazwy swojego repozytorium jako ścieżki bazowej. Dla hostingu w katalogu głównym ustaw `BASE_PATH=/` podczas budowania.
 
@@ -61,7 +63,7 @@ Pliki `src/locales/*.pl.json` / `*.en.json` i bazowe `pl.json` / `en.json` zawie
 
 Język jest zapisywany w localStorage pod `hiciarz-language`. Kolejność wyboru: zapisane `pl` / `en`, pierwszy obsługiwany wpis `navigator.languages`, polski. Przełączenie działa bez przeładowania i synchronizuje wybór między kartami tej samej przeglądarki. Aktualizowane są również `html.lang`, tytuł strony i opis. Dane użytkownika i identyfikatory formatu JSON/CSV oraz QR pozostają niezależne od języka.
 
-Przy dodawaniu tekstu uzupełnij oba pliki słownika z odpowiedniej grupy oraz użyj klucza w kodzie. Wykonaj `pnpm test` i `pnpm build`; testy sprawdzają między innymi zgodność kluczy i parametrów. Dłuższe angielskie etykiety warto sprawdzić w widoku mobilnym, w modalach i na wygenerowanym PDF.
+Przy dodawaniu tekstu uzupełnij oba pliki słownika z odpowiedniej grupy oraz użyj klucza w kodzie. W folderze `web/` wykonaj `pnpm test` i `pnpm build`; testy sprawdzają między innymi zgodność kluczy i parametrów. Dłuższe angielskie etykiety warto sprawdzić w widoku mobilnym, w modalach i na wygenerowanym PDF.
 
 ## Pliki dla AI
 

@@ -14,6 +14,7 @@ import pl.artifex.hiciarz.model.AppAction
 import pl.artifex.hiciarz.model.AppTab
 import pl.artifex.hiciarz.playback.SpotifyController
 import pl.artifex.hiciarz.ui.HiciarzApp
+import pl.artifex.hiciarz.ui.hideStatusBar
 
 class MainActivity : ComponentActivity() {
     private lateinit var model: HiciarzViewModel
@@ -22,6 +23,7 @@ class MainActivity : ComponentActivity() {
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         enableEdgeToEdge()
+        window.hideStatusBar()
         model = ViewModelProvider(this)[HiciarzViewModel::class.java]
         spotify = SpotifyController(this, clientIdProvider = { model.clientId() })
         model.attachPlayback(spotify)
@@ -54,7 +56,13 @@ class MainActivity : ComponentActivity() {
 
     override fun onPostResume() {
         super.onPostResume()
+        window.hideStatusBar()
         if (::spotify.isInitialized) spotify.refreshConnection()
+    }
+
+    override fun onWindowFocusChanged(hasFocus: Boolean) {
+        super.onWindowFocusChanged(hasFocus)
+        if (hasFocus) window.hideStatusBar()
     }
 
     override fun onDestroy() {

@@ -1,6 +1,6 @@
 import { readFileSync } from 'node:fs';
 import { afterAll, describe, expect, it, vi } from 'vitest';
-import { buildBingoPDF } from './bingo-pdf';
+import { bingoPageLayouts, buildBingoPDF, type BingoBoardsPerPage } from './bingo-pdf';
 const font = readFileSync(new URL('../public/fonts/NotoSans-Regular.ttf', import.meta.url));
 vi.stubGlobal('fetch', async () => new Response(font));
 afterAll(() => vi.unstubAllGlobals());
@@ -12,6 +12,27 @@ describe('printable Bingo boards', () => {
       expect(doc.internal.pageSize.getWidth()).toBeCloseTo(210, 0);
       expect(doc.internal.pageSize.getHeight()).toBeCloseTo(297, 0);
       expect(doc.output()).toContain('/Title (Hiciarz Bingo - plansze graczy)');
+    }
+  });
+  it.each(bingoPageLayouts)(
+    'paginates complete and partial sheets with %i boards per page',
+    async (boardsPerPage) => {
+      for (const level of ['beginner', 'expert'] as const) {
+        for (const count of [1, 3, 5]) {
+          const doc = await buildBingoPDF(level, count, 'layout-seed', { boardsPerPage });
+          expect(doc.getNumberOfPages()).toBe(Math.ceil(count / boardsPerPage));
+          expect(doc.output()).toContain(`/Subject (Plansze na A4: ${boardsPerPage}.`);
+        }
+      }
+    },
+  );
+  it('rejects unsupported page layouts instead of silently changing the requested print size', async () => {
+    for (const boardsPerPage of [0, 3, 6, NaN]) {
+      await expect(
+        buildBingoPDF('beginner', 4, 'invalid-layout', {
+          boardsPerPage: boardsPerPage as BingoBoardsPerPage,
+        }),
+      ).rejects.toThrow('Wybierz 1, 2 lub 4');
     }
   });
   it('bounds a print job rather than creating empty or unbounded PDFs', async () => {

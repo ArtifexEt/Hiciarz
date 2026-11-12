@@ -1,0 +1,125 @@
+.deck-library {
+  min-width: 0;
+}
+.deck-library-heading {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+  padding-left: 12px;
+  margin-bottom: 6px;
+}
+.deck-library-heading h2 {
+  margin: 0;
+  color: #d5e0d7;
+  font-size: 12px;
+  font-weight: 600;
+  letter-spacing: 0;
+}
+.deck-library-create {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  min-width: 44px;
+  min-height: 44px;
+  padding: 10px;
+  background: transparent;
+  color: inherit;
+  border-radius: 8px;
+}
+.deck-library-list {
+  display: grid;
+  align-content: start;
+  gap: 4px;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+.deck-library-list li {
+  min-width: 0;
+}
+.deck-library-item {
+  display: flex;
+  align-items: center;
+  gap: 9px;
+  width: 100%;
+  min-height: 48px;
+  padding: 10px 12px;
+  border: 1px solid transparent;
+  border-radius: 8px;
+  background: transparent;
+  color: inherit;
+  text-align: left;
+  font-size: 13px;
+}
+.deck-library-item > svg {
+  flex-shrink: 0;
+}
+.deck-library-name {
+  flex: 1;
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+.deck-library-count {
+  flex-shrink: 0;
+  min-width: 22px;
+  font-size: 11px;
+  font-variant-numeric: tabular-nums;
+  text-align: right;
+  opacity: 0.8;
+}
+.deck-library--sidebar {
+  color: #e4e9e3;
+}
+.deck-library--sidebar .deck-library-list {
+  max-height: min(32dvh, 360px);
+  overflow-y: auto;
+  overscroll-behavior: contain;
+  scrollbar-width: thin;
+  scrollbar-color: #ffffff50 transparent;
+}
+.deck-library--sidebar .deck-library-item:hover,
+.deck-library--sidebar .deck-library-create:hover {
+  background: #ffffff0d;
+}
+.deck-library--sidebar .deck-library-item[aria-current='true'] {
+  border-color: #ffffff35;
+  background: #ffffff15;
+  color: #fff3d2;
+  font-weight: 600;
+}
+.deck-library--sidebar button:focus-visible {
+  outline-color: #fff3d2;
+  outline-offset: -3px;
+}
+.deck-library--dialog {
+  display: grid;
+  gap: 16px;
+  color: var(--ink);
+}
+.deck-library--dialog .deck-library-list {
+  gap: 8px;
+}
+.deck-library--dialog .deck-library-item {
+  min-height: 60px;
+  border-color: var(--line);
+  font-size: 14px;
+}
+.deck-library--dialog .deck-library-item:hover {
+  background: var(--soft);
+}
+.deck-library--dialog .deck-library-item[aria-current='true'] {
+  border-color: var(--accent-ink);
+  background: var(--soft);
+  color: var(--accent-ink);
+  font-weight: 600;
+}
+.deck-library--dialog .deck-library-count {
+  font-size: 13px;
+}
+.deck-library--dialog .deck-library-create {
+  justify-self: start;
+}

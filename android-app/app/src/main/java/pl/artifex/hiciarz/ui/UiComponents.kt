@@ -16,6 +16,7 @@ import androidx.compose.runtime.Composable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.vector.ImageVector
+import androidx.compose.ui.platform.testTag
 import androidx.compose.ui.semantics.Role
 import androidx.compose.ui.semantics.heading
 import androidx.compose.ui.semantics.semantics
@@ -113,6 +114,10 @@ internal fun PlaybackControls(
             onClick = { onAction(if (playing) AppAction.Pause else playAction) },
             enabled = playback.connection == ConnectionStatus.CONNECTED,
             modifier = Modifier.size(48.dp), shape = CircleShape,
+            colors = IconButtonDefaults.filledIconButtonColors(
+                containerColor = MaterialTheme.colorScheme.secondary,
+                contentColor = MaterialTheme.colorScheme.onSecondary,
+            ),
         ) {
             Icon(if (playing) AppIcons.Pause else AppIcons.Play,
                 copy.t(if (playing) "Wstrzymaj" else "Odtwórz", if (playing) "Pause" else "Play"), Modifier.size(22.dp))
@@ -132,6 +137,44 @@ internal fun PlaybackControls(
         if (settings.autoPause) Surface(color = MaterialTheme.colorScheme.secondaryContainer, shape = CircleShape) {
             Text("${settings.clipSeconds} s", Modifier.padding(horizontal = 12.dp, vertical = 8.dp),
                 style = MaterialTheme.typography.labelMedium)
+        }
+    }
+}
+
+/** Transport belongs to the scanned artwork, even when the QR has no answer metadata. */
+@Composable
+internal fun CardPlayback(
+    playback: PlaybackState,
+    song: Song,
+    copy: UiCopy,
+    onAction: (AppAction) -> Unit,
+    modifier: Modifier = Modifier,
+    answerVisible: Boolean = false,
+    compact: Boolean = false,
+    content: @Composable () -> Unit,
+) {
+    val playing = playback.isPlaying && playback.trackUri == song.spotifyUri
+    Box(modifier.fillMaxWidth(), contentAlignment = Alignment.Center) {
+        Box(Modifier.widthIn(max = if (compact) 220.dp else 260.dp).fillMaxWidth().testTag("playback-card")) {
+            content()
+            FilledIconButton(
+                onClick = { onAction(if (playing) AppAction.Pause else AppAction.PlayCard(song)) },
+                enabled = playback.connection == ConnectionStatus.CONNECTED,
+                modifier = Modifier.align(if (answerVisible) Alignment.TopEnd else Alignment.Center)
+                    .padding(if (answerVisible) 4.dp else 0.dp)
+                    .size(if (answerVisible) 48.dp else 64.dp).testTag("card-playback-toggle"),
+                shape = CircleShape,
+                colors = IconButtonDefaults.filledIconButtonColors(
+                    containerColor = MaterialTheme.colorScheme.surface.copy(alpha = .94f),
+                    contentColor = MaterialTheme.colorScheme.onSurface,
+                    disabledContainerColor = MaterialTheme.colorScheme.surface.copy(alpha = .8f),
+                    disabledContentColor = MaterialTheme.colorScheme.onSurface.copy(alpha = .38f),
+                ),
+            ) {
+                Icon(if (playing) AppIcons.Pause else AppIcons.Play,
+                    copy.t(if (playing) "Wstrzymaj" else "Odtwórz", if (playing) "Pause" else "Play"),
+                    Modifier.size(if (answerVisible) 22.dp else 30.dp))
+            }
         }
     }
 }

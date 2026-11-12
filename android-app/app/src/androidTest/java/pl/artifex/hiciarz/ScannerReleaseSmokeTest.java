@@ -99,7 +99,7 @@ public final class ScannerReleaseSmokeTest {
         waitUntil("The portrait layout must be restored", 20_000,
                 () -> target.getResources().getConfiguration().orientation == Configuration.ORIENTATION_PORTRAIT);
         waitUntil("Card controls must survive recreation", 20_000,
-                () -> findAndClickOrScroll(labels("Scan next card", "Next card", "Skanuj kolejną kartę", "Następna karta")));
+                () -> findAndClickOrScroll(labels("Scan a new card", "Skanuj nową", "Scan next card", "Next card", "Skanuj kolejną kartę", "Następna karta")));
         scrollToTop();
         waitUntil("A new camera session must process frames after rotation", 30_000,
                 () -> readyCount() >= 2 && containsText("1959") && containsCardSkin("Disco"));

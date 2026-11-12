@@ -26,7 +26,7 @@ private enum class AppSheet { PLAYBACK, LICENSES, SKINS }
 
 @Composable
 fun HiciarzApp(state: AppState, onAction: (AppAction) -> Unit) {
-    HiciarzTheme {
+    HiciarzTheme(skin = state.activeSkin) {
         val copy = remember(state.settings.language) { UiCopy(state.settings.language) }
         val snackbar = remember { SnackbarHostState() }
         var sheet by rememberSaveable { mutableStateOf<AppSheet?>(null) }
@@ -59,7 +59,11 @@ fun HiciarzApp(state: AppState, onAction: (AppAction) -> Unit) {
                                 playback = state.playback, expanded = expanded)
                         },
                         bottomBar = {
-                            Column {
+                            // NavigationBar owns these insets on phones. With a rail, the
+                            // mini player is the bottom bar and must avoid system navigation.
+                            Column(if (expanded) Modifier.windowInsetsPadding(
+                                WindowInsets.navigationBars.only(WindowInsetsSides.Bottom),
+                            ) else Modifier) {
                                 if (state.playback.connection == ConnectionStatus.CONNECTED &&
                                     (activeTab == AppTab.SETTINGS || help != null))
                                     MiniPlayer(state.playback, copy, onAction) { sheet = AppSheet.PLAYBACK }
@@ -97,10 +101,12 @@ fun HiciarzApp(state: AppState, onAction: (AppAction) -> Unit) {
         }
         when (sheet) {
             AppSheet.PLAYBACK -> ModalBottomSheet(onDismissRequest = { sheet = null }) {
+                HideStatusBar()
                 PlaybackSheet(state, copy, onAction) { help = HelpTopic.AUDIO; sheet = null }
             }
             AppSheet.SKINS -> ModalBottomSheet(onDismissRequest = { sheet = null },
                 sheetState = rememberModalBottomSheetState(skipPartiallyExpanded = true)) {
+                HideStatusBar()
                 SkinSelectionSheet(state, copy, onAction)
             }
             AppSheet.LICENSES -> FontLicensesDialog(copy) { sheet = null }
@@ -118,18 +124,22 @@ private fun tabIcon(tab: AppTab): ImageVector = when (tab) {
 
 @Composable
 private fun AppBottomBar(selected: AppTab, copy: UiCopy, onChoose: (AppTab) -> Unit) {
-    NavigationBar(modifier = Modifier.testTag("app-bottom-navigation"), containerColor = MaterialTheme.colorScheme.surface, tonalElevation = 0.dp) {
+    NavigationBar(modifier = Modifier.testTag("app-bottom-navigation"), containerColor = MaterialTheme.colorScheme.surfaceContainerLow, tonalElevation = 0.dp) {
         listOf(AppTab.SCAN, AppTab.BINGO, AppTab.SETTINGS).forEach { tab ->
             NavigationBarItem(selected = selected == tab, onClick = { onChoose(tab) },
                 icon = { Icon(tabIcon(tab), null) }, label = { Text(copy.tab(tab), maxLines = 1) },
-                colors = NavigationBarItemDefaults.colors(indicatorColor = MaterialTheme.colorScheme.primaryContainer))
+                colors = NavigationBarItemDefaults.colors(
+                    selectedIconColor = MaterialTheme.colorScheme.onSecondary,
+                    selectedTextColor = MaterialTheme.colorScheme.primary,
+                    indicatorColor = MaterialTheme.colorScheme.secondary))
         }
     }
 }
 
 @Composable
 private fun AppRail(selected: AppTab, copy: UiCopy, onChoose: (AppTab) -> Unit) {
-    NavigationRail(containerColor = MaterialTheme.colorScheme.surface,
+    NavigationRail(containerColor = MaterialTheme.colorScheme.inverseSurface,
+        contentColor = MaterialTheme.colorScheme.inverseOnSurface,
         header = {
             Image(painterResource(R.drawable.hiciarz_mark), null,
                 Modifier.padding(vertical = 20.dp).size(38.dp))
@@ -139,7 +149,12 @@ private fun AppRail(selected: AppTab, copy: UiCopy, onChoose: (AppTab) -> Unit) 
             NavigationRailItem(selected = selected == tab, onClick = { onChoose(tab) },
                 icon = { Icon(tabIcon(tab), null) }, label = { Text(copy.tab(tab)) },
                 modifier = Modifier.padding(vertical = 6.dp),
-                colors = NavigationRailItemDefaults.colors(indicatorColor = MaterialTheme.colorScheme.primaryContainer))
+                colors = NavigationRailItemDefaults.colors(
+                    selectedIconColor = MaterialTheme.colorScheme.onSecondary,
+                    selectedTextColor = MaterialTheme.colorScheme.inverseOnSurface,
+                    indicatorColor = MaterialTheme.colorScheme.secondary,
+                    unselectedIconColor = MaterialTheme.colorScheme.inverseOnSurface.copy(alpha = .72f),
+                    unselectedTextColor = MaterialTheme.colorScheme.inverseOnSurface.copy(alpha = .72f)))
         }
     }
 }
@@ -149,7 +164,9 @@ private fun AppToolbar(copy: UiCopy, help: HelpTopic?, onBack: () -> Unit, onHel
                        onAudio: () -> Unit, playback: PlaybackState, expanded: Boolean) {
     val connected = playback.connection == ConnectionStatus.CONNECTED
     val connecting = playback.connection == ConnectionStatus.CONNECTING
-    Row(Modifier.fillMaxWidth().windowInsetsPadding(WindowInsets.statusBars).heightIn(min = 56.dp)
+    Row(Modifier.fillMaxWidth().windowInsetsPadding(
+        WindowInsets.statusBars.union(WindowInsets.displayCutout).only(WindowInsetsSides.Top + WindowInsetsSides.Horizontal),
+    ).heightIn(min = 56.dp)
         .padding(horizontal = 16.dp, vertical = 4.dp), verticalAlignment = Alignment.CenterVertically) {
         if (help != null) IconButton(onClick = onBack) {
             Icon(AppIcons.Back, copy.t("Wróć", "Back"))
@@ -183,7 +200,7 @@ private fun AppToolbar(copy: UiCopy, help: HelpTopic?, onBack: () -> Unit, onHel
 
 @Composable
 private fun MiniPlayer(playback: PlaybackState, copy: UiCopy, onAction: (AppAction) -> Unit, onOpen: () -> Unit) {
-    Surface(color = MaterialTheme.colorScheme.primaryContainer) {
+    Surface(modifier = Modifier.testTag("app-mini-player"), color = MaterialTheme.colorScheme.primaryContainer) {
         Row(Modifier.fillMaxWidth().clickable(onClick = onOpen).heightIn(min = 48.dp)
             .padding(start = 20.dp, end = 8.dp), verticalAlignment = Alignment.CenterVertically) {
             Icon(AppIcons.Record, null, Modifier.size(20.dp), tint = MaterialTheme.colorScheme.onPrimaryContainer)

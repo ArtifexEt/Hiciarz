@@ -218,6 +218,13 @@ class HiciarzViewModel(application: Application) : AndroidViewModel(application)
             }
             AppAction.DrawBingo -> drawBingo()
             AppAction.DrawBingoAndScan -> drawBingo(startScan = true)
+            AppAction.RedrawBingoQuestion -> {
+                if (state.value.bingoStage != BingoStage.IDLE) {
+                    mutableState.update { it.copy(question = BingoRules.redraw(it.bingoLevel, it.question, random),
+                        bingoAnswerRevealed = it.bingoSong != null && !it.settings.hideAnswers) }
+                    saveBingo()
+                }
+            }
             AppAction.BeginBingoScan -> beginBingoScan()
             AppAction.CancelBingoScan -> {
                 if (state.value.bingoStage == BingoStage.SCAN) {

@@ -41,7 +41,7 @@ internal fun HelpScreen(topic: HelpTopic, copy: UiCopy, level: BingoLevel, onTop
                 copy.t("Połóż kartę kodem QR do góry i skieruj na nią aparat. Utwór uruchomi się w Spotify.", "Put a card QR-side up and point the camera at it. The track starts in Spotify."),
                 copy.t("Powiedz rok i umieść kartę na własnej osi czasu. Dla wariantów z gier lub filmów zgadnij źródło.", "Name the year and place the card in your timeline. For game and film variants, name the source."),
                 copy.t("Po podaniu odpowiedzi odwróć drukowaną kartę i sprawdź wynik.", "After making your guess, turn over the printed card to check the answer."),
-                copy.t("Wybierz „Następna karta”. Skórkę odczytaną z QR można włączać automatycznie w ustawieniach.", "Tap “Next card”. Settings can automatically apply the skin encoded in the QR."),
+                copy.t("Wybierz „Skanuj nową”. Skórkę odczytaną z QR można włączać automatycznie w ustawieniach.", "Tap “Scan a new card”. Settings can automatically apply the skin encoded in the QR."),
             ))
             HelpTopic.AUDIO -> HelpArticle(copy.t("Spotify i odtwarzanie", "Spotify and playback"), listOf(
                 copy.t("Zainstaluj Spotify i zaloguj się w jego aplikacji. Odtwarzanie konkretnych nagrań wymaga konta Premium.",

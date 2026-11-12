@@ -29,9 +29,10 @@ import {
   House,
   Info,
   LoaderCircle,
-  MoreHorizontal,
+  ListMusic,
   Music2,
   Palette,
+  Pencil,
   Play,
   Plus,
   Printer,
@@ -51,6 +52,7 @@ import { qrImage } from './qr';
 import Landing from './Landing';
 import Modal from './Modal';
 import AppNavigation from './AppNavigation';
+import DeckLibrary from './DeckLibrary';
 import PlaybackSettings from './PlaybackSettings';
 import AppInstall, { ConnectionNotice } from './AppInstall';
 import {
@@ -460,7 +462,9 @@ export default function App() {
   }, [uiTheme]);
   useEffect(() => {
     setSelected(new Set());
+    setFilter('');
     setPreviewIndex(0);
+    setPreviewOpen(false);
     setTab('songs');
     if (activeId) localStorage.setItem('hiciarz-active-deck', activeId);
   }, [activeId]);
@@ -549,6 +553,16 @@ export default function App() {
   }
   function updateDeck(patch: Partial<Deck>) {
     setDecks((ds) => ds.map((d) => (d.id === deck.id ? { ...d, ...patch } : d)));
+  }
+  async function chooseDeck(id: string) {
+    if (busy || !(await changeMode('editor'))) return;
+    setActiveId(id);
+  }
+  async function createDeck() {
+    if (busy || !(await changeMode('editor'))) return;
+    const next = newDeck();
+    setDecks((current) => [...current, next]);
+    setActiveId(next.id);
   }
   function importSongs(songs: Song[], mode: 'append' | 'replace', note = '') {
     const r = mergeSongs(deck.songs, songs, mode);
@@ -823,6 +837,15 @@ export default function App() {
         onPlayback={() => setModal('playback')}
         onSettings={() => setModal('about')}
         onHelp={() => setModal('help')}
+        deckLibrary={
+          <DeckLibrary
+            decks={decks}
+            activeId={activeId}
+            disabled={busy}
+            onChoose={(id) => void chooseDeck(id)}
+            onCreate={() => void createDeck()}
+          />
+        }
       />
       <div className="workspace">
         <header className="app-header">
@@ -954,9 +977,28 @@ export default function App() {
                 </div>
               )}
               <section
-                className="deck-toolbar deck-workspace-bar"
+                className={'deck-toolbar deck-workspace-bar' + (draggingFile ? ' is-dragging' : '')}
                 inert={busy}
                 aria-label={tr('shell.deckChoose')}
+                onDragOver={(event) => {
+                  if (!event.dataTransfer.types.includes('Files')) return;
+                  event.preventDefault();
+                  event.dataTransfer.dropEffect = 'copy';
+                  setDraggingFile(true);
+                }}
+                onDragLeave={(event) => {
+                  if (
+                    !(event.relatedTarget instanceof Node) ||
+                    !event.currentTarget.contains(event.relatedTarget)
+                  )
+                    setDraggingFile(false);
+                }}
+                onDrop={(event) => {
+                  event.preventDefault();
+                  setDraggingFile(false);
+                  const file = event.dataTransfer.files[0];
+                  if (file) void readImportFile(file);
+                }}
               >
                 <div className="deck-title">
                   <label className="sr-only" htmlFor="deck-name">
@@ -970,70 +1012,40 @@ export default function App() {
                   />
                   <span className="deck-count">{trackCount(deck.songs.length)}</span>
                 </div>
-                <div className="deck-controls">
-                  <details className="deck-actions-menu">
-                    <summary aria-label={tr('shell.deckMenu')} title={tr('shell.deckMenu')}>
-                      <MoreHorizontal size={22} />
-                    </summary>
-                    <div className="deck-actions-list">
-                      {' '}
-                      {decks.length > 1 && (
-                        <select
-                          aria-label={tr('shell.deckChoose')}
-                          value={activeId}
-                          onChange={(event) => {
-                            setActiveId(event.target.value);
-                            event.currentTarget.closest('details')?.removeAttribute('open');
-                          }}
-                        >
-                          {decks.map((item) => (
-                            <option key={item.id} value={item.id}>
-                              {item.name}
-                            </option>
-                          ))}
-                        </select>
-                      )}
-                      <button
-                        onClick={(event) => {
-                          event.currentTarget.closest('details')?.removeAttribute('open');
-                          const next = newDeck();
-                          setDecks([...decks, next]);
-                          setActiveId(next.id);
-                        }}
-                      >
-                        <Plus size={18} />
-                        {tr('shell.newDeck')}
-                      </button>
-                      <button
-                        onClick={(event) => {
-                          event.currentTarget.closest('details')?.removeAttribute('open');
-                          fileRef.current?.click();
-                        }}
-                      >
-                        <FolderOpen size={18} />
-                        {tr('shell.importDeck')}
-                      </button>
-                      <button
-                        onClick={(event) => {
-                          event.currentTarget.closest('details')?.removeAttribute('open');
-                          download(JSON.stringify(deck, null, 2), `${deck.name || 'talia'}.json`);
-                        }}
-                      >
-                        <Download size={18} />
-                        {tr('shell.saveDeck')}
-                      </button>
-                      <button
-                        className="delete-action"
-                        onClick={(event) => {
-                          event.currentTarget.closest('details')?.removeAttribute('open');
-                          setModal('delete');
-                        }}
-                      >
-                        <Trash2 size={18} />
-                        {tr('shell.deleteDeck')}
-                      </button>
-                    </div>
-                  </details>
+                <button
+                  className="secondary deck-library-toggle"
+                  aria-haspopup="dialog"
+                  onClick={() => setModal('decks')}
+                >
+                  <ListMusic size={18} aria-hidden="true" />
+                  {tr('shell.allDecks')} ({decks.length})
+                </button>
+                <div className="deck-controls" role="group" aria-label={tr('shell.deckMenu')}>
+                  <button className="secondary" onClick={() => void createDeck()}>
+                    <Plus size={18} aria-hidden="true" />
+                    {tr('shell.newDeck')}
+                  </button>
+                  <button
+                    className="secondary"
+                    title={tr('shell.dropFile')}
+                    onClick={() => fileRef.current?.click()}
+                  >
+                    <FolderOpen size={18} aria-hidden="true" />
+                    {tr('shell.importDeck')}
+                  </button>
+                  <button
+                    className="secondary"
+                    onClick={() =>
+                      download(JSON.stringify(deck, null, 2), `${deck.name || 'talia'}.json`)
+                    }
+                  >
+                    <Download size={18} aria-hidden="true" />
+                    {tr('shell.saveDeck')}
+                  </button>
+                  <button className="secondary delete-action" onClick={() => setModal('delete')}>
+                    <Trash2 size={18} aria-hidden="true" />
+                    {tr('shell.deleteDeck')}
+                  </button>
                 </div>
               </section>
               <div className="studio-grid" inert={busy} aria-busy={busy}>
@@ -1264,10 +1276,11 @@ export default function App() {
                                 <span className="row-index">{String(i + 1).padStart(2, '0')}</span>
                                 <button
                                   className="song-name"
+                                  aria-label={tr('shell.previewSong', { title: s.title })}
+                                  aria-pressed={previewSong?.id === s.id}
                                   onClick={() => {
                                     setPreviewIndex(i);
-                                    setEditSong(s);
-                                    setModal('song');
+                                    setPreviewOpen(true);
                                   }}
                                 >
                                   <strong>{s.answer ? s.answer + ' · ' + s.title : s.title}</strong>
@@ -1296,13 +1309,14 @@ export default function App() {
                                   <button
                                     className="icon"
                                     aria-label={tr('shell.editSong', { title: s.title })}
+                                    title={tr('shell.editSong', { title: s.title })}
                                     onClick={() => {
                                       setPreviewIndex(i);
                                       setEditSong(s);
                                       setModal('song');
                                     }}
                                   >
-                                    <MoreHorizontal size={20} />
+                                    <Pencil size={18} aria-hidden="true" />
                                   </button>
                                 </div>
                               </div>
@@ -1937,6 +1951,18 @@ export default function App() {
                 document.querySelector('[data-deck-settings]')?.scrollIntoView({ block: 'start' }),
               );
             }}
+          />
+        </Modal>
+      )}
+      {modal === 'decks' && (
+        <Modal title={tr('shell.deckLibrary')} sheet onClose={() => setModal(null)}>
+          <DeckLibrary
+            decks={decks}
+            activeId={activeId}
+            disabled={busy}
+            appearance="dialog"
+            onChoose={(id) => void chooseDeck(id)}
+            onCreate={() => void createDeck()}
           />
         </Modal>
       )}

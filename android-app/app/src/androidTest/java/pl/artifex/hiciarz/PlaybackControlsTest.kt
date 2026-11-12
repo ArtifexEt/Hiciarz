@@ -10,10 +10,13 @@ import androidx.compose.ui.test.hasText
 import androidx.compose.ui.test.isDialog
 import androidx.compose.ui.test.onNodeWithContentDescription
 import androidx.compose.ui.test.onNodeWithText
+import androidx.compose.ui.test.onNodeWithTag
+import androidx.compose.ui.test.getUnclippedBoundsInRoot
 import androidx.compose.ui.test.performClick
 import androidx.compose.ui.test.performScrollTo
 import androidx.test.ext.junit.runners.AndroidJUnit4
 import org.junit.Assert.assertEquals
+import org.junit.Assert.assertTrue
 import org.junit.Rule
 import org.junit.Test
 import org.junit.runner.RunWith
@@ -27,6 +30,7 @@ import pl.artifex.hiciarz.model.BingoLevel
 import pl.artifex.hiciarz.model.QuestionType
 import pl.artifex.hiciarz.model.ConnectionStatus
 import pl.artifex.hiciarz.model.Deck
+import pl.artifex.hiciarz.model.GameMode
 import pl.artifex.hiciarz.model.PlaybackState
 import pl.artifex.hiciarz.model.Song
 import pl.artifex.hiciarz.ui.HiciarzApp
@@ -61,6 +65,44 @@ class PlaybackControlsTest {
         compose.onNodeWithContentDescription("Play").performScrollTo().performClick()
 
         compose.runOnIdle { assertEquals(listOf(AppAction.PlayCard(bingo)), actions) }
+    }
+
+    @Test fun unknownCardHasPlaybackOnArtworkAndScanDirectlyBelowIt() {
+        val unknown = Song("unknown", "", "", null, "0000000000000000000000")
+        val state = mutableStateOf(AppState(
+            currentSong = unknown,
+            scannerEnabled = false,
+            settings = AppSettings(language = "pl"),
+            playback = PlaybackState(connection = ConnectionStatus.CONNECTED,
+                isPlaying = true, trackUri = unknown.spotifyUri),
+        ))
+        compose.setContent { HiciarzApp(state.value) { actions.add(it) } }
+        val card = compose.onNodeWithTag("playback-card").assertIsDisplayed().getUnclippedBoundsInRoot()
+        val pause = compose.onNodeWithContentDescription("Wstrzymaj").assertIsDisplayed().getUnclippedBoundsInRoot()
+        val scan = compose.onNodeWithText("Skanuj nową").assertIsDisplayed().getUnclippedBoundsInRoot()
+        assertTrue("Pause belongs on the artwork", pause.left >= card.left && pause.right <= card.right &&
+            pause.top >= card.top && pause.bottom <= card.bottom)
+        assertTrue("Scan is below the card", scan.top >= card.bottom)
+        compose.onNodeWithText("Odkryj odpowiedź").assertDoesNotExist()
+        compose.onNodeWithContentDescription("Wstrzymaj").performClick()
+        compose.runOnIdle { state.value = state.value.copy(playback = state.value.playback.copy(isPlaying = false)) }
+        compose.onNodeWithContentDescription("Odtwórz").performClick()
+        compose.onNodeWithText("Skanuj nową").performClick()
+        compose.runOnIdle { assertEquals(listOf(AppAction.Pause, AppAction.PlayCard(unknown), AppAction.ScanNext), actions) }
+    }
+
+    @Test fun playbackDoesNotCoverALongRevealedAnswer() {
+        val answer = "A long game title with an expansion name and a complete edition subtitle"
+        val song = scanned.copy(answer = answer, gameMode = GameMode.GAME)
+        compose.setContent {
+            HiciarzApp(AppState(currentSong = song, answerRevealed = true,
+                settings = AppSettings(language = "en"),
+                playback = PlaybackState(connection = ConnectionStatus.CONNECTED,
+                    isPlaying = true, trackUri = song.spotifyUri))) { actions.add(it) }
+        }
+        val pause = compose.onNodeWithContentDescription("Pause").getUnclippedBoundsInRoot()
+        val text = compose.onNodeWithText(answer, useUnmergedTree = true).getUnclippedBoundsInRoot()
+        assertTrue("Long answers start below the playback button", text.top >= pause.bottom)
     }
 
     @Test fun disconnectAndCancelRestoreTheConnectActionWithoutALoadingLabel() {

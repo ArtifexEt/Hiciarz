@@ -13,7 +13,7 @@ import org.junit.Test
 import pl.artifex.hiciarz.model.AppAction
 import pl.artifex.hiciarz.model.QuestionType
 
-/** The current round's main action must fit on a 360 dp phone without a corrective scroll. */
+/** A 360 dp phone keeps scanner actions visible and lets every larger Bingo control scroll clear of navigation. */
 class PhoneRoundLayoutTest {
     @get:Rule val compose = createEmptyComposeRule()
     private lateinit var activity: ActivityScenario<MainActivity>
@@ -44,6 +44,7 @@ class PhoneRoundLayoutTest {
     @Test fun scannerRevealFitsAboveNavigationWithoutScrollingTheRound() {
         captureNative(compose, "phone-scan-pl", scrollTop = false)
         enterKnownCard()
+        // The scanner's simpler card flow still fits at its actual entry position.
         assertRevealFitsAboveNavigation()
         captureNative(compose, "phone-scan-known-hidden-pl", scrollTop = false)
         compose.onNodeWithText("Odkryj odpowiedź").performClick()
@@ -51,19 +52,26 @@ class PhoneRoundLayoutTest {
         captureNative(compose, "phone-card-answer-refined-pl", scrollTop = false)
     }
 
-    @Test fun bingoRevealFitsAboveNavigationWithoutScrollingTheRound() {
+    @Test fun bingoControlsScrollClearOfNavigationWithTheLargerCategoryPanel() {
         compose.onNodeWithText("Bingo").performClick()
         captureNative(compose, "phone-games-pl", scrollTop = false)
-        compose.onNodeWithText("Wylosuj pytanie").performScrollTo().performClick()
+        compose.onNodeWithText("Losuj kategorię").performScrollTo().performClick()
         activity.onActivity {
             ViewModelProvider(it)[HiciarzViewModel::class.java]
                 .dispatch(AppAction.SetQuestion(QuestionType.YEAR_WITHIN_TWO))
         }
         compose.onNodeWithText("Skanuj kartę").performScrollTo().performClick()
         enterKnownCard()
+        assertControlScrollsAboveNavigation("bingo-boards-download")
+        assertControlScrollsAboveNavigation("bingo-draw-category")
+        assertControlScrollsAboveNavigation("card-playback-toggle")
+        compose.onNodeWithText("Odkryj odpowiedź").performScrollTo()
         assertRevealFitsAboveNavigation()
         captureNative(compose, "phone-bingo-compact-playing-pl", scrollTop = false)
         captureNative(compose, "phone-bingo-playing-pl", scrollTop = false)
+        val next = compose.onNodeWithText("Następna runda").performScrollTo().assertIsDisplayed().getUnclippedBoundsInRoot()
+        val navigation = compose.onNodeWithTag("app-bottom-navigation").getUnclippedBoundsInRoot()
+        assertTrue("Next round stays above navigation after scrolling", next.bottom <= navigation.top)
     }
 
     private fun enterKnownCard() {
@@ -78,8 +86,13 @@ class PhoneRoundLayoutTest {
         compose.waitForIdle()
     }
 
+
+    private fun assertControlScrollsAboveNavigation(tag: String) {
+        val control = compose.onNodeWithTag(tag).performScrollTo().assertIsDisplayed().getUnclippedBoundsInRoot()
+        val navigation = compose.onNodeWithTag("app-bottom-navigation").getUnclippedBoundsInRoot()
+        assertTrue("$tag stays above navigation after scrolling", control.bottom <= navigation.top)
+    }
     private fun assertRevealFitsAboveNavigation() {
-        // Do not scroll after the card loads: this verifies the player's actual entry position.
         val header = compose.onNodeWithText("Hiciarz").assertIsDisplayed().getUnclippedBoundsInRoot()
         val reveal = compose.onNodeWithText("Odkryj odpowiedź").assertIsDisplayed().getUnclippedBoundsInRoot()
         val navigation = compose.onNodeWithTag("app-bottom-navigation")

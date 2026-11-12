@@ -60,7 +60,9 @@ internal fun DecksScreen(state: AppState, copy: UiCopy, onAction: (AppAction) ->
                 onAction(AppAction.SetCardlessMode(if (guess) CardlessMode.QUIZ else CardlessMode.TIMELINE))
                 onAction(AppAction.SelectTab(AppTab.BINGO))
             },
-                modifier = Modifier.fillMaxWidth().heightIn(min = 54.dp), shape = ControlShape) {
+                modifier = Modifier.fillMaxWidth().heightIn(min = 54.dp), shape = ControlShape,
+                colors = ButtonDefaults.buttonColors(containerColor = MaterialTheme.colorScheme.secondary,
+                    contentColor = MaterialTheme.colorScheme.onSecondary)) {
                 Icon(AppIcons.Game, null, Modifier.size(21.dp)); Spacer(Modifier.width(10.dp))
                 Text(copy.t("Graj bez kart", "Play without cards"))
             }
@@ -71,7 +73,10 @@ internal fun DecksScreen(state: AppState, copy: UiCopy, onAction: (AppAction) ->
     })
     deleting?.let { deck ->
         AlertDialog(onDismissRequest = { deleting = null },
-            title = { Text(copy.t("Usunąć talię?", "Remove this deck?")) },
+            title = {
+                HideStatusBar()
+                Text(copy.t("Usunąć talię?", "Remove this deck?"))
+            },
             text = { Text(copy.deck(deck)) },
             confirmButton = { TextButton(onClick = { onAction(AppAction.DeleteDeck(deck.id)); deleting = null }) { Text(copy.t("Usuń", "Remove")) } },
             dismissButton = { TextButton(onClick = { deleting = null }) { Text(copy.t("Anuluj", "Cancel")) } })

@@ -44,7 +44,7 @@ abstract class BundleCardSkins @Inject constructor(private val files: FileSystem
 
     @TaskAction fun bundle() {
         files.sync {
-            from(inputDirectory) { include("*.svg", "fish-santa.webp"); exclude("._*") }
+            from(inputDirectory) { include("*.svg", "fish-santa.webp", "fish-santa-ornament.webp"); exclude("._*") }
             into(outputDirectory.dir("themes"))
         }
     }
@@ -62,8 +62,8 @@ android {
         applicationId = "pl.artifex.hiciarz"
         minSdk = 26
         targetSdk = 37
-        versionCode = providers.gradleProperty("versionCode").orElse("100006").get().toInt()
-        versionName = providers.gradleProperty("versionName").orElse("0.2.0-alpha.4").get()
+        versionCode = providers.gradleProperty("versionCode").orElse("100007").get().toInt()
+        versionName = providers.gradleProperty("versionName").orElse("0.2.0-alpha.5").get()
         testInstrumentationRunner = providers.gradleProperty("hiciarzTestRunner").orNull
             ?: "androidx.test.runner.AndroidJUnitRunner"
         buildConfigField("String", "SPOTIFY_CLIENT_ID", "\"${spotifyClientId.get().replace("\\", "\\\\").replace("\"", "\\\"")}\"")

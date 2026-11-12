@@ -28,6 +28,6 @@ Lista świąteczna zachowuje kolejność wszystkich 151 pozycji odczytanych 9 li
 2. Dodaj pole `example` według wzoru z `christmas-hits.json`: unikalne `id`, `description`, `sourceUrl`, `sourceName`, `sourceOwner`, `snapshotDate` (`YYYY-MM-DD`) i `yearNote`. Ustaw `sourceType: "curated"` dla autorskiego wyboru z wielu źródeł albo `"playlist"` dla migawki jednej playlisty; `sourceUrl` musi używać HTTPS. Opcjonalna kategoria to `"music"` lub `"games"`.
 3. Zachowaj poprawne źródła, lata i unikalne identyfikatory kart. Nie umieszczaj w przykładach prywatnych playlist ani tokenów.
 4. Dla talii gier ustaw `gameMode: "game"` zarówno w projekcie, jak i w każdej karcie, oraz wpisz nazwę gry w `answer`. Dodaj tłumaczenia nazwy, opisu i uwagi o latach do plików `src/locales/examples.pl.json` i `examples.en.json` pod kluczami `examples.<id>.name`, `.description` i `.yearNote`.
-5. Uruchom `pnpm test` i `pnpm build`. Pliki JSON z tego folderu są automatycznie dołączane do wyboru przykładów podczas budowania strony.
+5. W folderze `web/` uruchom `pnpm test` i `pnpm build`. Pliki JSON z tego folderu są automatycznie dołączane do wyboru przykładów podczas budowania strony.
 
 Plik można również pobrać z repozytorium i otworzyć zwykłym przyciskiem **Wczytaj**. Każde wczytanie przykładu z galerii tworzy osobną, edytowalną kopię; zmiany użytkownika nie modyfikują pliku w repozytorium.
