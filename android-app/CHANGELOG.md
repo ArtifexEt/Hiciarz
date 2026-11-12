@@ -4,6 +4,10 @@ Zmiany kolejnych wersji aplikacji Android. Opis GitHub Release jest pobierany z 
 
 ## [Unreleased]
 
+- Uproszczono aplikację do skanowania kart i sterowania Spotify. Usunięto odkrywanie danych karty, ustawienie ukrywania odpowiedzi, zasady gry oraz ręczne wklejanie kodów i linków.
+- Pomoc opisuje tworzenie nowych kart i prowadzi do Hiciarza oraz kreatora na GitHub Pages.
+- Dolne menu ma kompaktowy układ dwóch pozycji z ikonami skanera i opcji; na dużym ekranie nawigacja pozostaje z boku.
+
 ## [0.2.0-alpha.7] - 2026-11-12
 
 - Zmieniono Client ID integracji Spotify na identyfikator nowej aplikacji Hiciarz. Po aktualizacji APK połącz aplikację ze Spotify ponownie.

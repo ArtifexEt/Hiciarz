@@ -53,13 +53,13 @@ class AppSkinThemeTest {
             val background = appBackground()
             val navigation = navigationColor()
             assertColor("${skin.id} app background", expected.background, background)
-            assertColor("${skin.id} navigation", expected.surfaceContainerLow, navigation)
+            assertColor("${skin.id} navigation", expected.inverseSurface, navigation)
             backgrounds += background.toArgb()
             navigationColors += navigation.toArgb()
             captureNative(compose, "skin-${skin.id}-settings", scrollTop = true)
 
             compose.onNodeWithContentDescription("Spotify playback").performClick()
-            compose.onNodeWithText("Playback").assertIsDisplayed()
+            compose.onNode(hasText("Playback") and hasAnyAncestor(isDialog())).assertIsDisplayed()
             val sheet = dominantColor(compose.onNode(isDialog()).captureToImage())
             sheetColors += sheet.toArgb()
             assertColor("${skin.id} playback sheet", expected.surfaceContainerLow, sheet)
@@ -89,7 +89,7 @@ class AppSkinThemeTest {
         } }
         val fish = appColorScheme(CardSkin.FISH, darkMode())
         assertColor("QR colors the scanner without metadata", fish.background, appBackground())
-        assertColor("QR colors navigation without metadata", fish.surfaceContainerLow, navigationColor())
+        assertColor("QR colors navigation without metadata", fish.inverseSurface, navigationColor())
         compose.onNodeWithText("Reveal answer").assertDoesNotExist()
         captureNative(compose, "skin-fish-unknown-card", scrollTop = false)
 
@@ -98,7 +98,7 @@ class AppSkinThemeTest {
         compose.onNodeWithText("Use the scanned card’s skin").assertIsOff()
         val winter = appColorScheme(CardSkin.WINTER, darkMode())
         assertColor("Disabling QR restores default background", winter.background, appBackground())
-        assertColor("Disabling QR restores default navigation", winter.surfaceContainerLow, navigationColor())
+        assertColor("Disabling QR restores default navigation", winter.inverseSurface, navigationColor())
         captureNative(compose, "skin-winter-qr-disabled", scrollTop = true)
         compose.onNodeWithText("Use the scanned card’s skin").performScrollTo().performClick()
         assertColor("Reenabling QR restores fish background", fish.background, appBackground())
@@ -134,8 +134,10 @@ class AppSkinThemeTest {
         return pixels[4, pixels.height / 3]
     }
 
-    private fun navigationColor(): Color =
-        compose.onNodeWithTag("app-bottom-navigation").captureToImage().toPixelMap()[5, 5]
+    private fun navigationColor(): Color {
+        val pixels = compose.onNodeWithTag("app-bottom-navigation").captureToImage().toPixelMap()
+        return pixels[2, pixels.height / 2]
+    }
 
     private fun dominantColor(image: ImageBitmap): Color {
         val pixels = image.toPixelMap()

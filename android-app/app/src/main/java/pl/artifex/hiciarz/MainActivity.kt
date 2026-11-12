@@ -1,6 +1,5 @@
 package pl.artifex.hiciarz
 
-import android.content.Intent
 import android.os.Bundle
 import android.view.WindowManager
 import androidx.activity.ComponentActivity
@@ -10,7 +9,6 @@ import androidx.lifecycle.ViewModelProvider
 import androidx.lifecycle.lifecycleScope
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import kotlinx.coroutines.launch
-import pl.artifex.hiciarz.model.AppAction
 import pl.artifex.hiciarz.model.AppTab
 import pl.artifex.hiciarz.playback.SpotifyController
 import pl.artifex.hiciarz.ui.HiciarzApp
@@ -37,20 +35,6 @@ class MainActivity : ComponentActivity() {
                     window.addFlags(WindowManager.LayoutParams.FLAG_KEEP_SCREEN_ON)
                 else window.clearFlags(WindowManager.LayoutParams.FLAG_KEEP_SCREEN_ON)
             }
-        }
-        if (savedInstanceState == null) handleIntent(intent)
-    }
-
-    override fun onNewIntent(intent: Intent) { super.onNewIntent(intent); setIntent(intent); handleIntent(intent) }
-
-    private fun handleIntent(intent: Intent?) {
-        if (intent == null) return
-        if (intent.action == Intent.ACTION_SEND) {
-            intent.getStringExtra(Intent.EXTRA_TEXT)?.let { model.dispatch(AppAction.ScanCode(it)) }
-        } else if (intent.action == Intent.ACTION_VIEW) {
-            val uri = intent.data ?: return
-            if (uri.scheme == "hiciarz" && uri.host == "spotify-callback") return
-            model.dispatch(AppAction.ScanCode(uri.toString()))
         }
     }
 

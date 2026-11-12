@@ -10,7 +10,7 @@ import org.junit.Before
 import org.junit.Rule
 import org.junit.Test
 
-/** A 360 dp phone keeps scanner playback and answer controls clear of navigation. */
+/** A 360 dp phone keeps scanner playback controls clear of navigation. */
 class PhoneRoundLayoutTest {
     @get:Rule val compose = createEmptyComposeRule()
     private lateinit var activity: ActivityScenario<MainActivity>
@@ -26,7 +26,7 @@ class PhoneRoundLayoutTest {
         compose.waitUntil(15_000) {
             val configuration = InstrumentationRegistry.getInstrumentation().targetContext.resources.configuration
             configuration.screenWidthDp in 350..370 && configuration.fontScale == 1f &&
-                compose.onAllNodesWithText("Wklej kod lub link").fetchSemanticsNodes().isNotEmpty()
+                compose.onAllNodesWithTag("camera-preview").fetchSemanticsNodes().isNotEmpty()
         }
     }
 
@@ -38,15 +38,17 @@ class PhoneRoundLayoutTest {
         if (::activity.isInitialized) activity.close()
     }
 
-    @Test fun scannerRevealFitsAboveNavigationWithoutScrollingTheRound() {
+    @Test fun scannerPlaybackFitsAboveNavigationWithoutScrolling() {
         captureNative(compose, "phone-scan-pl", scrollTop = false)
         enterKnownCard()
-        // The scanner's simpler card flow still fits at its actual entry position.
-        assertRevealFitsAboveNavigation()
+        val card = compose.onNodeWithTag("playback-card").assertIsDisplayed().getUnclippedBoundsInRoot()
+        val scan = compose.onNodeWithTag("scan-new-card").assertIsDisplayed().getUnclippedBoundsInRoot()
+        val navigation = compose.onNodeWithTag("app-bottom-navigation").assertIsDisplayed().getUnclippedBoundsInRoot()
+        assertTrue("New scan sits below the card", scan.top >= card.bottom)
+        assertTrue("New scan fits above navigation", scan.bottom <= navigation.top)
+        compose.onNodeWithText("Odkryj odpowiedź").assertDoesNotExist()
+        compose.onNodeWithText("1964").assertDoesNotExist()
         captureNative(compose, "phone-scan-known-hidden-pl", scrollTop = false)
-        compose.onNodeWithText("Odkryj odpowiedź").performClick()
-        compose.onNodeWithText("1964").assertIsDisplayed()
-        captureNative(compose, "phone-card-answer-refined-pl", scrollTop = false)
     }
 
     @Test fun scannerPlaybackAndNewScanStayClearOfNavigation() {
@@ -59,30 +61,15 @@ class PhoneRoundLayoutTest {
     }
 
     private fun enterKnownCard() {
-        compose.onNodeWithText("Wklej kod lub link").performScrollTo().performClick()
-        compose.onNodeWithText("Link Spotify lub kod Hiciarza")
-            .performTextInput("https://example.org/#2fs2EjXfH91m7f8HiJN1yQg97")
-        compose.onNodeWithText("Odtwórz").performClick()
+        scanNativeCard(activity, compose, "https://example.org/#2fs2EjXfH91m7f8HiJN1yQg97")
         compose.waitUntil(10_000) {
-            compose.onAllNodesWithText("Odkryj odpowiedź").fetchSemanticsNodes().isNotEmpty() &&
-                compose.onAllNodesWithTag("skin-art-fish", useUnmergedTree = true).fetchSemanticsNodes().isNotEmpty()
+            compose.onAllNodesWithTag("skin-art-fish", useUnmergedTree = true).fetchSemanticsNodes().isNotEmpty()
         }
-        compose.waitForIdle()
     }
-
 
     private fun assertControlScrollsAboveNavigation(tag: String) {
         val control = compose.onNodeWithTag(tag).performScrollTo().assertIsDisplayed().getUnclippedBoundsInRoot()
         val navigation = compose.onNodeWithTag("app-bottom-navigation").getUnclippedBoundsInRoot()
         assertTrue("$tag stays above navigation after scrolling", control.bottom <= navigation.top)
-    }
-    private fun assertRevealFitsAboveNavigation() {
-        val header = compose.onNodeWithText("Hiciarz").assertIsDisplayed().getUnclippedBoundsInRoot()
-        val reveal = compose.onNodeWithText("Odkryj odpowiedź").assertIsDisplayed().getUnclippedBoundsInRoot()
-        val navigation = compose.onNodeWithTag("app-bottom-navigation")
-            .assertIsDisplayed().getUnclippedBoundsInRoot()
-        assertTrue("Reveal must remain below the visible app header", reveal.top >= header.bottom)
-        assertTrue("Reveal must be completely above bottom navigation", reveal.bottom <= navigation.top)
-        assertTrue("Reveal must fit horizontally", reveal.left >= navigation.left && reveal.right <= navigation.right)
     }
 }

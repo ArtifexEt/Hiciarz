@@ -6,7 +6,10 @@ import androidx.activity.compose.BackHandler
 import androidx.compose.foundation.Image
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.*
+import androidx.compose.foundation.selection.selectable
+import androidx.compose.foundation.selection.selectableGroup
 import androidx.compose.foundation.shape.CircleShape
+import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.runtime.saveable.rememberSaveable
@@ -14,8 +17,10 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.platform.testTag
+import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.semantics.contentDescription
+import androidx.compose.ui.semantics.Role
 import androidx.compose.ui.semantics.semantics
 import androidx.compose.ui.semantics.stateDescription
 import androidx.compose.ui.unit.dp
@@ -31,7 +36,6 @@ fun HiciarzApp(state: AppState, onAction: (AppAction) -> Unit) {
         val snackbar = remember { SnackbarHostState() }
         var sheet by rememberSaveable { mutableStateOf<AppSheet?>(null) }
         var help by rememberSaveable { mutableStateOf<HelpTopic?>(null) }
-        var manual by rememberSaveable { mutableStateOf(false) }
         val fold = rememberFoldGeometry()
         val activeTab = if (state.tab == AppTab.DECKS) AppTab.SCAN else state.tab
         LaunchedEffect(state.message, copy.language) {
@@ -50,13 +54,12 @@ fun HiciarzApp(state: AppState, onAction: (AppAction) -> Unit) {
                         topBar = {
                             AppToolbar(copy, help,
                                 onBack = { help = null },
-                                onHelp = { help = HelpTopic.forState(state) },
+                                onHelp = { help = HelpTopic.ALL },
                                 onAudio = { sheet = AppSheet.PLAYBACK },
                                 playback = state.playback, expanded = expanded)
                         },
                         bottomBar = {
-                            // NavigationBar owns these insets on phones. With a rail, the
-                            // mini player is the bottom bar and must avoid system navigation.
+                            // The dock owns phone insets; the rail's mini player owns its own.
                             Column(if (expanded) Modifier.windowInsetsPadding(
                                 WindowInsets.navigationBars.only(WindowInsetsSides.Bottom),
                             ) else Modifier) {
@@ -64,7 +67,6 @@ fun HiciarzApp(state: AppState, onAction: (AppAction) -> Unit) {
                                     (activeTab == AppTab.SETTINGS || help != null))
                                     MiniPlayer(state.playback, copy, onAction) { sheet = AppSheet.PLAYBACK }
                                 if (!expanded) {
-                                    HorizontalDivider(thickness = .5.dp, color = MaterialTheme.colorScheme.outlineVariant)
                                     AppBottomBar(activeTab, copy, chooseTab)
                                 }
                             }
@@ -75,8 +77,7 @@ fun HiciarzApp(state: AppState, onAction: (AppAction) -> Unit) {
                             if (help != null) HelpScreen(help!!, copy) { help = it }
                             else when (activeTab) {
                                 AppTab.SCAN -> ScanScreen(state, copy, onAction,
-                                    onManual = { manual = true },
-                                    cameraActive = !manual && sheet == null)
+                                    cameraActive = sheet == null)
                                 AppTab.DECKS -> Unit
                                 AppTab.SETTINGS -> SettingsScreen(state, copy, onAction,
                                     onAudio = { sheet = AppSheet.PLAYBACK },
@@ -89,9 +90,6 @@ fun HiciarzApp(state: AppState, onAction: (AppAction) -> Unit) {
                     }
                 }
             }
-        }
-        if (manual) ManualEntryDialog(copy, { manual = false }) {
-            manual = false; onAction(AppAction.ScanCode(it))
         }
         when (sheet) {
             AppSheet.PLAYBACK -> ModalBottomSheet(onDismissRequest = { sheet = null }) {
@@ -117,14 +115,36 @@ private fun tabIcon(tab: AppTab): ImageVector = when (tab) {
 
 @Composable
 private fun AppBottomBar(selected: AppTab, copy: UiCopy, onChoose: (AppTab) -> Unit) {
-    NavigationBar(modifier = Modifier.testTag("app-bottom-navigation"), containerColor = MaterialTheme.colorScheme.surfaceContainerLow, tonalElevation = 0.dp) {
-        listOf(AppTab.SCAN, AppTab.SETTINGS).forEach { tab ->
-            NavigationBarItem(selected = selected == tab, onClick = { onChoose(tab) },
-                icon = { Icon(tabIcon(tab), null) }, label = { Text(copy.tab(tab), maxLines = 1) },
-                colors = NavigationBarItemDefaults.colors(
-                    selectedIconColor = MaterialTheme.colorScheme.onSecondary,
-                    selectedTextColor = MaterialTheme.colorScheme.primary,
-                    indicatorColor = MaterialTheme.colorScheme.secondary))
+    BoxWithConstraints(Modifier.fillMaxWidth()
+        .windowInsetsPadding(WindowInsets.navigationBars.only(WindowInsetsSides.Bottom + WindowInsetsSides.Horizontal))
+        .padding(horizontal = 20.dp, vertical = 10.dp), contentAlignment = Alignment.Center) {
+        val stacked = maxWidth < 320.dp || LocalDensity.current.fontScale > 1.2f
+        Surface(modifier = Modifier.widthIn(max = 360.dp).fillMaxWidth().testTag("app-bottom-navigation"),
+            shape = RoundedCornerShape(24.dp), color = MaterialTheme.colorScheme.inverseSurface) {
+            Row(Modifier.selectableGroup().padding(6.dp), horizontalArrangement = Arrangement.spacedBy(6.dp)) {
+                listOf(AppTab.SCAN, AppTab.SETTINGS).forEach { tab ->
+                    val active = selected == tab
+                    Surface(modifier = Modifier.weight(1f), shape = RoundedCornerShape(18.dp),
+                        color = if (active) MaterialTheme.colorScheme.secondary else MaterialTheme.colorScheme.inverseSurface,
+                        contentColor = if (active) MaterialTheme.colorScheme.onSecondary else MaterialTheme.colorScheme.inverseOnSurface) {
+                        val item = Modifier.selectable(selected = active, role = Role.Tab, onClick = { onChoose(tab) })
+                            .heightIn(min = 54.dp)
+                        if (stacked) {
+                            Column(item.padding(horizontal = 8.dp, vertical = 10.dp),
+                                horizontalAlignment = Alignment.CenterHorizontally, verticalArrangement = Arrangement.spacedBy(4.dp)) {
+                                Icon(tabIcon(tab), null, Modifier.size(24.dp))
+                                Text(copy.tab(tab), style = MaterialTheme.typography.labelLarge)
+                            }
+                        } else {
+                            Row(item.padding(horizontal = 12.dp, vertical = 10.dp),
+                                verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(10.dp, Alignment.CenterHorizontally)) {
+                                Icon(tabIcon(tab), null, Modifier.size(24.dp))
+                                Text(copy.tab(tab), style = MaterialTheme.typography.labelLarge, maxLines = 1)
+                            }
+                        }
+                    }
+                }
+            }
         }
     }
 }
@@ -165,7 +185,7 @@ private fun AppToolbar(copy: UiCopy, help: HelpTopic?, onBack: () -> Unit, onHel
             Icon(AppIcons.Back, copy.t("Wróć", "Back"))
         } else if (!expanded) Image(painterResource(R.drawable.hiciarz_mark), null,
             Modifier.padding(end = 8.dp).size(24.dp))
-        Text(if (help != null) copy.t("Jak grać", "How to play") else "Hiciarz",
+        Text("Hiciarz",
             style = MaterialTheme.typography.titleMedium, modifier = Modifier.weight(1f))
         TextButton(onClick = onAudio, contentPadding = PaddingValues(horizontal = 8.dp),
             modifier = Modifier.heightIn(min = 48.dp).semantics {
@@ -186,7 +206,7 @@ private fun AppToolbar(copy: UiCopy, help: HelpTopic?, onBack: () -> Unit, onHel
             }, style = MaterialTheme.typography.labelMedium)
         }
         if (help == null) IconButton(onClick = onHelp) {
-            Icon(AppIcons.Help, copy.t("Jak grać", "How to play"))
+            Icon(AppIcons.Help, copy.t("Jak tworzyć karty", "Create cards"))
         }
     }
 }

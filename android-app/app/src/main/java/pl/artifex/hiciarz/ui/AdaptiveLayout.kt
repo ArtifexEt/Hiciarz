@@ -5,6 +5,7 @@ import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.runtime.*
+import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.layout.onGloballyPositioned
@@ -42,6 +43,7 @@ internal fun rememberFoldGeometry(): FoldGeometry? {
 @Composable
 internal fun AdaptivePanes(
     modifier: Modifier = Modifier,
+    singleColumn: Boolean = false,
     primary: @Composable ColumnScope.() -> Unit,
     secondary: @Composable ColumnScope.() -> Unit,
 ) {
@@ -62,14 +64,15 @@ internal fun AdaptivePanes(
                 Spacer(Modifier.height(maxOf(20.dp, hingeHeight + 16.dp)))
                 Pane(Modifier.fillMaxWidth().weight(1f).testTag("secondary-pane"), secondary)
             }
-            verticalFold || maxWidth >= 640.dp -> Row(Modifier.fillMaxSize()) {
+            verticalFold || (maxWidth >= 640.dp && !singleColumn) -> Row(Modifier.fillMaxSize()) {
                 val left = if (verticalFold) Modifier.width(hingeX!! - gap / 2) else Modifier.weight(1f)
                 Pane(left.fillMaxHeight().testTag("primary-pane"), primary)
                 Spacer(Modifier.width(gap))
                 Pane(Modifier.weight(1f).fillMaxHeight().testTag("secondary-pane"), secondary)
             }
             else -> Column(
-                Modifier.fillMaxSize().verticalScroll(rememberScrollState())
+                Modifier.widthIn(max = if (singleColumn) 520.dp else Dp.Infinity).fillMaxSize()
+                    .align(Alignment.TopCenter).verticalScroll(rememberScrollState())
                     .padding(horizontal = 20.dp).padding(top = 16.dp, bottom = 24.dp),
                 verticalArrangement = Arrangement.spacedBy(16.dp),
             ) {

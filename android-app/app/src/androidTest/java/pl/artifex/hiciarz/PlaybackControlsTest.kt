@@ -75,18 +75,22 @@ class PlaybackControlsTest {
         compose.runOnIdle { assertEquals(listOf(AppAction.Pause, AppAction.PlayCard(unknown), AppAction.ScanNext), actions) }
     }
 
-    @Test fun playbackDoesNotCoverALongRevealedAnswer() {
+    @Test fun legacyRevealedStateCannotExposeCardData() {
         val answer = "A long game title with an expansion name and a complete edition subtitle"
         val song = scanned.copy(answer = answer, gameMode = GameMode.GAME)
         compose.setContent {
             HiciarzApp(AppState(currentSong = song, answerRevealed = true,
-                settings = AppSettings(language = "en"),
+                settings = AppSettings(language = "en", hideAnswers = false),
                 playback = PlaybackState(connection = ConnectionStatus.CONNECTED,
                     isPlaying = true, trackUri = song.spotifyUri))) { actions.add(it) }
         }
-        val pause = compose.onNodeWithContentDescription("Pause").getUnclippedBoundsInRoot()
-        val text = compose.onNodeWithText(answer, useUnmergedTree = true).getUnclippedBoundsInRoot()
-        assertTrue("Long answers start below the playback button", text.top >= pause.bottom)
+        compose.onNodeWithContentDescription("Pause").assertIsDisplayed().performClick()
+        compose.onNodeWithText(answer, useUnmergedTree = true).assertDoesNotExist()
+        compose.onNodeWithText(song.title, useUnmergedTree = true).assertDoesNotExist()
+        compose.onNodeWithText(song.artist, useUnmergedTree = true).assertDoesNotExist()
+        compose.onNodeWithText("1984", useUnmergedTree = true).assertDoesNotExist()
+        compose.onNodeWithText("Reveal answer").assertDoesNotExist()
+        compose.runOnIdle { assertEquals(listOf(AppAction.Pause), actions) }
     }
 
     @Test fun disconnectAndCancelRestoreTheConnectActionWithoutALoadingLabel() {
