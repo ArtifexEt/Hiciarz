@@ -19,3 +19,36 @@ Spotify udostępnia App Remote jako AAR, bez oficjalnego repozytorium Maven. Zad
 Pobrany AAR trafia do `GRADLE_USER_HOME/caches/hiciarz/spotify-app-remote/` (domyślnie w `~/.gradle/`). Polecenie `clean` nie usuwa tej kopii. Pierwszy build wymaga internetu. Kolejne mogą korzystać z `--offline`, jeśli biblioteka i pozostałe zależności są już pobrane. Uszkodzony plik jest odrzucany na podstawie sumy kontrolnej. Pliki AAR nie trafiają do Git.
 
 Korzystanie z biblioteki podlega [Spotify Developer Terms](https://developer.spotify.com/terms). Biblioteka nie zawiera Client Secret ani danych konta.
+
+## Integralność zależności Maven
+
+`gradle/verification-metadata.xml` przypina sumy SHA-256 artefaktów Maven,
+pluginów oraz pobranych plików POM i Gradle Module Metadata. Gradle sprawdza je
+domyślnie także podczas zwykłego buildu; brak sumy lub jej niezgodność ma
+przerwać CI. Nie wyłączaj weryfikacji ani nie generuj nowych sum automatycznie
+w workflow publikującym.
+
+Bazę utworzono wrapperem projektu z Google Maven, Maven Central i Gradle
+Plugin Portal. Obejmuje testy jednostkowe, lint, APK debug/release i testów
+instrumentacyjnych oraz AAPT2 dla Windowsa i Linuxa. Wrapper i SDK Spotify
+nadal mają osobne sumy kontrolne. Nie dodano wyjątków wyłączających
+weryfikację ani automatycznego zaufania kluczom PGP.
+
+Generowanie sum ufa aktualnie pobranym plikom. Nie dowodzi, że biblioteka nie
+zawiera złośliwego kodu lub podatności. Przy aktualizacji zależności porównaj
+nowe artefakty z oficjalnym wydawcą, przejrzyj różnice w metadanych i zachowaj
+wyłącznie uzasadnione nowe sumy. Używaj wrappera projektu, aby zachować zgodny
+format pliku:
+
+```sh
+./gradlew --write-verification-metadata sha256 testDebugUnitTest lint assembleRelease assembleDebug assembleDebugAndroidTest
+```
+
+Po przeglądzie uruchom te same zadania bez `--write-verification-metadata`,
+z `--dependency-verification strict`; po pobraniu zależności sprawdź również
+wariant `--offline`. Zmiany zależne od systemu operacyjnego trzeba sprawdzić
+na systemach używanych w CI. Nowy zestaw zadań lub konfiguracji może wymagać
+uzupełnienia bazy. Regenerowanie pliku nie może być sposobem na pominięcie
+nieoczekiwanego błędu integralności.
+
+Szczegóły i ograniczenia: [dokumentacja Gradle](https://docs.gradle.org/current/userguide/securing_dependencies.html).

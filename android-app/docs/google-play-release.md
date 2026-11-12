@@ -81,7 +81,7 @@ Web i Android pozostają w jednym repo. Android nie korzysta z talii: QR zawiera
 | --- | --- | --- |
 | Android | Kotlin i Jetpack Compose, `minSdk=26`, `targetSdk=37` | Sprawdzić gotowy AAB w Play i zachowanie na obsługiwanych wersjach Androida. |
 | Pakiet | `pl.artifex.hiciarz` | Potwierdzić docelową nazwę pakietu przed pierwszym uploadem. |
-| Wydania | Workflow `android-release.yml` publikuje testowe APK w GitHub Releases | Przygotować osobny proces AAB do Play. |
+| Wydania | Firebase publikuje APK po CI; starsze wydania GitHub są wycofane | Przed uruchomieniem AAB w Play oddzielić build od podpisu i uprawnień publikacji. |
 | Podpis | Obsługa prywatnego keystore; release lokalny ma fallback do debug key | W procesie Play wymusić podpis produkcyjny i zweryfikować certyfikat AAB. |
 | Jakość | Testy jednostkowe, lint, testy UI i skanera release w CI | Dodać odbiór instalacji z Play na rzeczywistym urządzeniu. |
 | Odtwarzanie | Skan QR uruchamia utwór przez Spotify App Remote; potrzebne Spotify i Premium | Sprawdzić podpis Play i nowego użytkownika oraz warunki integracji dla pełnego zakresu aplikacji. |
