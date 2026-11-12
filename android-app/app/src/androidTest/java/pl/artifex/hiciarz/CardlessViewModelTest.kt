@@ -175,6 +175,63 @@ class CardlessViewModelTest {
         assertFalse(state().playback.isPlaying)
     }
 
+    @Test fun standaloneScannerRearmsAfterBingoButKeepsAnExistingStandaloneCard() {
+        dispatch(AppAction.DrawBingo)
+        dispatch(AppAction.BeginBingoScan)
+        dispatch(AppAction.ScanCameraCode("spotify:track:0000000000000000000000", bingo = true))
+        val bingoSong = state().bingoSong
+        assertEquals(BingoStage.PLAYING, state().bingoStage)
+        assertFalse(state().scannerEnabled)
+        assertNull(state().currentSong)
+
+        dispatch(AppAction.SelectTab(AppTab.SCAN))
+        assertTrue("The empty standalone scanner must mount its camera", state().scannerEnabled)
+        dispatch(AppAction.ScanCameraCode("spotify:track:0000000000000000000002", bingo = true))
+        assertNull("A late Bingo frame must not enter the standalone flow", state().currentSong)
+        assertEquals(bingoSong, state().bingoSong)
+        assertEquals(1, state().bingoHistory.size)
+
+        dispatch(AppAction.ScanCameraCode("spotify:track:0000000000000000000001"))
+        val standaloneSong = state().currentSong
+        assertEquals("0000000000000000000001", standaloneSong?.spotifyId)
+        assertFalse(state().scannerEnabled)
+        assertEquals(bingoSong, state().bingoSong)
+        dispatch(AppAction.SelectTab(AppTab.SETTINGS))
+        dispatch(AppAction.SelectTab(AppTab.SCAN))
+        assertFalse("Returning to a scanned card must not restart its camera", state().scannerEnabled)
+        dispatch(AppAction.ScanCameraCode("spotify:track:0000000000000000000002"))
+        assertEquals(standaloneSong, state().currentSong)
+    }
+
+    @Test fun pendingBingoScannerRearmsAfterStandaloneScanWithoutChangingItsRule() {
+        dispatch(AppAction.DrawBingo)
+        dispatch(AppAction.BeginBingoScan)
+        val rule = state().question
+        val round = state().bingoRound
+        dispatch(AppAction.SelectTab(AppTab.SCAN))
+        dispatch(AppAction.ScanCameraCode("spotify:track:0000000000000000000000"))
+        val standaloneSong = state().currentSong
+        assertFalse(state().scannerEnabled)
+        assertEquals(BingoStage.SCAN, state().bingoStage)
+        assertNull(state().bingoSong)
+
+        dispatch(AppAction.SelectTab(AppTab.BINGO))
+        assertTrue("The pending Bingo scanner must mount its camera", state().scannerEnabled)
+        assertEquals(rule, state().question)
+        assertEquals(round, state().bingoRound)
+        dispatch(AppAction.ScanCameraCode("spotify:track:0000000000000000000002"))
+        assertNull("A late standalone frame must not fill the Bingo round", state().bingoSong)
+        dispatch(AppAction.ScanCameraCode("spotify:track:0000000000000000000001", bingo = true))
+        assertEquals(BingoStage.PLAYING, state().bingoStage)
+        assertEquals("0000000000000000000001", state().bingoSong?.spotifyId)
+        assertEquals(rule, state().question)
+        assertEquals(round, state().bingoRound)
+        assertEquals(standaloneSong, state().currentSong)
+        dispatch(AppAction.SelectTab(AppTab.SCAN))
+        assertFalse(state().scannerEnabled)
+        assertEquals(standaloneSong, state().currentSong)
+    }
+
     private fun state() = model.state.value
     private fun dispatch(action: AppAction) = main { model.dispatch(action) }
     private fun recreate() { main { store.clear() }; createModel() }

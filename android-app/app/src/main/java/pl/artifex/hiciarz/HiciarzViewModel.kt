@@ -136,7 +136,16 @@ class HiciarzViewModel(application: Application) : AndroidViewModel(application)
 
     fun dispatch(action: AppAction) {
         when (action) {
-            is AppAction.SelectTab -> mutableState.update { it.copy(tab = action.tab) }
+            is AppAction.SelectTab -> mutableState.update {
+                // A successful scan only stops its own camera. The other scanning flow may
+                // still be waiting for a card, while an existing standalone card stays open.
+                val scanReady = when (action.tab) {
+                    AppTab.SCAN -> it.currentSong == null
+                    AppTab.BINGO -> it.cardlessMode == CardlessMode.BINGO && it.bingoStage == BingoStage.SCAN
+                    else -> false
+                }
+                it.copy(tab = action.tab, scannerEnabled = scanReady)
+            }
             AppAction.ConnectSpotify -> playback?.connect()
             AppAction.DisconnectSpotify -> {
                 clipJob?.cancel(); clipDeadline = null; armClipUri = null; ownedTrackUri = null
