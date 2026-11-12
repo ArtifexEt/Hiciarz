@@ -167,7 +167,8 @@ class HiciarzViewModel(application: Application) : AndroidViewModel(application)
                 else {
                     val current = state.value
                     val expectedScreen = if (action.bingo) current.tab == AppTab.BINGO &&
-                        current.cardlessMode == CardlessMode.BINGO && current.bingoStage == BingoStage.SCAN
+                        current.cardlessMode == CardlessMode.BINGO && current.bingoStage == BingoStage.SCAN &&
+                        (action.bingoRound == null || action.bingoRound == current.bingoRound)
                     else current.tab == AppTab.SCAN && current.currentSong == null
                     if (expectedScreen && current.scannerEnabled) scan(action.value)
                 }
@@ -202,6 +203,7 @@ class HiciarzViewModel(application: Application) : AndroidViewModel(application)
                 } catch (_: Exception) { mutableState.update { it.copy(message = "import_failed") } }
             }
             AppAction.DrawBingo -> drawBingo()
+            AppAction.DrawBingoAndScan -> drawBingo(startScan = true)
             AppAction.BeginBingoScan -> beginBingoScan()
             AppAction.CancelBingoScan -> {
                 if (state.value.bingoStage == BingoStage.SCAN) {
@@ -313,12 +315,15 @@ class HiciarzViewModel(application: Application) : AndroidViewModel(application)
         }
     }
 
-    private fun drawBingo() {
+    private fun drawBingo(startScan: Boolean = false) {
         pauseOwned()
         val categories = BingoRules.categories(state.value.bingoLevel)
-        mutableState.update { it.copy(cardlessMode = CardlessMode.BINGO, bingoSong = null,
+        mutableState.update { it.copy(tab = if (startScan) AppTab.BINGO else it.tab,
+            cardlessMode = CardlessMode.BINGO, bingoSong = null,
             bingoAnswerRevealed = false, question = categories[random.nextInt(categories.size)],
-            scannedSkin = null, bingoStage = BingoStage.RULE, bingoRound = it.bingoRound + 1) }
+            scannedSkin = null, bingoStage = if (startScan) BingoStage.SCAN else BingoStage.RULE,
+            bingoRound = it.bingoRound + 1, scannerEnabled = startScan || it.scannerEnabled,
+            message = if (startScan) null else it.message) }
         saveGames()
     }
 

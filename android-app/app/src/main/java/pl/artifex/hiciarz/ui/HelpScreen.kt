@@ -49,8 +49,8 @@ internal fun HelpScreen(topic: HelpTopic, copy: UiCopy, level: BingoLevel, onTop
                     "Download the PDF boards and print them for the players. Select the matching question level."),
                 copy.t("Prowadzący losuje pytanie. Każdy widzi, co trzeba odgadnąć, zanim zacznie grać muzyka.",
                     "The host draws a question. Everyone sees what to guess before the music starts."),
-                copy.t("Wybierz „Skanuj kartę” i zeskanuj kod z nowej karty. Posłuchajcie utworu, a potem sprawdźcie odpowiedzi.",
-                    "Tap “Scan card” and scan a new printed card. Listen together, then check the answers."),
+                copy.t("Zeskanuj kod nowej karty. Jeśli aparat jest wstrzymany, wybierz „Skanuj kartę”. Posłuchajcie utworu, a potem sprawdźcie odpowiedzi.",
+                    "Scan a new printed card. If the camera is paused, tap “Scan card”. Listen together, then check the answers."),
                 copy.t("Gracze zaznaczają trafione odpowiedzi na swoich planszach. Pełny rząd, kolumna lub przekątna daje Bingo.",
                     "Players mark correct answers on their printed boards. A full row, column or diagonal makes Bingo."),
             ))

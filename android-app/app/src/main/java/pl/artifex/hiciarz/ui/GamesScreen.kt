@@ -61,7 +61,7 @@ internal fun GamesScreen(state: AppState, copy: UiCopy, onAction: (AppAction) ->
         CardlessMode.TIMELINE -> TimelineGame(state, copy, onAction, header) { reset = CardlessMode.TIMELINE }
         CardlessMode.QUIZ -> QuizGame(state, copy, onAction, header) { reset = CardlessMode.QUIZ }
         CardlessMode.BINGO -> HostBingoGame(state, copy, onAction, header,
-            onManual = onManual, cameraActive = cameraActive, onLevel = selectLevel,
+            onManual = onManual, cameraActive = cameraActive && !options && reset == null && levelChange == null, onLevel = selectLevel,
             onReset = { reset = CardlessMode.BINGO })
     }
     reset?.let { mode ->
@@ -278,16 +278,25 @@ private fun HostBingoGame(state: AppState, copy: UiCopy, onAction: (AppAction) -
                     copy.t("Telefon prowadzącego", "The host’s phone"),
                     copy.t("Wylosuj pytanie i zeskanuj kartę, aby puścić muzykę. Gracze zaznaczają odpowiedzi na papierowych planszach.",
                         "Draw a question, scan a card and play the music. Players mark answers on their printed boards."))
-                Button(onClick = { onAction(AppAction.DrawBingo) },
+                Button(onClick = { onAction(if (stacked) AppAction.DrawBingo else AppAction.DrawBingoAndScan) },
                     modifier = Modifier.fillMaxWidth().heightIn(min = 56.dp), shape = ControlShape) {
                     Icon(AppIcons.Shuffle, null); Spacer(Modifier.width(10.dp)); Text(copy.t("Wylosuj pytanie", "Draw a question"))
                 }
             }
-            BingoStage.RULE -> BingoRuleCard(state, copy)
+            BingoStage.RULE -> if (stacked) BingoRuleCard(state, copy) else {
+                Surface(color = MaterialTheme.colorScheme.surfaceVariant, shape = PanelShape,
+                    modifier = Modifier.fillMaxWidth().heightIn(min = 230.dp)) {
+                    Column(Modifier.padding(28.dp), horizontalAlignment = Alignment.CenterHorizontally,
+                        verticalArrangement = Arrangement.spacedBy(16.dp, Alignment.CenterVertically)) {
+                        Icon(AppIcons.Scan, null, Modifier.size(46.dp), tint = MaterialTheme.colorScheme.primary)
+                        Text(copy.t("Skanowanie wstrzymane", "Scanning paused"), style = MaterialTheme.typography.titleMedium)
+                    }
+                }
+            }
             BingoStage.SCAN -> {
                 if (stacked) BingoRuleLabel(state, copy)
                 CameraViewport(state.scannerEnabled && cameraActive, copy) {
-                    onAction(AppAction.ScanCameraCode(it, bingo = true))
+                    onAction(AppAction.ScanCameraCode(it, bingo = true, bingoRound = state.bingoRound))
                 }
             }
             BingoStage.PLAYING -> state.bingoSong?.let { song ->
@@ -306,10 +315,12 @@ private fun HostBingoGame(state: AppState, copy: UiCopy, onAction: (AppAction) -
                 }
                 TextButton(onClick = { onAction(AppAction.CancelBingoScan) }) {
                     Icon(AppIcons.Back, null, Modifier.size(18.dp)); Spacer(Modifier.width(8.dp))
-                    Text(copy.t("Wróć do pytania", "Back to the question"))
+                    Text(if (stacked) copy.t("Wróć do pytania", "Back to the question")
+                        else copy.t("Wstrzymaj skanowanie", "Pause scanning"))
                 }
             }
             BingoStage.RULE -> {
+                if (!stacked) BingoRuleCard(state, copy)
                 Button(onClick = { onAction(AppAction.BeginBingoScan) },
                     modifier = Modifier.fillMaxWidth().heightIn(min = 56.dp), shape = ControlShape) {
                     Icon(AppIcons.Scan, null); Spacer(Modifier.width(10.dp)); Text(copy.t("Skanuj kartę", "Scan card"))
@@ -319,14 +330,14 @@ private fun HostBingoGame(state: AppState, copy: UiCopy, onAction: (AppAction) -
                     style = MaterialTheme.typography.bodyLarge, color = MaterialTheme.colorScheme.onSurfaceVariant)
             }
             BingoStage.PLAYING -> state.bingoSong?.let { song ->
-                if (!stacked) BingoRuleLabel(state, copy)
+                if (!stacked) BingoRuleCard(state, copy)
                 PlaybackControls(state.playback, state.settings, copy, onAction,
                     expectedUri = song.spotifyUri, playAction = AppAction.PlayCard(song))
                 if (!state.bingoAnswerRevealed) OutlinedButton(onClick = { onAction(AppAction.RevealBingoAnswer) },
                     modifier = Modifier.fillMaxWidth().heightIn(min = 52.dp), shape = ControlShape) {
                     Icon(AppIcons.Eye, null); Spacer(Modifier.width(10.dp)); Text(copy.t("Odkryj odpowiedź", "Reveal answer"))
                 }
-                Button(onClick = { onAction(AppAction.DrawBingo) },
+                Button(onClick = { onAction(if (stacked) AppAction.DrawBingo else AppAction.DrawBingoAndScan) },
                     modifier = Modifier.fillMaxWidth().heightIn(min = 54.dp), shape = ControlShape) {
                     Text(copy.t("Następna runda", "Next round")); Spacer(Modifier.width(10.dp)); Icon(AppIcons.Arrow, null)
                 }
@@ -390,7 +401,7 @@ private fun BingoTicket(song: Song, question: QuestionType, revealed: Boolean, s
 private fun BingoRuleCard(state: AppState, copy: UiCopy) {
     val index = BingoRules.categories(state.bingoLevel).indexOf(state.question).coerceAtLeast(0)
     val (fill, ink) = categoryColors[index % categoryColors.size]
-    Surface(color = fill, shape = PanelShape) {
+    Surface(color = fill, shape = PanelShape, modifier = Modifier.testTag("bingo-rule-card")) {
         Column(Modifier.fillMaxWidth().padding(24.dp).heightIn(min = 174.dp), verticalArrangement = Arrangement.spacedBy(15.dp)) {
             Text(copy.t("Runda ${state.bingoRound} · kategoria ${index + 1}", "Round ${state.bingoRound} · category ${index + 1}"),
                 style = MaterialTheme.typography.labelMedium, color = ink)
