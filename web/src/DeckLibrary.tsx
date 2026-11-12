@@ -1,4 +1,4 @@
-import { Music2, Plus } from 'lucide-react';
+import { Music2, Plus, Trash2 } from 'lucide-react';
 import { useTranslation } from './i18n';
 import type { Deck } from './model';
 import './deck-library.css';
@@ -10,6 +10,8 @@ export default function DeckLibrary({
   appearance = 'sidebar',
   onChoose,
   onCreate,
+  onDelete,
+  focusDeckId,
 }: {
   decks: Deck[];
   activeId: string;
@@ -17,9 +19,12 @@ export default function DeckLibrary({
   appearance?: 'sidebar' | 'dialog';
   onChoose: (id: string) => void;
   onCreate: () => void;
+  onDelete?: (id: string) => void;
+  focusDeckId?: string;
 }) {
   const { t } = useTranslation();
   const sidebar = appearance === 'sidebar';
+  const canDelete = !sidebar && Boolean(onDelete);
   const createButton = (
     <button
       type="button"
@@ -49,12 +54,13 @@ export default function DeckLibrary({
         {decks.map((deck) => {
           const name = deck.name.trim() || t('model.newDeck');
           return (
-            <li key={deck.id}>
+            <li key={deck.id} className={canDelete ? 'deck-library-row' : undefined}>
               <button
                 type="button"
                 className="deck-library-item"
                 aria-current={deck.id === activeId ? 'true' : undefined}
                 disabled={disabled}
+                autoFocus={!sidebar && deck.id === focusDeckId}
                 title={name}
                 onClick={() => onChoose(deck.id)}
               >
@@ -67,6 +73,18 @@ export default function DeckLibrary({
                   {deck.songs.length}
                 </span>
               </button>
+              {canDelete && (
+                <button
+                  type="button"
+                  className="deck-library-delete"
+                  aria-label={t('deckLibrary.deleteNamed', { name })}
+                  title={t('deckLibrary.deleteNamed', { name })}
+                  disabled={disabled}
+                  onClick={() => onDelete?.(deck.id)}
+                >
+                  <Trash2 size={18} aria-hidden="true" />
+                </button>
+              )}
             </li>
           );
         })}

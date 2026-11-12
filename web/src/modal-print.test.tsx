@@ -26,6 +26,40 @@ describe('dialog and print flow', () => {
     expect(markup).toMatch(/<button[^>]*type="button"[^>]*aria-label="Close"/);
     expect(markup).toContain('class="modal-body"');
     expect(markup).toContain('name="answer"');
+    expect(markup).not.toContain('class="modal-navigation"');
+    expect(markup).not.toContain('class="modal-footer"');
+  });
+
+  it('keeps optional step navigation and form actions outside the scrolling body', () => {
+    const markup = renderToStaticMarkup(
+      <Modal
+        title="Add a track"
+        onClose={noop}
+        navigation={<nav aria-label="Steps">Track · Details</nav>}
+        footer={
+          <div className="modal-actions">
+            <button type="button">Back</button>
+            <button type="submit" form="track-details">
+              Save track
+            </button>
+          </div>
+        }
+      >
+        <form id="track-details">
+          <label>
+            Title
+            <input name="title" />
+          </label>
+        </form>
+      </Modal>,
+    );
+    expect(markup).toContain(
+      '<div class="modal-navigation"><nav aria-label="Steps">Track · Details</nav></div>' +
+        '<div class="modal-body"><form id="track-details">',
+    );
+    expect(markup).toContain('</form></div><div class="modal-footer"><div class="modal-actions">');
+    expect(markup).toContain('type="submit" form="track-details"');
+    expect(markup.match(/class="modal-body"/g)).toHaveLength(1);
   });
 
   it('summarizes a partial final sheet and selected duplex edge without blocking PDF actions on instructions', () => {

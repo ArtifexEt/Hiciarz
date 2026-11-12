@@ -8,11 +8,12 @@ Hiciarz korzysta z linków do utworów i oficjalnego odtwarzacza Spotify. Tworze
 
 1. W Spotify wybierz konkretne nagranie i skopiuj jego link przez **Udostępnij → Kopiuj link do utworu**.
 2. W Hiciarzu otwórz **Talie → Utwory → Dodaj utwór**. W pierwszym kroku **Utwór** wklej link i sprawdź odsłuch, jeśli jest dostępny.
-3. Wybierz **Dalej: dane utworu**. W drugim kroku uzupełnij wykonawcę i sprawdź pobrany tytuł. Publiczny podgląd Spotify nie zwraca nazwy wykonawcy. **Wstecz** pozwala zmienić link bez utraty ręcznych poprawek.
-4. Wybierz **Znajdź rok w MusicBrainz**, wskaż właściwą wersję i sprawdź datę. Wersja koncertowa lub remix może mieć inny rok niż pierwotne nagranie studyjne.
-5. Zatwierdź dane i dodaj kartę. Dla filmu lub gry uzupełnij także tytuł produkcji.
+3. Wybierz **Dalej: dane utworu**. Spotify dostarcza tytuł; Hiciarz sprawdza też, czy MusicBrainz łączy ten konkretny link z jednym nagraniem. Przy jednoznacznym powiązaniu może uzupełnić wykonawcę i rok. Jeśli go nie ma, wyszukuje propozycje według tytułu — wybierz właściwe nagranie, zanim użyjesz jego danych.
+4. W razie potrzeby wybierz **Znajdź wykonawcę i rok w MusicBrainz**. Wystarczy tytuł; podanie wykonawcy pomaga zawęzić wyniki. Sprawdź datę konkretnej wersji: koncert lub remix może mieć inny rok niż nagranie studyjne. Wszystkie pola możesz uzupełnić lub poprawić ręcznie.
+5. Nowa karta dziedziczy rodzaj wybrany w **Ustawieniach talii** przy jej nazwie. Zmienisz go dla tej karty w **Więcej ustawień**. Dla filmu lub gry uzupełnij także tytuł produkcji. Wybór **Motywu karty** pokazuje miniaturki; **Jak cała talia** zachowuje motyw projektu.
+6. Zatwierdź dane i dodaj kartę. Kroki pozostają w nagłówku, a akcje w stopce dialogu podczas przewijania. **Wstecz** lub pierwszy krok pozwalają zmienić link bez utraty wpisanych danych.
 
-MusicBrainz jest katalogiem metadanych; nie dostarcza plików audio. Brak wyniku lub dostępu do sieci pozwala nadal wpisać dane samodzielnie. [MusicBrainz API](https://musicbrainz.org/doc/MusicBrainz_API).
+Publiczny podgląd Spotify nie gwarantuje wykonawcy ani roku. Rok uzupełniany w formularzu pochodzi z MusicBrainz, które jest katalogiem metadanych, nie źródłem audio. Zgodny tytuł sam w sobie nie potwierdza wersji utworu z linku. Brak dopasowania lub dostępu do sieci pozwala nadal wpisać dane samodzielnie. [MusicBrainz API](https://musicbrainz.org/doc/MusicBrainz_API).
 
 ## Odsłuch i skanowanie
 

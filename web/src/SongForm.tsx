@@ -13,10 +13,11 @@ import {
 import { displayTranslation, useTranslation, t } from './i18n';
 import Modal from './Modal';
 import GameModePicker from './GameModePicker';
-import { spotifyId, themeNames, themes, validateSong, type GameMode, type Song } from './model';
+import CardThemeSelect from './CardThemeSelect';
+import { spotifyId, validateSong, type GameMode, type Song, type Theme } from './model';
 import {
   findRecordingSuggestions,
-  loadSpotifyTrack,
+  loadSpotifyTrackDetails,
   spotifySearchUrl,
   type RecordingSuggestion,
 } from './track-metadata';
@@ -33,6 +34,22 @@ export type SongDraft = {
 
 type SuggestedFields = Partial<Pick<SongDraft, 'title' | 'artist' | 'year'>>;
 const recordingFields = ['title', 'artist', 'year'] as const;
+type FieldRevisions = Record<(typeof recordingFields)[number], number>;
+
+/** Late metadata may fill blanks only while the user has left that field untouched. */
+export function draftWithMetadata(
+  draft: SongDraft,
+  metadata: SuggestedFields,
+  started: FieldRevisions,
+  current: FieldRevisions,
+): SongDraft {
+  const next = { ...draft };
+  for (const field of recordingFields) {
+    const value = metadata[field];
+    if (value && !next[field].trim() && started[field] === current[field]) next[field] = value;
+  }
+  return next;
+}
 
 /** A different source must not silently reuse the previous source's suggested metadata. */
 export function draftWithSpotifySource(
@@ -75,6 +92,7 @@ export function songFromDraft(draft: SongDraft, gameMode: GameMode, previous?: S
 export default function SongForm({
   song,
   defaultMode = 'music',
+  defaultTheme = 'classic',
   onSave,
   onClose,
   onDelete,
@@ -82,6 +100,7 @@ export default function SongForm({
 }: {
   song?: Song;
   defaultMode?: GameMode;
+  defaultTheme?: Theme;
   onSave: (song: Song) => void;
   onClose: () => void;
   onDelete?: () => void;
@@ -89,6 +108,7 @@ export default function SongForm({
 }) {
   const { t } = useTranslation();
   const spotifyInputId = useId();
+  const formId = useId();
   const pageRef = useRef<HTMLFormElement>(null);
   const sourceRef = useRef<HTMLInputElement>(null);
   const [step, setStep] = useState<'source' | 'details'>(song ? 'details' : 'source');
@@ -155,6 +175,7 @@ export default function SongForm({
     } else if (field === 'title' || field === 'artist' || field === 'year') {
       revisions.current[field]++;
       setSelectedRecording('');
+      setLookupMessage('');
       delete suggestedFields.current[field];
     }
     draftRef.current = next;
@@ -183,18 +204,46 @@ export default function SongForm({
     };
   }
 
-  async function loadTitle(raw: string) {
+  async function loadMetadata(raw: string) {
     const { controller, current } = startOperation('title');
-    const titleRevision = revisions.current.title;
-    try {
-      const metadata = await loadSpotifyTrack(raw, controller.signal);
+    const started = { ...revisions.current };
+    function applyMetadata(metadata: SuggestedFields) {
       if (!current()) return;
-      if (!draftRef.current.title.trim() && revisions.current.title === titleRevision) {
-        const next = { ...draftRef.current, title: metadata.title };
-        suggestedFields.current.title = metadata.title;
-        draftRef.current = next;
-        setDraft(next);
+      const previous = draftRef.current;
+      const next = draftWithMetadata(previous, metadata, started, revisions.current);
+      for (const field of recordingFields)
+        if (next[field] !== previous[field]) suggestedFields.current[field] = next[field];
+      draftRef.current = next;
+      setDraft(next);
+    }
+    try {
+      const metadata = await loadSpotifyTrackDetails(raw, controller.signal, (metadata) =>
+        applyMetadata({ title: metadata.title }),
+      );
+      if (!current()) return;
+      if (
+        revisions.current.title !== started.title ||
+        revisions.current.artist !== started.artist
+      ) {
+        setLookupMessage('songForm.changedDuringSearch');
+        return;
       }
+      if (metadata.matchedRecording) {
+        const recording = metadata.matchedRecording;
+        applyMetadata({
+          artist: recording.artist,
+          year: recording.year ? String(recording.year) : undefined,
+        });
+        setLookupMessage(
+          recording.year ? 'metadataAutofill.linked' : 'metadataAutofill.linkedNoYear',
+        );
+      } else {
+        setSuggestions(metadata.suggestions);
+        setLookupMessage(
+          metadata.suggestions.length ? 'metadataAutofill.chooseMatch' : 'metadataAutofill.noMatch',
+        );
+      }
+      if (metadata.lookupError) setLookupError(metadata.lookupError);
     } catch (error) {
       if (current()) setLookupError((error as Error).message);
     } finally {
@@ -224,7 +273,8 @@ export default function SongForm({
     setLookupError('');
     setLookupMessage('');
     setStep('details');
-    if (raw && !draftRef.current.title.trim()) void loadTitle(raw);
+    if (raw && recordingFields.some((field) => !draftRef.current[field].trim()))
+      void loadMetadata(raw);
   }
 
   function back() {
@@ -237,7 +287,7 @@ export default function SongForm({
   }
 
   async function findYear() {
-    if (!draftRef.current.title.trim() || !draftRef.current.artist.trim()) return;
+    if (!draftRef.current.title.trim()) return;
     const { controller, current } = startOperation('year');
     setSuggestions([]);
     setSelectedRecording('');
@@ -258,7 +308,7 @@ export default function SongForm({
         return;
       }
       setSuggestions(found);
-      if (!found.length) setLookupMessage('songForm.noSuggestions');
+      setLookupMessage(found.length ? 'metadataAutofill.chooseMatch' : 'songForm.noSuggestions');
     } catch (error) {
       if (current()) setLookupError((error as Error).message);
     } finally {
@@ -275,6 +325,9 @@ export default function SongForm({
     draftRef.current = next;
     setDraft(next);
     setSelectedRecording(recording.id);
+    setLookupMessage(
+      recording.year ? 'metadataAutofill.selected' : 'metadataAutofill.selectedNoYear',
+    );
     setError('');
   }
 
@@ -289,17 +342,48 @@ export default function SongForm({
             : t('creator.newCardTitle.' + gameMode)
       }
       onClose={onClose}
-    >
-      <div className="song-form">
+      navigation={
         <ol className="song-form-progress" aria-label={t('songForm.progress')}>
           <li aria-current={step === 'source' ? 'step' : undefined}>
-            <span aria-hidden="true">1</span> {t('songForm.stepTrack')}
+            <button type="button" onClick={() => step !== 'source' && back()}>
+              <span aria-hidden="true">1</span> {t('songForm.stepTrack')}
+            </button>
           </li>
           <li aria-current={step === 'details' ? 'step' : undefined}>
-            <span aria-hidden="true">2</span> {t('songForm.stepDetails')}
+            <button
+              type="button"
+              disabled={!trackId && !song?.sources.youtube}
+              onClick={() => step === 'source' && advance()}
+            >
+              <span aria-hidden="true">2</span> {t('songForm.stepDetails')}
+            </button>
           </li>
         </ol>
+      }
+      footer={
+        <div className="modal-actions song-form-actions">
+          <button type="button" className="secondary" onClick={step === 'source' ? onClose : back}>
+            {step === 'details' && <ArrowLeft size={17} aria-hidden="true" />}
+            {t(step === 'source' ? 'app.cancel' : 'songForm.back')}
+          </button>
+          <button className="primary" type="submit" form={formId}>
+            {step === 'source' ? (
+              <>
+                {t('songForm.next')} <ArrowRight size={17} aria-hidden="true" />
+              </>
+            ) : (
+              <>
+                <Check size={17} aria-hidden="true" />{' '}
+                {t(gameMode === 'music' ? 'app.saveTrack' : 'creator.saveCard')}
+              </>
+            )}
+          </button>
+        </div>
+      }
+    >
+      <div className="song-form">
         <form
+          id={formId}
           key={step}
           ref={pageRef}
           className="song-form-page"
@@ -400,14 +484,6 @@ export default function SongForm({
                   {displayTranslation(error)}
                 </p>
               )}
-              <div className="modal-actions">
-                <button type="button" className="secondary" onClick={onClose}>
-                  {t('app.cancel')}
-                </button>
-                <button type="submit" className="primary">
-                  {t('songForm.next')} <ArrowRight size={17} aria-hidden="true" />
-                </button>
-              </div>
             </>
           ) : (
             <>
@@ -428,10 +504,9 @@ export default function SongForm({
               {busy === 'title' && (
                 <p className="song-title-loading hint" role="status">
                   <LoaderCircle size={15} className="spin" aria-hidden="true" />{' '}
-                  {t('songForm.loadingTitle')}
+                  {t('metadataAutofill.loading')}
                 </p>
               )}
-              <GameModePicker value={gameMode} onChange={setGameMode} compact />
               <div className="form-grid">
                 {gameMode !== 'music' && (
                   <label className="answer-entry">
@@ -497,30 +572,24 @@ export default function SongForm({
                     }
                   />
                 </label>
-                <label>
-                  {t('app.cardTheme2')}
-                  <select
-                    name="theme"
-                    value={draft.theme}
-                    onChange={(event) => update('theme', event.target.value)}
-                  >
-                    <option value="">{t('app.sameAsTheDeck')}</option>
-                    {themes.map((theme) => (
-                      <option key={theme} value={theme}>
-                        {themeNames[theme]}
-                      </option>
-                    ))}
-                  </select>
-                </label>
+                <CardThemeSelect
+                  value={draft.theme as Theme | ''}
+                  deckTheme={defaultTheme}
+                  onChange={(theme) => update('theme', theme)}
+                />
               </div>
+              <details className="song-advanced-settings">
+                <summary>{t('metadataAutofill.moreSettings')}</summary>
+                <GameModePicker value={gameMode} onChange={setGameMode} compact />
+              </details>
               <div className="song-year-actions">
                 <button
                   className="text-button"
                   type="button"
-                  disabled={busy === 'year' || !draft.title.trim() || !draft.artist.trim()}
+                  disabled={busy !== null || !draft.title.trim()}
                   onClick={() => void findYear()}
                 >
-                  <Search size={15} aria-hidden="true" /> {t('songForm.findYear')}
+                  <Search size={15} aria-hidden="true" /> {t('metadataAutofill.findDetails')}
                 </button>
               </div>
               <div className="song-lookup-feedback" aria-live="polite" aria-atomic="true">
@@ -529,9 +598,9 @@ export default function SongForm({
                     {t('songForm.lookingUp')}
                   </p>
                 )}
-                {!busy && draft.title.trim() && !draft.artist.trim() && (
+                {!busy && draft.title.trim() && !draft.artist.trim() && !lookupMessage && (
                   <p className="hint" role="status">
-                    {t('songForm.enterArtistForYear')}
+                    {t('metadataAutofill.titleSearch')}
                   </p>
                 )}
                 {lookupMessage && (
@@ -591,15 +660,6 @@ export default function SongForm({
                   {displayTranslation(error)}
                 </p>
               )}
-              <div className="modal-actions">
-                <button type="button" className="secondary" onClick={back}>
-                  <ArrowLeft size={17} aria-hidden="true" /> {t('songForm.back')}
-                </button>
-                <button className="primary" type="submit">
-                  <Check size={17} />{' '}
-                  {gameMode === 'music' ? t('app.saveTrack') : t('creator.saveCard')}
-                </button>
-              </div>
               {song && (
                 <details className="song-extra-options">
                   <summary>{t('shell.moreSongOptions')}</summary>

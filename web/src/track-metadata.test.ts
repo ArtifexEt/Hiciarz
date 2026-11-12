@@ -329,6 +329,166 @@ describe('MusicBrainz recording suggestions', () => {
     await expect(metadata.findRecordingSuggestions('Third')).resolves.toEqual([]);
     expect(fetchMock).toHaveBeenCalledTimes(2);
   });
+
+  it('retries a transient busy service once after its short Retry-After window', async () => {
+    fetchMock
+      .mockResolvedValueOnce(json({}, 503, { 'Retry-After': '2' }))
+      .mockResolvedValueOnce(json({ recordings: [recording()] }));
+    const request = metadata.findRecordingSuggestions('Dancing Queen');
+    await vi.advanceTimersByTimeAsync(1999);
+    expect(fetchMock).toHaveBeenCalledTimes(1);
+    await vi.advanceTimersByTimeAsync(1);
+    expect(await request).toHaveLength(1);
+    expect(fetchMock).toHaveBeenCalledTimes(2);
+  });
+
+  it('does not wait through a long busy window or retry indefinitely', async () => {
+    fetchMock.mockResolvedValueOnce(json({}, 503, { 'Retry-After': '60' }));
+    await expect(metadata.findRecordingSuggestions('Dancing Queen')).rejects.toThrow(
+      'nie udostępnił danych',
+    );
+    expect(fetchMock).toHaveBeenCalledTimes(1);
+    await vi.advanceTimersByTimeAsync(60000);
+    fetchMock.mockResolvedValue(json({}, 503));
+    const request = metadata.findRecordingSuggestions('Dancing Queen');
+    const rejected = expect(request).rejects.toThrow('nie udostępnił danych');
+    await vi.advanceTimersByTimeAsync(1100);
+    await rejected;
+    expect(fetchMock).toHaveBeenCalledTimes(3);
+  });
+});
+
+describe('Spotify-linked recording enrichment', () => {
+  it('fills only a recording explicitly linked to the canonical Spotify URL', async () => {
+    fetchMock
+      .mockResolvedValueOnce(json({ title: 'Dancing Queen' }))
+      .mockResolvedValueOnce(
+        json({ relations: [{ 'target-type': 'recording', recording: { id: mbid } }] }),
+      )
+      .mockResolvedValueOnce(json({ recordings: [recording()] }));
+    const request = metadata.loadSpotifyTrackDetails(trackId);
+    await vi.advanceTimersByTimeAsync(1000);
+    const result = await request;
+    expect(result.title).toBe('Dancing Queen');
+    expect(result.matchedRecording).toMatchObject({ id: mbid, artist: 'ABBA', year: 1976 });
+    expect(result.suggestions).toEqual([]);
+    const lookup = new URL(fetchMock.mock.calls[1][0]);
+    expect(lookup.searchParams.get('resource')).toBe(`https://open.spotify.com/track/${trackId}`);
+    expect(lookup.searchParams.get('inc')).toBe('recording-rels');
+    expect(new URL(fetchMock.mock.calls[2][0]).searchParams.get('query')).toBe(`rid:${mbid}`);
+  });
+
+  it('automatically searches by title after a missing URL relationship but does not guess a match', async () => {
+    fetchMock
+      .mockResolvedValueOnce(json({ title: 'Dancing Queen' }))
+      .mockResolvedValueOnce(json({}, 404))
+      .mockResolvedValueOnce(json({ recordings: [recording()] }));
+    const request = metadata.loadSpotifyTrackDetails(trackId);
+    await vi.advanceTimersByTimeAsync(1000);
+    const result = await request;
+    expect(result).not.toHaveProperty('matchedRecording');
+    expect(result.suggestions).toHaveLength(1);
+    expect(result.suggestions[0]).toMatchObject({ artist: 'ABBA', year: 1976 });
+    expect(new URL(fetchMock.mock.calls[2][0]).searchParams.get('query')).toBe(
+      'recording:"Dancing Queen"',
+    );
+  });
+
+  it('keeps multiple linked recordings as choices and excludes unrelated search hits', async () => {
+    const otherId = '126fa041-3917-4c73-9079-ed16e36f20f8';
+    fetchMock
+      .mockResolvedValueOnce(json({ title: 'Dancing Queen' }))
+      .mockResolvedValueOnce(
+        json({
+          relations: [
+            { 'target-type': 'recording', recording: { id: mbid } },
+            { 'target-type': 'recording', recording: { id: otherId } },
+          ],
+        }),
+      )
+      .mockResolvedValueOnce(
+        json({
+          recordings: [
+            recording(),
+            recording({ id: otherId, 'first-release-date': '1986', disambiguation: 'live' }),
+            recording({
+              id: '226fa041-3917-4c73-9079-ed16e36f20f8',
+              'artist-credit': [{ name: 'Another artist' }],
+            }),
+          ],
+        }),
+      );
+    const request = metadata.loadSpotifyTrackDetails(trackId);
+    await vi.advanceTimersByTimeAsync(1000);
+    const result = await request;
+    expect(result).not.toHaveProperty('matchedRecording');
+    expect(result.suggestions.map((suggestion) => suggestion.id)).toEqual([mbid, otherId]);
+  });
+
+  it('does not invent a year for an otherwise verified linked recording', async () => {
+    fetchMock
+      .mockResolvedValueOnce(json({ title: 'Dancing Queen' }))
+      .mockResolvedValueOnce(
+        json({ relations: [{ 'target-type': 'recording', recording: { id: mbid } }] }),
+      )
+      .mockResolvedValueOnce(
+        json({
+          recordings: [
+            recording({ 'first-release-date': undefined, releases: [{ date: '2020' }] }),
+          ],
+        }),
+      );
+    const request = metadata.loadSpotifyTrackDetails(trackId);
+    await vi.advanceTimersByTimeAsync(1000);
+    expect((await request).matchedRecording).toMatchObject({ artist: 'ABBA' });
+    expect((await request).matchedRecording).not.toHaveProperty('year');
+  });
+
+  it('keeps the Spotify title and manual fallback when MusicBrainz is unavailable', async () => {
+    fetchMock
+      .mockResolvedValueOnce(json({ title: 'Dancing Queen' }))
+      .mockRejectedValue(new TypeError('Failed to fetch'));
+    const request = metadata.loadSpotifyTrackDetails(trackId);
+    await vi.advanceTimersByTimeAsync(1000);
+    const result = await request;
+    expect(result).toMatchObject({ title: 'Dancing Queen', suggestions: [] });
+    expect(result.lookupError).toContain('Sprawdź połączenie');
+    expect(result).not.toHaveProperty('matchedRecording');
+  });
+
+  it('still finds choices when the optional direct URL lookup fails', async () => {
+    fetchMock
+      .mockResolvedValueOnce(json({ title: 'Dancing Queen' }))
+      .mockResolvedValueOnce(json({}, 400))
+      .mockResolvedValueOnce(json({ recordings: [recording()] }));
+    const request = metadata.loadSpotifyTrackDetails(trackId);
+    await vi.advanceTimersByTimeAsync(1000);
+    const result = await request;
+    expect(result.suggestions).toHaveLength(1);
+    expect(result).not.toHaveProperty('lookupError');
+    expect(result).not.toHaveProperty('matchedRecording');
+  });
+
+  it('publishes the title promptly and cancels enrichment when its source becomes stale', async () => {
+    const controller = new AbortController();
+    const onTitle = vi.fn();
+    fetchMock.mockResolvedValueOnce(json({ title: 'Dancing Queen' }));
+    fetchMock.mockImplementationOnce(
+      (_url, { signal }: RequestInit) =>
+        new Promise((_resolve, reject) => {
+          signal?.addEventListener('abort', () =>
+            reject(new DOMException('Aborted', 'AbortError')),
+          );
+        }),
+    );
+    const request = metadata.loadSpotifyTrackDetails(trackId, controller.signal, onTitle);
+    const rejected = expect(request).rejects.toMatchObject({ name: 'AbortError' });
+    await vi.advanceTimersByTimeAsync(0);
+    expect(onTitle).toHaveBeenCalledWith({ id: trackId, title: 'Dancing Queen' });
+    controller.abort();
+    await rejected;
+    expect(fetchMock).toHaveBeenCalledTimes(2);
+  });
 });
 
 describe('external Spotify search', () => {

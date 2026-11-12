@@ -2,11 +2,12 @@ import { renderToStaticMarkup } from 'react-dom/server';
 import { afterEach, describe, expect, it } from 'vitest';
 import SongForm, {
   draftForRecording,
+  draftWithMetadata,
   draftWithSpotifySource,
   songFromDraft,
   type SongDraft,
 } from './SongForm';
-import { setLanguage, type Language } from './i18n';
+import { setLanguage, t, type Language } from './i18n';
 import { demoDeck } from './model';
 
 const draft: SongDraft = {
@@ -87,6 +88,37 @@ describe('Spotify card drafts', () => {
     expect(undated.year).toBe('');
     expect(() => songFromDraft(undated, 'music')).toThrow();
   });
+
+  it('fills untouched blank metadata without replacing existing manual fields', () => {
+    const revisions = { title: 0, artist: 0, year: 0 };
+    const manual = { ...draft, title: 'My edited title', artist: '', year: '' };
+    const result = draftWithMetadata(
+      manual,
+      { title: 'API title', artist: 'ABBA', year: '1976' },
+      revisions,
+      revisions,
+    );
+    expect(result).toMatchObject({
+      title: 'My edited title',
+      artist: 'ABBA',
+      year: '1976',
+      spotify: draft.spotify,
+    });
+    expect(manual.artist).toBe('');
+  });
+
+  it('respects a field manually cleared while metadata was loading', () => {
+    const started = { title: 0, artist: 0, year: 0 };
+    const current = { title: 0, artist: 0, year: 1 };
+    expect(
+      draftWithMetadata(
+        { ...draft, artist: '', year: '' },
+        { artist: 'ABBA', year: '1976' },
+        started,
+        current,
+      ),
+    ).toMatchObject({ artist: 'ABBA', year: '' });
+  });
 });
 
 describe.each<Language>(['pl', 'en'])('Spotify song form in %s', (language) => {
@@ -146,5 +178,46 @@ describe.each<Language>(['pl', 'en'])('Spotify song form in %s', (language) => {
     expect(markup).not.toContain('name="spotify"');
     expect(markup).not.toContain('<iframe');
     expect(markup).not.toMatch(/(?:songForm|app|creator)\.[A-Za-z]/);
+  });
+
+  it('keeps step navigation and associated submit actions outside the scrollable body', () => {
+    setLanguage(language);
+    const markup = renderToStaticMarkup(
+      <SongForm song={demoDeck().songs[0]} onSave={noop} onClose={noop} />,
+    );
+    const navigation = markup.indexOf('class="modal-navigation"');
+    const body = markup.indexOf('class="modal-body"');
+    const footer = markup.indexOf('class="modal-footer"');
+    const formId = markup.match(/<form[^>]*\bid="([^"]+)"/)?.[1];
+    expect(navigation).toBeGreaterThan(0);
+    expect(navigation).toBeLessThan(body);
+    expect(footer).toBeGreaterThan(markup.indexOf('</form>'));
+    expect(markup.slice(footer)).toContain(`form="${formId}"`);
+    expect(markup.slice(navigation, body)).toContain('<button type="button"');
+  });
+
+  it('uses the deck default for new cards and hides per-card type overrides in More settings', () => {
+    setLanguage(language);
+    const newCard = renderToStaticMarkup(
+      <SongForm defaultMode="game" onSave={noop} onClose={noop} />,
+    );
+    expect(newCard).toContain(t('creator.newCardTitle.game'));
+    const existing = {
+      ...demoDeck().songs[0],
+      gameMode: 'movie' as const,
+      answer: 'Jurassic Park',
+    };
+    const markup = renderToStaticMarkup(
+      <SongForm song={existing} defaultMode="game" onSave={noop} onClose={noop} />,
+    );
+    const advanced = markup.match(
+      /<details class="song-advanced-settings">([\s\S]*?)<\/details>/,
+    )?.[1];
+    expect(advanced).toBeTruthy();
+    expect(advanced).toContain(t('metadataAutofill.moreSettings'));
+    expect(advanced).toContain('checked="" value="movie"');
+    expect(advanced).not.toContain('name="answer"');
+    expect(markup).toContain('name="answer"');
+    expect(markup).not.toMatch(/<details class="song-advanced-settings"[^>]*\bopen=/);
   });
 });

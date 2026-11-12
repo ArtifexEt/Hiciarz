@@ -1,0 +1,12 @@
+{
+  "metadataAutofill.loading": "Loading Spotify details and checking the artist and year in MusicBrainz…",
+  "metadataAutofill.linked": "Filled in MusicBrainz details linked to this Spotify URL. Check the artist and year before saving.",
+  "metadataAutofill.linkedNoYear": "Found the artist for this Spotify URL, but no verified year. Enter the year or search for the correct release.",
+  "metadataAutofill.chooseMatch": "Choose the correct recording to fill in the artist and year. If it is missing, enter the artist and search again. A title alone does not verify the version at the Spotify link.",
+  "metadataAutofill.selected": "Filled in details from the selected MusicBrainz recording. Check that it matches the version at the Spotify link before saving.",
+  "metadataAutofill.selectedNoYear": "Filled in the title and artist from the selected MusicBrainz recording. No release date is available — enter the year manually.",
+  "metadataAutofill.noMatch": "Could not verify the remaining details. Enter them manually or search again — a title is enough.",
+  "metadataAutofill.findDetails": "Find artist and year in MusicBrainz",
+  "metadataAutofill.titleSearch": "Search by title. Adding the artist narrows the results and helps find the correct year.",
+  "metadataAutofill.moreSettings": "More settings"
+}

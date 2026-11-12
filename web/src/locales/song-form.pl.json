@@ -19,7 +19,7 @@
   "songForm.spotifyRequired": "Wklej link do utworu Spotify.",
   "songForm.useTrackLink": "Użyj pełnego linku do nagrania: https://open.spotify.com/track/…",
   "songForm.existingSourceKept": "Zapisane źródło odtwarzania tej karty zostanie zachowane.",
-  "songForm.enterArtistForYear": "Podgląd Spotify podaje sam tytuł. Wpisz wykonawcę, aby znaleźć właściwy rok.",
+  "songForm.enterArtistForYear": "Wyszukaj dane na podstawie samego tytułu lub dodaj wykonawcę, aby zawęzić wyniki.",
   "songForm.progress": "Dodawanie utworu",
   "songForm.stepTrack": "Utwór",
   "songForm.stepDetails": "Dane utworu",
