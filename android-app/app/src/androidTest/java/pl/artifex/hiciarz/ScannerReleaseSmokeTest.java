@@ -9,6 +9,7 @@ import android.content.pm.PackageManager;
 import android.content.pm.ServiceInfo;
 import android.content.res.Configuration;
 import android.os.Bundle;
+import android.os.Build;
 import android.os.ParcelFileDescriptor;
 import android.os.SystemClock;
 import android.view.accessibility.AccessibilityNodeInfo;
@@ -72,8 +73,8 @@ public final class ScannerReleaseSmokeTest {
                 .putString("cardSkin", "classic").putBoolean("followCardSkin", true).commit();
         shell("logcat -c");
         launch();
-        waitUntil("Scanner tab must be available", 20_000,
-                () -> findAndClick(labels("Scan", "Skaner", "Skanuj")));
+        waitUntil("The app must open directly in the scanner", 20_000,
+                () -> containsText("Scan a card"));
         waitUntil("The scanner must offer its camera permission action", 20_000,
                 () -> findAndClick(labels("Enable camera", "Włącz aparat")));
         waitUntil("Android must offer foreground camera access", 20_000,
@@ -85,7 +86,7 @@ public final class ScannerReleaseSmokeTest {
         waitUntil("The camera must decode the fixture and show its actual song", 20_000,
                 () -> containsText("Dean Martin") && containsText("1959"));
         waitUntil("The skin encoded in the actual QR must replace the chosen Classic theme", 10_000,
-                () -> containsText("Disco"));
+                () -> containsCardSkin("Disco"));
 
         // Recreate the real release Activity and re-arm its scanner from the card.
         automation.setRotation(UiAutomation.ROTATION_FREEZE_90);
@@ -101,7 +102,7 @@ public final class ScannerReleaseSmokeTest {
                 () -> findAndClickOrScroll(labels("Scan next card", "Next card", "Skanuj kolejną kartę", "Następna karta")));
         scrollToTop();
         waitUntil("A new camera session must process frames after rotation", 30_000,
-                () -> readyCount() >= 2 && containsText("1959") && containsText("Disco"));
+                () -> readyCount() >= 2 && containsText("1959") && containsCardSkin("Disco"));
     }
 
     @SuppressWarnings("deprecation")
@@ -145,6 +146,14 @@ public final class ScannerReleaseSmokeTest {
     private boolean containsText(String expected) {
         return walk(automation.getRootInActiveWindow(), node ->
                 node.getText() != null && node.getText().toString().contains(expected));
+    }
+
+    private boolean containsCardSkin(String expected) {
+        // The card's appearance is announced to accessibility services; it is no longer
+        // repeated as a separate skin-picker row in the scanning flow.
+        return walk(automation.getRootInActiveWindow(), node ->
+                Build.VERSION.SDK_INT >= 30 && node.getStateDescription() != null &&
+                        node.getStateDescription().toString().contains(expected));
     }
 
     private boolean acceptAndroidCameraPermission() {

@@ -74,16 +74,15 @@ class HiciarzViewModel(application: Application) : AndroidViewModel(application)
                 }
                 val restoredTimeline = restoreTimeline(active)
                 val restoredQuiz = restoreQuiz(active)
-                val mode = runCatching { CardlessMode.valueOf(prefs.getString("cardlessMode", null).orEmpty()) }
-                    .getOrDefault(CardlessMode.BINGO)
                 bingoScanSkin = if (bingoStage == BingoStage.PLAYING)
                     CardSkin.fromId(prefs.getString("bingoActiveSkin", "").orEmpty()) else null
                 mutableState.update { it.copy(decks = decks, activeDeckId = activeId, busy = false,
                     bingoHistory = history, bingoSong = currentBingo, bingoLevel = level, question = question,
                     bingoStage = bingoStage, bingoRound = prefs.getInt("bingoRound", history.size).coerceAtLeast(0),
                     bingoAnswerRevealed = currentBingo != null && prefs.getBoolean("bingoRevealed", false),
-                    cardlessMode = mode, timeline = restoredTimeline, quiz = restoredQuiz,
-                    scannedSkin = if (mode == CardlessMode.BINGO) bingoScanSkin else null) }
+                    // Keep saved decks and rounds, but open the printed-card scanner in this edition.
+                    cardlessMode = CardlessMode.BINGO, timeline = restoredTimeline, quiz = restoredQuiz,
+                    scannedSkin = if (it.tab == AppTab.BINGO) bingoScanSkin else null) }
             } catch (_: Exception) {
                 val examples = repository.current()
                 mutableState.update { it.copy(decks = examples, activeDeckId = examples.firstOrNull()?.id,
@@ -99,6 +98,7 @@ class HiciarzViewModel(application: Application) : AndroidViewModel(application)
     /** The Activity releases this reference before destruction, including rotation. */
     fun attachPlayback(controller: PlaybackTransport) {
         playback = controller
+        mutableState.update { it.copy(playback = controller.state.value) }
         playbackJob?.cancel()
         playbackJob = viewModelScope.launch {
             controller.state.collect { next ->
@@ -129,7 +129,7 @@ class HiciarzViewModel(application: Application) : AndroidViewModel(application)
 
     fun detachPlayback(controller: PlaybackTransport) {
         if (playback !== controller) return
-        reconnectOnAttach = state.value.playback.connection != ConnectionStatus.DISCONNECTED
+        reconnectOnAttach = controller.state.value.connection != ConnectionStatus.DISCONNECTED
         playbackJob?.cancel()
         playbackJob = null
         playback = null
@@ -140,23 +140,28 @@ class HiciarzViewModel(application: Application) : AndroidViewModel(application)
     fun dispatch(action: AppAction) {
         when (action) {
             is AppAction.SelectTab -> mutableState.update {
+                val tab = if (action.tab == AppTab.DECKS) AppTab.SCAN else action.tab
                 // A successful scan only stops its own camera. The other scanning flow may
                 // still be waiting for a card, while an existing standalone card stays open.
-                val scanReady = when (action.tab) {
+                val scanReady = when (tab) {
                     AppTab.SCAN -> it.currentSong == null
-                    AppTab.BINGO -> it.cardlessMode == CardlessMode.BINGO && it.bingoStage == BingoStage.SCAN
+                    AppTab.BINGO -> it.bingoStage == BingoStage.SCAN
                     else -> false
                 }
-                val skin = when (action.tab) {
+                val skin = when (tab) {
                     AppTab.SCAN -> standaloneScanSkin
-                    AppTab.BINGO -> if (it.cardlessMode == CardlessMode.BINGO) bingoScanSkin else null
+                    AppTab.BINGO -> bingoScanSkin
                     else -> it.scannedSkin
                 }
-                it.copy(tab = action.tab, scannerEnabled = scanReady, scannedSkin = skin)
+                it.copy(tab = tab, scannerEnabled = scanReady, scannedSkin = skin,
+                    cardlessMode = if (tab == AppTab.BINGO) CardlessMode.BINGO else it.cardlessMode)
             }
             AppAction.ConnectSpotify -> playback?.connect()
             AppAction.DisconnectSpotify -> {
+                reconnectOnAttach = false
                 clipJob?.cancel(); clipDeadline = null; armClipUri = null; ownedTrackUri = null
+                // The explicit action updates the panel immediately, without waiting for collection.
+                mutableState.update { it.copy(playback = PlaybackState(spotifyInstalled = it.playback.spotifyInstalled)) }
                 playback?.disconnect()
             }
             AppAction.Pause -> { clipJob?.cancel(); clipDeadline = null; armClipUri = null; playback?.pause() }
@@ -340,7 +345,7 @@ class HiciarzViewModel(application: Application) : AndroidViewModel(application)
         pauseOwned()
         bingoScanSkin = null
         val categories = BingoRules.categories(state.value.bingoLevel)
-        mutableState.update { it.copy(tab = if (startScan) AppTab.BINGO else it.tab,
+        mutableState.update { it.copy(tab = AppTab.BINGO,
             cardlessMode = CardlessMode.BINGO, bingoSong = null,
             bingoAnswerRevealed = false, question = categories[random.nextInt(categories.size)],
             scannedSkin = null, bingoStage = if (startScan) BingoStage.SCAN else BingoStage.RULE,
@@ -460,7 +465,7 @@ class HiciarzViewModel(application: Application) : AndroidViewModel(application)
             val deck = repository.import(Uri.parse(value))
             pauseOwned()
             prefs.edit().putString("activeDeck", deck.id).apply()
-            mutableState.update { resetGames(it.copy(tab = AppTab.DECKS, decks = repository.current(), activeDeckId = deck.id,
+            mutableState.update { resetGames(it.copy(tab = AppTab.SCAN, decks = repository.current(), activeDeckId = deck.id,
                 busy = false, message = "deck_imported")) }
             saveGames()
         } catch (error: Exception) {

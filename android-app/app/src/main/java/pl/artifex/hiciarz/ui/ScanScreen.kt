@@ -24,6 +24,8 @@ import androidx.compose.ui.graphics.StrokeCap
 import androidx.compose.ui.platform.LocalConfiguration
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.platform.testTag
+import androidx.compose.ui.semantics.semantics
+import androidx.compose.ui.semantics.stateDescription
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.Dp
@@ -37,82 +39,95 @@ import pl.artifex.hiciarz.scanner.ScannerPreview
 import kotlin.math.abs
 
 @Composable
-internal fun ScanScreen(state: AppState, copy: UiCopy, onAction: (AppAction) -> Unit, onManual: () -> Unit, onSkin: () -> Unit, cameraActive: Boolean = true) {
+internal fun ScanScreen(state: AppState, copy: UiCopy, onAction: (AppAction) -> Unit,
+                        onManual: () -> Unit, cameraActive: Boolean = true) {
     val song = state.currentSong
+    val hasAnswer = song?.let(::hasScannedAnswer) == true
+    val revealed = hasAnswer && (state.answerRevealed || !state.settings.hideAnswers)
     AdaptivePanes(primary = {
         if (song == null) {
-            CameraViewport(state.scannerEnabled && cameraActive, copy) { onAction(AppAction.ScanCameraCode(it)) }
-        } else {
-            val revealed = state.answerRevealed || !state.settings.hideAnswers
-            ScannedTicket(song, revealed, state.activeSkin, copy)
-            PlaybackControls(state.playback, state.settings, copy, onAction,
-                expectedUri = song.spotifyUri, playAction = AppAction.PlayCard(song))
-            if (!revealed) OutlinedButton(
-                onClick = { onAction(AppAction.RevealAnswer) },
-                modifier = Modifier.fillMaxWidth().heightIn(min = 54.dp), shape = ControlShape,
-            ) {
-                Icon(AppIcons.Eye, null, Modifier.size(20.dp))
-                Spacer(Modifier.width(10.dp))
-                Text(copy.t("Odkryj odpowiedź", "Reveal answer"))
+            Column(verticalArrangement = Arrangement.spacedBy(12.dp)) {
+                SectionTitle(copy.t("Skanuj kartę", "Scan a card"))
+                CameraViewport(state.scannerEnabled && cameraActive, copy, reservedHeight = 44.dp) { onAction(AppAction.ScanCameraCode(it)) }
             }
+        } else {
+            ScannedTicket(song, revealed, state.activeSkin, copy)
         }
     }, secondary = {
-        if (song != null) {
-            Button(onClick = { onAction(AppAction.ScanNext) },
-                modifier = Modifier.fillMaxWidth().heightIn(min = 58.dp), shape = ControlShape) {
-                Text(copy.t("Następna karta", "Next card"))
-                Spacer(Modifier.width(10.dp))
-                Icon(AppIcons.Scan, null, Modifier.size(22.dp))
-            }
-            if (state.answerRevealed && song.title.isBlank() && song.year == null) {
-                Text(copy.t("Odpowiedź znajdziesz na drukowanej karcie. Dodaj talię, aby widzieć ją także tutaj.",
-                    "Read the answer on the printed card. Import its deck to see it here too."),
-                    style = MaterialTheme.typography.bodyMedium, color = MaterialTheme.colorScheme.onSurfaceVariant)
-                TextButton(onClick = { onAction(AppAction.SelectTab(AppTab.DECKS)) }) { Text(copy.t("Dodaj talię", "Add a deck")) }
-            }
-        }
-        OutlinedButton(onClick = onManual, modifier = Modifier.fillMaxWidth().heightIn(min = 50.dp), shape = ControlShape) {
-            Icon(AppIcons.Link, null, Modifier.size(18.dp)); Spacer(Modifier.width(10.dp))
-            Text(copy.t("Wklej kod lub link", "Paste code or link"))
-        }
-        Surface(onClick = onSkin, shape = ControlShape, color = MaterialTheme.colorScheme.surface) {
-            Row(Modifier.fillMaxWidth().padding(15.dp), verticalAlignment = Alignment.CenterVertically,
-                horizontalArrangement = Arrangement.spacedBy(12.dp)) {
-                Icon(AppIcons.Palette, null, Modifier.size(22.dp), tint = MaterialTheme.colorScheme.primary)
-                Column(Modifier.weight(1f), verticalArrangement = Arrangement.spacedBy(2.dp)) {
-                    Text(copy.skin(state.activeSkin), style = MaterialTheme.typography.titleSmall)
+        if (song == null) {
+            Box(Modifier.fillMaxWidth(), contentAlignment = Alignment.Center) {
+                TextButton(onClick = onManual, modifier = Modifier.heightIn(min = 48.dp)) {
+                    Icon(AppIcons.Link, null, Modifier.size(18.dp))
+                    Spacer(Modifier.width(8.dp))
+                    Text(copy.t("Wklej kod lub link", "Paste code or link"))
                 }
-                Icon(AppIcons.Chevron, null, Modifier.size(17.dp))
+            }
+        } else {
+            Column(Modifier.fillMaxWidth(), verticalArrangement = Arrangement.spacedBy(12.dp)) {
+                PlaybackControls(state.playback, state.settings, copy, onAction,
+                    expectedUri = song.spotifyUri, playAction = AppAction.PlayCard(song))
+                if (!hasAnswer) {
+                    Text(copy.t("Odpowiedź znajdziesz na drukowanej karcie.", "Read the answer on the printed card."),
+                        style = MaterialTheme.typography.bodyMedium,
+                        color = MaterialTheme.colorScheme.onSurfaceVariant)
+                }
+                if (hasAnswer && !revealed) {
+                    Button(onClick = { onAction(AppAction.RevealAnswer) },
+                        modifier = Modifier.fillMaxWidth().heightIn(min = 52.dp), shape = ControlShape) {
+                        Icon(AppIcons.Eye, null, Modifier.size(20.dp))
+                        Spacer(Modifier.width(10.dp))
+                        Text(copy.t("Odkryj odpowiedź", "Reveal answer"))
+                    }
+                    TextButton(onClick = { onAction(AppAction.ScanNext) },
+                        modifier = Modifier.fillMaxWidth().heightIn(min = 48.dp)) {
+                        Text(copy.t("Następna karta", "Next card"))
+                        Spacer(Modifier.width(8.dp))
+                        Icon(AppIcons.Scan, null, Modifier.size(18.dp))
+                    }
+                } else {
+                    Button(onClick = { onAction(AppAction.ScanNext) },
+                        modifier = Modifier.fillMaxWidth().heightIn(min = 52.dp), shape = ControlShape) {
+                        Text(copy.t("Następna karta", "Next card"))
+                        Spacer(Modifier.width(10.dp))
+                        Icon(AppIcons.Scan, null, Modifier.size(20.dp))
+                    }
+                }
             }
         }
     })
 }
 
+private fun hasScannedAnswer(song: Song): Boolean = when (song.gameMode) {
+    GameMode.CLASSIC -> song.year != null
+    GameMode.GAME, GameMode.MOVIE -> song.answer.isNotBlank()
+}
+
 @Composable
 internal fun ScannedTicket(song: Song, revealed: Boolean, skin: CardSkin, copy: UiCopy) {
-    val hasDetails = song.title.isNotBlank() || song.year != null || song.answer.isNotBlank()
     val question = when (song.gameMode) {
         GameMode.CLASSIC -> copy.t("Który to rok?", "Which year?")
         GameMode.GAME -> copy.t("Jaka to gra?", "Which game?")
         GameMode.MOVIE -> copy.t("Jaki to film?", "Which film?")
     }
-    YearTicket(
-        skin = skin,
-        year = when {
-            !revealed -> "?"
-            !hasDetails -> "—"
-            song.gameMode != GameMode.CLASSIC -> song.answer
-            else -> song.year?.toString() ?: "—"
-        },
-        eyebrow = if (revealed) copy.t("Odpowiedź", "The answer") else copy.t("Twoja karta", "Your card"),
-        title = when {
-            !revealed -> question
-            !hasDetails -> copy.t("Odpowiedź na drukowanej karcie", "Read the answer on your printed card")
-            else -> song.title
-        },
-        subtitle = if (revealed && hasDetails) song.artist else null,
-        footer = if (revealed && hasDetails && song.gameMode != GameMode.CLASSIC) song.year?.toString() else null,
-    )
+    FlippingTicket(cardKey = song.spotifyId, revealed = revealed && hasScannedAnswer(song),
+        modifier = Modifier.semantics(mergeDescendants = true) {
+            stateDescription = copy.t("Skórka: ${copy.skin(skin)}", "Skin: ${copy.skin(skin)}")
+        }) { answerVisible ->
+        YearTicket(
+            skin = skin,
+            year = when {
+                !answerVisible -> "?"
+                song.gameMode != GameMode.CLASSIC -> song.answer
+                else -> song.year?.toString() ?: "—"
+            },
+            eyebrow = if (answerVisible) copy.t("Odpowiedź", "The answer") else question,
+            title = if (answerVisible) song.title else null,
+            subtitle = if (answerVisible) song.artist else null,
+            footer = if (answerVisible && song.gameMode != GameMode.CLASSIC) song.year?.toString() else null,
+            answerSide = answerVisible,
+            cardId = song.id,
+        )
+    }
 }
 
 @Composable
@@ -137,11 +152,11 @@ internal fun CameraViewport(enabled: Boolean, copy: UiCopy, reservedHeight: Dp =
         lifecycle.addObserver(observer)
         onDispose { lifecycle.removeObserver(observer) }
     }
-    val preferredHeight = (LocalConfiguration.current.screenHeightDp * .48f).coerceIn(230f, 470f).dp
+    val preferredHeight = (LocalConfiguration.current.screenHeightDp * .50f).coerceIn(230f, 500f).dp
     val availableHeight = LocalPaneHeight.current?.let { (it - 36.dp - reservedHeight).coerceAtLeast(180.dp) }
     val height = availableHeight ?: preferredHeight
-    Box(Modifier.fillMaxWidth().height(height).clip(RoundedCornerShape(28.dp))
-        .background(Color(0xFF22232D)).testTag("camera-preview"), contentAlignment = Alignment.Center) {
+    Box(Modifier.fillMaxWidth().height(height).clip(RoundedCornerShape(16.dp))
+        .background(Color(0xFF15211E)).testTag("camera-preview"), contentAlignment = Alignment.Center) {
         if (permission && enabled && error == null) {
             key(attempt) {
                 ScannerPreview(enabled = true, onCode = onCode, modifier = Modifier.fillMaxSize(),
@@ -149,10 +164,6 @@ internal fun CameraViewport(enabled: Boolean, copy: UiCopy, reservedHeight: Dp =
                     onCameraState = { camera = it; requestedZoom = it.zoomRatio })
             }
             Viewfinder(Modifier.fillMaxSize())
-            Text(copy.t("Umieść kod w kadrze", "Place the code in the frame"),
-                color = Color.White, style = MaterialTheme.typography.labelMedium,
-                modifier = Modifier.align(Alignment.TopCenter).padding(top = 22.dp)
-                    .background(Color(0xAA16161D), CircleShape).padding(horizontal = 14.dp, vertical = 8.dp))
             Row(Modifier.align(Alignment.BottomCenter).padding(14.dp),
                 verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(8.dp)) {
                 val levels = listOf(.5f, 1f, 2f, 4f).filter {
@@ -163,7 +174,7 @@ internal fun CameraViewport(enabled: Boolean, copy: UiCopy, reservedHeight: Dp =
                         levels.forEach { value ->
                             val selected = camera?.zoomRatio?.let { abs(it - value) < .18f } ?: false
                             TextButton(onClick = { requestedZoom = value }, modifier = Modifier.sizeIn(minWidth = 48.dp, minHeight = 48.dp),
-                                colors = ButtonDefaults.textButtonColors(contentColor = if (selected) Color(0xFFEBD59A) else Color.White)) {
+                                colors = ButtonDefaults.textButtonColors(contentColor = if (selected) Color(0xFFE2B976) else Color.White)) {
                                 Text((if (value % 1f == 0f) value.toInt().toString() else value.toString()) + "×")
                             }
                         }
@@ -173,17 +184,20 @@ internal fun CameraViewport(enabled: Boolean, copy: UiCopy, reservedHeight: Dp =
                     IconButton(onClick = { torch = !torch }) {
                         Icon(AppIcons.Flash, copy.t(if (torch) "Wyłącz latarkę" else "Włącz latarkę",
                             if (torch) "Turn torch off" else "Turn torch on"),
-                            tint = if (torch) Color(0xFFEBD59A) else Color.White)
+                            tint = if (torch) Color(0xFFE2B976) else Color.White)
                     }
                 }
             }
+        } else if (permission && !enabled && error == null) {
+            Text(copy.t("Skanowanie wstrzymane", "Scanning paused"),
+                color = Color.White, style = MaterialTheme.typography.bodyMedium)
         } else {
             Viewfinder(Modifier.fillMaxSize())
             val compact = height < 250.dp
             Column(Modifier.padding(if (compact) 18.dp else 30.dp), horizontalAlignment = Alignment.CenterHorizontally,
                 verticalArrangement = Arrangement.spacedBy(if (compact) 10.dp else 16.dp)) {
                 Icon(if (error == null) AppIcons.Scan else AppIcons.Camera, null,
-                    Modifier.size(if (compact) 30.dp else 46.dp), tint = Color(0xFFEBD59A))
+                    Modifier.size(if (compact) 28.dp else 34.dp), tint = Color(0xFFE2B976))
                 if (error != null || denied) Text(error?.let(copy::message) ?:
                     copy.t("Zezwól na aparat w ustawieniach aplikacji.", "Allow camera access in app settings."),
                     color = Color.White, textAlign = TextAlign.Center,
@@ -194,7 +208,7 @@ internal fun CameraViewport(enabled: Boolean, copy: UiCopy, reservedHeight: Dp =
                         denied -> context.startActivity(Intent(Settings.ACTION_APPLICATION_DETAILS_SETTINGS, Uri.parse("package:" + context.packageName)))
                         else -> request.launch(Manifest.permission.CAMERA)
                     }
-                }, modifier = Modifier.heightIn(min = 50.dp), shape = ControlShape) {
+                }, modifier = Modifier.heightIn(min = 48.dp), shape = ControlShape) {
                     Text(when {
                         error != null -> copy.t("Spróbuj ponownie", "Try again")
                         denied -> copy.t("Ustawienia aparatu", "Camera settings")

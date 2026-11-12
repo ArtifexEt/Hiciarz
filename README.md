@@ -63,13 +63,13 @@ W przeglądarce możesz korzystać z osadzonych odtwarzaczy **Spotify i YouTube*
 
 ## Także na Androidzie
 
-Wolisz natywną aplikację na telefonie? **[Pobierz testowy APK z GitHub Releases](https://github.com/ArtifexEt/Hiciarz/releases)**. W Bingo prowadzący losuje zasadę, skanuje drukowaną kartę i odtwarza jej utwór w Spotify. Oś czasu i quiz z grami lub filmami pozwalają też grać bez wydrukowanych kart. Aplikacja wymaga Androida 8.0 lub nowszego; karty i plansze Bingo przygotujesz w przeglądarce.
+Wolisz natywną aplikację na telefonie? **[Pobierz testowy APK z GitHub Releases](https://github.com/ArtifexEt/Hiciarz/releases)**. Android skupia się na skanowaniu drukowanych kart i prowadzeniu Bingo. Prowadzący losuje pytanie, skanuje kartę i odtwarza jej utwór w Spotify. Aplikacja wymaga Androida 8.0 lub nowszego; talie, karty i plansze Bingo przygotujesz w przeglądarce.
 
 [Instalacja i wymagania aplikacji Android](android-app/README.md#instalacja-wydania-testowego).
 
 ## Własne talie i pomoc
 
-Talie zapisują się na używanym urządzeniu. Pobierz kopię JSON, aby zachować swój zestaw lub przenieść go z kreatora do aplikacji Android. Muzyka wymaga internetu; po zapisaniu zasobów PWA możesz bez sieci edytować talie i przygotowywać PDF.
+Talie zapisują się na używanym urządzeniu. Pobierz kopię JSON, aby zachować swój zestaw i przenieść go do PWA na innym urządzeniu. Android skanuje wydrukowane karty. Muzyka wymaga internetu; po zapisaniu zasobów PWA możesz bez sieci edytować talie i przygotowywać PDF.
 
 - [Instrukcja korzystania z wersji przeglądarkowej](web/README.md)
 - [Gotowe talie i pliki do pobrania](web/examples/playlists/README.md)

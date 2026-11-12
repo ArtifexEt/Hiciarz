@@ -5,6 +5,7 @@ import { type Deck, type Song, type Theme, cardUrl, defaultPrint, themes } from 
 import { frontDesign, frontImage } from './front';
 import { qrImage } from './qr';
 import { themeArt, themeColors } from './themes';
+import FlipCard from './FlipCard';
 import './landing.css';
 
 // The sample illustrates one round; it never changes the user's decks.
@@ -80,27 +81,29 @@ function ExampleRound({ theme }: { theme: Theme }) {
           type="button"
           aria-pressed={revealed}
           aria-describedby="home-example-result"
-          onClick={() => setRevealed(!revealed)}
+          onClick={() => setRevealed((value) => !value)}
         >
           <span className="home-sample-face" aria-hidden="true">
-            {revealed ? (
-              <AnswerCard song={exampleCards[1]} deck={deck} />
-            ) : (
-              <span
-                className="home-paper-card home-card-back"
-                style={
-                  {
-                    backgroundImage: `url("${themeArt(theme)}")`,
-                    '--sample-ink': themeColors[theme].dark,
-                    '--sample-accent': themeColors[theme].accent,
-                  } as CSSProperties
-                }
-              >
-                <span className="home-back-brand">HICIARZ</span>
-                <span className="home-sample-qr">{code && <img src={code} alt="" />}</span>
-                <span className="home-back-caption">{t('components.Landing.lISTENGUESS')}</span>
-              </span>
-            )}
+            <FlipCard
+              flipped={revealed}
+              back={<AnswerCard song={exampleCards[1]} deck={deck} />}
+              front={
+                <span
+                  className="home-paper-card home-card-back"
+                  style={
+                    {
+                      backgroundImage: `url("${themeArt(theme)}")`,
+                      '--sample-ink': themeColors[theme].dark,
+                      '--sample-accent': themeColors[theme].accent,
+                    } as CSSProperties
+                  }
+                >
+                  <span className="home-back-brand">HICIARZ</span>
+                  <span className="home-sample-qr">{code && <img src={code} alt="" />}</span>
+                  <span className="home-back-caption">{t('components.Landing.lISTENGUESS')}</span>
+                </span>
+              }
+            />
           </span>
           <span className="home-flip-label">
             <RotateCcw size={16} aria-hidden="true" />

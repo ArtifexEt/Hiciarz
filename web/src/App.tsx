@@ -2105,12 +2105,14 @@ export default function App() {
                     <div className="side-switch">
                       <button
                         className={!showBack ? 'active' : ''}
+                        aria-pressed={!showBack}
                         onClick={() => setShowBack(false)}
                       >
                         {tr('app.answer')}
                       </button>
                       <button
                         className={showBack ? 'active' : ''}
+                        aria-pressed={showBack}
                         onClick={() => setShowBack(true)}
                       >
                         {tr('app.qrCode')}

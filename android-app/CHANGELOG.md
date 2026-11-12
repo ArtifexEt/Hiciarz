@@ -4,7 +4,11 @@ Zmiany kolejnych wersji aplikacji Android. Opis GitHub Release jest pobierany z 
 
 ## [Unreleased]
 
-<!-- Zapisuj tutaj zmiany, które nie trafiły jeszcze do sekcji konkretnej wersji. -->
+- Przebudowano skaner i Bingo: kwadratowe karty z pełną grafiką, kompaktowe odtwarzanie, pytanie jako główny element rundy i jeden wyróżniony przycisk na każdym etapie. Stała oprawa aplikacji pozostaje niezależna od skórek kart; opcje pomocnicze zajmują mniej miejsca.
+- Odkrywanie odpowiedzi jest dostępne dla kart z pasującymi danymi. Dla pozostałych aplikacja kieruje do odpowiedzi na wydruku zamiast pokazywać pusty awers.
+- Aplikacja otwiera się na skanerze. Nawigacja skupia się na Skanerze, Bingo i Opcjach; biblioteka talii pozostaje w PWA, a gry bez kart są na razie wyłączone w Androidzie. Wcześniejsze dane na urządzeniu są zachowane.
+- Rewersy korzystają z tych samych grafik co PWA, włącznie ze skórką z rybką Mikołajem. Odkrywanie kart ma płynny obrót 3D.
+- Połączenie Spotify działa także z otwartego panelu odtwarzania. Rozłączenie od razu aktualizuje panel, a trwające łączenie można anulować. Poprawiono odświeżanie stanu po powrocie do aplikacji i zachowanie ręcznego rozłączenia przy odtworzeniu ekranu.
 
 ## [0.2.0-alpha.3] - 2026-11-12
 

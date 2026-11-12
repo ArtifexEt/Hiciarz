@@ -1,7 +1,15 @@
 package pl.artifex.hiciarz
 
+import androidx.compose.runtime.mutableStateOf
+import androidx.compose.ui.test.assertIsDisplayed
+import androidx.compose.ui.test.assertIsEnabled
 import androidx.compose.ui.test.junit4.createComposeRule
+import androidx.compose.ui.test.hasAnyAncestor
+import androidx.compose.ui.test.hasContentDescription
+import androidx.compose.ui.test.hasText
+import androidx.compose.ui.test.isDialog
 import androidx.compose.ui.test.onNodeWithContentDescription
+import androidx.compose.ui.test.onNodeWithText
 import androidx.compose.ui.test.performClick
 import androidx.compose.ui.test.performScrollTo
 import androidx.test.ext.junit.runners.AndroidJUnit4
@@ -35,8 +43,8 @@ class PlaybackControlsTest {
         assertGlobalResume(AppTab.SETTINGS)
     }
 
-    @Test fun globalPlayInDecksResumesSpotifyDespiteAnOlderScannedCard() {
-        assertGlobalResume(AppTab.DECKS)
+    @Test fun globalPlayInBingoResumesSpotifyDespiteAnOlderScannedCard() {
+        assertGlobalResume(AppTab.BINGO)
     }
 
     @Test fun scannedCardPlayExplicitlyRequestsThatCardWhenSpotifyHasAnotherTrack() {
@@ -55,12 +63,49 @@ class PlaybackControlsTest {
         compose.runOnIdle { assertEquals(listOf(AppAction.PlayCard(bingo)), actions) }
     }
 
+    @Test fun disconnectAndCancelRestoreTheConnectActionWithoutALoadingLabel() {
+        val state = mutableStateOf(AppState(
+            tab = AppTab.SETTINGS,
+            settings = AppSettings(language = "en"),
+            playback = PlaybackState(connection = ConnectionStatus.CONNECTED, spotifyInstalled = true),
+        ))
+        compose.setContent {
+            HiciarzApp(state.value) { action ->
+                actions.add(action)
+                if (action == AppAction.DisconnectSpotify) {
+                    state.value = state.value.copy(playback = PlaybackState(spotifyInstalled = true))
+                }
+            }
+        }
+        compose.onNodeWithContentDescription("Spotify playback").performClick()
+        compose.onNodeWithText("Disconnect Spotify").performScrollTo().performClick()
+        assertConnectActionWithoutLoading()
+
+        compose.runOnIdle {
+            state.value = state.value.copy(playback = state.value.playback.copy(connection = ConnectionStatus.CONNECTING))
+        }
+        compose.onNodeWithText("Cancel connection").performScrollTo().assertIsEnabled().performClick()
+        assertConnectActionWithoutLoading()
+        compose.runOnIdle {
+            assertEquals(listOf(AppAction.DisconnectSpotify, AppAction.DisconnectSpotify), actions)
+        }
+    }
+
+    private fun assertConnectActionWithoutLoading() {
+        compose.onNodeWithText("Spotify not connected").assertExists()
+        compose.onNode(hasText("Connect Spotify") and hasAnyAncestor(isDialog()))
+            .performScrollTo().assertIsDisplayed().assertIsEnabled()
+        compose.onNodeWithText("Connecting…").assertDoesNotExist()
+        compose.onNodeWithText("Connecting to Spotify…").assertDoesNotExist()
+        compose.onNodeWithText("Cancel connection").assertDoesNotExist()
+    }
+
     private fun assertGlobalResume(tab: AppTab) {
         // A was scanned earlier, B was drawn in Bingo and B is now paused in Spotify.
         render(tab, spotifyTrack = bingo)
 
         compose.onNodeWithContentDescription("Spotify playback").performClick()
-        compose.onNodeWithContentDescription("Play").performClick()
+        compose.onNode(hasContentDescription("Play") and hasAnyAncestor(isDialog())).performClick()
 
         compose.runOnIdle { assertEquals(listOf(AppAction.Resume), actions) }
     }

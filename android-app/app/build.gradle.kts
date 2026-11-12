@@ -37,6 +37,22 @@ val bundledDecks = tasks.register<BundleDecks>("prepareBundledDecks") {
     inputDirectory.set(rootProject.layout.projectDirectory.dir("../web/examples/playlists"))
     outputDirectory.set(layout.buildDirectory.dir("generated/bundled-assets"))
 }
+abstract class BundleCardSkins @Inject constructor(private val files: FileSystemOperations) : DefaultTask() {
+    @get:InputDirectory @get:PathSensitive(PathSensitivity.RELATIVE)
+    abstract val inputDirectory: DirectoryProperty
+    @get:OutputDirectory abstract val outputDirectory: DirectoryProperty
+
+    @TaskAction fun bundle() {
+        files.sync {
+            from(inputDirectory) { include("*.svg", "fish-santa.webp"); exclude("._*") }
+            into(outputDirectory.dir("themes"))
+        }
+    }
+}
+val bundledCardSkins = tasks.register<BundleCardSkins>("prepareBundledCardSkins") {
+    inputDirectory.set(rootProject.layout.projectDirectory.dir("../web/public/themes"))
+    outputDirectory.set(layout.buildDirectory.dir("generated/bundled-skin-assets"))
+}
 
 android {
     namespace = "pl.artifex.hiciarz"
@@ -81,6 +97,7 @@ android {
 }
 androidComponents.onVariants { variant ->
     variant.sources.assets?.addGeneratedSourceDirectory(bundledDecks, BundleDecks::outputDirectory)
+    variant.sources.assets?.addGeneratedSourceDirectory(bundledCardSkins, BundleCardSkins::outputDirectory)
 }
 
 dependencies {
@@ -100,6 +117,7 @@ dependencies {
     implementation("com.google.mlkit:barcode-scanning:17.3.0")
     implementation("org.jetbrains.kotlinx:kotlinx-coroutines-android:1.10.2")
     implementation("com.google.code.gson:gson:2.13.2")
+    implementation("com.caverock:androidsvg-aar:1.4")
     implementation(files(tasks.named("downloadSpotifyAppRemote")))
     debugImplementation("androidx.compose.ui:ui-tooling")
     testImplementation("junit:junit:4.13.2")

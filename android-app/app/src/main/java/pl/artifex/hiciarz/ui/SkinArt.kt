@@ -10,12 +10,13 @@ import androidx.compose.runtime.Composable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
-import androidx.compose.ui.draw.clipToBounds
 import androidx.compose.ui.geometry.Offset
+import androidx.compose.ui.geometry.CornerRadius
 import androidx.compose.ui.geometry.Size
 import androidx.compose.ui.graphics.Color
-import androidx.compose.ui.graphics.Path
 import androidx.compose.ui.graphics.drawscope.Stroke
+import androidx.compose.ui.graphics.drawscope.DrawScope
+import androidx.compose.ui.graphics.drawscope.withTransform
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import pl.artifex.hiciarz.model.CardSkin
@@ -35,77 +36,107 @@ internal fun CardSkin.palette(): SkinPalette = when (this) {
     CardSkin.FISH -> SkinPalette(Color(0xFF073D3C), Color(0xFFFFF2DD), Color(0xFFE7BD70))
 }
 
-/** Skins are read from the printed card; the pattern never contains answer metadata. */
+private fun CardSkin.frontAccent(): Color = when (this) {
+    CardSkin.FISH, CardSkin.CHRISTMAS -> Color(0xFFAC864F)
+    CardSkin.WINTER -> Color(0xFF6D90AD)
+    CardSkin.VINYL -> Color(0xFFA96C3E)
+    CardSkin.MIXTAPE -> Color(0xFF59847D)
+    CardSkin.MEMPHIS -> Color(0xFF7978A1)
+    CardSkin.DISCO -> Color(0xFF9672AC)
+    else -> Color(0xFF8B7393)
+}
+
+// Same card-id hash, pastel palettes and ornaments as web/src/front.ts.
+private val cardPastels = listOf(0xFFEADCF3, 0xFFD9EADC, 0xFFF5D9C7, 0xFFD6E7F4, 0xFFF0D9E0, 0xFFF3E7BD, 0xFFD5E9E6, 0xFFE2DFF3)
+private val festivePastels = listOf(0xFFF5E5C6, 0xFFD9E8DA, 0xFFEFD6CE, 0xFFD6E8E2, 0xFFEDE0CD, 0xFFDCE4EF, 0xFFF2DCC9, 0xFFE3DFC8)
+private val winterPastels = listOf(0xFFDCEBF5, 0xFFE3DFF2, 0xFFD8EAE7, 0xFFE8E5F5, 0xFFD6E3F0, 0xFFE5EDF1, 0xFFD7E8ED, 0xFFE9E0ED)
+private val retroPastels = listOf(0xFFF5E6CD, 0xFFDFE9DC, 0xFFEFDBC8, 0xFFD9E7E6, 0xFFF2E4D2, 0xFFE6E5CE, 0xFFF1DCD3, 0xFFE4E7DA)
+private val partyPastels = listOf(0xFFEEE4F3, 0xFFDFE9EE, 0xFFF3DFE7, 0xFFE7E4F6, 0xFFF3E7CE, 0xFFD8E9E3, 0xFFEDDFEC, 0xFFE6E8F2)
+
+private fun CardSkin.frontPaper(cardId: String?): Color {
+    if (cardId == null) return palette().paper
+    var hash = 5381u
+    cardId.codePoints().forEach { point ->
+        val firstChar = if (point > 0xFFFF) Character.highSurrogate(point).code else point
+        hash = hash * 33u + firstChar.toUInt()
+    }
+    val pastels = when (this) {
+        CardSkin.FISH, CardSkin.CHRISTMAS -> festivePastels
+        CardSkin.WINTER -> winterPastels
+        CardSkin.VINYL, CardSkin.MIXTAPE -> retroPastels
+        CardSkin.MEMPHIS, CardSkin.DISCO -> partyPastels
+        else -> cardPastels
+    }
+    return Color(pastels[(hash % pastels.size.toUInt()).toInt()])
+}
+
 @Composable
-internal fun SkinPattern(skin: CardSkin, modifier: Modifier = Modifier, subdued: Boolean = false) {
-    val palette = skin.palette()
-    Canvas(modifier.clipToBounds().background(palette.ink)) {
-        val accent = palette.accent.copy(alpha = if (subdued) .22f else .46f)
-        val pale = palette.paper.copy(alpha = if (subdued) .09f else .18f)
-        val unit = size.minDimension
-        when (skin) {
-            CardSkin.MINIMAL -> {
-                drawLine(accent, Offset(unit * .12f, size.height * .15f), Offset(size.width - unit * .12f, size.height * .15f), 2.dp.toPx())
-                drawLine(pale, Offset(unit * .12f, size.height * .85f), Offset(size.width - unit * .12f, size.height * .85f), 1.dp.toPx())
-            }
-            CardSkin.VINYL, CardSkin.CLASSIC -> {
-                val center = Offset(size.width * .80f, size.height * .18f)
-                repeat(10) { i -> drawCircle(if (i % 3 == 0) accent else pale, unit * (.18f + i * .072f), center, style = Stroke(1.4.dp.toPx())) }
-                drawCircle(palette.accent, unit * .075f, center)
-                drawCircle(palette.ink, unit * .018f, center)
-            }
-            CardSkin.MIXTAPE -> {
-                val x = size.width * .67f; val y = size.height * .24f
-                drawRoundRect(pale, Offset(x - unit * .25f, y - unit * .13f), Size(unit * .48f, unit * .27f), androidx.compose.ui.geometry.CornerRadius(unit * .04f))
-                listOf(-.11f, .11f).forEach { delta -> drawCircle(accent, unit * .065f, Offset(x + unit * delta, y), style = Stroke(3.dp.toPx())) }
-                repeat(5) { i -> drawLine(pale, Offset(size.width * .06f, size.height * .7f + i * 13.dp.toPx()), Offset(size.width * .3f, size.height * .7f + i * 13.dp.toPx()), 2.dp.toPx()) }
-            }
-            CardSkin.MEMPHIS -> {
-                repeat(8) { i ->
-                    val x = (i * .29f % 1f) * size.width
-                    val y = (i * .37f % 1f) * size.height
-                    drawCircle(if (i % 2 == 0) accent else pale, unit * .055f, Offset(x, y), style = Stroke(3.dp.toPx()))
-                    drawLine(accent, Offset(x + unit * .06f, y + unit * .12f), Offset(x + unit * .16f, y + unit * .04f), 3.dp.toPx())
-                }
-            }
-            CardSkin.DISCO -> {
-                val center = Offset(size.width * .82f, size.height * .17f)
-                drawCircle(pale, unit * .29f, center)
-                repeat(7) { i ->
-                    val d = (i - 3) * unit * .075f
-                    drawLine(accent, Offset(center.x + d, center.y - unit * .25f), Offset(center.x + d, center.y + unit * .25f), 1.dp.toPx())
-                    drawLine(accent, Offset(center.x - unit * .25f, center.y + d), Offset(center.x + unit * .25f, center.y + d), 1.dp.toPx())
-                }
-            }
-            CardSkin.CHRISTMAS, CardSkin.WINTER -> {
-                repeat(8) { i ->
-                    val center = Offset((i * .31f % 1f) * size.width, (i * .39f % 1f) * size.height)
-                    repeat(6) { arm ->
-                        val angle = Math.PI / 3 * arm
-                        val end = Offset(center.x + cos(angle).toFloat() * unit * .05f, center.y + sin(angle).toFloat() * unit * .05f)
-                        drawLine(if (skin == CardSkin.CHRISTMAS) accent else pale, center, end, 1.4.dp.toPx())
-                    }
-                }
-            }
-            CardSkin.FISH -> {
-                repeat(4) { i ->
-                    val x = size.width * (.12f + i * .24f)
-                    val y = size.height * if (i % 2 == 0) .12f else .87f
-                    drawOval(accent, Offset(x, y), Size(unit * .14f, unit * .075f), style = Stroke(2.dp.toPx()))
-                    val path = Path().apply {
-                        moveTo(x, y + unit * .037f)
-                        lineTo(x - unit * .05f, y)
-                        lineTo(x - unit * .05f, y + unit * .075f)
-                        close()
-                    }
-                    drawPath(path, pale)
-                    drawCircle(palette.paper, unit * .008f, Offset(x + unit * .105f, y + unit * .03f))
-                }
+private fun CardFrontPattern(skin: CardSkin, cardId: String?, modifier: Modifier) {
+    val paper = skin.frontPaper(cardId)
+    val accent = skin.frontAccent()
+    Canvas(modifier.background(paper)) {
+        val unit = size.minDimension / 60f
+        listOf(2.7f to 3.5f, 3.8f to 2.7f).forEach { (inset, radius) ->
+            val padding = inset * unit
+            drawRoundRect(accent, Offset(padding, padding), Size(size.width - padding * 2, size.height - padding * 2),
+                cornerRadius = CornerRadius(radius * unit), style = Stroke(.2f * unit))
+        }
+        listOf(Offset(size.width * .85f, size.height * 8 / 60), Offset(size.width * .15f, size.height * 52 / 60)).forEach { center ->
+            withTransform({ translate(center.x, center.y); scale(unit, unit, Offset.Zero) }) {
+                drawFrontOrnament(skin, accent)
             }
         }
     }
 }
 
+private fun DrawScope.drawFrontOrnament(skin: CardSkin, color: Color) {
+    fun line(x: Float, y: Float, x2: Float, y2: Float) = drawLine(color, Offset(x, y), Offset(x2, y2), .2f)
+    fun ellipse(x: Float, y: Float, rx: Float, ry: Float) =
+        drawOval(color, Offset(x - rx, y - ry), Size(rx * 2, ry * 2), style = Stroke(.2f))
+    when (skin) {
+        CardSkin.FISH -> {
+            line(-1f, -3f, -1f, -1.5f)
+            ellipse(-.5f, 0f, 2.5f, 1.5f)
+            line(2f, 0f, 3.5f, -1.4f); line(3.5f, -1.4f, 3.5f, 1.4f); line(3.5f, 1.4f, 2f, 0f)
+            ellipse(-1.8f, -.3f, .16f, .16f)
+        }
+        CardSkin.WINTER -> {
+            repeat(3) { a ->
+                val angle = a * Math.PI / 3
+                val x = (cos(angle) * 2.8).toFloat(); val y = (sin(angle) * 2.8).toFloat()
+                line(-x, -y, x, y)
+            }
+            ellipse(0f, 0f, .6f, .6f)
+        }
+        CardSkin.CHRISTMAS -> {
+            line(-3f, -2f, 3f, 2f)
+            listOf(-2f, 0f, 2f).forEach { n ->
+                line(n, n * .65f, n, n * .65f - 2)
+                line(n, n * .65f, n - 1.8f, n * .65f + .4f)
+            }
+        }
+        CardSkin.MIXTAPE -> {
+            line(-3f, -1.9f, 3f, -1.9f); line(3f, -1.9f, 3f, 1.9f)
+            line(3f, 1.9f, -3f, 1.9f); line(-3f, 1.9f, -3f, -1.9f)
+            ellipse(-1.4f, 0f, .7f, .7f); ellipse(1.4f, 0f, .7f, .7f)
+        }
+        CardSkin.MEMPHIS -> {
+            line(-3f, 1.8f, -1.5f, -1.8f); line(-1.5f, -1.8f, 0f, 1.8f)
+            line(0f, 1.8f, 1.5f, -1.8f); line(1.5f, -1.8f, 3f, 1.8f)
+        }
+        CardSkin.DISCO -> {
+            ellipse(0f, 0f, 2.6f, 2.6f); ellipse(0f, 0f, 1.2f, 2.6f)
+            line(-2.6f, 0f, 2.6f, 0f); line(-2.1f, -1.5f, 2.1f, -1.5f); line(-2.1f, 1.5f, 2.1f, 1.5f)
+        }
+        CardSkin.MINIMAL -> {
+            line(0f, -2.5f, 2.5f, 0f); line(2.5f, 0f, 0f, 2.5f)
+            line(0f, 2.5f, -2.5f, 0f); line(-2.5f, 0f, 0f, -2.5f)
+        }
+        else -> { ellipse(0f, 0f, 3f, 3f); ellipse(0f, 0f, 1.8f, 1.8f); ellipse(0f, 0f, .45f, .45f) }
+    }
+}
+
+/** A physical card keeps its square silhouette; unusually long answers may grow for legibility. */
 @Composable
 internal fun YearTicket(
     skin: CardSkin,
@@ -116,40 +147,52 @@ internal fun YearTicket(
     modifier: Modifier = Modifier,
     compact: Boolean = false,
     footer: String? = null,
+    answerSide: Boolean = false,
+    cardId: String? = null,
 ) {
     val palette = skin.palette()
-    val cutColor = MaterialTheme.colorScheme.background
-    Box(modifier.fillMaxWidth().clip(RoundedCornerShape(if (compact) 18.dp else 28.dp))) {
-        SkinPattern(skin, Modifier.matchParentSize(), subdued = true)
-        Column(
-            Modifier.fillMaxWidth().padding(if (compact) 18.dp else 26.dp)
-                .heightIn(min = if (compact) 104.dp else 196.dp),
-            verticalArrangement = Arrangement.Center,
-            horizontalAlignment = Alignment.Start,
-        ) {
-            Text(eyebrow, style = MaterialTheme.typography.labelMedium, color = palette.paper.copy(alpha = .8f))
-            Spacer(Modifier.height(if (compact) 7.dp else 13.dp))
-            Text(year, style = if (year.length > 9) MaterialTheme.typography.headlineLarge else if (compact) MaterialTheme.typography.displaySmall else MaterialTheme.typography.displayLarge,
-                color = palette.paper, textAlign = TextAlign.Start)
-            if (!title.isNullOrBlank()) {
-                Spacer(Modifier.height(8.dp))
-                Text(title, style = MaterialTheme.typography.titleMedium, color = palette.paper)
+    val ink = if (answerSide) palette.ink else palette.paper
+    val accent = if (answerSide) skin.frontAccent() else palette.accent
+    val shape = RoundedCornerShape(10.dp)
+    BoxWithConstraints(modifier.fillMaxWidth(), contentAlignment = Alignment.Center) {
+        val cardWidth = minOf(maxWidth, if (compact) 220.dp else 260.dp)
+        Box(Modifier.width(cardWidth).clip(shape)) {
+            if (answerSide) CardFrontPattern(skin, cardId, Modifier.matchParentSize())
+            else SkinPattern(skin, Modifier.matchParentSize(), subdued = true)
+            Column(
+                Modifier.fillMaxWidth().heightIn(min = cardWidth)
+                    .padding(horizontal = cardWidth * .12f, vertical = cardWidth * .14f),
+                verticalArrangement = Arrangement.Center,
+                horizontalAlignment = Alignment.CenterHorizontally,
+            ) {
+                Text(year,
+                    style = when {
+                        year.length <= 6 -> MaterialTheme.typography.displayLarge
+                        year.length <= 20 -> MaterialTheme.typography.headlineMedium
+                        else -> MaterialTheme.typography.titleLarge
+                    },
+                    color = ink, textAlign = TextAlign.Center)
+                if (!answerSide && eyebrow.isNotBlank()) {
+                    Spacer(Modifier.height(10.dp))
+                    Text(eyebrow, style = MaterialTheme.typography.titleSmall,
+                        color = ink, textAlign = TextAlign.Center)
+                }
+                if (!title.isNullOrBlank()) {
+                    Spacer(Modifier.height(12.dp))
+                    Text(title, style = MaterialTheme.typography.titleSmall,
+                        color = ink, textAlign = TextAlign.Center)
+                }
+                if (!subtitle.isNullOrBlank()) {
+                    Spacer(Modifier.height(4.dp))
+                    Text(subtitle, style = MaterialTheme.typography.bodySmall,
+                        color = ink.copy(alpha = .78f), textAlign = TextAlign.Center)
+                }
+                if (!footer.isNullOrBlank()) {
+                    Spacer(Modifier.height(12.dp))
+                    Text(footer, style = MaterialTheme.typography.labelMedium,
+                        color = accent, textAlign = TextAlign.Center)
+                }
             }
-            if (!subtitle.isNullOrBlank()) {
-                Text(subtitle, style = MaterialTheme.typography.bodySmall, color = palette.paper.copy(alpha = .74f))
-            }
-            if (!footer.isNullOrBlank()) {
-                Spacer(Modifier.height(18.dp))
-                Text(footer, style = MaterialTheme.typography.labelMedium, color = palette.accent)
-            }
-        }
-        Canvas(Modifier.matchParentSize()) {
-            val y = size.height * .75f
-            val hole = 7.dp.toPx()
-            // Die-cut notches echo a physical music card instead of a generic dashboard card.
-            val cut = cutColor
-            drawCircle(cut, hole, Offset(0f, y))
-            drawCircle(cut, hole, Offset(size.width, y))
         }
     }
 }

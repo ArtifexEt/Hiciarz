@@ -6,7 +6,7 @@ internal class UiCopy(val language: String) {
     fun t(pl: String, en: String) = if (language == "en") en else pl
     fun tab(tab: AppTab) = when (tab) {
         AppTab.SCAN -> t("Skaner", "Scan")
-        AppTab.BINGO -> t("Graj", "Play")
+        AppTab.BINGO -> "Bingo"
         AppTab.DECKS -> t("Talie", "Decks")
         AppTab.SETTINGS -> t("Opcje", "Settings")
     }

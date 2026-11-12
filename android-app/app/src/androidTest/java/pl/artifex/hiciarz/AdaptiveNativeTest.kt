@@ -28,7 +28,8 @@ class AdaptiveNativeTest {
         InstrumentationRegistry.getInstrumentation().targetContext
             .getSharedPreferences("hiciarz", 0).edit().clear().putString("language", "pl").commit()
         activity = ActivityScenario.launch(MainActivity::class.java)
-        compose.waitUntil(15_000) { compose.onAllNodesWithText("Wylosuj pytanie").fetchSemanticsNodes().isNotEmpty() }
+        compose.waitUntil(15_000) { compose.onAllNodesWithText("Wklej kod lub link").fetchSemanticsNodes().isNotEmpty() }
+        compose.onNodeWithText("Bingo").performClick()
     }
 
     @After fun restoreDisplay() {
