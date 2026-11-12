@@ -562,22 +562,6 @@ small {
   text-decoration: none;
   justify-content: center;
 }
-.audio-help {
-  margin-top: 24px;
-  padding: 14px;
-  border: 1px solid var(--line);
-  border-radius: 10px;
-  font-size: 12px;
-}
-.audio-help summary {
-  cursor: pointer;
-  font-weight: 600;
-}
-.audio-help p {
-  line-height: 1.7;
-  margin-top: 12px;
-  color: var(--muted);
-}
 main {
   padding: 39px 39px 18px;
   max-width: 1600px;

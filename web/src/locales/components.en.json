@@ -63,7 +63,6 @@
   "components.GameGuide.playbackGuide": "Playback guide",
   "components.GameGuide.throughThePlayerSpotifyYouTube": "Through the player · Spotify / YouTube",
   "components.GameGuide.directlyInSpotify": "Directly in Spotify",
-  "components.GameGuide.theConnectedDevicePlaysTheSound": "The connected device plays the sound. To use an external speaker, connect it to that device in its sound settings.",
   "components.GameGuide.youNeedSpotifyPremiumAndCards": "You need Spotify Premium and cards with a Spotify source. Choose your player from the list — the next cards will play there.",
   "components.GameGuide.openPlayer": "Open player",
   "components.GameGuide.openSpotifyScanner": "Open Spotify scanner",

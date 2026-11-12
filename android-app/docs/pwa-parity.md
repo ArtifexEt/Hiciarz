@@ -9,7 +9,6 @@ Audyt dotyczy ekranów `AppNavigation`, `GameGuide`, `PlaybackSettings`, `BingoG
 | Muzyka z przypisanej karty | Spotify App Remote, z zachowaniem wcześniej wybranego wyjścia Spotify. |
 | Szybki panel dźwięku | Globalny natywny dolny panel, dostępny z gry i skanera. |
 | Wybór głośnika Spotify | Pozostaje w Spotify; Android nie ma selektora urządzeń, głośników ani źródeł. |
-| Odtwarzanie na telefonie / Bluetooth | Wyjście ustawia Spotify lub system. Hiciarz zachowuje istniejące połączenie App Remote, bez wymuszonego przełączenia urządzenia po skanie. |
 | Odtwarzacz YouTube, przeglądarka i parowanie drugiego ekranu | Pozostają w PWA; natywna aplikacja korzysta ze Spotify. |
 | „Jak grać” i instrukcja przygotowania | Dostępne z gry i skanera oraz z ustawień: oś czasu, gry/filmy, Bingo, karty QR i dźwięk. |
 | Podstawowy i zaawansowany poziom Bingo | Zachowane kategorie i przebieg prowadzącego: zasada → skan karty → muzyka. Bez automatycznego losowania utworów i cyfrowej planszy. |

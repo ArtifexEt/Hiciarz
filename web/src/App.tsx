@@ -2321,10 +2321,6 @@ export default function App() {
                       </button>
                     </>
                   )}
-                  <details className="audio-help">
-                    <summary>{tr('app.howDoIChooseASpeaker')}</summary>
-                    <p>{tr('app.inSpotifyModeSelectADeviceFrom')}</p>
-                  </details>
                 </aside>
               </div>
             </>

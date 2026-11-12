@@ -63,7 +63,6 @@
   "components.GameGuide.playbackGuide": "Instrukcja odtwarzania",
   "components.GameGuide.throughThePlayerSpotifyYouTube": "Przez odtwarzacz · Spotify / YouTube",
   "components.GameGuide.directlyInSpotify": "Bezpośrednio w Spotify",
-  "components.GameGuide.theConnectedDevicePlaysTheSound": "Dźwięk odtwarza połączone urządzenie. Jeśli chcesz użyć zewnętrznego głośnika, połącz go z tym urządzeniem w jego ustawieniach dźwięku.",
   "components.GameGuide.youNeedSpotifyPremiumAndCards": "Potrzebujesz Spotify Premium i kart ze źródłem Spotify. Wybierz swój odtwarzacz z listy — kolejne karty będą grały właśnie tam.",
   "components.GameGuide.openPlayer": "Otwórz odtwarzacz",
   "components.GameGuide.openSpotifyScanner": "Otwórz skaner Spotify",

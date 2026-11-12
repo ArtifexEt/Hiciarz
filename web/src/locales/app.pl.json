@@ -297,8 +297,6 @@
   "app.endSession": "Zakończ sesję",
   "app.clickConnectScannerToShowAQr": "Kliknij „Połącz skaner”, aby wyświetlić kod QR. Nie potrzebujesz konta Hiciarza.",
   "app.preparePairingQrCode": "Przygotuj QR parowania",
-  "app.howDoIChooseASpeaker": "Jak wybrać głośnik?",
-  "app.inSpotifyModeSelectADeviceFrom": "W trybie Spotify wybierz urządzenie z listy. W trybie „Na tym urządzeniu” dźwiękiem zarządza przeglądarka i ustawienia tego urządzenia. Dostępne sposoby połączenia z głośnikiem zależą od używanego sprzętu.",
   "app.madeForMusicAndGoodCompany": "Stworzone dla muzyki. I dobrego towarzystwa.",
   "app.aNewVersionIsReadyChooseLoad": "Nowa wersja jest gotowa. Wybierz „Wczytaj nową wersję”.",
   "app.updateCheckStartedWeWillLetYou": "Sprawdzanie aktualizacji uruchomione. Powiadomimy Cię, gdy nowa wersja będzie gotowa.",

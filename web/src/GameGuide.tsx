@@ -85,11 +85,7 @@ export function GameGuide({ onStart }: { onStart: (route: 'spotify' | 'laptop') 
           ))}
         </ol>
         <div className="guide-bottom">
-          <p>
-            {laptop
-              ? t('components.GameGuide.theConnectedDevicePlaysTheSound')
-              : t('components.GameGuide.youNeedSpotifyPremiumAndCards')}
-          </p>
+          {!laptop && <p>{t('components.GameGuide.youNeedSpotifyPremiumAndCards')}</p>}
           <button className="secondary" onClick={() => onStart(route)}>
             {laptop ? <Monitor size={17} /> : <ScanLine size={17} />}
             {laptop
