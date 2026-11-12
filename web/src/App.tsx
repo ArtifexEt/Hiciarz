@@ -50,6 +50,8 @@ import Landing from './Landing';
 import Modal from './Modal';
 import AppNavigation from './AppNavigation';
 import DeckLibrary from './DeckLibrary';
+import DeckSettings from './DeckSettings';
+import { removeDeck } from './deck-collection';
 import PlaybackSettings from './PlaybackSettings';
 import AppInstall, { ConnectionNotice } from './AppInstall';
 import {
@@ -69,7 +71,6 @@ import SongForm from './SongForm';
 import { clearLegacySpotifySettings } from './legacy-spotify';
 import DocumentationLinks, { ReportIssueLink } from './DocumentationLinks';
 import PlayingCard from './PlayingCard';
-import GameModePicker from './GameModePicker';
 import CreatorSteps, { type CreatorStep } from './CreatorSteps';
 import type { PlaybackState } from './playback';
 import { vibrateOnScan } from './scan-feedback';
@@ -165,6 +166,8 @@ export default function App() {
   const playlistPrompt = language === 'en' ? playlistPromptEn : playlistPromptPl;
   const [draggingFile, setDraggingFile] = useState(false);
   const [importStep, setImportStep] = useState<ImportStep>('choose');
+  const [deleteRequest, setDeleteRequest] = useState<{ id: string; returnTo: 'decks' | null }>();
+  const [libraryFocusId, setLibraryFocusId] = useState<string>();
   const [draggingImage, setDraggingImage] = useState(false);
   const [backgroundBusy, setBackgroundBusy] = useState(false);
   const updateAvailable = useSyncExternalStore(subscribeToUpdates, updateIsReady);
@@ -270,6 +273,7 @@ export default function App() {
     destination: 'download' | 'print';
   }>();
   const deck = decks.find((d) => d.id === activeId) || decks[0];
+  const deletionDeck = decks.find((d) => d.id === deleteRequest?.id);
   useEffect(() => {
     if (deck && !deck.songs.length) setTab('songs');
   }, [deck?.id, deck?.songs.length]);
@@ -571,6 +575,25 @@ export default function App() {
     setDecks((current) => [...current, next]);
     setActiveId(next.id);
   }
+  function requestDeckDeletion(id: string, returnTo: 'decks' | null = null) {
+    if (busy || !decks.some((deck) => deck.id === id)) return;
+    setDeleteRequest({ id, returnTo });
+    setModal('delete');
+  }
+  function cancelDeckDeletion() {
+    setLibraryFocusId(deleteRequest?.id);
+    setModal(deleteRequest?.returnTo || null);
+    setDeleteRequest(undefined);
+  }
+  function confirmDeckDeletion() {
+    if (busy || !deleteRequest) return;
+    const next = removeDeck(decks, deck.id, deleteRequest.id);
+    setDecks(next.decks);
+    if (next.activeId !== activeId) setActiveId(next.activeId);
+    setLibraryFocusId(next.activeId);
+    setModal(deleteRequest.returnTo);
+    setDeleteRequest(undefined);
+  }
   function importSongs(songs: Song[], mode: 'append' | 'replace', note = '') {
     const r = mergeSongs(deck.songs, songs, mode);
     if (r.songs.length > 2000) {
@@ -757,6 +780,7 @@ export default function App() {
   const historyReady = useRef(false);
   const popNavigation = useRef<(event: PopStateEvent) => void>(() => {});
   function availableModal(candidate: AppModal): AppModal {
+    if (candidate === 'delete' && !deletionDeck) return null;
     if (candidate === 'file' && !pending) return null;
     if (candidate === 'print-cards' && !printCount) return null;
     if (candidate === 'song' && editSong && !deck?.songs.some((song) => song.id === editSong.id))
@@ -986,23 +1010,37 @@ export default function App() {
                   if (file) void readImportFile(file);
                 }}
               >
-                <div className="deck-title">
-                  <label className="sr-only" htmlFor="deck-name">
-                    {tr('app.deckName')}
-                  </label>
-                  <input
-                    id="deck-name"
-                    value={deck.name}
-                    maxLength={100}
-                    onChange={(event) => updateDeck({ name: event.target.value })}
-                  />
-                  <span className="deck-count">{trackCount(deck.songs.length)}</span>
+                <div className="deck-title-row">
+                  <div className="deck-title">
+                    <label className="sr-only" htmlFor="deck-name">
+                      {tr('app.deckName')}
+                    </label>
+                    <input
+                      id="deck-name"
+                      value={deck.name}
+                      maxLength={100}
+                      onChange={(event) => updateDeck({ name: event.target.value })}
+                    />
+                    <span className="deck-count">{trackCount(deck.songs.length)}</span>
+                  </div>
+                  <button
+                    className="secondary deck-settings-toggle"
+                    aria-label={tr('deckSettings.title')}
+                    title={tr('deckSettings.title')}
+                    aria-haspopup="dialog"
+                    onClick={() => setModal('deck-settings')}
+                  >
+                    <Settings2 size={18} aria-hidden="true" />
+                  </button>
                 </div>
                 <div className="deck-workspace-actions">
                   <button
                     className="secondary deck-library-toggle"
                     aria-haspopup="dialog"
-                    onClick={() => setModal('decks')}
+                    onClick={() => {
+                      setLibraryFocusId(undefined);
+                      setModal('decks');
+                    }}
                   >
                     <ListMusic size={18} aria-hidden="true" />
                     <span className="deck-library-label">
@@ -1033,7 +1071,7 @@ export default function App() {
                       aria-label={tr('shell.deleteDeck')}
                       title={tr('shell.deleteDeck')}
                       aria-haspopup="dialog"
-                      onClick={() => setModal('delete')}
+                      onClick={() => requestDeckDeletion(deck.id)}
                     >
                       <Trash2 size={18} aria-hidden="true" />
                     </button>
@@ -1049,29 +1087,6 @@ export default function App() {
                   />
                   {tab === 'songs' ? (
                     <>
-                      <div className="creator-game-choice">
-                        {deck.songs.length ? (
-                          <details className="deck-variation">
-                            <summary>
-                              {tr('creator.variant.' + (deck.gameMode || 'music'))}
-                              <ChevronDown size={17} aria-hidden="true" />
-                            </summary>
-                            <GameModePicker
-                              value={deck.gameMode || 'music'}
-                              onChange={(gameMode) => updateDeck({ gameMode })}
-                              compact
-                            />
-                          </details>
-                        ) : (
-                          <GameModePicker
-                            value={deck.gameMode || 'music'}
-                            onChange={(gameMode) => updateDeck({ gameMode })}
-                          />
-                        )}
-                        {deck.songs.some(
-                          (song) => (song.gameMode || 'music') !== (deck.gameMode || 'music'),
-                        ) && <p className="hint">{tr('creator.mixedModes')}</p>}
-                      </div>
                       <div className="panel-heading">
                         <div>
                           <h2>{tr('creator.collection.' + (deck.gameMode || 'music'))}</h2>
@@ -1878,22 +1893,63 @@ export default function App() {
           />
         </Modal>
       )}
-      {modal === 'decks' && (
-        <Modal title={tr('shell.deckLibrary')} sheet onClose={() => setModal(null)}>
-          <DeckLibrary
-            decks={decks}
-            activeId={activeId}
-            disabled={busy}
-            appearance="dialog"
-            onChoose={(id) => void chooseDeck(id)}
-            onCreate={() => void createDeck()}
+      {modal === 'deck-settings' && (
+        <Modal title={tr('deckSettings.title')} onClose={() => setModal(null)}>
+          <DeckSettings
+            gameMode={deck.gameMode || 'music'}
+            onChange={(gameMode) => updateDeck({ gameMode })}
+            mixedModes={deck.songs.some(
+              (song) => (song.gameMode || 'music') !== (deck.gameMode || 'music'),
+            )}
           />
+          <div className="modal-actions">
+            <button className="primary" onClick={() => setModal(null)}>
+              {tr('deckSettings.done')}
+            </button>
+          </div>
+        </Modal>
+      )}
+      {(modal === 'decks' || (modal === 'delete' && deletionDeck)) && (
+        <Modal
+          title={tr(modal === 'delete' ? 'app.deleteThisDeck' : 'shell.deckLibrary')}
+          sheet={modal === 'decks'}
+          onClose={modal === 'delete' ? cancelDeckDeletion : () => setModal(null)}
+        >
+          {modal === 'delete' && deletionDeck ? (
+            <>
+              <p>
+                {tr('app.youWillDelete')}
+                {deletionDeck.name.trim() || tr('model.newDeck')}
+                {tr('app.fromThisBrowserYouCanSaveA')}
+              </p>
+              <div className="modal-actions">
+                <button className="secondary" autoFocus onClick={cancelDeckDeletion}>
+                  {tr('app.keepDeck')}
+                </button>
+                <button className="danger" disabled={busy} onClick={confirmDeckDeletion}>
+                  {tr('app.deleteDeck')}
+                </button>
+              </div>
+            </>
+          ) : (
+            <DeckLibrary
+              decks={decks}
+              activeId={activeId}
+              disabled={busy}
+              appearance="dialog"
+              focusDeckId={libraryFocusId}
+              onChoose={(id) => void chooseDeck(id)}
+              onCreate={() => void createDeck()}
+              onDelete={(id) => requestDeckDeletion(id, 'decks')}
+            />
+          )}
         </Modal>
       )}
       {modal === 'song' && (
         <SongForm
           song={editSong}
           defaultMode={deck.gameMode}
+          defaultTheme={deck.theme}
           onDelete={
             editSong
               ? () => {
@@ -2038,32 +2094,6 @@ export default function App() {
             ) : undefined
           }
         />
-      )}
-      {modal === 'delete' && (
-        <Modal title={tr('app.deleteThisDeck')} onClose={() => setModal(null)}>
-          <p>
-            {tr('app.youWillDelete')}
-            {deck.name}
-            {tr('app.fromThisBrowserYouCanSaveA')}
-          </p>
-          <div className="modal-actions">
-            <button className="secondary" onClick={() => setModal(null)}>
-              {tr('app.keepDeck')}
-            </button>
-            <button
-              className="danger"
-              onClick={() => {
-                const remaining = decks.filter((d) => d.id !== deck.id);
-                const next = remaining.length ? remaining : [newDeck()];
-                setDecks(next);
-                setActiveId(next[0].id);
-                setModal(null);
-              }}
-            >
-              {tr('app.deleteDeck')}
-            </button>
-          </div>
-        </Modal>
       )}
       {modal === 'check' && (
         <Modal title={tr('app.sourceCheck')} onClose={() => setModal(null)} wide>

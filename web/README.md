@@ -60,7 +60,7 @@ Ekran startowy na komputerze:
 ## Pierwsze kroki
 
 1. **[Otwórz Hiciarza](https://artifexet.github.io/Hiciarz/)** i wybierz **Twórz karty**. Jeśli masz już wydrukowaną talię, przejdź do **Skanuj karty**.
-2. **Przygotuj talię.** W widoku **Talie → Utwory** wybierz **Rodzaj kart**, a następnie **Importuj**. Kreator pozwala wczytać plik JSON/CSV, wybrać gotową talię albo przygotować listę z AI. W kroku **Przygotuj talię z AI** skopiuj prompt do swojego asystenta, a później wczytaj gotowy plik. Nagrania możesz też dodawać ręcznie: w **Dodaj utwór** wklej link Spotify, sprawdź odsłuch i wyszukaj rok w MusicBrainz. Sprawdź linki i lata przed drukiem.
+2. **Przygotuj talię.** Przyciskiem ustawień przy nazwie otwórz **Ustawienia talii** i wybierz domyślny rodzaj nowych kart. W **Utwory → Importuj** wczytaj JSON/CSV, wybierz gotową talię albo skopiuj prompt do swojego AI i wczytaj przygotowany plik. Pojedyncze nagranie dodasz przez **Dodaj utwór**: wklej link Spotify, sprawdź odsłuch i proponowane dane. Sprawdź linki i lata przed drukiem.
 3. **Wydrukuj karty.** Przejdź przez **Utwory → Wygląd → Druk** i wybierz **Pobierz / drukuj karty**. PDF mieści 12 kart 60 × 60 mm na A4. Drukuj dwustronnie w skali 100%, zgodnie z krawędzią obrotu pokazaną w oknie wydruku. Przed całą talią wykonaj próbę z **Próba wydruku i kalibracja**.
 4. **Wybierz miejsce odtwarzania.** Otwórz **Dźwięk** i wybierz jeden z wariantów opisanych poniżej.
 5. **Skanuj i słuchaj.** Zezwól na aparat, zeskanuj QR z karty i posłuchaj nagrania. Po odwróceniu wydrukowanej karty znajdziesz jej dane. Jeśli przeglądarka zablokuje automatyczny start, użyj przycisku odtwarzania.
@@ -81,20 +81,20 @@ Po skanie możesz zatrzymać lub wznowić utwór, przełączyć źródło dostę
 Dodawanie kart i odtwarzanie nie wymagają logowania do Spotify w Hiciarzu ani konfiguracji aplikacji deweloperskiej.
 
 1. Wybierz **Talie → Utwory → Dodaj utwór** i wklej link do konkretnego nagrania Spotify.
-2. Posłuchaj podglądu w pierwszym kroku i wybierz **Dalej: dane utworu**. W drugim kroku sprawdź pobrany tytuł i wpisz wykonawcę. **Wstecz** pozwala wrócić do linku bez utraty ręcznych poprawek.
-3. Wyszukaj rok w MusicBrainz i wybierz właściwą wersję nagrania. Rok oraz dane możesz poprawić ręcznie.
+2. Posłuchaj podglądu w pierwszym kroku i wybierz **Dalej: dane utworu**. Spotify dostarcza tytuł; Hiciarz dodatkowo sprawdza powiązanie linku w MusicBrainz. Jednoznaczne dopasowanie może uzupełnić wykonawcę i rok. W pozostałych przypadkach wybierz właściwe nagranie z propozycji albo wpisz dane samodzielnie.
+3. **Znajdź wykonawcę i rok w MusicBrainz** działa także na podstawie samego tytułu. Sprawdź wybraną wersję i datę; ręcznie wpisane dane pozostają edytowalne. Kroki są stale widoczne w nagłówku, a **Wstecz** i pozostałe akcje w stopce. Powrót do linku zachowuje wpisane dane.
 4. Zatwierdź kartę po sprawdzeniu danych.
 
-Podgląd Spotify może być niedostępny lub ograniczony do fragmentu. MusicBrainz dostarcza metadane, a nie audio; data dotyczy konkretnej wersji nagrania i może wymagać korekty. Brak odpowiedzi serwisu nie blokuje ręcznego dodania karty.
+Podgląd Spotify może być niedostępny lub ograniczony do fragmentu. MusicBrainz dostarcza metadane, a nie audio; rok pochodzi z MusicBrainz, nie z publicznego podglądu Spotify, i może wymagać korekty. Sam zgodny tytuł nie potwierdza nagrania z linku. Brak odpowiedzi serwisu nie blokuje ręcznego dodania karty.
 
 Całe playlisty wczytasz z pliku JSON/CSV zgodnego z formatem Hiciarza. Link do playlisty nie zastępuje listy jej utworów. [Dodawanie i odsłuch](docs/spotify.md) · [Format plików](docs/playlist-guide.md).
 
 ## Talie, wygląd i rodzaje kart
 
 - **Utwory muzyczne:** karty z tytułem, wykonawcą i rokiem wydania nagrania.
-- **Muzyka z filmów / Muzyka z gier:** wybierz kategorię przez **Rodzaj kart → Inne rodzaje kart** i uzupełnij tytuł produkcji. Podgląd dostarcza dane nagrania; tytuł filmu lub gry wpisujesz samodzielnie. Jest drukowany na stronie **Dane karty** i nie trafia do QR.
+- **Muzyka z filmów / Muzyka z gier:** domyślny rodzaj nowych kart wybierzesz w **Ustawieniach talii**. Dla pojedynczej karty zmienisz go w **Więcej ustawień** formularza utworu. Istniejące karty zachowują zapisany rodzaj. Tytuł filmu lub gry uzupełniasz samodzielnie; jest drukowany na stronie **Dane karty** i nie trafia do QR.
 - **Muzyczne Bingo:** [osobna aplikacja](https://artifexet.github.io/Bingo/) z losowaniem kategorii, poziomami trudności oraz planszami 5 × 5. Przygotujesz od 1 do 24 plansz, po 1, 2 lub 4 na stronie A4.
-- **Wygląd kart:** dziewięć motywów, własne rewersy z obsługą przeciągania plików, presety i oszczędny wydruk **Laser — lekki kolor**. Podgląd karty odzwierciedla układ PDF. Karty z własnym motywem zachowują go przy zmianie motywu talii; ujednolica je przycisk **Zastosuj motyw talii do wszystkich kart**. Skórka strony jest wybierana osobno w ustawieniach; nie zmienia motywu zapisanej talii.
+- **Wygląd kart:** dziewięć motywów, własne rewersy z obsługą przeciągania plików, presety i oszczędny wydruk **Laser — lekki kolor**. Wybór motywu pojedynczej karty pokazuje miniaturki; **Jak cała talia** dziedziczy motyw projektu. Podgląd karty odzwierciedla układ PDF. Karty z własnym motywem zachowują go przy zmianie motywu talii; ujednolica je przycisk **Zastosuj motyw talii do wszystkich kart**. Skórka strony jest wybierana osobno w ustawieniach; nie zmienia motywu zapisanej talii.
 
 [Generator plansz Bingo — podstawowy PL](https://artifexet.github.io/Bingo/?sheet=print&level=beginner&lang=pl) · [Zaawansowany PL](https://artifexet.github.io/Bingo/?sheet=print&level=expert&lang=pl) · [Beginner EN](https://artifexet.github.io/Bingo/?sheet=print&level=beginner&lang=en). Generator, losowanie i zasady są utrzymywane w [osobnym repozytorium](https://github.com/ArtifexEt/Bingo). Dawne adresy Hiciarza z `?view=bingo` przekierowują do nowej aplikacji, zachowując prawidłowe parametry poziomu, języka i okna druku.
 
@@ -119,6 +119,8 @@ Skaner wypełnia ekran telefonu, z głównymi przyciskami nad dolnym menu. Miejs
 W **Ustawieniach** zmienisz skórkę strony i język (**polski / angielski**), sprawdzisz aktualizacje i zainstalujesz Hiciarza. Na iOS aplikacja pokazuje instrukcję dodania do ekranu początkowego przez menu udostępniania. Zmiana języka obejmuje interfejs oraz napisy na PDF; dane wpisane do talii pozostają bez zmian. [Słowniki JSON](docs/configuration.md#tłumaczenia-json).
 
 Talie i grafiki są zapisywane **na tym urządzeniu**. W **Talie** przełączysz projekty, utworzysz nowy lub pobierzesz pełną kopię JSON przez **Zapisz do pliku**. Plik wczytasz przez **Utwory → Importuj → Wczytaj z pliku**. Listę utworów wyeksportujesz również jako CSV. Zapis do pliku pozwala przenieść projekt i chroni przed utratą danych po wyczyszczeniu przeglądarki.
+
+W oknie **Wszystkie talie** ikona kosza przy każdej pozycji otwiera potwierdzenie z jej nazwą. Usunięcie innej talii nie przełącza bieżącego projektu. Po usunięciu ostatniej aplikacja tworzy nową pustą talię.
 
 Po zapisaniu zasobów PWA można bez sieci edytować talie i przygotowywać PDF. Muzyka, Spotify i parowanie wymagają internetu. Aparat na telefonie wymaga bezpiecznego kontekstu — korzystaj z publikacji HTTPS. [Dane lokalne i PWA](docs/configuration.md#dane-lokalne-i-pwa).
 

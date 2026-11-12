@@ -2,6 +2,11 @@ import { t } from './i18n';
 import { spotifyId } from './model';
 
 export type SpotifyTrackMetadata = { id: string; title: string };
+export type SpotifyTrackDetails = SpotifyTrackMetadata & {
+  matchedRecording?: RecordingSuggestion;
+  suggestions: RecordingSuggestion[];
+  lookupError?: string;
+};
 export type RecordingSuggestion = {
   id: string;
   title: string;
@@ -70,7 +75,12 @@ function object(value: unknown): Record<string, unknown> {
     : {};
 }
 
-async function requestJson(url: string, service: 'Spotify' | 'MusicBrainz', signal?: AbortSignal) {
+async function requestJson(
+  url: string,
+  service: 'Spotify' | 'MusicBrainz',
+  signal?: AbortSignal,
+  allowMissing = false,
+) {
   checkAbort(signal);
   const controller = new AbortController();
   let timedOut = false;
@@ -87,14 +97,19 @@ async function requestJson(url: string, service: 'Spotify' | 'MusicBrainz', sign
       headers: { Accept: 'application/json' },
     });
     checkAbort(signal);
+    if (allowMissing && response.status === 404) return {};
     if (response.status === 429) {
       if (service === 'MusicBrainz')
         musicBrainzBlockedUntil = Math.max(Date.now() + 1000, retryAfter(response));
       throw new Error(t('trackMetadata.rateLimit', { service }));
     }
     if (!response.ok) {
-      if (service === 'MusicBrainz' && response.status === 503)
-        musicBrainzBlockedUntil = Math.max(musicBrainzBlockedUntil, retryAfter(response));
+      if (service === 'MusicBrainz' && response.status === 503) {
+        musicBrainzBlockedUntil = Math.max(Date.now() + 1100, retryAfter(response));
+        throw Object.assign(new Error(t('trackMetadata.unavailable', { service })), {
+          status: 503,
+        });
+      }
       throw new Error(t('trackMetadata.unavailable', { service }));
     }
     const result: unknown = await response.json();
@@ -110,6 +125,40 @@ async function requestJson(url: string, service: 'Spotify' | 'MusicBrainz', sign
     clearTimeout(timer);
     signal?.removeEventListener('abort', cancel);
   }
+}
+
+function requestMusicBrainz(url: string, signal?: AbortSignal, allowMissing = false) {
+  const request = musicBrainzQueue.then(async () => {
+    checkAbort(signal);
+    if (Date.now() < musicBrainzBlockedUntil)
+      throw new Error(t('trackMetadata.rateLimit', { service: 'MusicBrainz' }));
+    for (let attempt = 0; ; attempt++) {
+      await wait(Math.max(0, nextMusicBrainzStart - Date.now()), signal);
+      checkAbort(signal);
+      nextMusicBrainzStart = Date.now() + 1000;
+      try {
+        return await requestJson(url, 'MusicBrainz', signal, allowMissing);
+      } catch (error) {
+        // A transient busy response may recover once. Long Retry-After windows and
+        // rate limits stay visible immediately so manual entry remains available.
+        const delay = Math.max(1100, musicBrainzBlockedUntil - Date.now());
+        if (
+          attempt > 0 ||
+          !(error instanceof Error) ||
+          !('status' in error) ||
+          error.status !== 503 ||
+          delay > 5000
+        )
+          throw error;
+        await wait(delay, signal);
+      }
+    }
+  });
+  musicBrainzQueue = request.then(
+    () => undefined,
+    () => undefined,
+  );
+  return withAbort(request, signal);
 }
 
 /** Only the plain title is consumed; Spotify's supplied iframe HTML is never inserted. */
@@ -204,54 +253,100 @@ export async function findRecordingSuggestions(
   url.searchParams.set('fmt', 'json');
   url.searchParams.set('limit', '100');
 
-  // Serialize the whole fetch as well as its starting time. Unmounting a form aborts its
-  // queued work, and rejected requests do not prevent the next form from searching.
-  const request = musicBrainzQueue.then(async () => {
-    checkAbort(signal);
-    if (Date.now() < musicBrainzBlockedUntil)
-      throw new Error(t('trackMetadata.rateLimit', { service: 'MusicBrainz' }));
-    await wait(Math.max(0, nextMusicBrainzStart - Date.now()), signal);
-    checkAbort(signal);
-    nextMusicBrainzStart = Date.now() + 1000;
-    const data = await requestJson(url.href, 'MusicBrainz', signal);
-    if (!Array.isArray(data.recordings)) throw new Error(t('trackMetadata.invalidRecordings'));
-    const seen = new Set<string>();
-    return (
-      data.recordings
-        .slice(0, 100)
-        .flatMap((raw: unknown, index: number) => {
-          const value = suggestion(raw);
-          if (!value || seen.has(value.id)) return [];
-          seen.add(value.id);
-          const rawScore = object(raw).score;
-          const score =
-            typeof rawScore === 'string' || typeof rawScore === 'number' ? Number(rawScore) : 0;
-          return [
-            {
-              value,
-              index,
-              score: Number.isFinite(score) && score >= 0 && score <= 100 ? score : 0,
-            },
-          ];
-        })
-        // MusicBrainz often returns later live versions before an equally relevant
-        // original. Prefer its relevance score first, then earlier known releases.
-        // These remain choices for the user; no candidate is selected automatically.
-        .sort(
-          (a, b) =>
-            b.score - a.score ||
-            (a.value.year ?? Infinity) - (b.value.year ?? Infinity) ||
-            a.index - b.index,
-        )
-        .slice(0, 8)
-        .map(({ value }) => value)
-    );
-  });
-  musicBrainzQueue = request.then(
-    () => undefined,
-    () => undefined,
+  const data = await requestMusicBrainz(url.href, signal);
+  return recordingSuggestions(data);
+}
+
+function recordingSuggestions(data: Record<string, unknown>) {
+  if (!Array.isArray(data.recordings)) throw new Error(t('trackMetadata.invalidRecordings'));
+  const seen = new Set<string>();
+  return (
+    data.recordings
+      .slice(0, 100)
+      .flatMap((raw: unknown, index: number) => {
+        const value = suggestion(raw);
+        if (!value || seen.has(value.id)) return [];
+        seen.add(value.id);
+        const rawScore = object(raw).score;
+        const score =
+          typeof rawScore === 'string' || typeof rawScore === 'number' ? Number(rawScore) : 0;
+        return [
+          {
+            value,
+            index,
+            score: Number.isFinite(score) && score >= 0 && score <= 100 ? score : 0,
+          },
+        ];
+      })
+      // MusicBrainz often returns later live versions before an equally relevant
+      // original. Prefer its relevance score first, then earlier known releases.
+      // These remain choices for the user; no candidate is selected automatically.
+      .sort(
+        (a, b) =>
+          b.score - a.score ||
+          (a.value.year ?? Infinity) - (b.value.year ?? Infinity) ||
+          a.index - b.index,
+      )
+      .slice(0, 8)
+      .map(({ value }) => value)
   );
-  return withAbort(request, signal);
+}
+
+/** A direct recording relationship verifies the Spotify source; a title search does not. */
+export async function loadSpotifyTrackDetails(
+  raw: string,
+  signal?: AbortSignal,
+  onSpotifyMetadata?: (metadata: SpotifyTrackMetadata) => void,
+): Promise<SpotifyTrackDetails> {
+  const metadata = await loadSpotifyTrack(raw, signal);
+  checkAbort(signal);
+  onSpotifyMetadata?.(metadata);
+  try {
+    const resource = `https://open.spotify.com/track/${metadata.id}`;
+    const lookup = new URL('https://musicbrainz.org/ws/2/url');
+    lookup.searchParams.set('resource', resource);
+    lookup.searchParams.set('inc', 'recording-rels');
+    lookup.searchParams.set('fmt', 'json');
+    const data = await requestMusicBrainz(lookup.href, signal, true);
+    const ids = new Set<string>();
+    if (Array.isArray(data.relations)) {
+      for (const rawRelation of data.relations) {
+        const relation = object(rawRelation);
+        const id = object(relation.recording).id;
+        if (
+          relation['target-type'] === 'recording' &&
+          typeof id === 'string' &&
+          recordingId.test(id)
+        )
+          ids.add(id);
+      }
+    }
+    if (ids.size) {
+      const recordings = new URL('https://musicbrainz.org/ws/2/recording/');
+      recordings.searchParams.set('query', [...ids].map((id) => `rid:${id}`).join(' OR '));
+      recordings.searchParams.set('fmt', 'json');
+      recordings.searchParams.set('limit', '100');
+      const linked = recordingSuggestions(await requestMusicBrainz(recordings.href, signal)).filter(
+        (recording) => ids.has(recording.id),
+      );
+      if (ids.size === 1 && linked.length === 1)
+        return { ...metadata, matchedRecording: linked[0], suggestions: [] };
+      if (linked.length) return { ...metadata, suggestions: linked };
+    }
+  } catch (error) {
+    checkAbort(signal);
+    // Direct Spotify relationships are sparse and their lookup is optional.
+    // A failed URL lookup must not prevent the independent title search.
+  }
+  try {
+    return {
+      ...metadata,
+      suggestions: await findRecordingSuggestions(metadata.title, '', signal),
+    };
+  } catch (error) {
+    checkAbort(signal);
+    return { ...metadata, suggestions: [], lookupError: (error as Error).message };
+  }
 }
 
 export function spotifySearchUrl(query: string): string {

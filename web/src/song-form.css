@@ -2,7 +2,7 @@
   display: grid;
   grid-template-columns: 1fr 1fr;
   gap: 12px;
-  margin: 0 0 24px;
+  margin: 0;
   padding: 0;
   list-style: none;
 }
@@ -17,7 +17,19 @@
   font-size: 11px;
   line-height: 1.4;
 }
-.song-form-progress li > span {
+.song-form-progress li > button {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  width: 100%;
+  min-height: 44px;
+  padding: 0;
+  background: transparent;
+  color: inherit;
+  text-align: left;
+  font: inherit;
+}
+.song-form-progress li > button > span {
   display: grid;
   place-items: center;
   flex: 0 0 24px;
@@ -30,7 +42,7 @@
   border-bottom-color: var(--accent-ink);
   font-weight: 600;
 }
-.song-form-progress li[aria-current='step'] > span {
+.song-form-progress li[aria-current='step'] > button > span {
   background: var(--accent);
   border-color: transparent;
   color: var(--accent-ink);
@@ -48,11 +60,24 @@
   align-items: center;
   gap: 8px;
 }
-.song-form .modal-actions {
+.modal.app-modal .song-form-actions {
+  margin: 0;
   justify-content: space-between;
 }
-.song-form .modal-actions .primary {
+.song-form-actions .primary {
   flex: 1;
+}
+.song-advanced-settings {
+  margin: 16px 0;
+}
+.song-advanced-settings > summary {
+  min-height: 44px;
+  padding: 12px 0;
+  cursor: pointer;
+  font-size: 13px;
+}
+.song-advanced-settings .game-variants {
+  margin-top: 8px;
 }
 .song-form .song-spotify-link {
   margin: 0 0 12px;
@@ -198,11 +223,16 @@
 }
 .song-form a:focus-visible,
 .song-form button:focus-visible,
-.song-form summary:focus-visible {
+.song-form summary:focus-visible,
+.song-form-progress button:focus-visible,
+.song-form-actions button:focus-visible {
   outline: 2px solid var(--accent-ink);
   outline-offset: 3px;
 }
 @media (max-width: 520px) {
+  .song-form .form-grid {
+    grid-template-columns: 1fr;
+  }
   .song-source-entry,
   .song-search-entry {
     flex-direction: column;

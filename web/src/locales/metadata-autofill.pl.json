@@ -1,0 +1,10 @@
+{
+  "metadataAutofill.loading": "Pobieram dane Spotify i sprawdzam wykonawcę oraz rok w MusicBrainz…",
+  "metadataAutofill.linked": "Uzupełniono dane z MusicBrainz dla tego linku Spotify. Sprawdź wykonawcę i rok przed zapisaniem.",
+  "metadataAutofill.linkedNoYear": "Znaleziono wykonawcę dla tego linku Spotify, ale brakuje potwierdzonego roku. Wpisz rok lub wyszukaj właściwe wydanie.",
+  "metadataAutofill.chooseMatch": "Wybierz właściwe nagranie, aby uzupełnić wykonawcę i rok. Jeśli go nie ma, wpisz wykonawcę i wyszukaj ponownie. Sam tytuł nie potwierdza wersji z linku Spotify.",
+  "metadataAutofill.noMatch": "Nie udało się potwierdzić pozostałych danych. Możesz wpisać je ręcznie lub wyszukać nagranie ponownie — wystarczy tytuł.",
+  "metadataAutofill.findDetails": "Znajdź wykonawcę i rok w MusicBrainz",
+  "metadataAutofill.titleSearch": "Wyszukaj nagranie po tytule. Dodanie wykonawcy zawęzi wyniki i pomoże znaleźć właściwy rok.",
+  "metadataAutofill.moreSettings": "Więcej ustawień"
+}

@@ -1,0 +1,21 @@
+.deck-settings-intro {
+  margin: 0 0 20px;
+  color: var(--muted);
+  font-size: 13px;
+  line-height: 1.6;
+}
+.deck-settings .game-variants.is-compact .game-variation-options {
+  grid-template-columns: minmax(0, 1fr);
+}
+.deck-settings .game-variants.is-compact .game-variant {
+  flex-wrap: nowrap;
+  gap: 12px;
+}
+.deck-settings .game-variants.is-compact .game-variant > span {
+  flex: 1;
+  min-width: 0;
+  width: auto;
+}
+.deck-settings > .hint {
+  margin-bottom: 0;
+}
