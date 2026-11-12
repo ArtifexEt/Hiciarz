@@ -5,25 +5,18 @@ import android.graphics.Bitmap
 import androidx.compose.ui.semantics.SemanticsActions
 import androidx.compose.ui.test.*
 import androidx.compose.ui.test.junit4.createEmptyComposeRule
-import androidx.lifecycle.ViewModelProvider
 import androidx.test.core.app.ActivityScenario
 import androidx.test.platform.app.InstrumentationRegistry
 import java.io.File
 import java.util.concurrent.CountDownLatch
 import java.util.concurrent.TimeUnit
 import org.junit.After
-import org.junit.Assert.assertEquals
-import org.junit.Assert.assertNotEquals
-import org.junit.Assert.assertTrue
 import org.junit.Before
 import org.junit.Rule
 import org.junit.Test
 import pl.artifex.hiciarz.model.CardSkin
-import pl.artifex.hiciarz.model.AppAction
-import pl.artifex.hiciarz.model.BingoStage
-import pl.artifex.hiciarz.model.QuestionType
 
-/** Real navigation and game callbacks, with no Spotify account or camera permission required. */
+/** Real scanner navigation and settings callbacks, without a Spotify account or camera permission. */
 class NativeFlowTest {
     @get:Rule val compose = createEmptyComposeRule()
     private lateinit var activity: ActivityScenario<MainActivity>
@@ -39,84 +32,9 @@ class NativeFlowTest {
 
     @After fun close() { if (::activity.isInitialized) activity.close() }
 
-    @Test fun bingoRedrawRemainsAvailableBeforeAndAfterScanning() {
-        lateinit var model: HiciarzViewModel
-        activity.onActivity {
-            model = ViewModelProvider(it)[HiciarzViewModel::class.java]
-            model.dispatch(AppAction.SelectTab(pl.artifex.hiciarz.model.AppTab.BINGO))
-            model.dispatch(AppAction.DrawBingo)
-        }
-        fun redraw(stage: BingoStage) {
-            val previous = model.state.value
-            compose.onNodeWithTag("bingo-boards-download").performScrollTo().assertIsDisplayed()
-            compose.onAllNodesWithText("Plansze do pobrania").assertCountEquals(1)
-            val draw = compose.onNodeWithText("Losuj kolejną kategorię").performScrollTo().assertIsDisplayed()
-                .getUnclippedBoundsInRoot()
-            val category = compose.onNodeWithTag("bingo-rule-card").getUnclippedBoundsInRoot()
-            assertTrue("The large draw action stays outside the category panel", draw.top >= category.bottom)
-            compose.onNodeWithText("Losuj kolejną kategorię").performClick()
-            compose.runOnIdle {
-                val current = model.state.value
-                assertNotEquals(previous.question, current.question)
-                assertEquals(stage, current.bingoStage)
-                assertEquals(previous.bingoRound, current.bingoRound)
-                assertEquals(previous.bingoSong, current.bingoSong)
-            }
-        }
-
-        redraw(BingoStage.RULE)
-        compose.onNodeWithText("Skanuj kartę").performScrollTo().performClick()
-        redraw(BingoStage.SCAN)
-        enterCode("https://example.org/#2fs0000000000000000000000")
-        redraw(BingoStage.PLAYING)
-        compose.onNodeWithText("Następna runda").performScrollTo().assertIsDisplayed()
-    }
-
-    @Test fun bingoRequiresAQuestionThenAnExplicitScanAndKeepsItsRule() {
-        compose.onNodeWithText("Bingo").performClick()
-        compose.onNodeWithTag("bingo-boards-download").assertIsDisplayed()
-        compose.onAllNodesWithText("Plansze do pobrania").assertCountEquals(1)
-        compose.onNodeWithTag("bingo-empty-category").assertIsDisplayed()
-        captureNative(compose, "phone-games-pl")
-        compose.onNodeWithContentDescription("Jak grać").performClick()
-        compose.onNodeWithText("Plansze do pobrania").performScrollTo().assertIsDisplayed()
-        captureNative(compose, "phone-help-bingo-pl", scrollTop = false)
-        compose.onNodeWithContentDescription("Wróć").performClick()
-
-        compose.onNodeWithText("Losuj kategorię").performScrollTo().performClick()
-        compose.onNodeWithText("Skanuj kartę").performScrollTo().assertIsDisplayed()
-        compose.onNodeWithTag("camera-preview").assertDoesNotExist()
-        captureNative(compose, "phone-bingo-question-pl")
-        compose.onNodeWithText("Skanuj kartę").performClick()
-        compose.onNodeWithTag("camera-preview").assertIsDisplayed()
-        compose.onNodeWithText("Wróć do pytania").performScrollTo().performClick()
-        compose.onNodeWithText("Skanuj kartę").performScrollTo().assertIsDisplayed()
-        compose.onNodeWithText("Skanuj kartę").performClick()
-        enterCode("https://example.org/#2vs0000000000000000000000")
-        compose.onNodeWithTag("camera-preview").assertDoesNotExist()
-        compose.onNodeWithText("Odkryj odpowiedź").assertDoesNotExist()
-        compose.onNodeWithText("Odpowiedź znajdziesz na drukowanej karcie.").assertExists()
-        compose.onNodeWithText("Następna runda").performScrollTo().assertIsDisplayed()
-        compose.onNodeWithText("Następna runda").performScrollTo().performClick()
-        compose.onNodeWithText("Skanuj kartę").performScrollTo().assertIsDisplayed()
-
-        // A known printed card can reveal its answer in the app. The question stays fixed.
-        activity.onActivity {
-            ViewModelProvider(it)[HiciarzViewModel::class.java].dispatch(AppAction.SetQuestion(QuestionType.YEAR_WITHIN_TWO))
-        }
-        compose.onNodeWithText("Skanuj kartę").performClick()
-        enterCode(KNOWN_FISH_CARD)
-        compose.onNodeWithText(KNOWN_TITLE).assertDoesNotExist()
-        compose.onNodeWithText("Odkryj odpowiedź").performScrollTo().assertIsDisplayed()
-        waitForFishArtwork()
-        captureNative(compose, "phone-bingo-playing-pl")
-        compose.onNodeWithText("Odkryj odpowiedź").performScrollTo().performClick()
-        compose.onNodeWithText(KNOWN_TITLE).performScrollTo().assertIsDisplayed()
-        compose.onNodeWithText("Następna runda").performScrollTo().assertIsDisplayed()
-    }
-
     @Test fun scannerSkinsSettingsAndLanguageUseNativeScreens() {
         compose.onNodeWithText("Skaner").assertIsSelected()
+        compose.onNodeWithText("Bingo").assertDoesNotExist()
         compose.onNodeWithText("Talie").assertDoesNotExist()
         compose.onNodeWithText("Graj bez kart").assertDoesNotExist()
         compose.onNodeWithTag("mode-timeline").assertDoesNotExist()
@@ -156,7 +74,7 @@ class NativeFlowTest {
         compose.waitForIdle()
         compose.onNodeWithText("English").performScrollTo().performClick()
         compose.onNodeWithText("Scan").assertIsDisplayed()
-        compose.onNodeWithText("Bingo").assertIsDisplayed()
+        compose.onNodeWithText("Bingo").assertDoesNotExist()
         compose.onNodeWithText("Decks").assertDoesNotExist()
         compose.onNodeWithText("Language").performScrollTo().assertIsDisplayed()
         captureNative(compose, "phone-settings-en")

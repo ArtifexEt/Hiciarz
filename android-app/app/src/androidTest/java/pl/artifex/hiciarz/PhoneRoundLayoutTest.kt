@@ -2,7 +2,6 @@ package pl.artifex.hiciarz
 
 import androidx.compose.ui.test.*
 import androidx.compose.ui.test.junit4.createEmptyComposeRule
-import androidx.lifecycle.ViewModelProvider
 import androidx.test.core.app.ActivityScenario
 import androidx.test.platform.app.InstrumentationRegistry
 import org.junit.After
@@ -10,10 +9,8 @@ import org.junit.Assert.assertTrue
 import org.junit.Before
 import org.junit.Rule
 import org.junit.Test
-import pl.artifex.hiciarz.model.AppAction
-import pl.artifex.hiciarz.model.QuestionType
 
-/** A 360 dp phone keeps scanner actions visible and lets every larger Bingo control scroll clear of navigation. */
+/** A 360 dp phone keeps scanner playback and answer controls clear of navigation. */
 class PhoneRoundLayoutTest {
     @get:Rule val compose = createEmptyComposeRule()
     private lateinit var activity: ActivityScenario<MainActivity>
@@ -52,26 +49,13 @@ class PhoneRoundLayoutTest {
         captureNative(compose, "phone-card-answer-refined-pl", scrollTop = false)
     }
 
-    @Test fun bingoControlsScrollClearOfNavigationWithTheLargerCategoryPanel() {
-        compose.onNodeWithText("Bingo").performClick()
-        captureNative(compose, "phone-games-pl", scrollTop = false)
-        compose.onNodeWithText("Losuj kategorię").performScrollTo().performClick()
-        activity.onActivity {
-            ViewModelProvider(it)[HiciarzViewModel::class.java]
-                .dispatch(AppAction.SetQuestion(QuestionType.YEAR_WITHIN_TWO))
-        }
-        compose.onNodeWithText("Skanuj kartę").performScrollTo().performClick()
+    @Test fun scannerPlaybackAndNewScanStayClearOfNavigation() {
         enterKnownCard()
-        assertControlScrollsAboveNavigation("bingo-boards-download")
-        assertControlScrollsAboveNavigation("bingo-draw-category")
         assertControlScrollsAboveNavigation("card-playback-toggle")
-        compose.onNodeWithText("Odkryj odpowiedź").performScrollTo()
-        assertRevealFitsAboveNavigation()
-        captureNative(compose, "phone-bingo-compact-playing-pl", scrollTop = false)
-        captureNative(compose, "phone-bingo-playing-pl", scrollTop = false)
-        val next = compose.onNodeWithText("Następna runda").performScrollTo().assertIsDisplayed().getUnclippedBoundsInRoot()
-        val navigation = compose.onNodeWithTag("app-bottom-navigation").getUnclippedBoundsInRoot()
-        assertTrue("Next round stays above navigation after scrolling", next.bottom <= navigation.top)
+        assertControlScrollsAboveNavigation("scan-new-card")
+        compose.onNodeWithText("Skanuj nową").performClick()
+        compose.onNodeWithTag("camera-preview").assertIsDisplayed()
+        compose.onNodeWithText("Bingo").assertDoesNotExist()
     }
 
     private fun enterKnownCard() {

@@ -54,20 +54,8 @@ internal fun DecksScreen(state: AppState, copy: UiCopy, onAction: (AppAction) ->
         state.activeDeck?.let { deck ->
             YearTicket(deck.skin, deck.songs.size.toString(), copy.t("Utwory w talii", "Tracks in this deck"),
                 title = copy.deck(deck), subtitle = copy.mode(deck.gameMode), compact = true)
-            Button(onClick = {
-                val guess = deck.gameMode != GameMode.CLASSIC ||
-                    (deck.songs.isNotEmpty() && deck.songs.all { it.gameMode != GameMode.CLASSIC })
-                onAction(AppAction.SetCardlessMode(if (guess) CardlessMode.QUIZ else CardlessMode.TIMELINE))
-                onAction(AppAction.SelectTab(AppTab.BINGO))
-            },
-                modifier = Modifier.fillMaxWidth().heightIn(min = 54.dp), shape = ControlShape,
-                colors = ButtonDefaults.buttonColors(containerColor = MaterialTheme.colorScheme.secondary,
-                    contentColor = MaterialTheme.colorScheme.onSecondary)) {
-                Icon(AppIcons.Game, null, Modifier.size(21.dp)); Spacer(Modifier.width(10.dp))
-                Text(copy.t("Graj bez kart", "Play without cards"))
-            }
-            Text(copy.t("Talie są używane w grach bez kart i do odkrywania odpowiedzi zeskanowanych kart.",
-                "Decks are used for cardless games and to reveal the answers on scanned cards."),
+            Text(copy.t("Talie uzupełniają informacje o zeskanowanych kartach.",
+                "Decks supply information about scanned cards."),
                 style = MaterialTheme.typography.bodyMedium, color = MaterialTheme.colorScheme.onSurfaceVariant)
         }
     })

@@ -24,7 +24,7 @@ Hiciarz zamienia ulubione nagrania w grę przy wspólnym stole. Przygotuj talię
 
 - **Wasza muzyka, Wasze talie.** Wklejaj linki do utworów Spotify, sprawdzaj rok w MusicBrainz albo wczytuj pliki JSON/CSV. Na początek czekają gotowe zestawy: świąteczne hity i muzyka z gier.
 - **Karty w Waszym stylu.** Wybierz motyw, dodaj własny rewers i pobierz PDF do dwustronnego druku. Kwadratowe karty mają 60 × 60 mm.
-- **Kilka sposobów na wspólną grę.** Muzyczna oś czasu, zgadywanie filmów i gier oraz Bingo z planszami do wydrukowania.
+- **Kilka sposobów na wspólną grę.** Muzyczna oś czasu oraz zgadywanie filmów i gier. [Bingo z planszami do druku](https://artifexet.github.io/Bingo/) działa w osobnej aplikacji.
 - **Muzyka tam, gdzie gracie.** Słuchaj na telefonie albo połącz skaner z odtwarzaczem na drugim ekranie.
 
 ## Zobacz Hiciarza
@@ -36,11 +36,11 @@ Przygotuj własną talię i od razu zobacz, jak będą wyglądać wydrukowane ka
 <table>
   <tr>
     <th>Skanuj i zgaduj</th>
-    <th>Zagraj w muzyczne Bingo</th>
+    <th>Osobna aplikacja Bingo</th>
   </tr>
   <tr>
     <td width="50%" align="center"><a href="https://artifexet.github.io/Hiciarz/?view=scanner"><img src="web/docs/screenshots/scanner-mobile.png" alt="Skaner kart Hiciarza na telefonie" width="250"></a></td>
-    <td width="50%" align="center"><a href="https://artifexet.github.io/Hiciarz/?view=bingo"><img src="web/docs/screenshots/bingo-mobile.png" alt="Muzyczne Bingo w Hiciarzu" width="250"></a></td>
+    <td width="50%" align="center"><a href="https://artifexet.github.io/Bingo/">Otwórz Bingo</a><br>Losowanie kategorii i plansze PDF do druku.</td>
   </tr>
 </table>
 
@@ -51,7 +51,7 @@ Przygotuj własną talię i od razu zobacz, jak będą wyglądać wydrukowane ka
 3. **Wybierz, gdzie ma grać muzyka.** W **Dźwięk** ustaw odtwarzanie na tym urządzeniu lub drugi ekran.
 4. **Skanuj, słuchaj i zgaduj.** Zeskanuj QR z karty i sprawdź odpowiedź po jej odwróceniu. Jeśli masz już wydrukowaną talię, możesz od razu zacząć od **Skanuj karty**.
 
-Wolisz Bingo? [Otwórz generator plansz PDF](https://artifexet.github.io/Hiciarz/?view=bingo&sheet=print&level=beginner&lang=pl), wydrukuj plansze i losuj kategorie muzycznych zagadek. Wybierz poziom podstawowy lub zaawansowany i liczbę potrzebnych wydruków.
+Bingo ma osobną aplikację i [repozytorium](https://github.com/ArtifexEt/Bingo). [Otwórz generator plansz PDF](https://artifexet.github.io/Bingo/?sheet=print&level=beginner&lang=pl), wydrukuj plansze i losuj kategorie muzycznych zagadek. Wybierz poziom podstawowy lub zaawansowany i liczbę potrzebnych wydruków.
 
 ## Spotify i inne sposoby słuchania
 
@@ -63,7 +63,7 @@ Hiciarz nie łączy konta Spotify. W kreatorze wklej link do konkretnego utworu,
 
 ## Także na Androidzie
 
-Wolisz natywną aplikację na telefonie? **[Pobierz testowy APK z GitHub Releases](https://github.com/ArtifexEt/Hiciarz/releases)**. Android skupia się na skanowaniu drukowanych kart i prowadzeniu Bingo. Prowadzący losuje pytanie, skanuje kartę i odtwarza jej utwór w Spotify. Aplikacja wymaga Androida 8.0 lub nowszego; talie, karty i plansze Bingo przygotujesz w przeglądarce.
+Wolisz natywną aplikację na telefonie? **[Pobierz testowy APK z GitHub Releases](https://github.com/ArtifexEt/Hiciarz/releases)**. Android służy do skanowania drukowanych kart QR i uruchamiania ich utworów w Spotify. Aplikacja wymaga Androida 8.0 lub nowszego. Talie i karty przygotujesz w webowym Hiciarzu, a plansze do Bingo w [osobnej aplikacji](https://artifexet.github.io/Bingo/).
 
 [Instalacja i wymagania aplikacji Android](android-app/README.md#instalacja-wydania-testowego).
 

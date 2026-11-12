@@ -32,18 +32,25 @@ function mobileButtons(markup: string) {
 afterEach(() => setLanguage('pl'));
 
 describe('persistent app navigation', () => {
-  it('keeps scanner, Bingo, decks and sound directly available in the mobile navigation', () => {
+  it('keeps scanner, decks and sound available beside the external Bingo link', () => {
     setLanguage('pl');
-    const controls = mobileButtons(render('bingo'));
+    const controls = mobileButtons(render('scanner'));
     expect(controls.map((button) => button.text)).toEqual([
       'Skaner',
-      'Bingo',
       'Talie',
       t('shell.sound'),
       'Więcej',
     ]);
-    expect(controls[1].attributes).toContain('aria-current="page"');
-    expect(controls[4].attributes).not.toContain('aria-current=');
+    expect(controls[0].attributes).toContain('aria-current="page"');
+    expect(controls[3].attributes).not.toContain('aria-current=');
+    const links = [...render('scanner').matchAll(/<a\b([^>]*)>([\s\S]*?)<\/a>/g)];
+    expect(links).toHaveLength(2);
+    for (const [, attributes, content] of links) {
+      expect(attributes).toContain('href="https://artifexet.github.io/Bingo/?lang=pl"');
+      expect(attributes).toContain('rel="noreferrer"');
+      expect(attributes).not.toContain('aria-current=');
+      expect(content).toContain('Bingo');
+    }
   });
 
   it('exposes the same sound dialog action on desktop and mobile without treating it as a page', () => {
@@ -66,6 +73,6 @@ describe('persistent app navigation', () => {
     expect(more.attributes).toContain('aria-current="page"');
     expect(more.attributes).toContain('aria-expanded="true"');
     expect(more.attributes).toContain('aria-haspopup="dialog"');
-    expect(mobileButtons(render('bingo')).at(-1)!.attributes).not.toContain('aria-current=');
+    expect(mobileButtons(render('editor')).at(-1)!.attributes).not.toContain('aria-current=');
   });
 });

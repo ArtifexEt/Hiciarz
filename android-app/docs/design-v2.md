@@ -1,5 +1,7 @@
 # Android — projekt drugiej wersji interfejsu
 
+Dokument archiwalny opisujący wcześniejszą wersję Androida z trybami gry. Obecna aplikacja zawiera Skaner i Opcje; aktualny zakres opisuje [podział funkcji PWA i Androida](pwa-parity.md).
+
 To aplikacja do wspólnej gry przy muzyce: ekran ma pomóc rozpocząć turę, zachować tajemnicę utworu i rozstrzygnąć odpowiedź. Tworzenie kart pozostaje w webie.
 
 Rozpatrzone układy:

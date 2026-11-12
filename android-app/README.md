@@ -1,51 +1,38 @@
 # Hiciarz na Androida
 
-Natywna aplikacja Kotlin / Jetpack Compose do skanowania drukowanych kart i prowadzenia Bingo. Otwiera się na skanerze, a dolna nawigacja zawiera **Skaner, Bingo i Opcje**. Spotify odtwarza muzykę w swojej aplikacji, a Hiciarz steruje nim przez oficjalny App Remote SDK. Biblioteka talii, kreator i generator PDF pozostają w [`../web/`](../web/). Gry bez kart są na razie wyłączone w Androidzie.
+Plan publikacji w sklepie: [proces wydania w Google Play](docs/google-play-release.md).
 
-W Bingo telefon prowadzącego najpierw losuje kategorię, a dopiero wybranie „Skanuj kartę” uruchamia aparat. Na szerszym ekranie losowanie od razu przygotowuje skaner, a powiększone pole pytania pozostaje obok aparatu i karty. Duże pole kategorii i wyróżniony przycisk losowania odpowiadają wersji web; przycisk przyjmuje akcent aktywnej skórki. „Losuj kolejną kategorię” zmienia pytanie na inne z tego samego poziomu przed skanem, podczas skanowania i po odtworzeniu karty. „Plansze do pobrania” są od razu widoczne na ekranie Bingo. Zachowuje utwór i numer rundy; widoczność odpowiedzi odpowiada ustawieniu jej ukrywania. Skan rozpoczyna utwór; gracze zaznaczają odpowiedzi na papierowych planszach. „Następna runda” przygotowuje nowe pytanie i kolejną kartę, a „Plansze do pobrania” otwiera generator z wybranym poziomem i językiem. Zasady każdej gry są dostępne pod „Jak grać”.
+Natywna aplikacja Kotlin / Jetpack Compose do skanowania drukowanych kart QR i uruchamiania przypisanej muzyki. Otwiera się na skanerze, a nawigacja zawiera **Skaner i Opcje**. Spotify odtwarza muzykę w swojej aplikacji, a Hiciarz steruje nim przez oficjalny App Remote SDK. Biblioteka talii, kreator kart i generator PDF są dostępne w [`../web/`](../web/). [Bingo i plansze do druku](https://artifexet.github.io/Bingo/) mają osobne [repozytorium](https://github.com/ArtifexEt/Bingo).
 
-Skaner i karta zajmują główną część ekranu i zachowują kwadratowe proporcje również na tablecie. Przycisk pauzy lub wznowienia znajduje się bezpośrednio na obrazie karty; po odkryciu odpowiedzi przechodzi w róg. W skanerze pod kartą jest przycisk „Skanuj nową”. Odtwarzanie i skórka działają na podstawie QR także wtedy, gdy aplikacja nie zna danych utworu, więc utworzenie nowej playlisty nie wymaga aktualizacji APK. Odkrywanie w aplikacji jest dostępne, gdy zapisane dane pozwalają sprawdzić odpowiedź; dla pozostałych kart odpowiedź pozostaje na wydruku. Skórka obejmuje całą aplikację: tła, panele, przyciski, nawigację i okna opcji. Palety odpowiadają wersji web i uwzględniają systemowy tryb ciemny.
+Skaner i karta zachowują kwadratowe proporcje również na tablecie. Pauza i wznowienie znajdują się na obrazie karty, a pod nią jest przycisk „Skanuj nową”. Odtwarzanie i skórka działają na podstawie QR także dla utworów, których danych aplikacja nie zna. Odkrywanie jest dostępne, gdy zapisane dane pozwalają wyświetlić odpowiedź; dla pozostałych kart odpowiedź pozostaje na wydruku.
 
-QR może automatycznie włączyć jedną z dziewięciu skórek. Identyfikator motywu jest zapisany w kodzie, niezależnie od listy piosenek. Android pakuje te same grafiki rewersów co PWA, także rybkę w czapce Mikołaja; rybki mają kołyszące się ozdoby i migoczące lampki. Skaner i Bingo zachowują własny motyw karty podczas przełączania. Ustawienia pozwalają wybrać własny wygląd i wyłączyć śledzenie skórki karty. Automatyczna pauza jest domyślnie wyłączona. Na dużym oknie i rozłożonym telefonie nawigacja przechodzi na bok, a niezależne panele uwzględniają zgięcie ekranu. Pasek odtwarzania w Opcjach pozostaje nad nawigacją systemową. [Porównanie funkcji z PWA](docs/pwa-parity.md) opisuje pełny zakres.
+Kod QR może automatycznie włączyć jedną z dziewięciu skórek. Palety i grafiki odpowiadają wersji web i uwzględniają tryb ciemny; rybki mają animowane ozdoby i lampki. W Opcjach można wybrać własny wygląd i wyłączyć śledzenie skórki karty. Automatyczna pauza jest domyślnie wyłączona. Na dużym oknie nawigacja przechodzi na bok, a panele uwzględniają zgięcie ekranu. [Podział funkcji PWA i Androida](docs/pwa-parity.md) opisuje pełny zakres.
 
-Zegar i systemowy pasek statusu są ukryte w całej aplikacji, również w panelach opcji i oknach dialogowych. Dolna nawigacja systemowa pozostaje dostępna. Android nadal pozwala rozwinąć powiadomienia gestem od góry; tryb pełnoekranowy nie blokuje osobnych wyskakujących powiadomień Spotify. System może też na kilka sekund odsłonić pasek podczas animacji zielonego wskaźnika aparatu, po czym ponownie go ukrywa.
+Po aktualizacji ze starszej wersji aplikacja uruchamia skaner i pomija zapisane rundy usuniętych trybów. Zachowuje ustawienia, dane talii i skanowanych kart.
+
+Zegar i systemowy pasek statusu są ukryte również w panelach opcji i dialogach. Dolna nawigacja systemowa pozostaje dostępna. Android pozwala rozwinąć powiadomienia gestem od góry i może chwilowo odsłonić pasek podczas animacji wskaźnika aparatu.
 
 ## Ekrany aplikacji
 
-Zrzuty pochodzą z uruchomionej aplikacji na emulatorze AOSP. Pokazują skaner, przebieg Bingo i te same grafiki skórek co PWA. W emulatorze Spotify nie jest zainstalowane.
+Zrzuty pochodzą z aplikacji na emulatorze AOSP bez zainstalowanego Spotify. Układy Folda korzystają z emulowanego okna i pozycji zawiasu przekazywanej przez WindowManager.
 
-| Bingo · telefon prowadzącego | Skaner · aparat |
+| Skaner | Odkryta karta |
 | --- | --- |
-| <img src="docs/screenshots/phone-bingo-playing-pl.png" width="240" alt="Bingo z wylosowaną kategorią, ukrytą kartą oraz odkryciem odpowiedzi i następną rundą" /> | <img src="docs/screenshots/phone-scan-pl.png" width="240" alt="Natywny skaner QR z powiększeniem, latarką i dolną nawigacją" /> |
+| <img src="docs/screenshots/phone-scan-pl.png" width="240" alt="Skaner QR z nawigacją Skaner i Opcje" /> | <img src="docs/screenshots/phone-scan-revealed-pl.png" width="240" alt="Dane karty po odkryciu" /> |
 
-| Rybki · rewers | Odkryta karta |
+| Rybki | Opcje i większy tekst |
 | --- | --- |
-| <img src="docs/screenshots/phone-scan-fish-pl.png" width="240" alt="Rewers karty ze źródłową grafiką rybek z PWA" /> | <img src="docs/screenshots/phone-scan-revealed-pl.png" width="240" alt="Jasna strona odpowiedzi po obrocie karty" /> |
+| <img src="docs/screenshots/phone-scan-fish-pl.png" width="240" alt="Karta z animowaną skórką rybek" /> | <img src="docs/screenshots/phone-settings-large-dark-pl.png" width="240" alt="Opcje w trybie ciemnym z większym tekstem" /> |
 
-| Rozłożony ekran · dwa panele | Tabletop · poziome zgięcie |
+| Rozłożony ekran | Poziome zgięcie |
 | --- | --- |
-| <img src="docs/screenshots/fold-inner-scanner-pl.png" width="440" alt="Aparat i pytanie Bingo w osobnych panelach po obu stronach pionowego zgięcia" /> | <img src="docs/screenshots/fold-tabletop-scanner-pl.png" width="440" alt="Aparat nad poziomym zgięciem, pytanie i działania poniżej oraz dolna nawigacja" /> |
+| <img src="docs/screenshots/fold-inner-scanner-pl.png" width="440" alt="Skaner na rozłożonym ekranie z pionowym zawiasem" /> | <img src="docs/screenshots/fold-tabletop-scanner-pl.png" width="440" alt="Skaner uwzględniający poziome zgięcie ekranu" /> |
 
-| Tablet · pytanie i skaner | Tablet · pytanie podczas odsłuchu |
+| Tablet i aparat | Tablet i karta |
 | --- | --- |
-| <img src="docs/screenshots/tablet-bingo-scanner-pl.png" width="540" alt="Aparat i pełna wylosowana kategoria Bingo widoczne jednocześnie, bez przełączania ekranu" /> | <img src="docs/screenshots/tablet-bingo-playing-pl.png" width="540" alt="Pełne pytanie i podpowiedź obok karty, odtwarzania i następnej rundy" /> |
+| <img src="docs/screenshots/tablet-scanner-pl.png" width="540" alt="Kwadratowy aparat na tablecie" /> | <img src="docs/screenshots/tablet-card-pl.png" width="540" alt="Karta i sterowanie odtwarzaniem na tablecie" /> |
 
-Układy Folda sprawdzono w emulowanym oknie z pozycją zawiasu przekazywaną przez WindowManager. Nie jest to test na fizycznym Fold7.
-
-<details>
-<summary>Skórki, pomoc i większy tekst</summary>
-
-| Dziewięć skórek | Jak grać w Bingo |
-| --- | --- |
-| <img src="docs/screenshots/phone-skins-pl.png" width="240" alt="Dziewięć skórek ze wspólnymi grafikami rewersów PWA i Androida" /> | <img src="docs/screenshots/phone-help-bingo-pl.png" width="240" alt="Cztery kolejne kroki gry Bingo i link do generatora plansz" /> |
-
-| Jak grać w Bingo | Tryb ciemny · tekst 135% |
-| --- | --- |
-| <img src="docs/screenshots/phone-help-bingo-pl.png" width="240" alt="Cztery kolejne kroki gry Bingo i link do generatora plansz" /> | <img src="docs/screenshots/phone-settings-large-dark-pl.png" width="240" alt="Powiększone ustawienia w ciemnym motywie z czytelną dolną nawigacją" /> |
-
-[Ekran przygotowania Bingo](docs/screenshots/phone-games-pl.png)
-
-</details>
+[Dziewięć skórek aplikacji](docs/screenshots/phone-skins-pl.png).
 
 ## Instalacja wydania testowego
 
@@ -123,9 +110,9 @@ Ustaw `ANDROID_HOME` na lokalizację Android SDK albo dodaj `sdk.dir=…` do lok
 | Raport testów JUnit | `app/build/reports/tests/testDebugUnitTest/index.html` |
 | Raport lint | `app/build/reports/lint-results-release.html` |
 
-Testy obejmują zgodność kart QR i importu JSON/CSV z kreatorem web, skórki, reguły Bingo, Osi czasu i quizu oraz zachowanie gry po odtworzeniu procesu. Nie potwierdzają autoryzacji Spotify na prawdziwym urządzeniu; tę część należy sprawdzić ręcznie.
+Testy obejmują zgodność kart QR i importu JSON/CSV z kreatorem web, skórki, zachowanie skanera po odtworzeniu procesu oraz migrację danych ze starszych wersji. Nie potwierdzają autoryzacji Spotify na prawdziwym urządzeniu; tę część należy sprawdzić ręcznie.
 
-CI uruchamia też natywne scenariusze Compose na emulatorze AOSP: losowanie pytania Bingo przed skanem, wklejenie kodu, odkrycie karty, zmianę skórki i języka oraz zasady. Osobny scenariusz zmienia rzeczywiste okno Activity i publikuje pozycję pionowego oraz poziomego zgięcia przez WindowManager, sprawdzając, że panele nie nachodzą na zawias. Obejmuje ekran telefonu 360 dp, zewnętrzny i wewnętrzny ekran Folda, krótki widok poziomy, tryb ciemny i powiększenie tekstu. Zrzuty PNG trafiają do artefaktu `android-native-ui-…` obok raportu testów. Jest to test emulatora, a nie deklaracja sprawdzenia na fizycznym Fold7.
+CI uruchamia też natywne scenariusze Compose na emulatorze AOSP: skanowanie i wklejenie kodu, odkrycie karty, zmianę skórki i języka, pomoc oraz przełączanie między Skanerem i Opcjami. Osobny scenariusz zmienia rzeczywiste okno Activity i publikuje pozycję pionowego oraz poziomego zgięcia przez WindowManager, sprawdzając, że panele nie nachodzą na zawias. Obejmuje ekran telefonu 360 dp, zewnętrzny i wewnętrzny ekran Folda, krótki widok poziomy, tryb ciemny i powiększenie tekstu. Zrzuty PNG trafiają do artefaktu `android-native-ui-…` obok raportu testów. Jest to test emulatora, a nie deklaracja sprawdzenia na fizycznym Fold7.
 
 Testy regresji sprawdzają globalne wznawianie Spotify po zmianie zakładki, odtwarzanie wybranej karty oraz poprawną aktualizację stanu przy rozłączeniu i ponownym podłączeniu Spotify. Działają na emulatorze bez konta Spotify.
 

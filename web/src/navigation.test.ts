@@ -5,11 +5,9 @@ import {
   parseAppView,
   parseEntryModal,
   parseEntryLanguage,
-  parseBingoLevel,
   readNavigationState,
   urlForView,
   urlForModal,
-  urlForBingoLevel,
   views,
 } from './navigation';
 
@@ -55,8 +53,8 @@ describe('app navigation URLs', () => {
 
   it('replaces duplicate view parameters and removes them all when returning home', () => {
     const original = 'https://example.com/Hiciarz/?view=editor&view=player&source=qr#pair=room';
-    const next = new URL(urlForView(original, 'bingo'));
-    expect(next.searchParams.getAll('view')).toEqual(['bingo']);
+    const next = new URL(urlForView(original, 'scanner'));
+    expect(next.searchParams.getAll('view')).toEqual(['scanner']);
     const home = new URL(urlForView(next.href, 'home'));
     expect(home.searchParams.getAll('view')).toEqual([]);
     expect(home.searchParams.get('source')).toBe('qr');
@@ -64,53 +62,37 @@ describe('app navigation URLs', () => {
   });
 });
 
-describe('direct links from the Android app', () => {
-  it('opens the Bingo generator with the requested level and language, preserving the card hash', () => {
-    const url =
-      'https://example.com/Hiciarz/?view=bingo&sheet=print&level=expert&lang=en#2fs0123456789012345678901';
-    expect(parseAppView(url)).toBe('bingo');
-    expect(parseEntryModal(url)).toBe('bingo-print');
-    expect(parseBingoLevel(url)).toBe('expert');
-    expect(parseEntryLanguage(url)).toBe('en');
-    const changed = new URL(urlForBingoLevel(url, 'beginner'));
-    expect(changed.searchParams.get('sheet')).toBe('print');
-    expect(changed.searchParams.get('lang')).toBe('en');
-    expect(changed.hash).toBe('#2fs0123456789012345678901');
-  });
-
+describe('direct help and language links', () => {
   it('supports help links but refuses unrelated or destructive dialogs', () => {
-    expect(parseEntryModal('https://example.com/?view=bingo&sheet=help')).toBe('bingo-help');
     expect(parseEntryModal('https://example.com/?view=scanner&sheet=help')).toBe('help');
-    for (const sheet of ['delete', 'song', 'spotify', 'print-cards', 'unknown'])
-      expect(parseEntryModal(`https://example.com/?view=bingo&sheet=${sheet}`)).toBeNull();
-    expect(parseEntryModal('https://example.com/?view=editor&sheet=print')).toBeNull();
+    for (const sheet of ['delete', 'song', 'spotify', 'print-cards', 'unknown', 'print'])
+      expect(parseEntryModal(`https://example.com/?view=editor&sheet=${sheet}`)).toBeNull();
   });
 
-  it('builds a copyable generator URL and removes the sheet when switching views or closing it', () => {
-    const original = 'https://example.com/Hiciarz/?view=bingo&level=expert&lang=pl';
-    const generator = urlForModal(original, 'bingo', 'bingo-print');
-    expect(parseEntryModal(generator)).toBe('bingo-print');
-    expect(new URL(urlForView(generator, 'scanner')).searchParams.has('sheet')).toBe(false);
-    expect(new URL(urlForModal(generator, 'bingo', null)).searchParams.has('sheet')).toBe(false);
-    expect(parseBingoLevel(urlForModal(generator, 'bingo', null))).toBe('expert');
+  it('builds copyable help URLs and removes the sheet when switching views or closing it', () => {
+    const original = 'https://example.com/Hiciarz/?view=scanner&lang=pl#pair=room';
+    const help = urlForModal(original, 'scanner', 'help');
+    expect(parseEntryModal(help)).toBe('help');
+    expect(new URL(urlForView(help, 'editor')).searchParams.has('sheet')).toBe(false);
+    expect(new URL(urlForModal(help, 'scanner', null)).searchParams.has('sheet')).toBe(false);
+    expect(new URL(help).hash).toBe('#pair=room');
   });
 
   it('keeps defaults for malformed or unsupported external options', () => {
-    for (const url of ['not a URL', 'https://example.com/?level=admin&lang=xx']) {
+    expect(parseEntryLanguage('https://example.com/?lang=en')).toBe('en');
+    expect(parseEntryLanguage('https://example.com/?lang=pl')).toBe('pl');
+    for (const url of ['not a URL', 'https://example.com/?lang=xx']) {
       expect(parseEntryModal(url)).toBeNull();
-      expect(parseBingoLevel(url)).toBe('beginner');
       expect(parseEntryLanguage(url)).toBeUndefined();
     }
   });
 });
 
 describe('app navigation history state', () => {
-  it('keeps the paired player when switching between Bingo and scanning, but ends it for other routes', () => {
-    expect(keepScannerPairing('scanner', 'bingo')).toBe(true);
-    expect(keepScannerPairing('bingo', 'scanner')).toBe(true);
+  it('keeps a paired scanner only while staying on its route', () => {
+    expect(keepScannerPairing('scanner', 'scanner')).toBe(true);
     for (const view of ['home', 'editor', 'player'] as const) {
       expect(keepScannerPairing('scanner', view)).toBe(false);
-      expect(keepScannerPairing('bingo', view)).toBe(false);
       expect(keepScannerPairing(view, 'scanner')).toBe(false);
     }
   });
@@ -129,6 +111,8 @@ describe('app navigation history state', () => {
       { modal: 'song' },
       { hiciarzNavigation: 'true', modal: 'song' },
       { hiciarzNavigation: true, modal: 'unknown' },
+      { hiciarzNavigation: true, modal: 'bingo-print' },
+      { hiciarzNavigation: true, modal: 'bingo-help' },
       { hiciarzNavigation: true, modal: 'spotify' },
       { hiciarzNavigation: true, modal: 'spotify-setup' },
       { hiciarzNavigation: true },

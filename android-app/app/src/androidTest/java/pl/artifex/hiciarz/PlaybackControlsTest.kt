@@ -24,10 +24,6 @@ import pl.artifex.hiciarz.model.AppAction
 import pl.artifex.hiciarz.model.AppSettings
 import pl.artifex.hiciarz.model.AppState
 import pl.artifex.hiciarz.model.AppTab
-import pl.artifex.hiciarz.model.CardlessMode
-import pl.artifex.hiciarz.model.BingoStage
-import pl.artifex.hiciarz.model.BingoLevel
-import pl.artifex.hiciarz.model.QuestionType
 import pl.artifex.hiciarz.model.ConnectionStatus
 import pl.artifex.hiciarz.model.Deck
 import pl.artifex.hiciarz.model.GameMode
@@ -35,36 +31,24 @@ import pl.artifex.hiciarz.model.PlaybackState
 import pl.artifex.hiciarz.model.Song
 import pl.artifex.hiciarz.ui.HiciarzApp
 
-/** Real UI callbacks distinguish the global transport from the two cards. */
+/** Real UI callbacks distinguish global transport from the scanned card. */
 @RunWith(AndroidJUnit4::class)
 class PlaybackControlsTest {
     @get:Rule val compose = createComposeRule()
     private val actions = mutableListOf<AppAction>()
     private val scanned = Song("scan-a", "Scanned song", "Artist A", 1984, "2FRnf9qhLbvw8fu4IBXx78")
-    private val bingo = Song("bingo-b", "Bingo song", "Artist B", 1976, "0GjEhVFGZW8afUYGChu3Rr")
+    private val external = Song("external-b", "External song", "Artist B", 1976, "0GjEhVFGZW8afUYGChu3Rr")
 
     @Test fun globalPlayInSettingsResumesSpotifyDespiteAnOlderScannedCard() {
         assertGlobalResume(AppTab.SETTINGS)
     }
 
-    @Test fun globalPlayInBingoResumesSpotifyDespiteAnOlderScannedCard() {
-        assertGlobalResume(AppTab.BINGO)
-    }
-
     @Test fun scannedCardPlayExplicitlyRequestsThatCardWhenSpotifyHasAnotherTrack() {
-        render(AppTab.SCAN, spotifyTrack = bingo)
+        render(AppTab.SCAN, spotifyTrack = external)
 
         compose.onNodeWithContentDescription("Play").performScrollTo().performClick()
 
         compose.runOnIdle { assertEquals(listOf(AppAction.PlayCard(scanned)), actions) }
-    }
-
-    @Test fun bingoCardPlayExplicitlyRequestsTheDrawnCardWhenSpotifyHasAnotherTrack() {
-        render(AppTab.BINGO, spotifyTrack = scanned)
-
-        compose.onNodeWithContentDescription("Play").performScrollTo().performClick()
-
-        compose.runOnIdle { assertEquals(listOf(AppAction.PlayCard(bingo)), actions) }
     }
 
     @Test fun unknownCardHasPlaybackOnArtworkAndScanDirectlyBelowIt() {
@@ -143,8 +127,8 @@ class PlaybackControlsTest {
     }
 
     private fun assertGlobalResume(tab: AppTab) {
-        // A was scanned earlier, B was drawn in Bingo and B is now paused in Spotify.
-        render(tab, spotifyTrack = bingo)
+        // Spotify may be paused on a different track from the previously scanned card.
+        render(tab, spotifyTrack = external)
 
         compose.onNodeWithContentDescription("Spotify playback").performClick()
         compose.onNode(hasContentDescription("Play") and hasAnyAncestor(isDialog())).performClick()
@@ -153,14 +137,9 @@ class PlaybackControlsTest {
     }
 
     private fun render(tab: AppTab, spotifyTrack: Song) {
-        val deck = Deck("test-deck", "Test deck", listOf(scanned, bingo))
+        val deck = Deck("test-deck", "Test deck", listOf(scanned, external))
         val state = AppState(
             tab = tab,
-            cardlessMode = CardlessMode.BINGO,
-            bingoStage = BingoStage.PLAYING,
-            bingoRound = 1,
-            bingoLevel = BingoLevel.EXPERT,
-            question = QuestionType.TITLE,
             playback = PlaybackState(
                 connection = ConnectionStatus.CONNECTED,
                 isPlaying = false,
@@ -171,8 +150,6 @@ class PlaybackControlsTest {
             activeDeckId = deck.id,
             currentSong = scanned,
             scannerEnabled = false,
-            bingoSong = bingo,
-            bingoHistory = listOf(bingo),
         )
         compose.setContent { HiciarzApp(state) { actions.add(it) } }
     }

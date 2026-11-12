@@ -59,8 +59,7 @@ class FullscreenNativeTest {
     @Test fun statusBarStaysHiddenAcrossTabsForegroundReturnAndRecreation() {
         assertFocusedWindow("Initial scanner", dialog = false)
         captureNative(compose, "fullscreen-scanner", scrollTop = false)
-        compose.onNodeWithText("Bingo").performClick()
-        assertFocusedWindow("Bingo", dialog = false)
+        compose.onNodeWithText("Bingo").assertDoesNotExist()
         compose.onNodeWithText("Settings").performClick()
         assertFocusedWindow("Settings", dialog = false)
         captureNative(compose, "fullscreen-settings", scrollTop = false)

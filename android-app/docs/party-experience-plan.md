@@ -1,5 +1,7 @@
 # Android: rozgrywka i nowy interfejs
 
+Dokument archiwalny opisujący wcześniejszą wersję Androida z trybami gry. Obecna aplikacja zawiera Skaner i Opcje; aktualny zakres opisuje [podział funkcji PWA i Androida](pwa-parity.md).
+
 Prace obejmują aplikację Android. Funkcje kreatora, drukowania i PWA pozostają na webie. Prywatny klucz podpisujący pozostaje w GitHub Secrets.
 
 ## Wdrożone i opublikowane

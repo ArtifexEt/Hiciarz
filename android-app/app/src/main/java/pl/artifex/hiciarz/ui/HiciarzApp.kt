@@ -38,10 +38,6 @@ fun HiciarzApp(state: AppState, onAction: (AppAction) -> Unit) {
             state.message?.let { snackbar.showSnackbar(copy.message(it)); onAction(AppAction.DismissMessage) }
         }
         BackHandler(help != null) { help = null }
-        BackHandler(help == null && !manual && sheet == null && activeTab == AppTab.BINGO &&
-            state.bingoStage == BingoStage.SCAN) {
-            onAction(AppAction.CancelBingoScan)
-        }
         CompositionLocalProvider(LocalFoldGeometry provides fold) {
             BoxWithConstraints(Modifier.fillMaxSize()) {
                 val expanded = maxWidth >= 600.dp && fold?.vertical != false
@@ -76,10 +72,8 @@ fun HiciarzApp(state: AppState, onAction: (AppAction) -> Unit) {
                         snackbarHost = { SnackbarHost(snackbar) },
                     ) { padding ->
                         Box(Modifier.fillMaxSize().padding(padding).consumeWindowInsets(padding)) {
-                            if (help != null) HelpScreen(help!!, copy, state.bingoLevel) { help = it }
+                            if (help != null) HelpScreen(help!!, copy) { help = it }
                             else when (activeTab) {
-                                AppTab.BINGO -> GamesScreen(state, copy, onAction,
-                                    onManual = { manual = true }, cameraActive = !manual && sheet == null)
                                 AppTab.SCAN -> ScanScreen(state, copy, onAction,
                                     onManual = { manual = true },
                                     cameraActive = !manual && sheet == null)
@@ -116,7 +110,6 @@ fun HiciarzApp(state: AppState, onAction: (AppAction) -> Unit) {
 }
 
 private fun tabIcon(tab: AppTab): ImageVector = when (tab) {
-    AppTab.BINGO -> AppIcons.Bingo
     AppTab.SCAN -> AppIcons.Scan
     AppTab.DECKS -> AppIcons.Decks
     AppTab.SETTINGS -> AppIcons.Settings
@@ -125,7 +118,7 @@ private fun tabIcon(tab: AppTab): ImageVector = when (tab) {
 @Composable
 private fun AppBottomBar(selected: AppTab, copy: UiCopy, onChoose: (AppTab) -> Unit) {
     NavigationBar(modifier = Modifier.testTag("app-bottom-navigation"), containerColor = MaterialTheme.colorScheme.surfaceContainerLow, tonalElevation = 0.dp) {
-        listOf(AppTab.SCAN, AppTab.BINGO, AppTab.SETTINGS).forEach { tab ->
+        listOf(AppTab.SCAN, AppTab.SETTINGS).forEach { tab ->
             NavigationBarItem(selected = selected == tab, onClick = { onChoose(tab) },
                 icon = { Icon(tabIcon(tab), null) }, label = { Text(copy.tab(tab), maxLines = 1) },
                 colors = NavigationBarItemDefaults.colors(
@@ -145,7 +138,7 @@ private fun AppRail(selected: AppTab, copy: UiCopy, onChoose: (AppTab) -> Unit) 
                 Modifier.padding(vertical = 20.dp).size(38.dp))
         }) {
         Spacer(Modifier.height(16.dp))
-        listOf(AppTab.SCAN, AppTab.BINGO, AppTab.SETTINGS).forEach { tab ->
+        listOf(AppTab.SCAN, AppTab.SETTINGS).forEach { tab ->
             NavigationRailItem(selected = selected == tab, onClick = { onChoose(tab) },
                 icon = { Icon(tabIcon(tab), null) }, label = { Text(copy.tab(tab)) },
                 modifier = Modifier.padding(vertical = 6.dp),

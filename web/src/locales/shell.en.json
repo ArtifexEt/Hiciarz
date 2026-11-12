@@ -3,7 +3,6 @@
   "shell.view.home": "Home",
   "shell.view.scanner": "Scanner",
   "shell.view.editor": "Decks",
-  "shell.view.bingo": "Bingo",
   "shell.view.player": "Second screen",
   "shell.more": "More",
   "shell.help": "How to play",
@@ -52,5 +51,6 @@
   "shell.selectTracks": "Select search results",
   "shell.searchCards": "Search cards…",
   "shell.visibleTracks": "Showing {{shown}} of {{total}}",
-  "shell.cardCount": "Cards: {{count}}"
+  "shell.cardCount": "Cards: {{count}}",
+  "shell.bingoLink": "Bingo"
 }

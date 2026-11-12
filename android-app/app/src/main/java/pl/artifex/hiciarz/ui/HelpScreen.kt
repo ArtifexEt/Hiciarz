@@ -1,42 +1,27 @@
 package pl.artifex.hiciarz.ui
 
 import androidx.compose.foundation.layout.*
-import androidx.compose.foundation.rememberScrollState
-import androidx.compose.foundation.verticalScroll
 import androidx.compose.material3.*
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.unit.dp
 import pl.artifex.hiciarz.model.*
 
 internal enum class HelpTopic {
-    ALL, BINGO, SCAN, AUDIO;
+    ALL, SCAN, AUDIO;
     companion object {
         fun forState(state: AppState): HelpTopic = when (state.tab) {
             AppTab.SCAN, AppTab.DECKS -> SCAN
-            AppTab.BINGO -> BINGO
             else -> ALL
         }
     }
 }
 
 @Composable
-internal fun HelpScreen(topic: HelpTopic, copy: UiCopy, level: BingoLevel, onTopic: (HelpTopic) -> Unit) {
-    val context = LocalContext.current
+internal fun HelpScreen(topic: HelpTopic, copy: UiCopy, onTopic: (HelpTopic) -> Unit) {
     val article: @Composable () -> Unit = {
         when (topic) {
             HelpTopic.ALL -> Unit
-            HelpTopic.BINGO -> HelpArticle("Bingo", listOf(
-                copy.t("Pobierz plansze PDF i przygotuj wydruki dla graczy. Wybierz pasujący poziom pytań.",
-                    "Download the PDF boards and print them for the players. Select the matching question level."),
-                copy.t("Prowadzący losuje pytanie. Każdy widzi, co trzeba odgadnąć, zanim zacznie grać muzyka.",
-                    "The host draws a question. Everyone sees what to guess before the music starts."),
-                copy.t("Zeskanuj kod nowej karty. Jeśli aparat jest wstrzymany, wybierz „Skanuj kartę”. Posłuchajcie utworu, a potem sprawdźcie odpowiedzi.",
-                    "Scan a new printed card. If the camera is paused, tap “Scan card”. Listen together, then check the answers."),
-                copy.t("Gracze zaznaczają trafione odpowiedzi na swoich planszach. Pełny rząd, kolumna lub przekątna daje Bingo.",
-                    "Players mark correct answers on their printed boards. A full row, column or diagonal makes Bingo."),
-            ))
             HelpTopic.SCAN -> HelpArticle(copy.t("Z drukowanymi kartami", "With printed cards"), listOf(
                 copy.t("Połóż kartę kodem QR do góry i skieruj na nią aparat. Utwór uruchomi się w Spotify.", "Put a card QR-side up and point the camera at it. The track starts in Spotify."),
                 copy.t("Powiedz rok i umieść kartę na własnej osi czasu. Dla wariantów z gier lub filmów zgadnij źródło.", "Name the year and place the card in your timeline. For game and film variants, name the source."),
@@ -55,13 +40,6 @@ internal fun HelpScreen(topic: HelpTopic, copy: UiCopy, level: BingoLevel, onTop
             ))
 
         }
-        if (topic == HelpTopic.BINGO) OutlinedButton(
-            onClick = { openUrl(context, bingoBoardUrl(level, copy.language)) },
-            modifier = Modifier.fillMaxWidth().heightIn(min = 50.dp), shape = ControlShape,
-        ) {
-            Icon(AppIcons.Decks, null); Spacer(Modifier.width(10.dp))
-            Text(copy.t("Plansze do pobrania", "Get Bingo boards"))
-        }
         if (topic != HelpTopic.AUDIO) {
             Surface(color = MaterialTheme.colorScheme.secondaryContainer, shape = ControlShape) {
                 Column(Modifier.padding(18.dp), verticalArrangement = Arrangement.spacedBy(6.dp)) {
@@ -75,11 +53,11 @@ internal fun HelpScreen(topic: HelpTopic, copy: UiCopy, level: BingoLevel, onTop
     }
     AdaptivePanes(primary = {
         if (topic == HelpTopic.ALL) {
-            HelpArticle(copy.t("Przed pierwszą rundą", "Before your first round"), listOf(
+            HelpArticle(copy.t("Przed pierwszym skanem", "Before your first scan"), listOf(
                 copy.t("Otwórz Spotify i zaloguj się w jego aplikacji. W Hiciarzu wybierz „Połącz Spotify” i zaakceptuj jednorazową zgodę.",
                     "Open Spotify and sign in there. In Hiciarz, choose “Connect Spotify” and accept the one-time permission."),
-                copy.t("Zeskanuj drukowaną kartę, żeby odtworzyć utwór. W Bingo najpierw wylosuj pytanie i przygotuj papierowe plansze dla graczy.",
-                    "Scan a printed card to play its track. For Bingo, first draw a question and prepare printed boards for the players."),
+                copy.t("Zeskanuj kod QR na drukowanej karcie, żeby odtworzyć przypisany do niej utwór.",
+                    "Scan the QR code on a printed card to play its track."),
                 copy.t("Przyciski odtwarzania w Hiciarzu sterują muzyką w Spotify. Automatyczna pauza jest domyślnie wyłączona.",
                     "Hiciarz controls playback in Spotify. Automatic pause is off by default."),
             ))
@@ -89,7 +67,6 @@ internal fun HelpScreen(topic: HelpTopic, copy: UiCopy, level: BingoLevel, onTop
             helpLinks(copy).filter { it.first != topic }.forEachIndexed { index, item ->
                 if (index > 0) GroupDivider()
                 SettingRow(item.second, icon = when (item.first) {
-                    HelpTopic.BINGO -> AppIcons.Bingo
                     HelpTopic.SCAN -> AppIcons.Scan
                     else -> AppIcons.Speaker
                 }) { onTopic(item.first) }
@@ -99,7 +76,6 @@ internal fun HelpScreen(topic: HelpTopic, copy: UiCopy, level: BingoLevel, onTop
 }
 
 private fun helpLinks(copy: UiCopy) = listOf(
-    HelpTopic.BINGO to "Bingo",
     HelpTopic.SCAN to copy.t("Drukowane karty", "Printed cards"),
     HelpTopic.AUDIO to copy.t("Spotify i odtwarzanie", "Spotify and playback"),
 )

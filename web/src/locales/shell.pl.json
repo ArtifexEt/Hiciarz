@@ -3,7 +3,6 @@
   "shell.view.home": "Start",
   "shell.view.scanner": "Skaner",
   "shell.view.editor": "Talie",
-  "shell.view.bingo": "Bingo",
   "shell.view.player": "Drugi ekran",
   "shell.more": "Więcej",
   "shell.help": "Jak grać",
@@ -52,5 +51,6 @@
   "shell.selectTracks": "Zaznacz wyniki wyszukiwania",
   "shell.searchCards": "Szukaj kart…",
   "shell.visibleTracks": "Wyświetlono {{shown}} z {{total}}",
-  "shell.cardCount": "Liczba kart: {{count}}"
+  "shell.cardCount": "Liczba kart: {{count}}",
+  "shell.bingoLink": "Bingo"
 }

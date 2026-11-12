@@ -17,7 +17,7 @@
   &nbsp; Przeglądarka · Telefon · PWA · Własne talie · PDF do druku
 </p>
 
-Hiciarz łączy kreator kart, skaner QR i odtwarzacz. Przygotuj listę nagrań, wybierz wygląd i wydrukuj talię. Podczas gry zeskanuj kartę, posłuchaj utworu i odgadnij rok, film lub grę. Dostępne jest też muzyczne Bingo z planszami do druku.
+Hiciarz łączy kreator kart, skaner QR i odtwarzacz. Przygotuj listę nagrań, wybierz wygląd i wydrukuj talię. Podczas gry zeskanuj kartę, posłuchaj utworu i odgadnij rok, film lub grę. Muzyczne [Bingo z planszami do druku](https://artifexet.github.io/Bingo/) jest osobną aplikacją w [repozytorium ArtifexEt/Bingo](https://github.com/ArtifexEt/Bingo).
 
 **[Spotify: dodawanie utworów i odsłuch](docs/spotify.md)** · **[Format playlist JSON/CSV](docs/playlist-guide.md)** · **[Uruchomienie i publikacja](docs/configuration.md)**
 
@@ -41,11 +41,11 @@ Ekran startowy na komputerze:
 <table>
   <tr>
     <th>Skaner na telefonie</th>
-    <th>Bingo</th>
+    <th>Osobna aplikacja Bingo</th>
   </tr>
   <tr>
-    <td width="50%" align="center"><a href="docs/screenshots/scanner-mobile.png"><img src="docs/screenshots/scanner-mobile.png" alt="Mobilny skaner z dolnym menu: Skaner, Bingo, Talie, Dźwięk i Więcej" width="320"></a></td>
-    <td width="50%" align="center"><a href="docs/screenshots/bingo-mobile.png"><img src="docs/screenshots/bingo-mobile.png" alt="Losowanie zagadki w Bingo z dostępem do Dźwięku w dolnym pasku" width="320"></a></td>
+    <td width="50%" align="center"><a href="docs/screenshots/scanner-mobile.png"><img src="docs/screenshots/scanner-mobile.png" alt="Mobilny skaner z odnośnikiem do osobnej aplikacji Bingo w dolnym menu" width="320"></a></td>
+    <td width="50%" align="center"><a href="https://artifexet.github.io/Bingo/">Otwórz Bingo</a><br>Losowanie kategorii, zasady i generator plansz PDF.</td>
   </tr>
   <tr>
     <th>Gdzie ma grać muzyka?</th>
@@ -67,10 +67,10 @@ Ekran startowy na komputerze:
 
 ## Gdzie ma grać muzyka?
 
-| Wybór w **Dźwięk**    | Jak działa                                                                             | Co przygotować                                                                                                                                                     |
-| --------------------- | -------------------------------------------------------------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------ |
-| **Na tym urządzeniu** | Spotify lub YouTube odtwarza w skanerze na telefonie albo tablecie.                    | Bez parowania i bez łączenia konta. Nagranie musi pozwalać na osadzanie; Spotify może udostępnić tylko fragment.                                                        |
-| **Drugi ekran**       | Telefon skanuje karty, a połączony komputer lub drugi telefon odtwarza muzykę.         | Na drugim urządzeniu otwórz **Drugi ekran** i wybierz **Połącz skaner**. W skanerze zeskanuj QR parowania, a następnie karty. Oba urządzenia potrzebują internetu. |
+| Wybór w **Dźwięk**    | Jak działa                                                                     | Co przygotować                                                                                                                                                     |
+| --------------------- | ------------------------------------------------------------------------------ | ------------------------------------------------------------------------------------------------------------------------------------------------------------------ |
+| **Na tym urządzeniu** | Spotify lub YouTube odtwarza w skanerze na telefonie albo tablecie.            | Bez parowania i bez łączenia konta. Nagranie musi pozwalać na osadzanie; Spotify może udostępnić tylko fragment.                                                   |
+| **Drugi ekran**       | Telefon skanuje karty, a połączony komputer lub drugi telefon odtwarza muzykę. | Na drugim urządzeniu otwórz **Drugi ekran** i wybierz **Połącz skaner**. W skanerze zeskanuj QR parowania, a następnie karty. Oba urządzenia potrzebują internetu. |
 
 Osadzony odtwarzacz może pokazywać tytuł i okładkę. Przy zgadywaniu nagrań przydaje się drugi ekran ustawiony poza wzrokiem graczy.
 
@@ -81,7 +81,7 @@ Po skanie możesz zatrzymać lub wznowić utwór, przełączyć źródło dostę
 Dodawanie kart i odtwarzanie nie wymagają logowania do Spotify w Hiciarzu ani konfiguracji aplikacji deweloperskiej.
 
 1. Wybierz **Talie → Utwory → Dodaj utwór** i wklej link do konkretnego nagrania Spotify.
-2. Posłuchaj podglądu w oficjalnym odtwarzaczu Spotify. Wybierz **Wczytaj dane**, aby pobrać tytuł, i wpisz wykonawcę.
+2. Posłuchaj podglądu w pierwszym kroku i wybierz **Dalej: dane utworu**. W drugim kroku sprawdź pobrany tytuł i wpisz wykonawcę. **Wstecz** pozwala wrócić do linku bez utraty ręcznych poprawek.
 3. Wyszukaj rok w MusicBrainz i wybierz właściwą wersję nagrania. Rok oraz dane możesz poprawić ręcznie.
 4. Zatwierdź kartę po sprawdzeniu danych.
 
@@ -93,10 +93,10 @@ Całe playlisty wczytasz z pliku JSON/CSV zgodnego z formatem Hiciarza. Link do 
 
 - **Klasyczna oś czasu:** zgaduj rok nagrania i układaj muzyczną chronologię.
 - **Zgadnij film / Zgadnij grę:** wybierz wariant przez **W co gramy? → Inne warianty** i uzupełnij tytuł produkcji jako odpowiedź. Podgląd dostarcza dane nagrania; odpowiedź wpisujesz samodzielnie. Jest drukowana na stronie odpowiedzi karty i nie trafia do QR.
-- **Muzyczne Bingo:** otwórz **Bingo**, wybierz poziom i użyj **Losuj kategorię**. Zestawy **Na dobry początek** i **Dla znawców** zawierają po pięć kategorii pytań. Każde losowanie jest niezależne. Odpowiedzi sprawdzacie na kartach, punkty zaznaczacie na papierze; pełny rząd, kolumna lub przekątna daje Bingo. Widoczny od razu przycisk **Plansze do pobrania** otwiera **Plansze do druku** — różne plansze 5 × 5 z wyborem 1, 2 lub 4 plansz na stronie A4.
+- **Muzyczne Bingo:** [osobna aplikacja](https://artifexet.github.io/Bingo/) z losowaniem kategorii, poziomami trudności oraz planszami 5 × 5. Przygotujesz od 1 do 24 plansz, po 1, 2 lub 4 na stronie A4.
 - **Wygląd kart:** dziewięć motywów, własne rewersy z obsługą przeciągania plików, presety i oszczędny wydruk **Laser — lekki kolor**. Podgląd karty odzwierciedla układ PDF. Karty z własnym motywem zachowują go przy zmianie motywu talii; ujednolica je przycisk **Zastosuj motyw talii do wszystkich kart**. Skórka strony jest wybierana osobno w ustawieniach; nie zmienia motywu zapisanej talii.
 
-[Otwórz generator plansz Bingo — podstawowy PL](https://artifexet.github.io/Hiciarz/?view=bingo&sheet=print&level=beginner&lang=pl) · [Zaawansowany PL](https://artifexet.github.io/Hiciarz/?view=bingo&sheet=print&level=expert&lang=pl) · [Beginner EN](https://artifexet.github.io/Hiciarz/?view=bingo&sheet=print&level=beginner&lang=en). Linki z aplikacji Android otwierają ten sam generator. Parametry `level=beginner|expert` i `lang=pl|en` wybierają poziom oraz język, a w oknie można ustawić łączną liczbę plansz, wybrać 1, 2 lub 4 plansze na stronie A4 i pobrać PDF. [Podgląd generatora na telefonie](docs/screenshots/bingo-boards-mobile.png).
+[Generator plansz Bingo — podstawowy PL](https://artifexet.github.io/Bingo/?sheet=print&level=beginner&lang=pl) · [Zaawansowany PL](https://artifexet.github.io/Bingo/?sheet=print&level=expert&lang=pl) · [Beginner EN](https://artifexet.github.io/Bingo/?sheet=print&level=beginner&lang=en). Generator, losowanie i zasady są utrzymywane w [osobnym repozytorium](https://github.com/ArtifexEt/Bingo). Dawne adresy Hiciarza z `?view=bingo` przekierowują do nowej aplikacji, zachowując prawidłowe parametry poziomu, języka i okna druku.
 
 **Wybierz gotową talię** udostępnia przykłady bez logowania:
 
@@ -112,9 +112,9 @@ Import JSON/CSV pyta o dopisanie na końcu albo zastąpienie listy. Dopisywanie 
 
 ## Telefon, PWA i zapis danych
 
-Na telefonie dolny pasek zawiera **Skaner**, **Bingo**, **Talie**, **Dźwięk** i **Więcej**. Na komputerze widoki są w bocznym pasku. Logo wraca do startu, a **Wstecz** zamyka okno lub wraca do poprzedniego widoku. **Dźwięk** jest dostępny także podczas Bingo.
+Na telefonie dolny pasek zawiera **Skaner**, **Bingo** (link do osobnej aplikacji), **Talie**, **Dźwięk** i **Więcej**. Na komputerze widoki są w bocznym pasku. Logo wraca do startu, a **Wstecz** zamyka okno lub wraca do poprzedniego widoku. Link **Bingo** otwiera osobną aplikację prowadzącego i generator plansz.
 
-Skaner i Bingo wypełniają ekran telefonu, z głównymi przyciskami nad dolnym menu. Miejsce odtwarzania zmienisz też w górnym pasku skanera. Pomoc i druk w Bingo otwierają dolne panele; powrót ze skanera zachowuje wylosowaną kategorię. W układzie poziomym plansza lub aparat są obok kontrolek. Do startu wrócisz przez **Więcej → Start**.
+Skaner wypełnia ekran telefonu, z głównymi przyciskami nad dolnym menu. Miejsce odtwarzania zmienisz też w jego górnym pasku. W układzie poziomym aparat jest obok kontrolek. Do startu wrócisz przez **Więcej → Start**.
 
 W **Ustawieniach** zmienisz skórkę strony i język (**polski / angielski**), sprawdzisz aktualizacje i zainstalujesz Hiciarza. Na iOS aplikacja pokazuje instrukcję dodania do ekranu początkowego przez menu udostępniania. Zmiana języka obejmuje interfejs oraz napisy na PDF; dane wpisane do talii pozostają bez zmian. [Słowniki JSON](docs/configuration.md#tłumaczenia-json).
 
@@ -147,13 +147,13 @@ GitHub Actions uruchamia testy i budowanie. Workflow **Publish website** publiku
 
 ## Dokumentacja
 
-| Dokument                                              | Zawartość                                                                      |
-| ----------------------------------------------------- | ------------------------------------------------------------------------------ |
-| [Spotify](docs/spotify.md)                            | Link do utworu, odsłuch, rok z MusicBrainz i pomoc przy błędach. |
-| [Konfiguracja techniczna](docs/configuration.md)      | Publikacja, zmienne Actions, parowanie, PWA, tłumaczenia i zasoby.             |
-| [Przygotowanie listy utworów](docs/playlist-guide.md) | JSON/CSV i przygotowanie playlisty z pomocą AI.                                |
-| [Gotowy prompt](docs/playlist-prompt.txt)             | Instrukcja do skopiowania do wybranego AI.                                     |
-| [Przykładowe playlisty](examples/playlists/README.md) | Gotowe pliki, źródła nagrań i dodawanie kolejnych zestawów.                    |
+| Dokument                                              | Zawartość                                                          |
+| ----------------------------------------------------- | ------------------------------------------------------------------ |
+| [Spotify](docs/spotify.md)                            | Link do utworu, odsłuch, rok z MusicBrainz i pomoc przy błędach.   |
+| [Konfiguracja techniczna](docs/configuration.md)      | Publikacja, zmienne Actions, parowanie, PWA, tłumaczenia i zasoby. |
+| [Przygotowanie listy utworów](docs/playlist-guide.md) | JSON/CSV i przygotowanie playlisty z pomocą AI.                    |
+| [Gotowy prompt](docs/playlist-prompt.txt)             | Instrukcja do skopiowania do wybranego AI.                         |
+| [Przykładowe playlisty](examples/playlists/README.md) | Gotowe pliki, źródła nagrań i dodawanie kolejnych zestawów.        |
 
 Linki do dokumentacji znajdziesz też w aplikacji: **Jak grać** (na telefonie **Więcej → Jak grać**). Przewodnik opisuje dodawanie kart bez łączenia konta Spotify.
 

@@ -14,7 +14,6 @@ import kotlinx.coroutines.withTimeout
 import org.junit.After
 import org.junit.Assert.assertEquals
 import org.junit.Assert.assertFalse
-import org.junit.Assert.assertNotEquals
 import org.junit.Assert.assertTrue
 import org.junit.Before
 import org.junit.Test
@@ -45,79 +44,59 @@ class HiciarzViewModelPlaybackTest {
         main { if (::store.isInitialized) store.clear() }
     }
 
-    @Test fun globalResumeKeepsTheBingoRecordingFromEveryTab() {
+    @Test fun globalResumeKeepsTheSpotifyRecordingFromEveryTab() {
         dispatch(AppAction.ScanCode(SCANNED_URI))
         assertEquals(SCANNED_URI, snapshot().currentSong?.spotifyUri)
-        scanBingoCard()
-        val bingoUri = requireNotNull(snapshot().bingoSong).spotifyUri
-        assertNotEquals(SCANNED_URI, bingoUri)
+        main { player.publishSpotifyTrack(EXTERNAL_URI, playing = false) }
 
-        for (tab in listOf(AppTab.SCAN, AppTab.BINGO, AppTab.SETTINGS)) {
+        for (tab in listOf(AppTab.SCAN, AppTab.SETTINGS)) {
             dispatch(AppAction.Pause)
             dispatch(AppAction.SelectTab(tab))
             main { player.commands.clear() }
-
             dispatch(AppAction.Resume)
-
-            assertEquals("Global Play must resume Spotify from $tab", bingoUri, snapshot().playback.trackUri)
+            assertEquals("Global Play must resume Spotify from $tab", EXTERNAL_URI, snapshot().playback.trackUri)
             assertTrue(snapshot().playback.isPlaying)
-            assertEquals(listOf(Command("resume", bingoUri)), player.commands)
+            assertEquals(listOf(Command("resume", EXTERNAL_URI)), player.commands)
         }
     }
 
     @Test fun cardPlayUsesItsExplicitRecordingAndResumesItWithoutRestarting() {
         dispatch(AppAction.ScanCode(SCANNED_URI))
         val scannedSong = requireNotNull(snapshot().currentSong)
-        scanBingoCard()
-        dispatch(AppAction.Pause)
-        dispatch(AppAction.SelectTab(AppTab.BINGO))
+        main { player.publishSpotifyTrack(EXTERNAL_URI, playing = false) }
+        dispatch(AppAction.SelectTab(AppTab.SETTINGS))
         main { player.commands.clear() }
-
         dispatch(AppAction.PlayCard(scannedSong))
-
-        assertEquals(AppTab.BINGO, snapshot().tab)
+        assertEquals(AppTab.SETTINGS, snapshot().tab)
         assertEquals(SCANNED_URI, snapshot().playback.trackUri)
         assertEquals(listOf(Command("play", SCANNED_URI)), player.commands)
-
         main {
             player.publishSpotifyTrack(SCANNED_URI, playing = false, positionMs = 12_345)
             player.commands.clear()
         }
         dispatch(AppAction.PlayCard(scannedSong))
-
         assertEquals(listOf(Command("resume", SCANNED_URI)), player.commands)
         assertEquals(12_345L, snapshot().playback.positionMs)
     }
 
-    @Test fun reselectingTheActiveDeckPreservesTheRoundAndItsSavedHistory() {
-        scanBingoCard()
-        dispatch(AppAction.RevealBingoAnswer)
-        scanBingoCard()
-        dispatch(AppAction.RevealBingoAnswer)
+    @Test fun reselectingTheActiveDeckPreservesTheScannedCardAndPlayback() {
+        dispatch(AppAction.ScanCode(SCANNED_URI))
+        dispatch(AppAction.RevealAnswer)
         val before = snapshot()
         val deckId = requireNotNull(before.activeDeckId)
-        val savedHistory = preferences.getString("bingoHistory", null)
-        assertEquals(2, before.bingoHistory.size)
         main { player.commands.clear() }
-
         dispatch(AppAction.SelectDeck(deckId))
-
         val after = snapshot()
-        assertEquals(before.bingoHistory, after.bingoHistory)
-        assertEquals(before.bingoSong, after.bingoSong)
-        assertEquals(before.bingoAnswerRevealed, after.bingoAnswerRevealed)
-        assertEquals(savedHistory, preferences.getString("bingoHistory", null))
+        assertEquals(before.currentSong, after.currentSong)
+        assertEquals(before.answerRevealed, after.answerRevealed)
+        assertEquals(before.playback, after.playback)
         assertTrue("Reselecting a deck must not stop playback", player.commands.isEmpty())
-
         main { store.clear() }
         createModel()
-
-        assertEquals(before.bingoHistory, snapshot().bingoHistory)
-        assertEquals(before.bingoSong, snapshot().bingoSong)
         assertEquals(deckId, snapshot().activeDeckId)
     }
 
-    @Test fun globallyResumingMusicChosenInSpotifyDoesNotApplyTheGameClipTimer() {
+    @Test fun globallyResumingMusicChosenInSpotifyDoesNotApplyTheCardClipTimer() {
         dispatch(AppAction.SetClipSeconds(5))
         dispatch(AppAction.SetAutoPause(true))
         dispatch(AppAction.SelectTab(AppTab.SETTINGS))
@@ -134,13 +113,6 @@ class HiciarzViewModelPlaybackTest {
         assertTrue(snapshot().playback.isPlaying)
         assertEquals(EXTERNAL_URI, snapshot().playback.trackUri)
         assertFalse(player.commands.any { it.operation == "pause" })
-    }
-
-    private fun scanBingoCard() {
-        dispatch(AppAction.DrawBingo)
-        dispatch(AppAction.BeginBingoScan)
-        val card = requireNotNull(snapshot().activeDeck).songs.first { it.spotifyUri != SCANNED_URI }
-        dispatch(AppAction.ScanCode(card.spotifyUri))
     }
 
     private fun createModel() {

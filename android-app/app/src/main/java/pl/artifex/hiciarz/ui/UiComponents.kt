@@ -205,8 +205,3 @@ internal fun openSpotify(context: Context) {
 internal fun connectSpotify(state: PlaybackState, context: Context, onAction: (AppAction) -> Unit) {
     if (state.spotifyInstalled) onAction(AppAction.ConnectSpotify) else openSpotify(context)
 }
-
-internal fun bingoBoardUrl(level: BingoLevel, language: String): String =
-    "https://artifexet.github.io/Hiciarz/?view=bingo&sheet=print&level=" +
-        (if (level == BingoLevel.EXPERT) "expert" else "beginner") +
-        "&lang=" + if (language == "en") "en" else "pl"

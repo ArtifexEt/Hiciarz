@@ -121,6 +121,7 @@ summary {
   color: #e4e9e3;
   font-size: 14px;
   text-align: left;
+  text-decoration: none;
 }
 .app-nav-button svg {
   flex-shrink: 0;
@@ -130,7 +131,7 @@ summary {
   color: var(--accent-ink);
   font-weight: 700;
 }
-.app-sidebar button:focus-visible {
+.app-sidebar :is(button, a):focus-visible {
   outline-color: #fff3d2;
 }
 .app-bottom-nav {
@@ -951,7 +952,7 @@ summary {
     background: var(--surface);
     border-top: 1px solid var(--line);
   }
-  .app-bottom-nav button {
+  .app-bottom-nav :is(button, a) {
     display: flex;
     flex-direction: column;
     justify-content: center;
@@ -964,6 +965,7 @@ summary {
     background: transparent;
     border-radius: 9px;
     line-height: 1.25;
+    text-decoration: none;
   }
   .app-bottom-nav button[aria-current='page'],
   .app-bottom-nav button[aria-expanded='true'] {

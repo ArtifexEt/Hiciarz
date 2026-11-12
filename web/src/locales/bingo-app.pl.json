@@ -1,8 +1,0 @@
-{
-  "bingoApp.emptyQuestion": "Co dziś odgadujemy?",
-  "bingoApp.scanCard": "Skanuj kartę",
-  "bingoApp.boards": "Plansze do pobrania",
-  "bingoApp.boardsPerPage": "Plansze na stronie",
-  "bingoApp.invalidPageLayout": "Wybierz 1, 2 lub 4 plansze na stronie.",
-  "bingoApp.pdfSubject": "Plansze na A4: {{count}}. Druk jednostronny, skala 100%."
-}

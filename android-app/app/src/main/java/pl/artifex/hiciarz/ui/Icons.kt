@@ -27,7 +27,6 @@ internal object AppIcons {
     ).addPath(PathParser().parsePathString(data).toNodes(), fill = SolidColor(Color.Black)).build()
 
     val Scan = stroke("Scan", "M8 3H4a1 1 0 0 0-1 1v4M16 3h4a1 1 0 0 1 1 1v4M3 16v4a1 1 0 0 0 1 1h4M21 16v4a1 1 0 0 1-1 1h-4M7 7h3v3H7zM14 7h3v3h-3zM7 14h3v3H7zM14 14h1v3h2v-3")
-    val Bingo = stroke("Bingo", "M5 3h14a2 2 0 0 1 2 2v14a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2M9 3v18M15 3v18M3 9h18M3 15h18")
     val Decks = stroke("Decks", "M8 4h11a2 2 0 0 1 2 2v14a1 1 0 0 1-1 1H8a2 2 0 0 1-2-2V6a2 2 0 0 1 2-2M3 17V5a3 3 0 0 1 3-3M10 9h7M10 13h7M10 17h4")
     val Settings = stroke("Settings", "M4 6h16M4 12h16M4 18h16M9 3v6M16 9v6M8 15v6")
     val Play = filled("Play", "M7 4.7a1 1 0 0 1 1.5-.86l11 6.3a2 2 0 0 1 0 3.46l-11 6.3A1 1 0 0 1 7 19V4.7z")
@@ -53,7 +52,6 @@ internal object AppIcons {
     val Back = stroke("Back", "M19 12H5M10 5l-7 7 7 7")
     val Help = stroke("Help", "M21 12a9 9 0 1 1-18 0a9 9 0 0 1 18 0M9.5 8.5a2.5 2.5 0 1 1 4 2c-1.5 1-1.5 1.5-1.5 3M12 17v.1")
     val Speaker = stroke("Speaker", "M3 9h4l5-4v14l-5-4H3zM16 8a6 6 0 0 1 0 8M19 5a10 10 0 0 1 0 14")
-    val Timeline = stroke("Timeline", "M3 12h18M5 5h4v5H5zM11 14h4v5h-4zM17 5h4v5h-4z")
     val Palette = stroke("Palette", "M12 3a9 9 0 1 0 0 18h1a2 2 0 0 0 1.5-3.3a1.5 1.5 0 0 1 1.2-2.4H18a3 3 0 0 0 3-3.1A9 9 0 0 0 12 3M7 11v.1M9 7v.1M14 7v.1M17 11v.1")
     val Flash = stroke("Flash", "M13 2L4 14h7l-1 8 10-13h-7l1-7")
     val Trophy = stroke("Trophy", "M7 3h10v6a5 5 0 0 1-10 0V3M7 5H3v3a4 4 0 0 0 4 4M17 5h4v3a4 4 0 0 1-4 4M12 14v6M8 21h8")

@@ -1,8 +1,0 @@
-{
-  "bingoApp.emptyQuestion": "What are we guessing?",
-  "bingoApp.scanCard": "Scan a card",
-  "bingoApp.boards": "Get Bingo boards",
-  "bingoApp.boardsPerPage": "Boards per page",
-  "bingoApp.invalidPageLayout": "Choose 1, 2 or 4 boards per page.",
-  "bingoApp.pdfSubject": "Boards per A4 sheet: {{count}}. Print single-sided at 100% scale."
-}

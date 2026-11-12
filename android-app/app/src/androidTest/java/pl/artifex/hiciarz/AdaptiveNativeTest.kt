@@ -8,7 +8,6 @@ import androidx.compose.ui.test.junit4.createEmptyComposeRule
 import androidx.test.core.app.ActivityScenario
 import androidx.test.platform.app.InstrumentationRegistry
 import androidx.lifecycle.ViewModelProvider
-import pl.artifex.hiciarz.model.BingoStage
 import pl.artifex.hiciarz.model.AppSettings
 import pl.artifex.hiciarz.model.AppState
 import pl.artifex.hiciarz.model.AppTab
@@ -37,7 +36,6 @@ class AdaptiveNativeTest {
             .getSharedPreferences("hiciarz", 0).edit().clear().putString("language", "pl").commit()
         activity = ActivityScenario.launch(MainActivity::class.java)
         compose.waitUntil(15_000) { compose.onAllNodesWithText("Wklej kod lub link").fetchSemanticsNodes().isNotEmpty() }
-        compose.onNodeWithText("Bingo").performClick()
     }
 
     @After fun restoreDisplay() {
@@ -50,9 +48,7 @@ class AdaptiveNativeTest {
 
     @Test fun foldCoverInnerAndTabletopKeepContentClearOfTheHinge() {
         resize("1080x2520", 420, 400..430)
-        captureNative(compose, "fold-cover-bingo-pl")
-        compose.onNodeWithText("Losuj kategorię").performScrollTo().performClick()
-        compose.onNodeWithText("Skanuj kartę").performScrollTo().performClick()
+        captureNative(compose, "fold-cover-scanner-pl")
 
         // Fold7 inner display at a representative density: about 750 dp, not just a tablet preset.
         resize("1968x2184", 420, 730..770)
@@ -65,7 +61,6 @@ class AdaptiveNativeTest {
         val navigation = compose.onNodeWithTag("app-bottom-navigation").fetchSemanticsNode().boundsInRoot
         assertTrue("Tabletop navigation crosses the hinge", navigation.top >= horizontal.bottom - 1f)
         captureNative(compose, "fold-tabletop-scanner-pl")
-        compose.onNodeWithText("Wstrzymaj skanowanie").performScrollTo().performClick()
         compose.onNodeWithText("Opcje").performClick()
         captureNative(compose, "fold-tabletop-settings-pl")
     }
@@ -119,43 +114,30 @@ class AdaptiveNativeTest {
         captureNative(compose, "fold-inner-settings-playing-pl")
     }
 
-    @Test fun tabletDrawShowsTheCameraAndFullRuleTogetherThroughTheRound() {
+    @Test fun tabletScannerKeepsItsSquareCameraAndCardControlsVisible() {
         resize("2560x1600", 320, 1260..1300)
-        val instrumentation = InstrumentationRegistry.getInstrumentation()
-        instrumentation.uiAutomation.grantRuntimePermission(instrumentation.targetContext.packageName,
-            android.Manifest.permission.CAMERA)
-        compose.onNodeWithText("Losuj kategorię").performScrollTo().performClick()
         compose.onNodeWithTag("camera-preview").assertIsDisplayed()
-        compose.onNodeWithTag("bingo-rule-card").assertIsDisplayed()
-        compose.onNodeWithText("Skanuj kartę").assertDoesNotExist()
         val camera = compose.onNodeWithTag("camera-preview").fetchSemanticsNode().boundsInRoot
-        val rule = compose.onNodeWithTag("bingo-rule-card").fetchSemanticsNode().boundsInRoot
         assertEquals("Tablet camera must remain square", camera.width, camera.height, 1f)
-        assertTrue("Camera and rule must be visible in separate columns", camera.right <= rule.left)
-        captureNative(compose, "tablet-bingo-scanner-pl")
+        compose.onNodeWithText("Wklej kod lub link").assertIsDisplayed()
+        captureNative(compose, "tablet-scanner-pl")
 
-        var model: HiciarzViewModel? = null
+        lateinit var model: HiciarzViewModel
         activity.onActivity { model = ViewModelProvider(it)[HiciarzViewModel::class.java] }
-        val question = model!!.state.value.question
         compose.onNodeWithText("Wklej kod lub link").performScrollTo().performClick()
         compose.onNodeWithText("Link Spotify lub kod Hiciarza").performTextInput("spotify:track:0000000000000000000000")
         compose.onNodeWithText("Odtwórz").performClick()
-        compose.waitUntil(5_000) { model!!.state.value.bingoStage == BingoStage.PLAYING }
-        compose.onNodeWithTag("bingo-rule-card").assertIsDisplayed()
-        assertEquals(question, model!!.state.value.question)
+        compose.waitUntil(5_000) { model.state.value.currentSong != null }
+        compose.onNodeWithTag("card-playback-toggle").assertIsDisplayed()
         compose.onNodeWithTag("camera-preview").assertDoesNotExist()
-        captureNative(compose, "tablet-bingo-playing-pl")
+        compose.onNodeWithText("Skanuj nową").assertIsDisplayed()
+        captureNative(compose, "tablet-card-pl")
 
-        compose.onNodeWithText("Następna runda").performScrollTo().performClick()
+        compose.onNodeWithText("Skanuj nową").performClick()
         compose.onNodeWithTag("camera-preview").assertIsDisplayed()
-        compose.onNodeWithTag("bingo-rule-card").assertIsDisplayed()
-        assertEquals(2, model!!.state.value.bingoRound)
-        compose.onNodeWithText("Wstrzymaj skanowanie").performScrollTo().performClick()
-        compose.onNodeWithTag("camera-preview").assertDoesNotExist()
         resize("1968x2184", 420, 730..770)
-        compose.onNodeWithTag("bingo-rule-card").assertIsDisplayed()
-        compose.onNodeWithTag("camera-preview").assertDoesNotExist()
-        assertEquals(BingoStage.RULE, model!!.state.value.bingoStage)
+        compose.onNodeWithTag("camera-preview").assertIsDisplayed()
+        compose.onNodeWithText("Bingo").assertDoesNotExist()
     }
 
     private fun resize(size: String, density: Int, expectedWidth: IntRange) {

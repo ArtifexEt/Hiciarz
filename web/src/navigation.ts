@@ -1,9 +1,9 @@
-export const views = ['home', 'scanner', 'editor', 'bingo', 'player'] as const;
+export const views = ['home', 'scanner', 'editor', 'player'] as const;
 export type AppView = (typeof views)[number];
 
-/** Bingo and the scanner are two views of the same round on the scanning phone. */
+/** Keep a scanner session only while staying on the scanner route. */
 export function keepScannerPairing(from: AppView, to: AppView): boolean {
-  return (from === 'scanner' || from === 'bingo') && (to === 'scanner' || to === 'bingo');
+  return from === 'scanner' && to === 'scanner';
 }
 
 export const modalNames = [
@@ -19,8 +19,6 @@ export const modalNames = [
   'prompt',
   'menu',
   'playback',
-  'bingo-help',
-  'bingo-print',
 ] as const;
 export type AppModal = (typeof modalNames)[number] | null;
 
@@ -48,25 +46,15 @@ export function urlForView(url: string, view: AppView): string {
   return next.href;
 }
 
-/** Only safe, non-destructive help and Bingo PDF entry points can open from a link. */
+/** Only the non-destructive help entry point can open from a link. */
 export function parseEntryModal(url: string): AppModal {
   try {
     const sheet = new URL(url).searchParams.get('sheet');
-    const view = parseAppView(url);
-    if (sheet === 'print' && view === 'bingo') return 'bingo-print';
-    if (sheet === 'help') return view === 'bingo' ? 'bingo-help' : 'help';
+    if (sheet === 'help') return 'help';
   } catch {
     /* Invalid external links use the normal view. */
   }
   return null;
-}
-
-export function parseBingoLevel(url: string): 'beginner' | 'expert' {
-  try {
-    return new URL(url).searchParams.get('level') === 'expert' ? 'expert' : 'beginner';
-  } catch {
-    return 'beginner';
-  }
 }
 
 export function parseEntryLanguage(url: string): 'pl' | 'en' | undefined {
@@ -81,15 +69,7 @@ export function parseEntryLanguage(url: string): 'pl' | 'en' | undefined {
 
 export function urlForModal(url: string, view: AppView, modal: AppModal): string {
   const next = new URL(urlForView(url, view));
-  if (view === 'bingo' && modal === 'bingo-print') next.searchParams.set('sheet', 'print');
-  else if (modal === 'help' || (view === 'bingo' && modal === 'bingo-help'))
-    next.searchParams.set('sheet', 'help');
-  return next.href;
-}
-
-export function urlForBingoLevel(url: string, level: 'beginner' | 'expert'): string {
-  const next = new URL(url);
-  next.searchParams.set('level', level);
+  if (modal === 'help') next.searchParams.set('sheet', 'help');
   return next.href;
 }
 

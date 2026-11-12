@@ -1,43 +1,36 @@
 # PWA i Android: podział funkcji
 
-Audyt dotyczy ekranów `AppNavigation`, `GameGuide`, `PlaybackSettings`, `BingoGame`, `CameraZoom` i ustawień aplikacji webowej.
+Audyt dotyczy ekranów `AppNavigation`, `GameGuide`, `PlaybackSettings`, `CameraZoom` i ustawień aplikacji webowej.
 
 | Funkcja PWA | Kierunek w aplikacji Android |
 | --- | --- |
 | Skanowanie QR z ukryciem odpowiedzi | Natywny aparat CameraX i ML Kit, kwadratowy podgląd także na tablecie, błąd aparatu z możliwością ponowienia. |
 | Zbliżenie aparatu | Natywne sterowanie kamerą; zakres zależy od urządzenia. |
 | Muzyka z przypisanej karty | Spotify App Remote, z zachowaniem wcześniej wybranego wyjścia Spotify. Pauza i wznowienie na obrazie karty, „Skanuj nową” pod nim. Dane utworu w bibliotece aplikacji nie są potrzebne do odtwarzania QR. |
-| Szybki panel dźwięku | Globalny natywny dolny panel, dostępny z gry i skanera. |
+| Szybki panel dźwięku | Globalny natywny dolny panel, dostępny ze skanera i Opcji. |
 | Wybór głośnika Spotify | Pozostaje w Spotify; Android nie ma selektora urządzeń, głośników ani źródeł. |
 | Odtwarzacz YouTube, przeglądarka i parowanie drugiego ekranu | Pozostają w PWA; natywna aplikacja korzysta ze Spotify. |
-| „Jak grać” i instrukcja przygotowania | Dostępne ze skanera, Bingo oraz ustawień: drukowane karty QR, Bingo i dźwięk. |
-| Podstawowy i zaawansowany poziom Bingo | Zasada → skan karty → muzyka. Duże pastelowe pole kategorii i przycisk losowania w kolorze aktywnej skórki jak w PWA, dostępny na każdym etapie rundy. Na telefonie osobny krok skanowania; w dwóch panelach pytanie i aparat są obok siebie. Bez losowania utworów i cyfrowej planszy. |
-| Plansze Bingo do druku | Widoczny od razu przycisk „Plansze do pobrania” otwiera generator PDF w PWA, przekazując poziom i język. Generator pozwala wybrać 1, 2 lub 4 plansze na stronę A4. Gracze nadal zaznaczają odpowiedzi na wydrukach. |
+| „Jak grać” i instrukcja przygotowania | Pomoc skanowania, drukowanych kart QR i dźwięku dostępna ze skanera i Opcji. |
+| Podstawowy i zaawansowany poziom Bingo | Dostępne w [osobnej aplikacji Bingo](https://artifexet.github.io/Bingo/). Android nie zawiera kategorii ani rund. |
+| Plansze Bingo do druku | Generator i rozgrywka mają [osobne repozytorium](https://github.com/ArtifexEt/Bingo); Android nie zawiera linku do plansz. |
 | Warianty muzyka / gra / film | Drukowane karty QR; dla gier i filmów odpowiedzią jest źródło utworu. |
 | Wybór wyglądu i motyw zapisany w QR | Te same dziewięć grafik rewersów i palet całej aplikacji co w PWA, z wariantami ciemnymi. Animowane rybki z ozdobami i lampkami. Automatyczny odczyt skórki z QR także dla nieznanego utworu oraz wybór ręczny. |
 | PL / EN | Zachowane w natywnych ekranach i pomocy. |
 | Ukrywanie odpowiedzi | Zachowane; aplikacja nie pobiera tytułu z odtwarzacza jako podpowiedzi. Systemowy pasek statusu i zegar są ukryte również w dialogach. Wysuwane powiadomienia Spotify pozostają pod kontrolą Androida. |
 | Ograniczenie czasu muzyki | Opcjonalne; domyślnie wyłączone. |
-| Biblioteka talii i import JSON / CSV | Dostępne w PWA. Android otwiera skaner i oferuje Skaner, Bingo i Opcje. Wcześniejsze dane na urządzeniu pozostają zachowane. |
-| Gry bez kart | Na razie wyłączone w Androidzie. |
-| Kreator, edycja, prompt AI, podgląd i druk kart PDF | Pozostają na webie; usuwamy wejście do tworzenia kart z aplikacji Android. Generator plansz Bingo jest dostępny osobnym linkiem. |
+| Biblioteka talii i import JSON / CSV | Dostępne w PWA. Android otwiera skaner i oferuje Skaner oraz Opcje. Wcześniejsze dane na urządzeniu pozostają zachowane. |
+| Gry bez kart | Pozostają w PWA; Android nie zawiera ich mechaniki ani zapisu rund. |
+| Kreator, edycja, prompt AI, podgląd i druk kart PDF | Pozostają na webie. Android korzysta z wydrukowanych kodów QR. |
 | Zgłoszenie usterki i dokumentacja | Zachowane w ustawieniach. |
 | Instalacja PWA | Pozostaje funkcją wersji webowej; wydania Androida korzystają z podpisanego APK. |
 
-## Bingo w Androidzie
+## Skanowanie w Androidzie
 
-1. Prowadzący wybiera poziom i losuje kategorię. Aplikacja pokazuje zasadę bez uruchamiania muzyki. Na telefonie wybranie „Skanuj kartę” otwiera aparat; w układzie dwóch paneli losowanie przygotowuje aparat obok pełnego pytania.
-2. Prowadzący odczytuje QR drukowanej karty. Wylosowana kategoria zostaje na ekranie, a Spotify odtwarza wskazane nagranie.
-3. Gracze sprawdzają odpowiedzi i zaznaczają trafienia na swoich papierowych planszach. Pełny rząd, kolumna lub przekątna daje Bingo.
-4. Prowadzący zaczyna następną turę od kolejnej kategorii. Ponowne skanowanie tej samej karty jest możliwe, jeśli wynika z decyzji prowadzącego.
+1. Użytkownik skanuje QR drukowanej karty lub wkleja kod.
+2. Spotify odtwarza wskazany utwór; aplikacja zachowuje motyw karty i pozwala sterować pauzą lub wznowieniem.
+3. Jeśli aplikacja zna dane karty, można je odkryć. „Skanuj nową” ponownie przygotowuje aparat.
 
-„Losuj kolejną kategorię” wybiera inną kategorię bieżącego poziomu zarówno przed skanem, jak i podczas odtwarzania. Zachowuje skanowaną kartę, muzykę, historię i numer rundy; widoczność odpowiedzi odpowiada ustawieniu jej ukrywania. „Następna runda” przechodzi do kolejnej karty.
-
-Historia skanów i etap tury zapisują się na urządzeniu. Obrót lub rozłożenie telefonu nie zmienia zasady ani rundy. Po ponownym uruchomieniu procesu aplikacja wraca do zasady zamiast samoczynnie uruchamiać pozostawiony wcześniej aparat.
-
-Generator plansz przyjmuje `?view=bingo&sheet=print&level=beginner|expert&lang=pl|en`. Przykłady: [podstawowy PL](https://artifexet.github.io/Hiciarz/?view=bingo&sheet=print&level=beginner&lang=pl), [zaawansowany PL](https://artifexet.github.io/Hiciarz/?view=bingo&sheet=print&level=expert&lang=pl), [podstawowy EN](https://artifexet.github.io/Hiciarz/?view=bingo&sheet=print&level=beginner&lang=en).
-
-Android skupia się na skanowaniu drukowanych kart i Bingo. Wybór gry bez kart oraz biblioteka talii nie są dostępne w mobilnej nawigacji.
+Android nie prowadzi Bingo: nie losuje kategorii, nie liczy rund i nie otwiera generatora plansz. Po aktualizacji zapis poprzednich trybów jest usuwany, a dane talii i ustawienia pozostają zachowane.
 
 ## Porównanie z HITSTER
 

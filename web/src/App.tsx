@@ -58,17 +58,15 @@ import AppInstall, { ConnectionNotice } from './AppInstall';
 import {
   parseAppView,
   parseEntryModal,
-  parseBingoLevel,
   keepScannerPairing,
   urlForView,
   urlForModal,
-  urlForBingoLevel,
   navigationState,
   readNavigationState,
   type AppView,
   type AppModal,
 } from './navigation';
-import type { BingoLevel } from './bingo';
+import { redirectLegacyBingo } from './bingo-link';
 import FishFestivities from './FishFestivities';
 import SongForm from './SongForm';
 import { clearLegacySpotifySettings } from './legacy-spotify';
@@ -122,7 +120,6 @@ import type { SourceCheck } from './availability';
 import { useConnection, type Command } from './connection';
 const Camera = lazy(() => import('./Camera'));
 import Players from './Players';
-const BingoGame = lazy(() => import('./BingoGame'));
 type Mode = AppView;
 function trackCount(count: number) {
   const form = new Intl.PluralRules(getLanguage()).select(count);
@@ -171,8 +168,6 @@ export default function App() {
   const [draggingFile, setDraggingFile] = useState(false);
   const [draggingImage, setDraggingImage] = useState(false);
   const [backgroundBusy, setBackgroundBusy] = useState(false);
-  const [bingoOpened, setBingoOpened] = useState(false);
-  const [bingoLevel, setBingoLevel] = useState<BingoLevel>(() => parseBingoLevel(location.href));
   const updateAvailable = useSyncExternalStore(subscribeToUpdates, updateIsReady);
   const [updating, setUpdating] = useState(false);
   const [decks, setDecks] = useState<Deck[]>([]),
@@ -180,9 +175,6 @@ export default function App() {
     [activeId, setActiveIdState] = useState(''),
     [mode, setMode] = useState<Mode>(() => parseAppView(location.href)),
     [tab, setTab] = useState<CreatorStep>('songs');
-  useEffect(() => {
-    if (mode === 'bingo') setBingoOpened(true);
-  }, [mode]);
   const [modal, setModal] = useState<AppModal>(() => parseEntryModal(location.href)),
     [editSong, setEditSong] = useState<Song>(),
     [filter, setFilter] = useState(''),
@@ -711,7 +703,7 @@ export default function App() {
         setModal(null);
       }
       if (!shouldRecord) {
-        const nextModal = availableModal(readNavigationState(history.state).modal, destination);
+        const nextModal = availableModal(readNavigationState(history.state).modal);
         history.replaceState(
           navigationState(history.state, destination, nextModal),
           '',
@@ -748,9 +740,7 @@ export default function App() {
   }
   const historyReady = useRef(false);
   const popNavigation = useRef<(event: PopStateEvent) => void>(() => {});
-  function availableModal(candidate: AppModal, view = mode): AppModal {
-    if ((candidate === 'bingo-help' || candidate === 'bingo-print') && view !== 'bingo')
-      return null;
+  function availableModal(candidate: AppModal): AppModal {
     if (candidate === 'file' && !pending) return null;
     if (candidate === 'print-cards' && !printCount) return null;
     if (candidate === 'song' && editSong && !deck?.songs.some((song) => song.id === editSong.id))
@@ -758,17 +748,17 @@ export default function App() {
     return candidate;
   }
   popNavigation.current = (event) => {
+    if (redirectLegacyBingo()) return;
     if (playbackTransition.current) {
       historyPopPending.current = true;
       return;
     }
     const target = parseAppView(location.href);
     const candidate = readNavigationState(event.state).modal ?? parseEntryModal(location.href);
-    const nextModal = availableModal(candidate, target);
+    const nextModal = availableModal(candidate);
     if (nextModal !== candidate)
       history.replaceState(navigationState(history.state, target, nextModal), '', location.href);
     setModal(nextModal);
-    if (target === 'bingo') setBingoLevel(parseBingoLevel(location.href));
     if (target !== mode) void changeMode(target, false);
   };
   useEffect(() => {
@@ -917,31 +907,10 @@ export default function App() {
           </div>
         )}
         <main id="app-content" tabIndex={-1}>
-          {uiTheme === 'fish' &&
-            mode !== 'bingo' &&
-            mode !== 'scanner' &&
-            !(mode === 'player' && card) && <FishFestivities compact={mode !== 'home'} />}
-          {(bingoOpened || mode === 'bingo') && (
-            <div className="bingo-container" hidden={mode !== 'bingo'}>
-              <Suspense fallback={<p className="hint">{tr('app.preparingBingo')}</p>}>
-                <BingoGame
-                  onScanner={() => changeMode('scanner')}
-                  level={bingoLevel}
-                  onLevelChange={(level) => {
-                    setBingoLevel(level);
-                    history.replaceState(history.state, '', urlForBingoLevel(location.href, level));
-                  }}
-                  sheet={modal === 'bingo-help' ? 'help' : modal === 'bingo-print' ? 'print' : null}
-                  onSheetChange={(sheet) =>
-                    setModal(
-                      sheet === 'help' ? 'bingo-help' : sheet === 'print' ? 'bingo-print' : null,
-                    )
-                  }
-                />
-              </Suspense>
-            </div>
+          {uiTheme === 'fish' && mode !== 'scanner' && !(mode === 'player' && card) && (
+            <FishFestivities compact={mode !== 'home'} />
           )}
-          {mode === 'bingo' ? null : mode === 'home' ? (
+          {mode === 'home' ? (
             <Landing onChoose={changeMode} theme={uiTheme} />
           ) : mode === 'editor' ? (
             <>

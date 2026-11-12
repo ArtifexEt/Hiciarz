@@ -33,7 +33,7 @@ class MainActivity : ComponentActivity() {
         }
         lifecycleScope.launch {
             model.state.collect { state ->
-                if (state.tab == AppTab.SCAN || state.tab == AppTab.BINGO)
+                if (state.tab == AppTab.SCAN)
                     window.addFlags(WindowManager.LayoutParams.FLAG_KEEP_SCREEN_ON)
                 else window.clearFlags(WindowManager.LayoutParams.FLAG_KEEP_SCREEN_ON)
             }

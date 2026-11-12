@@ -10,7 +10,6 @@ import {
   t,
 } from './i18n';
 import { cardQuestion, newDeck, themeNames, validateSong } from './model';
-import { bingoCategories } from './bingo';
 
 beforeEach(() => {
   vi.stubGlobal('localStorage', { setItem: vi.fn() });
@@ -96,13 +95,11 @@ describe('JSON translations', () => {
     }
   });
 
-  it('updates model labels, Bingo labels and validation without changing existing deck data', () => {
+  it('updates model labels and validation without changing existing deck data', () => {
     const deck = newDeck();
     expect(themeNames.fish).toBe('Rybki świąteczne');
-    expect(bingoCategories.beginner[0].name).toBe('Zespół czy solista?');
     setLanguage('en');
     expect(themeNames.fish).toBe('Christmas fish');
-    expect(bingoCategories.beginner[0].name).toBe('Band or solo artist?');
     expect(cardQuestion('movie')).toBe('Which film is this music from?');
     expect(() => validateSong(null, 1)).toThrow('Row 2: invalid record.');
     expect(newDeck().name).toBe('My new deck');

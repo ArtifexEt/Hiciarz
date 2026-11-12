@@ -2,9 +2,10 @@ import { t, useTranslation } from './i18n';
 import { useState } from 'react';
 import { ArrowUpRight, Monitor, ScanLine, Smartphone } from 'lucide-react';
 import type { PlaybackOutput } from './scanner-playback';
+import { bingoAppUrl } from './bingo-link';
 
 export function GameGuide({ onStart }: { onStart: (route: PlaybackOutput) => void }) {
-  useTranslation();
+  const { language } = useTranslation();
   const [route, setRoute] = useState<PlaybackOutput>('local');
   const local = route === 'local';
   const steps = local
@@ -69,6 +70,9 @@ export function GameGuide({ onStart }: { onStart: (route: PlaybackOutput) => voi
             {t(local ? 'sound.openScanner' : 'components.GameGuide.openPlayer')}
             <ArrowUpRight size={16} />
           </button>
+          <a href={bingoAppUrl(language)} rel="noreferrer">
+            {t('shell.bingoLink')} <ArrowUpRight size={16} aria-hidden="true" />
+          </a>
         </div>
         <p className="guide-note">{t('app.theSpotifyOrYoutubePlayerMayShow')}</p>
       </div>

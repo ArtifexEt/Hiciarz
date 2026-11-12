@@ -5,7 +5,6 @@ import android.net.Uri
 import android.os.SystemClock
 import androidx.lifecycle.AndroidViewModel
 import androidx.lifecycle.viewModelScope
-import java.security.SecureRandom
 import java.util.Locale
 import kotlinx.coroutines.Job
 import kotlinx.coroutines.delay
@@ -13,8 +12,6 @@ import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.launch
-import org.json.JSONArray
-import org.json.JSONObject
 import pl.artifex.hiciarz.data.DeckCodec
 import pl.artifex.hiciarz.data.DeckFormatException
 import pl.artifex.hiciarz.data.DeckRepository
@@ -24,7 +21,6 @@ import pl.artifex.hiciarz.playback.PlaybackTransport
 class HiciarzViewModel(application: Application) : AndroidViewModel(application) {
     private val prefs = application.getSharedPreferences("hiciarz", 0)
     private val repository = DeckRepository(application)
-    private val random = SecureRandom()
     private val initialSettings = AppSettings(
         language = prefs.getString("language", if (Locale.getDefault().language == "en") "en" else "pl") ?: "pl",
         // Older builds enabled this implicitly, even when only the language was changed.
@@ -46,43 +42,23 @@ class HiciarzViewModel(application: Application) : AndroidViewModel(application)
     private var pendingAction: AppAction? = null
     private var clipDeadline: Long? = null
     private var standaloneScanSkin: CardSkin? = null
-    private var bingoScanSkin: CardSkin? = null
 
     init {
-        // The APK owns its Spotify configuration; hidden legacy overrides must not break login.
-        prefs.edit().remove("clientId").apply()
+        // Retire old game sessions and routes without touching decks or scanner settings.
+        // AppState always opens SCAN, including after an update from a saved BINGO route.
+        prefs.edit().apply {
+            remove("clientId") // The APK owns its Spotify configuration.
+            remove("tab")
+            listOf("bingoDeck", "bingoLevel", "bingoQuestion", "bingoHistory", "bingoScans",
+                "bingoCurrentScan", "bingoStage", "bingoRound", "bingoActiveSkin", "bingoRevealed",
+                "cardlessDeck", "cardlessMode", "timeline", "quiz").forEach { remove(it) }
+        }.apply()
         viewModelScope.launch {
             try {
                 val decks = repository.load()
                 val activeId = prefs.getString("activeDeck", null)?.takeIf { id -> decks.any { it.id == id } }
                     ?: decks.firstOrNull { it.gameMode == GameMode.CLASSIC }?.id ?: decks.firstOrNull()?.id
-                val active = decks.firstOrNull { it.id == activeId }
-                val history = restoreBingoHistory(decks)
-                val level = runCatching { BingoLevel.valueOf(prefs.getString("bingoLevel", "BEGINNER")!!) }
-                    .getOrDefault(BingoLevel.BEGINNER)
-                val question = runCatching { QuestionType.valueOf(prefs.getString("bingoQuestion", "BAND_OR_SOLO")!!) }
-                    .getOrDefault(BingoRules.categories(level).first())
-                    .takeIf { it in BingoRules.categories(level) } ?: BingoRules.categories(level).first()
-                val currentBingo = runCatching { readSavedSong(JSONObject(prefs.getString("bingoCurrentScan", "{}").orEmpty())) }.getOrNull()
-                val savedStage = runCatching { BingoStage.valueOf(prefs.getString("bingoStage", "").orEmpty()) }
-                    .getOrDefault(if (history.isEmpty()) BingoStage.IDLE else BingoStage.RULE)
-                // Opening the application never starts a camera left active before process death.
-                val bingoStage = when {
-                    savedStage == BingoStage.SCAN -> BingoStage.RULE
-                    savedStage == BingoStage.PLAYING && currentBingo == null -> BingoStage.RULE
-                    else -> savedStage
-                }
-                val restoredTimeline = restoreTimeline(active)
-                val restoredQuiz = restoreQuiz(active)
-                bingoScanSkin = if (bingoStage == BingoStage.PLAYING)
-                    CardSkin.fromId(prefs.getString("bingoActiveSkin", "").orEmpty()) else null
-                mutableState.update { it.copy(decks = decks, activeDeckId = activeId, busy = false,
-                    bingoHistory = history, bingoSong = currentBingo, bingoLevel = level, question = question,
-                    bingoStage = bingoStage, bingoRound = prefs.getInt("bingoRound", history.size).coerceAtLeast(0),
-                    bingoAnswerRevealed = currentBingo != null && prefs.getBoolean("bingoRevealed", false),
-                    // Keep saved decks and rounds, but open the printed-card scanner in this edition.
-                    cardlessMode = CardlessMode.BINGO, timeline = restoredTimeline, quiz = restoredQuiz,
-                    scannedSkin = if (it.tab == AppTab.BINGO) bingoScanSkin else null) }
+                mutableState.update { it.copy(decks = decks, activeDeckId = activeId, busy = false) }
             } catch (_: Exception) {
                 val examples = repository.current()
                 mutableState.update { it.copy(decks = examples, activeDeckId = examples.firstOrNull()?.id,
@@ -141,20 +117,8 @@ class HiciarzViewModel(application: Application) : AndroidViewModel(application)
         when (action) {
             is AppAction.SelectTab -> mutableState.update {
                 val tab = if (action.tab == AppTab.DECKS) AppTab.SCAN else action.tab
-                // A successful scan only stops its own camera. The other scanning flow may
-                // still be waiting for a card, while an existing standalone card stays open.
-                val scanReady = when (tab) {
-                    AppTab.SCAN -> it.currentSong == null
-                    AppTab.BINGO -> it.bingoStage == BingoStage.SCAN
-                    else -> false
-                }
-                val skin = when (tab) {
-                    AppTab.SCAN -> standaloneScanSkin
-                    AppTab.BINGO -> bingoScanSkin
-                    else -> it.scannedSkin
-                }
-                it.copy(tab = tab, scannerEnabled = scanReady, scannedSkin = skin,
-                    cardlessMode = if (tab == AppTab.BINGO) CardlessMode.BINGO else it.cardlessMode)
+                it.copy(tab = tab, scannerEnabled = tab == AppTab.SCAN && it.currentSong == null,
+                    scannedSkin = if (tab == AppTab.SCAN) standaloneScanSkin else it.scannedSkin)
             }
             AppAction.ConnectSpotify -> playback?.connect()
             AppAction.DisconnectSpotify -> {
@@ -179,10 +143,7 @@ class HiciarzViewModel(application: Application) : AndroidViewModel(application)
                 if (initializing) pendingAction = action
                 else {
                     val current = state.value
-                    val expectedScreen = if (action.bingo) current.tab == AppTab.BINGO &&
-                        current.cardlessMode == CardlessMode.BINGO && current.bingoStage == BingoStage.SCAN &&
-                        (action.bingoRound == null || action.bingoRound == current.bingoRound)
-                    else current.tab == AppTab.SCAN && current.currentSong == null
+                    val expectedScreen = current.tab == AppTab.SCAN && current.currentSong == null
                     if (expectedScreen && current.scannerEnabled) scan(action.value)
                 }
             }
@@ -198,8 +159,7 @@ class HiciarzViewModel(application: Application) : AndroidViewModel(application)
                 if (state.value.activeDeckId != action.id && state.value.decks.any { it.id == action.id }) {
                     pauseOwned()
                     prefs.edit().putString("activeDeck", action.id).apply()
-                    mutableState.update { resetGames(it.copy(activeDeckId = action.id)) }
-                    saveGames()
+                    mutableState.update { it.copy(activeDeckId = action.id) }
                 }
             }
             is AppAction.ImportDeck -> importDeck(action.uri)
@@ -208,88 +168,16 @@ class HiciarzViewModel(application: Application) : AndroidViewModel(application)
                 try {
                     if (state.value.activeDeckId == action.id) pauseOwned()
                     val decks = repository.delete(action.id)
-                    mutableState.update { current -> val updated = current.copy(decks = decks,
-                        activeDeckId = current.activeDeckId.takeUnless { it == action.id } ?: decks.firstOrNull()?.id,
-                        message = "deck_deleted")
-                        if (current.activeDeckId == action.id) resetGames(updated) else updated }
+                    mutableState.update { it.copy(decks = decks,
+                        activeDeckId = it.activeDeckId.takeUnless { id -> id == action.id } ?: decks.firstOrNull()?.id,
+                        message = "deck_deleted") }
                     prefs.edit().putString("activeDeck", state.value.activeDeckId).apply()
-                    saveGames()
                 } catch (_: Exception) { mutableState.update { it.copy(message = "import_failed") } }
-            }
-            AppAction.DrawBingo -> drawBingo()
-            AppAction.DrawBingoAndScan -> drawBingo(startScan = true)
-            AppAction.RedrawBingoQuestion -> {
-                if (state.value.bingoStage != BingoStage.IDLE) {
-                    mutableState.update { it.copy(question = BingoRules.redraw(it.bingoLevel, it.question, random),
-                        bingoAnswerRevealed = it.bingoSong != null && !it.settings.hideAnswers) }
-                    saveBingo()
-                }
-            }
-            AppAction.BeginBingoScan -> beginBingoScan()
-            AppAction.CancelBingoScan -> {
-                if (state.value.bingoStage == BingoStage.SCAN) {
-                    mutableState.update { it.copy(bingoStage = BingoStage.RULE, scannerEnabled = true, message = null) }
-                    saveBingo()
-                }
-            }
-            AppAction.RevealBingoAnswer -> {
-                mutableState.update { if (it.bingoSong != null) it.copy(bingoAnswerRevealed = true) else it }
-                saveBingo()
-            }
-            AppAction.ResetBingo -> {
-                pauseOwned()
-                bingoScanSkin = null
-                mutableState.update { it.copy(bingoHistory = emptyList(), bingoSong = null, bingoAnswerRevealed = false,
-                    bingoStage = BingoStage.IDLE, bingoRound = 0, scannedSkin = null) }
-                saveBingo()
-            }
-            is AppAction.SetQuestion -> {
-                if (state.value.bingoSong == null) mutableState.update { it.copy(question = action.question) }
-                saveBingo()
-            }
-            is AppAction.SetBingoLevel -> {
-                if (state.value.bingoLevel != action.level) {
-                    pauseOwned()
-                    bingoScanSkin = null
-                    mutableState.update { it.copy(bingoLevel = action.level, bingoHistory = emptyList(), bingoSong = null,
-                        bingoAnswerRevealed = false, bingoStage = BingoStage.IDLE, bingoRound = 0, scannedSkin = null) }
-                    saveBingo()
-                }
-            }
-            is AppAction.SetCardlessMode -> {
-                if (state.value.cardlessMode != action.mode) pauseOwned()
-                mutableState.update { it.copy(cardlessMode = action.mode,
-                    scannedSkin = if (action.mode == CardlessMode.BINGO) bingoScanSkin else null,
-                    scannerEnabled = if (it.tab == AppTab.BINGO)
-                        action.mode == CardlessMode.BINGO && it.bingoStage == BingoStage.SCAN
-                        else it.scannerEnabled) }; saveGames()
-            }
-            AppAction.StartTimeline -> startTimeline()
-            is AppAction.ChooseTimelineGap -> {
-                mutableState.update { it.copy(timeline = TimelineRules.choose(it.timeline, action.index)) }; saveCardless()
-            }
-            AppAction.RevealTimeline -> state.value.activeDeck?.let { deck ->
-                mutableState.update { it.copy(timeline = TimelineRules.reveal(it.timeline, deck)) }; saveCardless()
-            }
-            AppAction.NextTimeline -> nextTimeline()
-            AppAction.ResetTimeline -> {
-                pauseOwned(); mutableState.update { it.copy(timeline = TimelineState()) }; saveCardless()
-            }
-            AppAction.StartQuiz -> startQuiz()
-            AppAction.RevealQuiz -> { mutableState.update { it.copy(quiz = QuizRules.reveal(it.quiz)) }; saveCardless() }
-            is AppAction.SubmitQuizAnswer -> state.value.activeDeck?.let { deck ->
-                mutableState.update { it.copy(quiz = QuizRules.answer(it.quiz, action.correct, deck)) }; saveCardless()
-            }
-            AppAction.NextQuiz -> nextQuiz()
-            AppAction.ResetQuiz -> {
-                pauseOwned(); mutableState.update { it.copy(quiz = QuizState()) }; saveCardless()
             }
             is AppAction.SetCardSkin -> {
                 updateSettings(state.value.settings.copy(cardSkin = action.skin))
                 standaloneScanSkin = null
-                bingoScanSkin = null
                 mutableState.update { it.copy(scannedSkin = null) }
-                saveBingo()
             }
             is AppAction.SetFollowCardSkin -> updateSettings(state.value.settings.copy(followCardSkin = action.enabled))
             is AppAction.SetLanguage -> updateSettings(state.value.settings.copy(language = if (action.language == "en") "en" else "pl"))
@@ -305,16 +193,13 @@ class HiciarzViewModel(application: Application) : AndroidViewModel(application)
             }
             is AppAction.SetHideAnswers -> {
                 updateSettings(state.value.settings.copy(hideAnswers = action.enabled))
-                mutableState.update { it.copy(answerRevealed = !action.enabled,
-                    bingoAnswerRevealed = it.bingoSong != null && !action.enabled) }
+                mutableState.update { it.copy(answerRevealed = !action.enabled) }
             }
         }
     }
 
     private fun scan(raw: String) {
         if (initializing) { pendingAction = AppAction.ScanCode(raw); return }
-        val bingo = state.value.tab == AppTab.BINGO && state.value.cardlessMode == CardlessMode.BINGO &&
-            state.value.bingoStage == BingoStage.SCAN
         try {
             val card = DeckCodec.readCard(raw)
             val songs = state.value.activeDeck?.songs.orEmpty() + state.value.decks.flatMap { it.songs }
@@ -323,105 +208,22 @@ class HiciarzViewModel(application: Application) : AndroidViewModel(application)
                 ?: Song("spotify-${card.spotifyId}", "", "", null, card.spotifyId,
                     gameMode = card.gameMode ?: GameMode.CLASSIC)
             val scanned = song.copy(skin = card.skin ?: song.skin)
-            if (bingo) {
-                bingoScanSkin = card.skin
-                mutableState.update { it.copy(bingoSong = scanned, bingoHistory = (it.bingoHistory + scanned).takeLast(500),
-                    bingoStage = BingoStage.PLAYING, bingoAnswerRevealed = !it.settings.hideAnswers,
-                    scannedSkin = card.skin, scannerEnabled = false, message = null) }
-                saveBingo()
-            } else {
-                standaloneScanSkin = card.skin
-                mutableState.update { it.copy(tab = AppTab.SCAN, currentSong = scanned,
-                    scannedSkin = card.skin, scannerEnabled = false,
-                    answerRevealed = !it.settings.hideAnswers, message = null) }
-            }
+            standaloneScanSkin = card.skin
+            mutableState.update { it.copy(tab = AppTab.SCAN, currentSong = scanned,
+                scannedSkin = card.skin, scannerEnabled = false,
+                answerRevealed = !it.settings.hideAnswers, message = null) }
             play(song)
         } catch (error: Exception) {
             mutableState.update { it.copy(message = (error as? DeckFormatException)?.code ?: "invalid_qr", scannerEnabled = false) }
             viewModelScope.launch {
                 delay(800)
                 mutableState.update {
-                    if ((bingo && it.bingoStage == BingoStage.SCAN) || (!bingo && it.currentSong == null))
+                    if (it.tab == AppTab.SCAN && it.currentSong == null)
                         it.copy(scannerEnabled = true) else it
                 }
             }
         }
     }
-
-    private fun drawBingo(startScan: Boolean = false) {
-        pauseOwned()
-        bingoScanSkin = null
-        val categories = BingoRules.categories(state.value.bingoLevel)
-        mutableState.update { it.copy(tab = AppTab.BINGO,
-            cardlessMode = CardlessMode.BINGO, bingoSong = null,
-            bingoAnswerRevealed = false, question = categories[random.nextInt(categories.size)],
-            scannedSkin = null, bingoStage = if (startScan) BingoStage.SCAN else BingoStage.RULE,
-            bingoRound = it.bingoRound + 1, scannerEnabled = startScan || it.scannerEnabled,
-            message = if (startScan) null else it.message) }
-        saveGames()
-    }
-
-    private fun beginBingoScan() {
-        if (state.value.bingoStage !in listOf(BingoStage.RULE, BingoStage.PLAYING)) return
-        pauseOwned()
-        bingoScanSkin = null
-        mutableState.update { it.copy(tab = AppTab.BINGO, cardlessMode = CardlessMode.BINGO,
-            bingoStage = BingoStage.SCAN, bingoSong = null, bingoAnswerRevealed = false,
-            scannerEnabled = true, scannedSkin = null, message = null) }
-        saveGames()
-    }
-
-    private fun startTimeline() {
-        if (state.value.timeline.started) return
-        val deck = state.value.activeDeck ?: return showMessage("choose_deck")
-        val session = TimelineRules.start(deck, random)
-        if (!session.started) return showMessage("timeline_needs_years")
-        mutableState.update { it.copy(cardlessMode = CardlessMode.TIMELINE, timeline = session, scannedSkin = null) }
-        saveCardless()
-        session.currentSong?.let(::play)
-    }
-
-    private fun nextTimeline() {
-        val deck = state.value.activeDeck ?: return showMessage("choose_deck")
-        val previous = state.value.timeline
-        val next = TimelineRules.next(previous, deck, random)
-        if (next == previous) return
-        mutableState.update { it.copy(timeline = next) }
-        saveCardless()
-        if (!next.finished) next.currentSong?.let(::play)
-    }
-
-    private fun startQuiz() {
-        if (state.value.quiz.started) return
-        val deck = state.value.activeDeck ?: return showMessage("choose_deck")
-        val session = QuizRules.start(deck, random)
-        if (!session.started) return showMessage("empty_deck")
-        mutableState.update { it.copy(cardlessMode = CardlessMode.QUIZ, quiz = session, scannedSkin = null) }
-        saveCardless()
-        session.currentSong?.let(::play)
-    }
-
-    private fun nextQuiz() {
-        val deck = state.value.activeDeck ?: return showMessage("choose_deck")
-        val previous = state.value.quiz
-        val next = QuizRules.next(previous, deck, random)
-        if (next == previous) return
-        mutableState.update { it.copy(quiz = next) }
-        saveCardless()
-        if (!next.finished) next.currentSong?.let(::play)
-    }
-
-    private fun showMessage(code: String) { mutableState.update { it.copy(message = code) } }
-
-    private fun defaultCardlessMode(deck: Deck?): CardlessMode =
-        if (deck != null && (deck.gameMode != GameMode.CLASSIC ||
-                (deck.songs.isNotEmpty() && deck.songs.all { it.gameMode != GameMode.CLASSIC })))
-            CardlessMode.QUIZ else CardlessMode.TIMELINE
-
-    private fun resetGames(state: AppState): AppState = state.copy(
-        cardlessMode = if (state.cardlessMode == CardlessMode.BINGO) CardlessMode.BINGO else defaultCardlessMode(state.activeDeck),
-        timeline = TimelineState(), quiz = QuizState(),
-    )
 
     private fun play(song: Song) {
         clipJob?.cancel()
@@ -472,110 +274,12 @@ class HiciarzViewModel(application: Application) : AndroidViewModel(application)
             val deck = repository.import(Uri.parse(value))
             pauseOwned()
             prefs.edit().putString("activeDeck", deck.id).apply()
-            mutableState.update { resetGames(it.copy(tab = AppTab.SCAN, decks = repository.current(), activeDeckId = deck.id,
-                busy = false, message = "deck_imported")) }
-            saveGames()
+            mutableState.update { it.copy(tab = AppTab.SCAN, decks = repository.current(), activeDeckId = deck.id,
+                busy = false, message = "deck_imported") }
         } catch (error: Exception) {
             mutableState.update { it.copy(busy = false, message = (error as? DeckFormatException)?.code ?: "import_failed") }
         }
     }
-
-    private fun saveBingo() {
-        val value = state.value
-        prefs.edit().putString("bingoDeck", value.activeDeckId).putString("bingoLevel", value.bingoLevel.name)
-            .putString("bingoQuestion", value.question.name)
-            .putString("bingoHistory", JSONArray(value.bingoHistory.map { it.spotifyId }).toString())
-            .putString("bingoScans", JSONArray(value.bingoHistory.map(::savedSong)).toString())
-            .putString("bingoCurrentScan", value.bingoSong?.let { savedSong(it).toString() })
-            .putString("bingoStage", value.bingoStage.name).putInt("bingoRound", value.bingoRound)
-            .putString("bingoActiveSkin", bingoScanSkin?.id.orEmpty())
-            .putBoolean("bingoRevealed", value.bingoAnswerRevealed).apply()
-    }
-
-    private fun saveGames() { saveBingo(); saveCardless() }
-
-    private fun saveCardless() {
-        val value = state.value
-        val timeline = value.timeline
-        val quiz = value.quiz
-        val timelineJson = JSONObject().put("board", JSONArray(timeline.board.map { it.spotifyId }))
-            .put("current", timeline.currentSong?.spotifyId).put("gap", timeline.selectedGap)
-            .put("revealed", timeline.revealed).put("correct", timeline.correct).put("correctGap", timeline.correctGap)
-            .put("played", JSONArray(timeline.playedIds.toList())).put("mistakes", timeline.mistakes)
-        val quizJson = JSONObject().put("current", quiz.currentSong?.spotifyId).put("revealed", quiz.revealed)
-            .put("answered", quiz.answered).put("played", JSONArray(quiz.playedIds.toList()))
-            .put("correctCount", quiz.correctCount)
-        prefs.edit().putString("cardlessDeck", value.activeDeckId).putString("cardlessMode", value.cardlessMode.name)
-            .putString("timeline", timelineJson.toString()).putString("quiz", quizJson.toString()).apply()
-    }
-
-    private fun savedSong(song: Song): JSONObject = JSONObject().put("id", song.id)
-        .put("spotify", song.spotifyId).put("title", song.title).put("artist", song.artist)
-        .put("year", song.year).put("answer", song.answer).put("mode", song.gameMode.name)
-        .apply { song.skin?.let { put("skin", it.id) } }
-
-    private fun readSavedSong(json: JSONObject): Song {
-        val spotifyId = DeckCodec.spotifyId(json.getString("spotify"))
-        return Song(json.optString("id", "spotify-$spotifyId").take(100), json.optString("title").take(200),
-            json.optString("artist").take(200), json.optInt("year", -1).takeIf { it in 1000..2100 }, spotifyId,
-            json.optString("answer").take(200), runCatching { GameMode.valueOf(json.optString("mode")) }
-                .getOrDefault(GameMode.CLASSIC), CardSkin.fromId(json.optString("skin")))
-    }
-
-    private fun restoreBingoHistory(decks: List<Deck>): List<Song> = runCatching {
-        if (prefs.contains("bingoScans")) {
-            val scans = JSONArray(prefs.getString("bingoScans", "[]"))
-            (0 until scans.length()).map { readSavedSong(scans.getJSONObject(it)) }.takeLast(500)
-        } else {
-            val ids = JSONArray(prefs.getString("bingoHistory", "[]"))
-            val songs = decks.flatMap { it.songs }
-            (0 until ids.length()).map { index ->
-                val id = DeckCodec.spotifyId(ids.getString(index))
-                songs.firstOrNull { it.spotifyId == id } ?: Song("spotify-$id", "", "", null, id)
-            }.takeLast(500)
-        }
-    }.getOrDefault(emptyList())
-
-    private fun stringIds(array: JSONArray): Set<String> = (0 until array.length()).map { array.getString(it) }.toSet()
-
-    private fun restoreTimeline(deck: Deck?): TimelineState = runCatching {
-        if (deck == null || prefs.getString("cardlessDeck", null) != deck.id) return@runCatching TimelineState()
-        val pool = TimelineRules.eligible(deck)
-        val songs = pool.associateBy { it.spotifyId }
-        val json = JSONObject(prefs.getString("timeline", "{}").orEmpty())
-        val ids = json.getJSONArray("board")
-        val board = (0 until ids.length()).map { songs.getValue(ids.getString(it)) }
-        require(pool.size >= 2 && board.isNotEmpty() && board.map { it.spotifyId }.distinct().size == board.size)
-        require(board.zipWithNext().all { (a, b) -> a.year!! <= b.year!! })
-        val current = songs.getValue(json.getString("current"))
-        val played = stringIds(json.getJSONArray("played")).filterTo(mutableSetOf()) { it in songs }
-        require(board.all { it.spotifyId in played } && current.spotifyId in played)
-        val revealed = json.optBoolean("revealed", false)
-        require(revealed || current.spotifyId !in board.map { it.spotifyId })
-        val gap = json.optInt("gap", -1).takeIf { it in 0..board.size }
-        val target = minOf(10, pool.size)
-        TimelineState(board = board, currentSong = current, selectedGap = gap,
-            revealed = revealed, correct = if (json.has("correct")) json.getBoolean("correct") else null,
-            correctGap = json.optInt("correctGap", -1).takeIf { it in 0..board.size },
-            playedIds = played, round = (played.size - 1).coerceAtLeast(1),
-            mistakes = json.optInt("mistakes", 0).coerceIn(0, played.size), targetCards = target,
-            finished = revealed && (board.size >= target || pool.none { it.spotifyId !in played }))
-    }.getOrDefault(TimelineState())
-
-    private fun restoreQuiz(deck: Deck?): QuizState = runCatching {
-        if (deck == null || prefs.getString("cardlessDeck", null) != deck.id) return@runCatching QuizState()
-        val songs = deck.songs.distinctBy { it.spotifyId }.associateBy { it.spotifyId }
-        val json = JSONObject(prefs.getString("quiz", "{}").orEmpty())
-        val current = songs.getValue(json.getString("current"))
-        val played = stringIds(json.getJSONArray("played")).filterTo(mutableSetOf()) { it in songs }
-        require(current.spotifyId in played)
-        val answered = json.optBoolean("answered", false)
-        val correctCount = json.optInt("correctCount", 0).coerceIn(0, played.size)
-        val target = minOf(10, songs.size)
-        QuizState(currentSong = current, revealed = json.optBoolean("revealed", false), answered = answered,
-            playedIds = played, round = played.size, correctCount = correctCount, targetScore = target,
-            finished = answered && (correctCount >= target || songs.keys.none { it !in played }))
-    }.getOrDefault(QuizState())
 
     private fun updateSettings(settings: AppSettings) {
         mutableState.update { it.copy(settings = settings) }

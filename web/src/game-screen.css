@@ -28,12 +28,12 @@
 }
 
 @media (max-width: 980px) {
-  .app-shell:is(.mode-scanner, .mode-bingo) .workspace {
+  .app-shell.mode-scanner .workspace {
     min-height: 100dvh;
     padding-bottom: calc(65px + env(safe-area-inset-bottom, 0px));
     background-image: none;
   }
-  .app-shell:is(.mode-scanner, .mode-bingo) .workspace > main {
+  .app-shell.mode-scanner .workspace > main {
     display: flex;
     flex: 1;
     flex-direction: column;
@@ -41,15 +41,6 @@
     max-width: none;
     margin: 0;
     padding: 0;
-  }
-  .app-shell.mode-bingo .app-header {
-    display: none;
-  }
-  .app-shell.mode-bingo .bingo-container:not([hidden]) {
-    display: flex;
-    flex: 1;
-    flex-direction: column;
-    min-height: 0;
   }
   .app-shell.mode-scanner .app-header {
     min-height: 56px;
