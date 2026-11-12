@@ -107,6 +107,63 @@ class CardlessViewModelTest {
         assertNotEquals(song.spotifyId, state().timeline.currentSong?.spotifyId)
     }
 
+    @Test fun combinedBingoDrawStartsScanningAndIgnoresCameraFramesFromThePreviousRound() {
+        dispatch(AppAction.SelectTab(AppTab.SETTINGS))
+        dispatch(AppAction.SetCardlessMode(CardlessMode.QUIZ))
+        dispatch(AppAction.DrawBingoAndScan)
+        val firstRound = state().bingoRound
+        assertEquals(1, firstRound)
+        assertEquals(AppTab.BINGO, state().tab)
+        assertEquals(CardlessMode.BINGO, state().cardlessMode)
+        assertEquals(BingoStage.SCAN, state().bingoStage)
+        assertTrue(state().scannerEnabled)
+        assertTrue(state().question in BingoRules.categories(state().bingoLevel))
+        assertNull(state().bingoSong)
+        assertFalse(state().playback.isPlaying)
+
+        dispatch(AppAction.ScanCameraCode("https://example.org/#2xs0000000000000000000000",
+            bingo = true, bingoRound = firstRound))
+        assertEquals(BingoStage.PLAYING, state().bingoStage)
+        assertTrue(state().playback.isPlaying)
+        assertEquals(CardSkin.CHRISTMAS, state().activeSkin)
+        dispatch(AppAction.RevealBingoAnswer)
+        assertTrue(state().bingoAnswerRevealed)
+
+        dispatch(AppAction.DrawBingoAndScan)
+        val nextRound = state().bingoRound
+        val nextRule = state().question
+        assertEquals(firstRound + 1, nextRound)
+        assertEquals(BingoStage.SCAN, state().bingoStage)
+        assertTrue(state().scannerEnabled)
+        assertNull(state().bingoSong)
+        assertFalse(state().bingoAnswerRevealed)
+        assertNull(state().scannedSkin)
+        assertFalse("Drawing the next round must pause the previous card", state().playback.isPlaying)
+        assertEquals(1, state().bingoHistory.size)
+
+        dispatch(AppAction.ScanCameraCode("spotify:track:0000000000000000000001",
+            bingo = true, bingoRound = firstRound))
+        assertEquals(BingoStage.SCAN, state().bingoStage)
+        assertNull("The previous camera round must not fill the new round", state().bingoSong)
+        assertEquals(nextRule, state().question)
+        assertEquals(1, state().bingoHistory.size)
+        assertFalse(state().playback.isPlaying)
+        dispatch(AppAction.ScanCameraCode("spotify:track:0000000000000000000002",
+            bingo = true, bingoRound = nextRound))
+        assertEquals(BingoStage.PLAYING, state().bingoStage)
+        assertEquals("0000000000000000000002", state().bingoSong?.spotifyId)
+        assertEquals(nextRule, state().question)
+        assertEquals(2, state().bingoHistory.size)
+        assertTrue(state().playback.isPlaying)
+
+        dispatch(AppAction.DrawBingo)
+        assertEquals(nextRound + 1, state().bingoRound)
+        assertEquals("The phone flow must still stop at the question", BingoStage.RULE, state().bingoStage)
+        assertNull(state().bingoSong)
+        assertFalse(state().scannerEnabled)
+        assertFalse(state().playback.isPlaying)
+    }
+
     @Test fun gameSoundtrackDeckDefaultsToSourceQuizAndJudgementsPersist() {
         val gameDeck = state().decks.first { it.gameMode == GameMode.GAME }
         dispatch(AppAction.SetCardlessMode(CardlessMode.TIMELINE))

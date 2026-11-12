@@ -129,7 +129,7 @@ sealed interface AppAction {
     data class PlayCard(val song: Song) : AppAction
     data object SwitchToPhone : AppAction
     data class ScanCode(val value: String) : AppAction
-    data class ScanCameraCode(val value: String, val bingo: Boolean = false) : AppAction
+    data class ScanCameraCode(val value: String, val bingo: Boolean = false, val bingoRound: Int? = null) : AppAction
     data object ScanNext : AppAction
     data object RevealAnswer : AppAction
     data object DismissMessage : AppAction
@@ -137,6 +137,7 @@ sealed interface AppAction {
     data class ImportDeck(val uri: String) : AppAction
     data class DeleteDeck(val id: String) : AppAction
     data object DrawBingo : AppAction
+    data object DrawBingoAndScan : AppAction
     data object BeginBingoScan : AppAction
     data object CancelBingoScan : AppAction
     data object RevealBingoAnswer : AppAction

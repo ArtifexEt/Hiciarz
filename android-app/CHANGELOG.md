@@ -6,6 +6,15 @@ Zmiany kolejnych wersji aplikacji Android. Opis GitHub Release jest pobierany z 
 
 <!-- Zapisuj tutaj zmiany, które nie trafiły jeszcze do sekcji konkretnej wersji. -->
 
+## [0.2.0-alpha.2] - 2026-11-12
+
+### Bingo na większym ekranie
+
+- W układzie dwóch paneli losowanie pytania od razu przygotowuje aparat, a pełna wylosowana kategoria pozostaje widoczna obok skanera oraz podczas odsłuchu i odkrywania odpowiedzi.
+- „Następna runda” losuje nowe pytanie i ponownie uzbraja skaner. Telefon zachowuje osobny krok „Skanuj kartę”.
+- Anulowanie skanowania i zmiana rozmiaru okna nie uruchamiają aparatu samoczynnie. Wynik ze starej rundy nie może trafić do nowej.
+- Zaktualizowano instrukcję i zrzuty widoku tabletowego. Układ nadal uwzględnia pionowy oraz poziomy zawias Folda.
+
 ## [0.2.0-alpha.1] - 2026-11-12
 
 ### Gra i obsługa

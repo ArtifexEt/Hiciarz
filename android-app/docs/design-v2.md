@@ -45,3 +45,9 @@ W tych testach nie uczestniczyło konto Spotify ani fizyczny Fold7. Kontrolę od
 - [Badania Material 3 Expressive](https://design.google/library/expressive-material-design-google-research): wyraziste najważniejsze akcje przy zachowaniu rozpoznawalnych list i nawigacji.
 - [Android adaptive layout](https://developer.android.com/develop/adaptive-apps/guides/list-detail): adaptacja do okna i pozycji zawiasu.
 - [Specyfikacja Fold7](https://www.samsungmobilepress.com/articles/samsung-galaxy-z-fold7-raising-the-bar-for-smartphones): 1080×2520 ekran zewnętrzny, 1968×2184 ekran wewnętrzny.
+
+## Bingo na tablecie — wspólny ekran rundy
+
+W rzeczywistym układzie dwóch paneli aparat i pełne pytanie są widoczne równocześnie. Kliknięcie losowania lub następnej rundy atomowo ustawia pytanie i uzbraja skaner; po odczycie karta zastępuje aparat, a pełna kategoria nadal pozostaje obok. Telefon zachowuje jawny krok skanowania. Zmiana rozmiaru okna, anulowanie i wznowienie aplikacji nie uruchamiają aparatu przez efekt kompozycji. Callback kamery identyfikuje rundę, aby opóźniony odczyt nie wypełnił kolejnej.
+
+Weryfikacja zmiany: pełny zestaw 24 testów natywnych oraz 3 testy adaptacyjne po korekcie podpisu pauzy przeszły na emulatorze AOSP. Zrzuty tabletu 2560 × 1600 pokazują faktyczny wspólny widok oraz niezmienione pytanie po skanie.

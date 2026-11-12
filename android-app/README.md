@@ -2,7 +2,7 @@
 
 Natywna aplikacja Kotlin / Jetpack Compose do skanowania drukowanych kart, prowadzenia Bingo i grania bez kart w Oś czasu lub Zgadnij. Spotify odtwarza muzykę w swojej aplikacji, a Hiciarz steruje nim przez oficjalny App Remote SDK. Kreator kart i generator plansz PDF pozostają w [`../web/`](../web/).
 
-W Bingo telefon prowadzącego najpierw losuje kategorię, a dopiero wybranie „Skanuj kartę” uruchamia aparat. Skan rozpoczyna utwór; gracze zaznaczają odpowiedzi na papierowych planszach. „Plansze do pobrania” otwiera generator z wybranym poziomem i językiem. Zasady każdej gry są dostępne pod „Jak grać”.
+W Bingo telefon prowadzącego najpierw losuje kategorię, a dopiero wybranie „Skanuj kartę” uruchamia aparat. Na szerszym ekranie losowanie od razu przygotowuje skaner, a pełne pytanie pozostaje obok aparatu i sterowania odtwarzaniem. Skan rozpoczyna utwór; gracze zaznaczają odpowiedzi na papierowych planszach. „Plansze do pobrania” otwiera generator z wybranym poziomem i językiem. Zasady każdej gry są dostępne pod „Jak grać”.
 
 QR może automatycznie włączyć jedną z dziewięciu skórek. Ustawienia pozwalają wybrać własny wygląd i wyłączyć śledzenie skórki karty. Automatyczna pauza jest domyślnie wyłączona. Na dużym oknie i rozłożonym telefonie nawigacja przechodzi na bok, a niezależne panele uwzględniają zgięcie ekranu. [Porównanie funkcji z PWA](docs/pwa-parity.md) opisuje pełny zakres.
 
@@ -21,6 +21,10 @@ Zrzuty pochodzą z uruchomionej aplikacji na emulatorze AOSP. Karta z rokiem 195
 | Rozłożony ekran · dwa panele | Tabletop · poziome zgięcie |
 | --- | --- |
 | <img src="docs/screenshots/fold-inner-scanner-pl.png" width="440" alt="Aparat i pytanie Bingo w osobnych panelach po obu stronach pionowego zgięcia" /> | <img src="docs/screenshots/fold-tabletop-scanner-pl.png" width="440" alt="Aparat nad poziomym zgięciem, pytanie i działania poniżej oraz dolna nawigacja" /> |
+
+| Tablet · pytanie i skaner | Tablet · pytanie podczas odsłuchu |
+| --- | --- |
+| <img src="docs/screenshots/tablet-bingo-scanner-pl.png" width="540" alt="Aparat i pełna wylosowana kategoria Bingo widoczne jednocześnie, bez przełączania ekranu" /> | <img src="docs/screenshots/tablet-bingo-playing-pl.png" width="540" alt="Pełne pytanie i podpowiedź obok karty, odtwarzania i następnej rundy" /> |
 
 Układy Folda sprawdzono w emulowanym oknie z pozycją zawiasu przekazywaną przez WindowManager. Nie jest to test na fizycznym Fold7.
 
@@ -151,7 +155,7 @@ W **Settings → Secrets and variables → Actions → Secrets** ustaw:
 Publiczne `SPOTIFY_CLIENT_ID` i `ANDROID_SIGNING_CERT_SHA256` umieść osobno w **Variables**. Odcisk może mieć postać 64 znaków szesnastkowych albo zapisu z dwukropkami. Workflow odtwarza magazyn wyłącznie w tymczasowym katalogu runnera, usuwa go po zakończeniu i publikuje tylko APK, sumę kontrolną oraz publiczne metadane podpisu.
 
 ```sh
-./gradlew :app:assembleRelease -PversionName=0.2.0-alpha.1 -PversionCode=100003
+./gradlew :app:assembleRelease -PversionName=0.2.0-alpha.2 -PversionCode=100004
 ```
 
 Do aktualizacji zainstalowanego APK użyj tego samego podpisu i większego `versionCode`. Numer lokalnego buildu powinien być większy od numeru już zainstalowanego wydania, podanego w `BUILD-INFO.txt`.
@@ -185,7 +189,7 @@ Zwykłe CI może działać bez sekretów, np. w forku: wtedy używa efemeryczneg
 Po pobraniu APK i pliku sumy do tego samego katalogu sprawdź integralność na Linuksie:
 
 ```sh
-sha256sum --check hiciarz-android-0.2.0-alpha.1-test.apk.sha256
+sha256sum --check hiciarz-android-0.2.0-alpha.2-test.apk.sha256
 ```
 
 Na macOS odpowiednikiem jest `shasum -a 256 --check …`. Odcisk podpisu można dodatkowo odczytać narzędziem Android SDK `apksigner verify --print-certs <plik.apk>` i porównać z `SIGNING-CERTIFICATE.txt`.
