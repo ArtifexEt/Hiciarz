@@ -17,6 +17,7 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.platform.LocalContext
+import androidx.compose.ui.platform.testTag
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.semantics.contentDescription
 import androidx.compose.ui.semantics.semantics
@@ -53,7 +54,7 @@ fun HiciarzApp(state: AppState, onAction: (AppAction) -> Unit) {
         }
         CompositionLocalProvider(LocalFoldGeometry provides fold) {
             BoxWithConstraints(Modifier.fillMaxSize()) {
-                val expanded = maxWidth >= 600.dp
+                val expanded = maxWidth >= 600.dp && fold?.vertical != false
                 val chooseTab: (AppTab) -> Unit = { help = null; onAction(AppAction.SelectTab(it)) }
                 Row(Modifier.fillMaxSize()) {
                     if (expanded) AppRail(state.tab, copy, chooseTab)
@@ -80,7 +81,7 @@ fun HiciarzApp(state: AppState, onAction: (AppAction) -> Unit) {
                             if (help != null) HelpScreen(help!!, copy, state.bingoLevel) { help = it }
                             else when (state.tab) {
                                 AppTab.BINGO -> GamesScreen(state, copy, onAction,
-                                    onDeck = { sheet = AppSheet.DECKS }, onHelp = { help = it },
+                                    onDeck = { sheet = AppSheet.DECKS },
                                     onManual = { manual = true }, cameraActive = !manual && sheet == null)
                                 AppTab.SCAN -> ScanScreen(state, copy, onAction,
                                     onManual = { manual = true }, onSkin = { sheet = AppSheet.SKINS },
@@ -129,7 +130,7 @@ private fun tabIcon(tab: AppTab): ImageVector = when (tab) {
 
 @Composable
 private fun AppBottomBar(selected: AppTab, copy: UiCopy, onChoose: (AppTab) -> Unit) {
-    NavigationBar(containerColor = MaterialTheme.colorScheme.surface, tonalElevation = 0.dp) {
+    NavigationBar(modifier = Modifier.testTag("app-bottom-navigation"), containerColor = MaterialTheme.colorScheme.surface, tonalElevation = 0.dp) {
         listOf(AppTab.BINGO, AppTab.SCAN, AppTab.DECKS, AppTab.SETTINGS).forEach { tab ->
             NavigationBarItem(selected = selected == tab, onClick = { onChoose(tab) },
                 icon = { Icon(tabIcon(tab), null) }, label = { Text(copy.tab(tab), maxLines = 1) },

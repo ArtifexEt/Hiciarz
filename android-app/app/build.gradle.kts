@@ -48,7 +48,8 @@ android {
         targetSdk = 37
         versionCode = providers.gradleProperty("versionCode").orElse("100003").get().toInt()
         versionName = providers.gradleProperty("versionName").orElse("0.2.0-alpha.1").get()
-        testInstrumentationRunner = "androidx.test.runner.AndroidJUnitRunner"
+        testInstrumentationRunner = providers.gradleProperty("hiciarzTestRunner").orNull
+            ?: "androidx.test.runner.AndroidJUnitRunner"
         buildConfigField("String", "SPOTIFY_CLIENT_ID", "\"${spotifyClientId.get().replace("\\", "\\\\").replace("\"", "\\\"")}\"")
         buildConfigField("String", "SPOTIFY_REDIRECT_URI", "\"hiciarz://spotify-callback\"")
         buildConfigField("boolean", "TEST_SIGNING", (!productionSigning).toString())

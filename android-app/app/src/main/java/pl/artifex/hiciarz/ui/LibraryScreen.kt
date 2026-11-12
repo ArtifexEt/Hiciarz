@@ -55,7 +55,9 @@ internal fun DecksScreen(state: AppState, copy: UiCopy, onAction: (AppAction) ->
             YearTicket(deck.skin, deck.songs.size.toString(), copy.t("Utwory w talii", "Tracks in this deck"),
                 title = copy.deck(deck), subtitle = copy.mode(deck.gameMode), compact = true)
             Button(onClick = {
-                onAction(AppAction.SetCardlessMode(if (deck.gameMode == GameMode.CLASSIC) CardlessMode.TIMELINE else CardlessMode.QUIZ))
+                val guess = deck.gameMode != GameMode.CLASSIC ||
+                    (deck.songs.isNotEmpty() && deck.songs.all { it.gameMode != GameMode.CLASSIC })
+                onAction(AppAction.SetCardlessMode(if (guess) CardlessMode.QUIZ else CardlessMode.TIMELINE))
                 onAction(AppAction.SelectTab(AppTab.BINGO))
             },
                 modifier = Modifier.fillMaxWidth().heightIn(min = 54.dp), shape = ControlShape) {

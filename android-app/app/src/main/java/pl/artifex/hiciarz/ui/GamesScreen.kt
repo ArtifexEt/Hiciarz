@@ -24,13 +24,22 @@ import pl.artifex.hiciarz.model.*
 
 @Composable
 internal fun GamesScreen(state: AppState, copy: UiCopy, onAction: (AppAction) -> Unit,
-                         onDeck: () -> Unit, onHelp: (HelpTopic) -> Unit, onManual: () -> Unit, cameraActive: Boolean = true) {
+                         onDeck: () -> Unit, onManual: () -> Unit, cameraActive: Boolean = true) {
     var reset by rememberSaveable { mutableStateOf<CardlessMode?>(null) }
     var levelChange by remember { mutableStateOf<BingoLevel?>(null) }
+    var options by rememberSaveable { mutableStateOf(false) }
+    val selectLevel: (BingoLevel) -> Unit = { level ->
+        if (state.bingoRound > 0 && state.bingoLevel != level) { options = false; levelChange = level }
+        else onAction(AppAction.SetBingoLevel(level))
+    }
+    val active = when (state.cardlessMode) {
+        CardlessMode.TIMELINE -> state.timeline.started
+        CardlessMode.QUIZ -> state.quiz.started
+        CardlessMode.BINGO -> state.bingoStage != BingoStage.IDLE
+    }
     val header: @Composable ColumnScope.() -> Unit = {
-        SectionTitle(copy.game(state.cardlessMode),
-            copy.t("Zasady", "Rules")) { onHelp(HelpTopic.forState(state)) }
-        SingleChoiceSegmentedButtonRow(Modifier.fillMaxWidth()) {
+        if (active) SectionTitle(copy.game(state.cardlessMode), copy.t("Zmień grę", "Change game")) { options = true }
+        else SingleChoiceSegmentedButtonRow(Modifier.fillMaxWidth()) {
             listOf(CardlessMode.TIMELINE, CardlessMode.QUIZ, CardlessMode.BINGO).forEachIndexed { index, mode ->
                 SegmentedButton(selected = state.cardlessMode == mode,
                     onClick = { onAction(AppAction.SetCardlessMode(mode)) },
@@ -39,16 +48,21 @@ internal fun GamesScreen(state: AppState, copy: UiCopy, onAction: (AppAction) ->
                     modifier = Modifier.heightIn(min = 48.dp).testTag("mode-" + mode.name.lowercase())) { Text(copy.game(mode), maxLines = 1) }
             }
         }
-        if (state.cardlessMode != CardlessMode.BINGO) DeckSelector(state.activeDeck, copy, onDeck)
+        if (!active && state.cardlessMode != CardlessMode.BINGO) DeckSelector(state.activeDeck, copy, onDeck)
+    }
+    if (options) ModalBottomSheet(onDismissRequest = { options = false }) {
+        GameOptionsSheet(state, copy, onAction,
+            onLevel = selectLevel,
+            onDeck = { options = false; onDeck() },
+            onRestart = { options = false; reset = state.cardlessMode },
+            onClose = { options = false })
     }
     when (state.cardlessMode) {
         CardlessMode.TIMELINE -> TimelineGame(state, copy, onAction, header) { reset = CardlessMode.TIMELINE }
         CardlessMode.QUIZ -> QuizGame(state, copy, onAction, header) { reset = CardlessMode.QUIZ }
         CardlessMode.BINGO -> HostBingoGame(state, copy, onAction, header,
-            onManual = onManual, cameraActive = cameraActive, onLevel = { level ->
-                if (state.bingoRound > 0 && state.bingoLevel != level) levelChange = level
-                else onAction(AppAction.SetBingoLevel(level))
-            }, onReset = { reset = CardlessMode.BINGO })
+            onManual = onManual, cameraActive = cameraActive, onLevel = selectLevel,
+            onReset = { reset = CardlessMode.BINGO })
     }
     reset?.let { mode ->
         AlertDialog(onDismissRequest = { reset = null },
@@ -80,50 +94,60 @@ private fun TimelineGame(state: AppState, copy: UiCopy, onAction: (AppAction) ->
                          header: @Composable ColumnScope.() -> Unit, onReset: () -> Unit) {
     val game = state.timeline
     AdaptivePanes(primary = {
-        header()
-        if (!game.started) {
-            GameIntro(CardlessMode.TIMELINE, copy,
-                title = copy.t("Który utwór był pierwszy?", "Which track came first?"),
-                detail = copy.t("Słuchaj i układaj lata. Zbierz 10 kart na własnej osi czasu.",
-                    "Listen and order the years. Collect 10 cards on your timeline."))
-            Button(onClick = { onAction(AppAction.StartTimeline) }, enabled = state.activeDeck != null,
-                modifier = Modifier.fillMaxWidth().heightIn(min = 56.dp), shape = ControlShape) {
-                Icon(AppIcons.Play, null, Modifier.size(20.dp)); Spacer(Modifier.width(10.dp))
-                Text(copy.t("Zacznij grę", "Start game"))
-            }
-        } else {
-            GameProgress(game.board.size, game.targetCards, copy.t("karty", "cards"),
-                copy.t("Tura ${game.round}", "Round ${game.round}"))
-            game.currentSong?.let { song ->
-                YearTicket(skinForSong(state, song), if (game.revealed) song.year.toString() else "?",
-                    copy.t("Który to rok?", "Which year?"),
-                    title = if (game.revealed) song.title else copy.t("Znajdź miejsce na osi", "Find its place on the timeline"),
-                    subtitle = if (game.revealed) song.artist else null)
-                PlaybackControls(state.playback, state.settings, copy, onAction,
-                    expectedUri = song.spotifyUri, playAction = AppAction.PlayCard(song))
-            }
-            if (game.revealed) {
-                RoundOutcome(game.correct == true,
-                    if (game.correct == true) copy.t("Dobre miejsce!", "Right place!")
-                    else copy.t("Ten utwór jest z innego roku.", "This track belongs elsewhere."))
-                if (game.finished) GameFinished(game.won, copy) { onAction(AppAction.ResetTimeline) }
-                else Button(onClick = { onAction(AppAction.NextTimeline) },
-                    modifier = Modifier.fillMaxWidth().heightIn(min = 54.dp), shape = ControlShape) {
-                    Text(copy.t("Następny utwór", "Next track")); Spacer(Modifier.width(10.dp)); Icon(AppIcons.Arrow, null)
+        val stacked = LocalPaneHeight.current == null
+        Column(verticalArrangement = Arrangement.spacedBy(if (stacked && game.started) 12.dp else 20.dp)) {
+            header()
+            if (!game.started) {
+                GameIntro(CardlessMode.TIMELINE, copy,
+                    title = copy.t("Który utwór był pierwszy?", "Which track came first?"),
+                    detail = copy.t("Słuchaj i układaj lata. Zbierz 10 kart na własnej osi czasu.",
+                        "Listen and order the years. Collect 10 cards on your timeline."))
+                Button(onClick = { onAction(AppAction.StartTimeline) }, enabled = state.activeDeck != null,
+                    modifier = Modifier.fillMaxWidth().heightIn(min = 56.dp), shape = ControlShape) {
+                    Icon(AppIcons.Play, null, Modifier.size(20.dp)); Spacer(Modifier.width(10.dp))
+                    Text(copy.t("Zacznij grę", "Start game"))
                 }
-            } else Button(onClick = { onAction(AppAction.RevealTimeline) }, enabled = game.selectedGap != null,
-                modifier = Modifier.fillMaxWidth().heightIn(min = 54.dp), shape = ControlShape) {
-                Text(copy.t("Sprawdź miejsce", "Check position"))
+            } else {
+                GameProgress(game.board.size, game.targetCards, copy.t("karty", "cards"),
+                    copy.t("Tura ${game.round}", "Round ${game.round}"))
+                game.currentSong?.let { song ->
+                    YearTicket(skinForSong(state, song), if (game.revealed) song.year.toString() else "?",
+                        copy.t("Który to rok?", "Which year?"),
+                        title = if (game.revealed) song.title else null,
+                        subtitle = if (game.revealed) song.artist else null, compact = stacked)
+                    PlaybackControls(state.playback, state.settings, copy, onAction,
+                        expectedUri = song.spotifyUri, playAction = AppAction.PlayCard(song))
+                }
+                if (stacked) {
+                    TimelineBoard(game, state, copy, onAction, compact = true)
+                    if (!game.revealed && game.selectedGap == null)
+                        Text(copy.t("Wybierz + przed, między lub po latach.", "Choose + before, between or after the years."),
+                            style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
+                    Text(copy.t("Pomyłki: ${game.mistakes}", "Misses: ${game.mistakes}"),
+                        style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
+                }
+                if (game.revealed) {
+                    RoundOutcome(game.correct == true,
+                        if (game.correct == true) copy.t("Dobre miejsce!", "Right place!")
+                        else copy.t("Utwór pasuje w inne miejsce.", "This track belongs elsewhere."))
+                    if (game.finished) GameFinished(game.won, copy) { onAction(AppAction.ResetTimeline) }
+                    else Button(onClick = { onAction(AppAction.NextTimeline) },
+                        modifier = Modifier.fillMaxWidth().heightIn(min = 54.dp), shape = ControlShape) {
+                        Text(copy.t("Następny utwór", "Next track")); Spacer(Modifier.width(10.dp)); Icon(AppIcons.Arrow, null)
+                    }
+                } else Button(onClick = { onAction(AppAction.RevealTimeline) }, enabled = game.selectedGap != null,
+                    modifier = Modifier.fillMaxWidth().heightIn(min = 54.dp), shape = ControlShape) {
+                    Text(copy.t("Sprawdź miejsce", "Check position"))
+                }
             }
         }
     }, secondary = {
-        if (game.started) {
-            SectionTitle(copy.t("Twoja oś", "Your timeline"),
-                copy.t("Od nowa", "Restart"), onReset)
+        if (game.started && LocalPaneHeight.current != null) {
+            SectionTitle(copy.t("Twoja oś", "Your timeline"), copy.t("Od nowa", "Restart"), onReset)
             Text(if (game.revealed && game.correct == false)
                 copy.t("Poprawne miejsce zaznaczono na osi.", "The correct gap is highlighted.")
                 else if (game.revealed) copy.t("Trafiona karta zostaje na osi.", "The correct card stays on your timeline.")
-                else copy.t("Wybierz znak + przed, między lub po latach.", "Choose + before, between or after the years."),
+                else copy.t("Wybierz + przed, między lub po latach.", "Choose + before, between or after the years."),
                 style = MaterialTheme.typography.bodyMedium, color = MaterialTheme.colorScheme.onSurfaceVariant)
             TimelineBoard(game, state, copy, onAction)
             if (game.selectedGap != null && !game.revealed)
@@ -131,7 +155,7 @@ private fun TimelineGame(state: AppState, copy: UiCopy, onAction: (AppAction) ->
                     color = MaterialTheme.colorScheme.primary)
             Text(copy.t("Pomyłki: ${game.mistakes}", "Misses: ${game.mistakes}"),
                 style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
-        } else {
+        } else if (!game.started) {
             Text(copy.t("Pierwsza karta jest odkryta", "Your starter is revealed"), style = MaterialTheme.typography.titleMedium)
             Text(copy.t("Pierwszą kartę odkryjemy dla Ciebie. Kolejne lata dopasujesz ze słuchu.",
                 "Your starter card is revealed. Place the next years by listening."),
@@ -141,7 +165,7 @@ private fun TimelineGame(state: AppState, copy: UiCopy, onAction: (AppAction) ->
 }
 
 @Composable
-private fun TimelineBoard(game: TimelineState, state: AppState, copy: UiCopy, onAction: (AppAction) -> Unit) {
+private fun TimelineBoard(game: TimelineState, state: AppState, copy: UiCopy, onAction: (AppAction) -> Unit, compact: Boolean = false) {
     LazyRow(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(8.dp),
         verticalAlignment = Alignment.CenterVertically, contentPadding = PaddingValues(vertical = 10.dp)) {
         for (gap in 0..game.board.size) {
@@ -166,11 +190,11 @@ private fun TimelineBoard(game: TimelineState, state: AppState, copy: UiCopy, on
                 val current = game.revealed && game.correct == true && song.spotifyId == game.currentSong?.spotifyId
                 Surface(shape = ControlShape,
                     border = if (current) BorderStroke(3.dp, MaterialTheme.colorScheme.secondary) else null,
-                    modifier = Modifier.width(122.dp).height(160.dp)) {
+                    modifier = Modifier.width(if (compact) 108.dp else 122.dp).height(if (compact) 130.dp else 160.dp)) {
                     Box {
                         SkinPattern(skin, Modifier.fillMaxSize(), subdued = true)
                         Column(Modifier.padding(15.dp), verticalArrangement = Arrangement.spacedBy(8.dp)) {
-                            Text(song.year.toString(), style = MaterialTheme.typography.displaySmall, color = skin.palette().paper)
+                            Text(song.year.toString(), style = if (compact) MaterialTheme.typography.headlineLarge else MaterialTheme.typography.displaySmall, color = skin.palette().paper)
                             Text(song.title, style = MaterialTheme.typography.bodySmall, color = skin.palette().paper,
                                 maxLines = 2, overflow = TextOverflow.Ellipsis)
                         }
@@ -244,9 +268,9 @@ private fun HostBingoGame(state: AppState, copy: UiCopy, onAction: (AppAction) -
                           header: @Composable ColumnScope.() -> Unit, onManual: () -> Unit, cameraActive: Boolean,
                           onLevel: (BingoLevel) -> Unit, onReset: () -> Unit) {
     val context = LocalContext.current
-    val question = copy.question(state.question)
     val stage = state.bingoStage
     AdaptivePanes(primary = {
+        val stacked = LocalPaneHeight.current == null
         if (stage != BingoStage.SCAN) header()
         when (stage) {
             BingoStage.IDLE -> {
@@ -259,22 +283,43 @@ private fun HostBingoGame(state: AppState, copy: UiCopy, onAction: (AppAction) -
                     Icon(AppIcons.Shuffle, null); Spacer(Modifier.width(10.dp)); Text(copy.t("Wylosuj pytanie", "Draw a question"))
                 }
             }
-            BingoStage.RULE -> {
-                BingoRuleCard(state, copy)
-                Button(onClick = { onAction(AppAction.BeginBingoScan) },
-                    modifier = Modifier.fillMaxWidth().heightIn(min = 56.dp), shape = ControlShape) {
-                    Icon(AppIcons.Scan, null); Spacer(Modifier.width(10.dp)); Text(copy.t("Skanuj kartę", "Scan card"))
-                }
-            }
+            BingoStage.RULE -> BingoRuleCard(state, copy)
             BingoStage.SCAN -> {
-                BingoRuleLabel(state, copy)
-                CameraViewport(state.scannerEnabled && cameraActive, copy, reservedHeight = 88.dp) {
+                if (stacked) BingoRuleLabel(state, copy)
+                CameraViewport(state.scannerEnabled && cameraActive, copy) {
                     onAction(AppAction.ScanCameraCode(it, bingo = true))
                 }
             }
             BingoStage.PLAYING -> state.bingoSong?.let { song ->
-                BingoRuleLabel(state, copy)
+                if (stacked) BingoRuleLabel(state, copy)
                 BingoTicket(song, state.question, state.bingoAnswerRevealed, state.activeSkin, copy)
+            }
+        }
+    }, secondary = {
+        val stacked = LocalPaneHeight.current == null
+        when (stage) {
+            BingoStage.SCAN -> {
+                if (!stacked) BingoRuleCard(state, copy)
+                OutlinedButton(onClick = onManual, modifier = Modifier.fillMaxWidth().heightIn(min = 50.dp), shape = ControlShape) {
+                    Icon(AppIcons.Link, null); Spacer(Modifier.width(10.dp))
+                    Text(copy.t("Wklej kod lub link", "Paste code or link"))
+                }
+                TextButton(onClick = { onAction(AppAction.CancelBingoScan) }) {
+                    Icon(AppIcons.Back, null, Modifier.size(18.dp)); Spacer(Modifier.width(8.dp))
+                    Text(copy.t("Wróć do pytania", "Back to the question"))
+                }
+            }
+            BingoStage.RULE -> {
+                Button(onClick = { onAction(AppAction.BeginBingoScan) },
+                    modifier = Modifier.fillMaxWidth().heightIn(min = 56.dp), shape = ControlShape) {
+                    Icon(AppIcons.Scan, null); Spacer(Modifier.width(10.dp)); Text(copy.t("Skanuj kartę", "Scan card"))
+                }
+                Text(copy.t("Gracze zaznaczają trafienia na papierowych planszach. Po odsłuchaniu sprawdźcie odpowiedź na karcie.",
+                    "Players mark correct answers on their printed boards. Check the card’s answer after listening."),
+                    style = MaterialTheme.typography.bodyLarge, color = MaterialTheme.colorScheme.onSurfaceVariant)
+            }
+            BingoStage.PLAYING -> state.bingoSong?.let { song ->
+                if (!stacked) BingoRuleLabel(state, copy)
                 PlaybackControls(state.playback, state.settings, copy, onAction,
                     expectedUri = song.spotifyUri, playAction = AppAction.PlayCard(song))
                 if (!state.bingoAnswerRevealed) OutlinedButton(onClick = { onAction(AppAction.RevealBingoAnswer) },
@@ -286,38 +331,25 @@ private fun HostBingoGame(state: AppState, copy: UiCopy, onAction: (AppAction) -
                     Text(copy.t("Następna runda", "Next round")); Spacer(Modifier.width(10.dp)); Icon(AppIcons.Arrow, null)
                 }
             }
-        }
-    }, secondary = {
-        if (stage == BingoStage.SCAN) {
-            TextButton(onClick = { onAction(AppAction.CancelBingoScan) }) {
-                Icon(AppIcons.Back, null, Modifier.size(18.dp)); Spacer(Modifier.width(8.dp))
-                Text(copy.t("Wróć do pytania", "Back to the question"))
-            }
-            OutlinedButton(onClick = onManual, modifier = Modifier.fillMaxWidth().heightIn(min = 50.dp), shape = ControlShape) {
-                Icon(AppIcons.Link, null); Spacer(Modifier.width(10.dp))
-                Text(copy.t("Wklej kod lub link", "Paste code or link"))
-            }
-        }
-        else if (stage == BingoStage.PLAYING) {
-            Text(copy.t("Gracze zaznaczają swoje odpowiedzi na planszach.", "Players mark their own answers on their boards."),
-                style = MaterialTheme.typography.bodyLarge, color = MaterialTheme.colorScheme.onSurfaceVariant)
-        }
-        Text(copy.t("Poziom pytań", "Question level"), style = MaterialTheme.typography.titleSmall)
-        SingleChoiceSegmentedButtonRow(Modifier.fillMaxWidth()) {
-            listOf(BingoLevel.BEGINNER to copy.t("Podstawowy", "Beginner"), BingoLevel.EXPERT to copy.t("Zaawansowany", "Expert"))
-                .forEachIndexed { index, (level, label) ->
-                    SegmentedButton(selected = state.bingoLevel == level, onClick = { onLevel(level) },
-                        icon = {},
-                        shape = SegmentedButtonDefaults.itemShape(index, 2), modifier = Modifier.heightIn(min = 48.dp)) { Text(label) }
+            BingoStage.IDLE -> {
+                Text(copy.t("Poziom pytań", "Question level"), style = MaterialTheme.typography.titleSmall)
+                SingleChoiceSegmentedButtonRow(Modifier.fillMaxWidth()) {
+                    listOf(BingoLevel.BEGINNER to copy.t("Podstawowy", "Beginner"), BingoLevel.EXPERT to copy.t("Zaawansowany", "Expert"))
+                        .forEachIndexed { index, (level, label) ->
+                            SegmentedButton(selected = state.bingoLevel == level, onClick = { onLevel(level) }, icon = {},
+                                shape = SegmentedButtonDefaults.itemShape(index, 2), modifier = Modifier.heightIn(min = 48.dp)) { Text(label) }
+                        }
                 }
+                OutlinedButton(onClick = { openUrl(context, bingoBoardUrl(state.bingoLevel, copy.language)) },
+                    modifier = Modifier.fillMaxWidth().heightIn(min = 50.dp), shape = ControlShape) {
+                    Icon(AppIcons.Decks, null, Modifier.size(20.dp)); Spacer(Modifier.width(10.dp))
+                    Text(copy.t("Plansze do pobrania", "Get Bingo boards"))
+                }
+                CategoryLegend(state, copy)
+            }
         }
-        OutlinedButton(onClick = { openUrl(context, bingoBoardUrl(state.bingoLevel, copy.language)) },
-            modifier = Modifier.fillMaxWidth().heightIn(min = 50.dp), shape = ControlShape) {
-            Icon(AppIcons.Decks, null, Modifier.size(20.dp)); Spacer(Modifier.width(10.dp))
-            Text(copy.t("Plansze do pobrania", "Get Bingo boards"))
-        }
-        CategoryLegend(state, copy)
-        if (stage != BingoStage.IDLE) TextButton(onClick = onReset) { Text(copy.t("Zakończ grę Bingo", "End Bingo game")) }
+        if (stage != BingoStage.IDLE && stage != BingoStage.SCAN)
+            TextButton(onClick = onReset) { Text(copy.t("Zakończ grę Bingo", "End Bingo game")) }
     })
 }
 
@@ -344,7 +376,7 @@ private fun BingoTicket(song: Song, question: QuestionType, revealed: Boolean, s
     YearTicket(skin, if (!revealed) "?" else answer?.takeIf { it.isNotBlank() } ?: "—",
         eyebrow = if (revealed) copy.t("Odpowiedź", "The answer") else copy.t("Twoja karta", "Your card"),
         title = when {
-            !revealed -> copy.question(question)
+            !revealed -> null
             answer.isNullOrBlank() -> copy.t("Odpowiedź na drukowanej karcie", "Read the answer on your printed card")
             question == QuestionType.BAND_OR_SOLO -> copy.t("Zespół czy solista? Oceńcie wspólnie.", "Band or solo artist? Decide together.")
             question == QuestionType.TITLE -> song.artist
@@ -450,7 +482,7 @@ private fun GameProgress(score: Int, target: Int, noun: String, round: String) {
     Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
         Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.SpaceBetween) {
             Text(round, style = MaterialTheme.typography.labelLarge, color = MaterialTheme.colorScheme.onSurfaceVariant)
-            Text("$score / $target $noun", style = MaterialTheme.typography.labelLarge, color = MaterialTheme.colorScheme.primary)
+            Text(noun.replaceFirstChar { it.uppercase() } + ": $score / $target", style = MaterialTheme.typography.labelLarge, color = MaterialTheme.colorScheme.primary)
         }
         LinearProgressIndicator(progress = { (score.toFloat() / target.coerceAtLeast(1)).coerceIn(0f, 1f) },
             modifier = Modifier.fillMaxWidth().height(5.dp))

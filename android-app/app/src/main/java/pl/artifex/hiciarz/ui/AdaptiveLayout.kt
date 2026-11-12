@@ -34,7 +34,7 @@ internal fun rememberFoldGeometry(): FoldGeometry? {
             ?: flowOf(null)
     }
     val layout by layoutFlow.collectAsStateWithLifecycle(initialValue = null)
-    val feature = layout?.displayFeatures?.filterIsInstance<FoldingFeature>()?.firstOrNull()
+    val feature = layout?.displayFeatures?.filterIsInstance<FoldingFeature>()?.firstOrNull { it.isSeparating }
     return feature?.let { FoldGeometry(Rect(it.bounds), it.orientation == FoldingFeature.Orientation.VERTICAL) }
 }
 

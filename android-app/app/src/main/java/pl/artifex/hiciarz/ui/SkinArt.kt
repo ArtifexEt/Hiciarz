@@ -10,6 +10,7 @@ import androidx.compose.runtime.Composable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
+import androidx.compose.ui.draw.clipToBounds
 import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.geometry.Size
 import androidx.compose.ui.graphics.Color
@@ -38,7 +39,7 @@ internal fun CardSkin.palette(): SkinPalette = when (this) {
 @Composable
 internal fun SkinPattern(skin: CardSkin, modifier: Modifier = Modifier, subdued: Boolean = false) {
     val palette = skin.palette()
-    Canvas(modifier.background(palette.ink)) {
+    Canvas(modifier.clipToBounds().background(palette.ink)) {
         val accent = palette.accent.copy(alpha = if (subdued) .22f else .46f)
         val pale = palette.paper.copy(alpha = if (subdued) .09f else .18f)
         val unit = size.minDimension
@@ -122,7 +123,7 @@ internal fun YearTicket(
         SkinPattern(skin, Modifier.matchParentSize(), subdued = true)
         Column(
             Modifier.fillMaxWidth().padding(if (compact) 18.dp else 26.dp)
-                .heightIn(min = if (compact) 120.dp else 228.dp),
+                .heightIn(min = if (compact) 104.dp else 196.dp),
             verticalArrangement = Arrangement.Center,
             horizontalAlignment = Alignment.Start,
         ) {

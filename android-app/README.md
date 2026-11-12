@@ -8,15 +8,36 @@ QR może automatycznie włączyć jedną z dziewięciu skórek. Ustawienia pozwa
 
 ## Ekrany aplikacji
 
-Zrzuty z emulatora AOSP pokazują polski interfejs na telefonie i angielski w szerokim oknie. W tym środowisku testowym Spotify nie jest zainstalowane.
+Zrzuty pochodzą z uruchomionej aplikacji na emulatorze AOSP. Karta z rokiem 1959 pokazuje rzeczywisty odczyt QR aparatem w zoptymalizowanym APK oraz automatyczne zastosowanie skórki Disco. W emulatorze Spotify nie jest zainstalowane.
 
-| Skaner · telefon | Talie · telefon |
+| Bingo · telefon prowadzącego | Oś czasu · gra bez kart |
 | --- | --- |
-| <img src="docs/screenshots/phone-scan-pl.png" width="240" alt="Natywny skaner kart z przyciskiem aparatu i dolną nawigacją" /> | <img src="docs/screenshots/phone-decks-pl.png" width="240" alt="Biblioteka talii z importem JSON lub CSV i playlistą z 294 utworami z gier" /> |
+| <img src="docs/screenshots/phone-bingo-playing-pl.png" width="240" alt="Bingo z wylosowaną kategorią, ukrytą kartą oraz odkryciem odpowiedzi i następną rundą" /> | <img src="docs/screenshots/phone-timeline-revealed-pl.png" width="240" alt="Karta utworu, oś z latami i wynik decyzji mieszczą się w widoku gry" /> |
 
-| Bingo · szerokie okno | Ustawienia · szerokie okno |
+| Skaner · aparat | Odczytana karta · gotowy APK |
 | --- | --- |
-| <img src="docs/screenshots/tablet-bingo-en.png" width="480" alt="Dwukolumnowy widok Bingo z wyborem poziomu, pytaniem i odtwarzaniem" /> | <img src="docs/screenshots/tablet-settings-en.png" width="480" alt="Dwukolumnowe ustawienia Spotify, odtwarzania i języka" /> |
+| <img src="docs/screenshots/phone-scan-pl.png" width="240" alt="Natywny skaner QR z powiększeniem, latarką i dolną nawigacją" /> | <img src="docs/screenshots/phone-card-release-en.png" width="240" alt="Karta Dean Martin z rokiem 1959 i skórką Disco odczytaną z QR przez aparat" /> |
+
+| Rozłożony ekran · dwa panele | Tabletop · poziome zgięcie |
+| --- | --- |
+| <img src="docs/screenshots/fold-inner-scanner-pl.png" width="440" alt="Aparat i pytanie Bingo w osobnych panelach po obu stronach pionowego zgięcia" /> | <img src="docs/screenshots/fold-tabletop-scanner-pl.png" width="440" alt="Aparat nad poziomym zgięciem, pytanie i działania poniżej oraz dolna nawigacja" /> |
+
+Układy Folda sprawdzono w emulowanym oknie z pozycją zawiasu przekazywaną przez WindowManager. Nie jest to test na fizycznym Fold7.
+
+<details>
+<summary>Talie, skórki, pomoc i większy tekst</summary>
+
+| Biblioteka talii | Dziewięć skórek |
+| --- | --- |
+| <img src="docs/screenshots/phone-decks-pl.png" width="240" alt="Import JSON i CSV, trzy przykładowe talie i rozpoczęcie gry bez kart" /> | <img src="docs/screenshots/phone-skins-pl.png" width="240" alt="Natywny arkusz dziewięciu skórek z ustawieniem automatycznego odczytu wyglądu z QR" /> |
+
+| Jak grać w Bingo | Tryb ciemny · tekst 135% |
+| --- | --- |
+| <img src="docs/screenshots/phone-help-bingo-pl.png" width="240" alt="Cztery kolejne kroki gry Bingo i link do generatora plansz" /> | <img src="docs/screenshots/phone-settings-large-dark-pl.png" width="240" alt="Powiększone ustawienia w ciemnym motywie z czytelną dolną nawigacją" /> |
+
+[Ekran przygotowania Bingo](docs/screenshots/phone-games-pl.png) · [Arkusz wyboru gry i talii](docs/screenshots/phone-game-options-pl.png)
+
+</details>
 
 ## Instalacja wydania testowego
 

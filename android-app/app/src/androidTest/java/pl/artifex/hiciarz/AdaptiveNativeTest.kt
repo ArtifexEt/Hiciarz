@@ -50,15 +50,17 @@ class AdaptiveNativeTest {
 
         val horizontal = publishFold(FoldingFeature.Orientation.HORIZONTAL)
         assertPanesAvoid(horizontal, vertical = false)
+        val navigation = compose.onNodeWithTag("app-bottom-navigation").fetchSemanticsNode().boundsInRoot
+        assertTrue("Tabletop navigation crosses the hinge", navigation.top >= horizontal.bottom - 1f)
         captureNative(compose, "fold-tabletop-scanner-pl")
         compose.onNodeWithText("Wróć do pytania").performScrollTo().performClick()
-        compose.onNodeWithText("Ustawienia").performClick()
+        compose.onNodeWithText("Opcje").performClick()
         captureNative(compose, "fold-tabletop-settings-pl")
     }
 
     @Test fun settingsSupportDarkLargeTextAndShortLandscape() {
         resize("1080x2400", 480, 350..370)
-        compose.onNodeWithText("Ustawienia").performClick()
+        compose.onNodeWithText("Opcje").performClick()
         nativeShell("cmd uimode night yes")
         compose.waitUntil(15_000) {
             InstrumentationRegistry.getInstrumentation().targetContext.resources.configuration.uiMode and

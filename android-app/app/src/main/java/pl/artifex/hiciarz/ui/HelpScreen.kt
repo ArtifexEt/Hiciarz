@@ -41,7 +41,7 @@ internal fun HelpScreen(topic: HelpTopic, copy: UiCopy, level: BingoLevel, onTop
             HelpTopic.QUIZ -> HelpArticle(copy.t("Zgadnij grę lub film", "Guess the game or film"), listOf(
                 copy.t("Wybierz talię z gier lub filmów. Nazwa źródła pozostaje ukryta.", "Choose a game or film soundtrack deck. Its source stays hidden."),
                 copy.t("Posłuchaj utworu i powiedz, z jakiej gry lub filmu pochodzi.", "Listen and name the game or film it comes from."),
-                copy.t("Odkryj odpowiedź. Prowadzący zaznacza „Zgadłem” albo „Nie tym razem”.", "Reveal the answer. The host marks “Got it” or “Not this time”."),
+                copy.t("Odkryj odpowiedź. Prowadzący zaznacza „Zgadłem” albo „Pomyłka”.", "Reveal the answer. The host marks “Got it” or “Not this time”."),
                 copy.t("Zdobądź 10 punktów; utwory nie powtarzają się w tej rozgrywce.", "Earn 10 points. Tracks do not repeat within the game."),
             ))
             HelpTopic.BINGO -> HelpArticle("Bingo", listOf(

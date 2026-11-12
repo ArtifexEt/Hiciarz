@@ -187,7 +187,8 @@ jobs:
         run: |
           set -euo pipefail
           mkdir -p camera-smoke-artifacts
-          ./gradlew --no-daemon :app:assembleRelease :app:assembleDebugAndroidTest
+          ./gradlew --no-daemon :app:assembleRelease :app:assembleDebugAndroidTest \
+            -PhiciarzTestRunner=pl.artifex.hiciarz.ScannerReleaseSmokeInstrumentation
           test -s app/build/outputs/mapping/release/mapping.txt
           tools="$ANDROID_HOME/build-tools/37.0.0"
           "$tools/aapt2" dump badging app/build/outputs/apk/release/app-release.apk > camera-smoke-artifacts/apk-manifest.txt
@@ -217,7 +218,8 @@ jobs:
           mkdir -p "$artifact_dir"
           collect_diagnostics() {
             adb logcat -d -v threadtime -s HiciarzScanner:I AndroidRuntime:E CameraX:E ComponentDiscovery:W '*:S' > "$artifact_dir/logcat.txt" || true
-            adb exec-out screencap -p > "$artifact_dir/screen.png" || true
+            adb pull /sdcard/hiciarz-camera-smoke.png "$artifact_dir/screen.png" \
+              || adb exec-out screencap -p > "$artifact_dir/screen.png" || true
             adb shell dumpsys media.camera > "$artifact_dir/camera-service.txt" || true
           }
           trap collect_diagnostics EXIT
@@ -226,8 +228,7 @@ jobs:
           adb install -r app/build/outputs/apk/release/app-release.apk
           adb install -r -t app/build/outputs/apk/androidTest/debug/app-debug-androidTest.apk
           timeout 180s adb shell am instrument -w -r \
-            -e class pl.artifex.hiciarz.ScannerReleaseSmokeTest \
-            pl.artifex.hiciarz.test/androidx.test.runner.AndroidJUnitRunner \
+            pl.artifex.hiciarz.test/pl.artifex.hiciarz.ScannerReleaseSmokeInstrumentation \
             | tee "$artifact_dir/instrumentation.txt"
           python3 - "$artifact_dir/instrumentation.txt" <<'PY'
           import json, pathlib, sys

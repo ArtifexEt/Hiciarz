@@ -10,6 +10,8 @@ import androidx.compose.ui.test.junit4.createEmptyComposeRule
 import androidx.test.core.app.ActivityScenario
 import androidx.test.platform.app.InstrumentationRegistry
 import java.io.File
+import java.util.concurrent.CountDownLatch
+import java.util.concurrent.TimeUnit
 import org.junit.After
 import org.junit.Before
 import org.junit.Rule
@@ -74,6 +76,10 @@ class NativeFlowTest {
         compose.onNodeWithText("Sprawdź miejsce").performScrollTo().assertIsEnabled().performClick()
         compose.onNodeWithText("Następny utwór").performScrollTo().assertIsDisplayed()
         captureNative(compose, "phone-timeline-revealed-pl")
+        compose.onNodeWithText("Zmień grę").performScrollTo().performClick()
+        compose.onNodeWithText("Rozpocznij od nowa").performScrollTo().assertIsDisplayed()
+        captureNative(compose, "phone-game-options-pl")
+        compose.onNodeWithText("Gotowe").performScrollTo().performClick()
 
         compose.onNodeWithText("Skaner").performClick()
         captureNative(compose, "phone-scan-pl")
@@ -87,7 +93,7 @@ class NativeFlowTest {
         compose.onNodeWithText("Następna karta").performScrollTo().performClick()
         compose.onNodeWithText("Klasyczna").performScrollTo().assertIsDisplayed()
 
-        compose.onNodeWithText("Ustawienia").performClick()
+        compose.onNodeWithText("Opcje").performClick()
         compose.onNodeWithText("Automatyczna pauza").performScrollTo().assertIsOff()
         compose.onNodeWithText("Client ID", substring = true).assertDoesNotExist()
         compose.onNodeWithText("Gdzie gra muzyka", substring = true).assertDoesNotExist()
@@ -122,6 +128,33 @@ internal fun captureNative(compose: androidx.compose.ui.test.junit4.ComposeTestR
         }
     }
     compose.waitForIdle()
+    val instrumentation = InstrumentationRegistry.getInstrumentation()
+    instrumentation.waitForIdleSync()
+    compose.waitUntil(5_000) {
+        var hidden = true
+        instrumentation.runOnMainSync {
+            val decor = androidx.test.runner.lifecycle.ActivityLifecycleMonitorRegistry.getInstance()
+                .getActivitiesInStage(androidx.test.runner.lifecycle.Stage.RESUMED).firstOrNull()?.window?.decorView
+            val insets = decor?.let { androidx.core.view.ViewCompat.getRootWindowInsets(it) }
+            hidden = insets == null || (!insets.isVisible(androidx.core.view.WindowInsetsCompat.Type.ime()) &&
+                insets.getInsets(androidx.core.view.WindowInsetsCompat.Type.ime()).bottom == 0)
+        }
+        hidden
+    }
+    val drawn = CountDownLatch(1)
+    instrumentation.runOnMainSync {
+        val current = androidx.test.runner.lifecycle.ActivityLifecycleMonitorRegistry.getInstance()
+            .getActivitiesInStage(androidx.test.runner.lifecycle.Stage.RESUMED).firstOrNull()
+        val decor = current?.window?.decorView
+        if (decor == null) drawn.countDown()
+        else {
+            if (android.os.Build.VERSION.SDK_INT >= 29) decor.viewTreeObserver.registerFrameCommitCallback {
+                decor.postOnAnimation { decor.postOnAnimation { drawn.countDown() } }
+            } else decor.postOnAnimation { decor.postOnAnimation { drawn.countDown() } }
+            decor.invalidate()
+        }
+    }
+    check(drawn.await(3, TimeUnit.SECONDS)) { "Window did not commit the screenshot frame" }
     val context = InstrumentationRegistry.getInstrumentation().targetContext
     val directory = File(context.filesDir, "screenshots").apply { mkdirs() }
     File(directory, "$name.png").outputStream().use {

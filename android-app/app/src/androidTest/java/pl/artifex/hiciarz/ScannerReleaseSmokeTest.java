@@ -37,9 +37,19 @@ import static org.junit.Assert.assertTrue;
  */
 @RunWith(AndroidJUnit4.class)
 public final class ScannerReleaseSmokeTest {
-    private final android.app.Instrumentation instrumentation = InstrumentationRegistry.getInstrumentation();
-    private final android.content.Context target = instrumentation.getTargetContext();
-    private final UiAutomation automation = instrumentation.getUiAutomation();
+    private final android.app.Instrumentation instrumentation;
+    private final android.content.Context target;
+    private final UiAutomation automation;
+
+    public ScannerReleaseSmokeTest() {
+        this(InstrumentationRegistry.getInstrumentation());
+    }
+
+    ScannerReleaseSmokeTest(android.app.Instrumentation instrumentation) {
+        this.instrumentation = instrumentation;
+        target = instrumentation.getTargetContext();
+        automation = instrumentation.getUiAutomation();
+    }
 
     @After public void finish() {
         automation.setRotation(UiAutomation.ROTATION_UNFREEZE);

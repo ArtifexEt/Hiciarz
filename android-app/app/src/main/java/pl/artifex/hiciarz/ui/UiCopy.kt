@@ -8,7 +8,7 @@ internal class UiCopy(val language: String) {
         AppTab.SCAN -> t("Skaner", "Scan")
         AppTab.BINGO -> t("Graj", "Play")
         AppTab.DECKS -> t("Talie", "Decks")
-        AppTab.SETTINGS -> t("Ustawienia", "Settings")
+        AppTab.SETTINGS -> t("Opcje", "Settings")
     }
     fun mode(mode: GameMode) = when (mode) {
         GameMode.CLASSIC -> t("Muzyka", "Music")

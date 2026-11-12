@@ -70,9 +70,6 @@ internal fun ScanScreen(state: AppState, copy: UiCopy, onAction: (AppAction) -> 
                     style = MaterialTheme.typography.bodyMedium, color = MaterialTheme.colorScheme.onSurfaceVariant)
                 TextButton(onClick = { onAction(AppAction.SelectTab(AppTab.DECKS)) }) { Text(copy.t("Dodaj talię", "Add a deck")) }
             }
-        } else {
-            Text(copy.t("Skanuj. Posłuchaj. Zgadnij.", "Scan. Listen. Guess."),
-                style = MaterialTheme.typography.headlineMedium)
         }
         OutlinedButton(onClick = onManual, modifier = Modifier.fillMaxWidth().heightIn(min = 50.dp), shape = ControlShape) {
             Icon(AppIcons.Link, null, Modifier.size(18.dp)); Spacer(Modifier.width(10.dp))
@@ -182,12 +179,15 @@ internal fun CameraViewport(enabled: Boolean, copy: UiCopy, reservedHeight: Dp =
             }
         } else {
             Viewfinder(Modifier.fillMaxSize())
-            Column(Modifier.padding(30.dp), horizontalAlignment = Alignment.CenterHorizontally,
-                verticalArrangement = Arrangement.spacedBy(16.dp)) {
+            val compact = height < 250.dp
+            Column(Modifier.padding(if (compact) 18.dp else 30.dp), horizontalAlignment = Alignment.CenterHorizontally,
+                verticalArrangement = Arrangement.spacedBy(if (compact) 10.dp else 16.dp)) {
                 Icon(if (error == null) AppIcons.Scan else AppIcons.Camera, null,
-                    Modifier.size(46.dp), tint = Color(0xFFEBD59A))
-                Text(error?.let(copy::message) ?: copy.t("Kod karty w środku kadru", "Card code inside the frame"),
-                    color = Color.White, textAlign = TextAlign.Center, style = MaterialTheme.typography.titleMedium)
+                    Modifier.size(if (compact) 30.dp else 46.dp), tint = Color(0xFFEBD59A))
+                if (error != null || denied) Text(error?.let(copy::message) ?:
+                    copy.t("Zezwól na aparat w ustawieniach aplikacji.", "Allow camera access in app settings."),
+                    color = Color.White, textAlign = TextAlign.Center,
+                    style = if (compact) MaterialTheme.typography.bodySmall else MaterialTheme.typography.bodyMedium)
                 FilledTonalButton(onClick = {
                     when {
                         error != null -> { error = null; attempt++ }
