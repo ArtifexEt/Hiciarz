@@ -87,9 +87,9 @@ Instrukcja konfiguracji odpowiada [oficjalnemu przewodnikowi App Remote dla Andr
 
 ### Development Mode i zakres testów
 
-Spotify publikuje ograniczenia Development Mode i listy dozwolonych użytkowników dla [Web API](https://developer.spotify.com/documentation/web-api/concepts/quota-modes). Natywne App Remote korzysta z innej ścieżki połączenia, ale sam wybór APK **nie daje gwarancji dostępu dla dowolnego konta Spotify**.
+12 listopada 2026 użytkownik projektu potwierdził działanie połączenia i odtwarzania Spotify w APK `0.2.0-alpha.7` z nową integracją Hiciarz **bez dodawania konta do listy użytkowników w Spotify Developer Dashboard**. Ręczne dopisanie testowanego konta do integracji nie było potrzebne.
 
-Dotychczasowe próby potwierdziły sterowanie odtwarzaniem na testowanych kontach. Nadal brakuje próby na świeżym koncie i urządzeniu bez wcześniejszej zgody oraz bez historii dopisywania konta do integracji. Do czasu tej weryfikacji traktuj APK jako wydanie testowe. Błąd autoryzacji wymaga sprawdzenia konfiguracji Client ID, pakietu, podpisu i dostępu danego konta.
+Potwierdzenie dotyczy natywnego Spotify App Remote na Androidzie. Opisane przez Spotify ograniczenia Development Mode i listy dozwolonych użytkowników dla [Web API](https://developer.spotify.com/documentation/web-api/concepts/quota-modes) dotyczą osobnego API, którego aplikacja Android nie używa do sterowania odtwarzaniem. Wynik tej próby nie oznacza testu wszystkich kont i urządzeń. Przy błędzie połączenia sprawdź Client ID, pakiet, podpis APK oraz wymagania aplikacji Spotify.
 
 ## Budowanie i testy
 
