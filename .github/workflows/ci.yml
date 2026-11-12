@@ -143,6 +143,10 @@ jobs:
           trap collect_screenshots EXIT
           adb shell svc wifi disable
           adb shell svc data disable
+          ./gradlew --no-daemon :app:assembleDebug :app:assembleDebugAndroidTest
+          # Recover Quickstep's boot-time ANR before checking real app window focus.
+          adb shell am force-stop com.android.launcher3
+          timeout 30s adb shell am start -W -a android.intent.action.MAIN -c android.intent.category.HOME
           ./gradlew --no-daemon :app:connectedDebugAndroidTest \
             -Pandroid.injected.androidTest.leaveApksInstalledAfterRun=true \
             -Pandroid.testInstrumentationRunnerArguments.package=pl.artifex.hiciarz \
@@ -245,6 +249,9 @@ jobs:
           adb install -r -t app/build/outputs/apk/androidTest/debug/app-debug-androidTest.apk
           adb shell pm revoke pl.artifex.hiciarz android.permission.CAMERA
           adb shell pm clear-permission-flags pl.artifex.hiciarz android.permission.CAMERA user-set user-fixed
+          # A launcher ANR would cover the scanner and Android's permission prompt.
+          adb shell am force-stop com.android.launcher3
+          timeout 30s adb shell am start -W -a android.intent.action.MAIN -c android.intent.category.HOME
           timeout 180s adb shell am instrument -w -r \
             pl.artifex.hiciarz.test/pl.artifex.hiciarz.ScannerReleaseSmokeInstrumentation \
             | tee "$artifact_dir/instrumentation.txt"
