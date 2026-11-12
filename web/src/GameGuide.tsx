@@ -1,49 +1,37 @@
 import { t, useTranslation } from './i18n';
 import { useState } from 'react';
-import { ArrowUpRight, Monitor, Radio, ScanLine, Smartphone } from 'lucide-react';
-import { spotifyConfigured } from './spotify';
+import { ArrowUpRight, Monitor, ScanLine, Smartphone } from 'lucide-react';
+import type { PlaybackOutput } from './scanner-playback';
 
-export function GameGuide({ onStart }: { onStart: (route: 'spotify' | 'laptop') => void }) {
+export function GameGuide({ onStart }: { onStart: (route: PlaybackOutput) => void }) {
   useTranslation();
-  const [route, setRoute] = useState<'spotify' | 'laptop'>(
-    spotifyConfigured() ? 'spotify' : 'laptop',
-  );
-  const laptop = route === 'laptop';
-  const steps = laptop
+  const [route, setRoute] = useState<PlaybackOutput>('local');
+  const local = route === 'local';
+  const steps = local
     ? [
-        [
-          t('components.GameGuide.startThePlayer'),
-          t('components.GameGuide.onTheDeviceThatWillPlay'),
-        ],
-        [
-          t('components.GameGuide.connectTheScanner'),
-          t('components.GameGuide.onTheOtherDeviceOpenCard'),
-        ],
-        [t('components.GameGuide.scanACard'), t('components.GameGuide.scanTheQRCodesOnYour')],
+        [t('components.GameGuide.scanACard'), t('plainPlayback.pointAtCard')],
+        [t('components.GameGuide.listenHere'), t('components.GameGuide.startEmbeddedPlayback')],
       ]
     : [
-        [
-          t('components.GameGuide.prepareSpotify'),
-          t('components.GameGuide.openSpotifyOnTheDeviceYou'),
-        ],
-        [
-          t('components.GameGuide.connectAccount'),
-          t('components.GameGuide.choosePlayThroughSpotifySignIn'),
-        ],
-        [t('components.GameGuide.scanACard'), t('components.GameGuide.startTheCameraAndScanA')],
+        [t('components.GameGuide.startThePlayer'), t('sound.openSecondScreen')],
+        [t('components.GameGuide.connectTheScanner'), t('sound.scanPairingCode')],
+        [t('components.GameGuide.scanACard'), t('components.GameGuide.scanTheQRCodesOnYour')],
       ];
   return (
     <section className="game-guide" aria-labelledby="game-guide-title">
       <div className="game-guide-heading">
         <div>
-          <span className="eyebrow">{t('components.GameGuide.fIRSTTIMESTARTHERE')}</span>
           <h2 id="game-guide-title">{t('components.GameGuide.scanCardsDiscoverMusic')}</h2>
           <p>{t('components.GameGuide.prepareAndPrintADeckIn')}</p>
         </div>
         <div className="guide-device-art" aria-hidden="true">
           <Smartphone size={29} />
-          <span>→</span>
-          {laptop ? <Monitor size={37} /> : <Radio size={37} />}
+          {!local && (
+            <>
+              <span>→</span>
+              <Monitor size={37} />
+            </>
+          )}
         </div>
       </div>
       <div
@@ -51,30 +39,21 @@ export function GameGuide({ onStart }: { onStart: (route: 'spotify' | 'laptop') 
         role="tablist"
         aria-label={t('components.GameGuide.playbackGuide')}
       >
-        <button
-          id="guide-laptop"
-          role="tab"
-          aria-selected={laptop}
-          aria-controls="guide-steps"
-          onClick={() => setRoute('laptop')}
-        >
-          <Monitor size={17} /> {t('components.GameGuide.throughThePlayerSpotifyYouTube')}
-        </button>
-        <button
-          id="guide-spotify"
-          role="tab"
-          aria-selected={!laptop}
-          aria-controls="guide-steps"
-          onClick={() => setRoute('spotify')}
-        >
-          <Radio size={17} /> {t('components.GameGuide.directlyInSpotify')}
-        </button>
+        {(['local', 'browser'] as const).map((value) => (
+          <button
+            key={value}
+            id={`guide-${value}`}
+            role="tab"
+            aria-selected={route === value}
+            aria-controls="guide-steps"
+            onClick={() => setRoute(value)}
+          >
+            {value === 'local' ? <Smartphone size={17} /> : <Monitor size={17} />}
+            {t(value === 'local' ? 'app.onThisDevice' : 'app.secondScreen')}
+          </button>
+        ))}
       </div>
-      <div
-        id="guide-steps"
-        role="tabpanel"
-        aria-labelledby={laptop ? 'guide-laptop' : 'guide-spotify'}
-      >
+      <div id="guide-steps" role="tabpanel" aria-labelledby={`guide-${route}`}>
         <ol className="guide-steps">
           {steps.map(([title, description], index) => (
             <li key={title}>
@@ -85,18 +64,13 @@ export function GameGuide({ onStart }: { onStart: (route: 'spotify' | 'laptop') 
           ))}
         </ol>
         <div className="guide-bottom">
-          {!laptop && <p>{t('components.GameGuide.youNeedSpotifyPremiumAndCards')}</p>}
           <button className="secondary" onClick={() => onStart(route)}>
-            {laptop ? <Monitor size={17} /> : <ScanLine size={17} />}
-            {laptop
-              ? t('components.GameGuide.openPlayer')
-              : t('components.GameGuide.openSpotifyScanner')}
+            {local ? <ScanLine size={17} /> : <Monitor size={17} />}
+            {t(local ? 'sound.openScanner' : 'components.GameGuide.openPlayer')}
             <ArrowUpRight size={16} />
           </button>
         </div>
-        {laptop && (
-          <p className="guide-note">{t('components.GameGuide.spotifyOnThisPageMayOnly')}</p>
-        )}
+        <p className="guide-note">{t('app.theSpotifyOrYoutubePlayerMayShow')}</p>
       </div>
     </section>
   );

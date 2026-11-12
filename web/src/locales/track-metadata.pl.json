@@ -1,0 +1,9 @@
+{
+  "trackMetadata.rateLimit": "{{service}} ogranicza teraz liczbę zapytań. Spróbuj później lub wpisz dane ręcznie.",
+  "trackMetadata.unavailable": "{{service}} nie udostępnił danych. Spróbuj ponownie lub wpisz je ręcznie.",
+  "trackMetadata.timeout": "{{service}} nie odpowiedział na czas. Spróbuj ponownie lub wpisz dane ręcznie.",
+  "trackMetadata.network": "Nie udało się odczytać danych z {{service}}. Sprawdź połączenie lub wpisz dane ręcznie.",
+  "trackMetadata.missingTitle": "Spotify nie zwróciło tytułu tego nagrania. Wpisz go ręcznie.",
+  "trackMetadata.searchTooLong": "Tytuł i wykonawca mogą mieć najwyżej po 200 znaków.",
+  "trackMetadata.invalidRecordings": "Nie udało się odczytać podpowiedzi MusicBrainz. Wpisz rok ręcznie."
+}

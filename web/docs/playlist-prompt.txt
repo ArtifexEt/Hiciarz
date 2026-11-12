@@ -1,16 +1,21 @@
-Przygotuj listę utworów do zaimportowania do aplikacji Hiciarz.
+Przygotuj listę nagrań ze Spotify do zaimportowania do aplikacji Hiciarz.
 
-Najpierw zapytaj mnie o temat, liczbę piosenek, języki, zakres lat i preferowane źródło: Spotify, YouTube lub oba. Zapytaj też, czy chcę podać własne utwory lub playlistę.
+Najpierw zapytaj mnie o temat talii, liczbę kart (maksymalnie 2000), języki nagrań, zakres lat i wariant gry: music (zgadywanie roku), movie (zgadywanie filmu) albo game (zgadywanie gry). Zapytaj też, czy chcę podać własne nagrania lub linki. Korzystaj wyłącznie z utworów Spotify.
 
-Po ustaleniu kryteriów przygotuj plik hiciarz-utwory.json. Ma zawierać samą tablicę JSON, bez Markdown i komentarzy. Każdy element musi mieć:
-- title: tytuł nagrania, tekst do 160 znaków;
-- artist: wykonawca, tekst do 160 znaków;
-- year: liczba całkowita, rok pierwszego wydania konkretnego nagrania, a nie późniejszej składanki lub reedycji;
-- sources: obiekt z co najmniej jednym polem spotify lub youtube. Wartości to sprawdzone linki HTTPS do utworu Spotify lub filmu YouTube, albo ich prawdziwe identyfikatory;
-- opcjonalnie theme: classic, minimal, christmas, winter lub fish. fish oznacza rybki świąteczne.
+Zweryfikuj każde nagranie na podstawie wyszukiwania w internecie albo przekazanych przeze mnie źródeł: prawdziwy link Spotify, tytuł, wykonawcę i konkretną wersję. Sprawdź rok pierwszego wydania tego nagrania w wiarygodnym źródle, np. MusicBrainz; data późniejszej składanki, reedycji lub publikacji koncertu może być inna. Dla wariantu movie lub game potwierdź również film lub grę, z której pochodzi wybrana wersja.
 
-Nie dodawaj id; aplikacja utworzy je automatycznie. Nie dodawaj tokenów ani danych logowania. Maksymalnie 2000 utworów. Zachowaj ustaloną kolejność i unikaj duplikatów.
+Nigdy nie wymyślaj identyfikatorów, linków, lat ani odpowiedzi. Jeśli nie masz dostępu do wyszukiwania lub nie możesz potwierdzić danych, poproś o źródła albo zaproponuj pominięcie takiego nagrania. Wyjaśnij braki przed przygotowaniem końcowej listy. Nie obiecuj zadanej liczby kart, jeśli nie udało się zweryfikować tylu nagrań.
 
-Zweryfikuj każde źródło: tytuł, wykonawcę i wersję nagrania. Nigdy nie wymyślaj identyfikatorów, linków ani dat. Sprawdź rok w wiarygodnym źródle. Jeśli nie masz dostępu do wyszukiwania, poproś o dane źródłowe lub plik z linkami. Jeśli nie możesz potwierdzić utworu, pomiń go w pliku i opisz to osobno. Nie wpisuj tekstów zastępczych do sources.
+Po ustaleniu i sprawdzeniu listy przygotuj plik hiciarz-utwory.json, zapisany w UTF-8. Ma zawierać samą tablicę JSON, bez Markdown, komentarzy i tekstu przed tablicą lub po niej. Każdy element musi mieć:
+- title: niepusty tytuł konkretnego nagrania, tekst do 200 znaków;
+- artist: niepusta nazwa wykonawcy, tekst do 200 znaków;
+- year: liczba całkowita od 1000 do 2100, rok pierwszego wydania tego nagrania;
+- sources: obiekt z polem spotify. Wartością musi być sprawdzony link HTTPS w postaci https://open.spotify.com/track/IDENTYFIKATOR albo prawdziwy identyfikator tego utworu, złożony z 22 liter i cyfr. Wstaw rzeczywistą wartość; nie używaj linku do albumu, playlisty lub wyników wyszukiwania;
+- gameMode: music, movie albo game, zgodnie z ustalonym wariantem;
+- answer: tylko dla movie i game, niepusty tytuł filmu lub gry do 200 znaków; dla music pomiń to pole;
+- review: true (wartość logiczna), aby aplikacja oznaczyła rok do sprawdzenia przed drukiem;
+- opcjonalnie theme: classic, minimal, vinyl, mixtape, memphis, disco, christmas, winter lub fish. Jeśli nie ustaliliśmy motywu, pomiń to pole.
 
-Na końcu krótko napisz, żeby zapisać plik jako UTF-8, a w Hiciarzu wybrać Wczytaj lub Wybierz plik. Przy imporcie można dopisać nowe utwory na końcu albo zastąpić obecną listę. To wyjaśnienie umieść poza plikiem JSON.
+Nie dodawaj id; aplikacja utworzy je automatycznie. Nie dodawaj tokenów, danych logowania ani dodatkowych objaśnień do rekordów. Nie wpisuj wartości zastępczych, null ani tekstu „nieznany” do wymaganych pól. Zachowaj ustaloną kolejność, unikaj duplikatów i nie przekraczaj 2000 rekordów. Sprawdź poprawność składni JSON i obecność wszystkich wymaganych danych przed oddaniem wyniku.
+
+Jeśli możesz utworzyć plik do pobrania, udostępnij gotowy hiciarz-utwory.json. Poza plikiem możesz krótko wymienić pominięte nagrania i źródła weryfikacji oraz wskazać: w Hiciarzu przeciągnij plik do pola importu lub wybierz Wczytaj z pliku, a następnie zdecyduj, czy dopisać utwory, czy zastąpić listę. Jeśli nie możesz utworzyć pliku, końcową odpowiedź ogranicz do samej tablicy JSON, którą zapiszę jako plik UTF-8 z rozszerzeniem .json; żadnych bloków kodu ani objaśnień w tej odpowiedzi.

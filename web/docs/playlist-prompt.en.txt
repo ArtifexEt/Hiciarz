@@ -1,16 +1,21 @@
-Prepare a track list to import into Hiciarz.
+Prepare a list of Spotify recordings to import into Hiciarz.
 
-First ask me about the theme, number of songs, languages, year range and preferred source: Spotify, YouTube or both. Also ask whether I want to provide my own tracks or a playlist.
+First ask me about the deck's topic, number of cards (maximum 2000), recording languages, year range and game mode: music (guess the year), movie (guess the movie) or game (guess the game). Also ask whether I want to provide my own recordings or links. Use Spotify tracks only.
 
-Once we agree on the criteria, prepare hiciarz-tracks.json. It must contain only a JSON array, without Markdown or comments. Each item must include:
-- title: recording title, up to 160 characters;
-- artist: artist name, up to 160 characters;
-- year: an integer, the year this particular recording was first released, rather than a later compilation or reissue;
-- sources: an object with at least one spotify or youtube field. Values must be verified HTTPS links to a Spotify track or YouTube video, or their real identifiers;
-- optional theme: classic, minimal, christmas, winter or fish. The fish theme means Christmas fish.
+Verify each recording through web search or sources I provide: its real Spotify link, title, artist and specific version. Check the year this recording was first released against a reliable source such as MusicBrainz; a later compilation, reissue or concert publication may have a different date. For movie or game mode, also confirm the movie or game associated with the selected version.
 
-Do not add id; the app generates it automatically. Do not include tokens or credentials. Maximum 2000 tracks. Keep the agreed order and avoid duplicates.
+Never invent identifiers, links, years or answers. If you cannot search or confirm the details, ask for sources or propose omitting that recording. Explain missing information before preparing the final list. Do not promise the requested card count if you could not verify that many recordings.
 
-Verify each source: title, artist and recording version. Never invent identifiers, links or dates. Check the year against a reliable source. If you cannot search, ask for source data or a file with links. If a track cannot be confirmed, omit it from the file and explain separately. Do not put placeholder text in sources.
+Once we have agreed on and checked the list, prepare hiciarz-tracks.json, encoded as UTF-8. It must contain only a JSON array, without Markdown, comments or text before or after the array. Each item must include:
+- title: the nonempty title of the specific recording, up to 200 characters;
+- artist: the nonempty artist name, up to 200 characters;
+- year: an integer from 1000 to 2100, the year this recording was first released;
+- sources: an object with a spotify field. Its value must be a verified HTTPS link in the form https://open.spotify.com/track/IDENTIFIER or the real 22-character alphanumeric identifier of that track. Insert the actual value; do not use an album, playlist or search-results link;
+- gameMode: music, movie or game, matching the agreed mode;
+- answer: only for movie and game, the nonempty movie or game title, up to 200 characters; omit this field for music;
+- review: true (a boolean), so the app marks the year for review before printing;
+- optional theme: classic, minimal, vinyl, mixtape, memphis, disco, christmas, winter or fish. Omit this field unless we agreed on a theme.
 
-Finally, briefly explain how to save the file as UTF-8 and choose Import or Choose file in Hiciarz. Import can append new tracks or replace the current list. Keep this explanation outside the JSON file.
+Do not add id; the app generates it automatically. Do not add tokens, credentials or explanations to the records. Do not put placeholders, null or the word "unknown" in required fields. Keep the agreed order, avoid duplicates and do not exceed 2000 records. Check the JSON syntax and all required details before delivering the result.
+
+If you can create a downloadable file, provide the finished hiciarz-tracks.json. Outside the file, you may briefly list omitted recordings and verification sources, and explain: in Hiciarz, drag the file into the import area or choose Import file, then choose whether to append the tracks or replace the list. If you cannot create a file, limit the final response to the JSON array itself, which I will save as a UTF-8 file with the .json extension; no code fences or explanations in that response.

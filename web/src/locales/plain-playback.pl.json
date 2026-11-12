@@ -5,8 +5,6 @@
   "plainPlayback.state.stopped": "Odtwarzanie zatrzymane.",
   "plainPlayback.state.error": "Nie udało się odtworzyć nagrania.",
   "plainPlayback.loadingAction": "Wczytywanie…",
-  "plainPlayback.prepareSpotify": "Połącz Spotify",
-  "plainPlayback.chooseSpotifyDevice": "Wybierz „Dźwięk”, aby połączyć konto Spotify i wybrać urządzenie.",
   "plainPlayback.scanPairingCode": "Zeskanuj kod parowania",
   "plainPlayback.pairingCodeLocation": "Wyświetl kod w odtwarzaczu na drugim urządzeniu.",
   "plainPlayback.pointAtCard": "Skieruj aparat na kod QR karty.",
@@ -14,5 +12,7 @@
   "plainPlayback.pairPlayerDescription": "Połącz telefon, którym będziesz skanować karty.",
   "plainPlayback.pairingInstructions": "Na telefonie otwórz Skaner kart i zeskanuj ten kod.",
   "plainPlayback.scanOnConnectedDevice": "Skanuj karty na połączonym urządzeniu.",
-  "plainPlayback.pairingCode": "Kod parowania"
+  "plainPlayback.pairingCode": "Kod parowania",
+  "plainPlayback.preparePlayback": "Wybierz odtwarzanie",
+  "plainPlayback.choosePlaybackOutput": "Otwórz „Dźwięk” i wybierz miejsce odtwarzania."
 }

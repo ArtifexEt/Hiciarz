@@ -16,8 +16,6 @@ import {
   lazy,
 } from 'react';
 import {
-  ArrowDown,
-  ArrowUp,
   ArrowUpRight,
   Check,
   ChevronDown,
@@ -70,18 +68,9 @@ import {
 } from './navigation';
 import type { BingoLevel } from './bingo';
 import FishFestivities from './FishFestivities';
-import SpotifyAccount from './SpotifyAccount';
-import SpotifyLoginNotice from './SpotifyLoginNotice';
-import SpotifySetup from './SpotifySetup';
+import SongForm from './SongForm';
+import { clearLegacySpotifySettings } from './legacy-spotify';
 import DocumentationLinks, { ReportIssueLink } from './DocumentationLinks';
-import {
-  isSpotifySettingsStorageKey,
-  openSpotifySetup,
-  spotifyClientId,
-  spotifySettingsEvent,
-  spotifySetupEvent,
-  type SpotifyPurpose,
-} from './spotify-settings';
 import PlayingCard from './PlayingCard';
 import GameModePicker from './GameModePicker';
 import CreatorSteps, { type CreatorStep } from './CreatorSteps';
@@ -113,7 +102,6 @@ import {
   csvExport,
   download,
   findDeckForCard,
-  type GameMode,
   mergeSongs,
   newDeck,
   parseImport,
@@ -132,17 +120,7 @@ import type { SourceCheck } from './availability';
 import { useConnection, type Command } from './connection';
 const Camera = lazy(() => import('./Camera'));
 import Players from './Players';
-import { SpotifyRemotePanel, useSpotifyRemote } from './SpotifyRemote';
 const BingoGame = lazy(() => import('./BingoGame'));
-import {
-  beginSpotifyLogin,
-  disconnectSpotify,
-  finishSpotify,
-  importPlaylist,
-  spotifyConfigured,
-  spotifyConnected,
-  spotifyLoginPurpose,
-} from './spotify';
 type Mode = AppView;
 function trackCount(count: number) {
   const form = new Intl.PluralRules(getLanguage()).select(count);
@@ -185,333 +163,6 @@ function ThemePicker({ value, onChange }: { value: Theme; onChange: (t: Theme) =
     </div>
   );
 }
-function SongForm({
-  song,
-  defaultMode = 'music',
-  onSave,
-  onClose,
-  onDelete,
-  onMove,
-}: {
-  song?: Song;
-  defaultMode?: GameMode;
-  onSave: (s: Song) => void;
-  onClose: () => void;
-  onDelete?: () => void;
-  onMove?: { up?: () => void; down?: () => void };
-}) {
-  const [error, setError] = useState('');
-  const [gameMode, setGameMode] = useState<GameMode>(song ? song.gameMode || 'music' : defaultMode);
-  return (
-    <Modal
-      title={
-        song
-          ? tr('app.editTrack')
-          : gameMode === 'music'
-            ? tr('app.addYourHit')
-            : tr('creator.newCardTitle.' + gameMode)
-      }
-      onClose={onClose}
-    >
-      <form
-        onSubmit={(e) => {
-          e.preventDefault();
-          const f = new FormData(e.currentTarget);
-          try {
-            onSave(
-              validateSong({
-                id: song?.id,
-                title: f.get('title'),
-                artist: f.get('artist'),
-                year: f.get('year'),
-                theme: f.get('theme') || undefined,
-                sources: { spotify: f.get('spotify'), youtube: f.get('youtube') },
-                review: false,
-                gameMode,
-                answer: f.get('answer'),
-              }),
-            );
-            onClose();
-          } catch (err) {
-            setError((err as Error).message);
-          }
-        }}
-      >
-        <GameModePicker value={gameMode} onChange={setGameMode} compact />
-        <div className="form-grid">
-          {gameMode !== 'music' && (
-            <label className="answer-entry">
-              {tr('creator.answer.' + gameMode)}
-              <input
-                name="answer"
-                autoFocus
-                required
-                maxLength={200}
-                defaultValue={song?.answer || ''}
-                placeholder={
-                  gameMode === 'movie' ? tr('app.eGJurassicPark') : tr('app.eGTheWitcher3WildHunt')
-                }
-              />
-            </label>
-          )}
-          <label>
-            {tr('creator.recordingTitle')}
-            <input
-              name="title"
-              required
-              maxLength={200}
-              defaultValue={song?.title}
-              placeholder={
-                gameMode === 'music'
-                  ? tr('app.forExampleDancingQueen')
-                  : tr('creator.recordingExample.' + gameMode)
-              }
-              autoFocus={gameMode === 'music'}
-            />
-          </label>
-          <label>
-            {gameMode === 'music' ? tr('app.artist') : tr('creator.recordingArtist')}
-            <input
-              name="artist"
-              required
-              maxLength={200}
-              defaultValue={song?.artist}
-              placeholder={
-                gameMode === 'music'
-                  ? 'ABBA'
-                  : gameMode === 'game'
-                    ? 'Jeremy Soule'
-                    : 'John Williams'
-              }
-            />
-          </label>
-          <label>
-            {gameMode === 'music' ? tr('app.yearForTheGame') : tr('creator.recordingYear')}
-            <input
-              name="year"
-              type="number"
-              required
-              min="1000"
-              max="2100"
-              defaultValue={song?.year || ''}
-              placeholder={gameMode === 'game' ? '2011' : gameMode === 'movie' ? '1993' : '1976'}
-            />
-          </label>
-          <label>
-            {tr('app.cardTheme2')}
-            <select name="theme" defaultValue={song?.theme || ''}>
-              <option value="">{tr('app.sameAsTheDeck')}</option>
-              {themes.map((t) => (
-                <option key={t} value={t}>
-                  {themeNames[t]}
-                </option>
-              ))}
-            </select>
-          </label>
-        </div>
-        <div className="form-divider">
-          <span>{tr('app.playbackSources')}</span>
-          <small>{tr('app.addAtLeastOne')}</small>
-        </div>
-        <label>
-          {tr('app.spotify')}
-          <input
-            name="spotify"
-            defaultValue={
-              song?.sources.spotify ? 'https://open.spotify.com/track/' + song.sources.spotify : ''
-            }
-            placeholder="https://open.spotify.com/track/…"
-          />
-        </label>
-        <label>
-          {tr('app.youtube')}
-          <input
-            name="youtube"
-            defaultValue={song?.sources.youtube ? 'https://youtu.be/' + song.sources.youtube : ''}
-            placeholder="https://www.youtube.com/watch?v=…"
-          />
-        </label>
-        <p className="hint">
-          {gameMode === 'music'
-            ? tr('app.theYearRefersToThisParticularRecording')
-            : tr('creator.yearNotAnswer')}
-        </p>
-        {error && (
-          <p className="error" role="alert">
-            {displayTranslation(error)}
-          </p>
-        )}
-        <div className="modal-actions">
-          <button type="button" className="secondary" onClick={onClose}>
-            {tr('app.cancel')}
-          </button>
-          <button className="primary" type="submit">
-            <Check size={17} />{' '}
-            {gameMode === 'music' ? tr('app.saveTrack') : tr('creator.saveCard')}
-          </button>
-        </div>
-        {song && (
-          <details className="song-extra-options">
-            <summary>{tr('shell.moreSongOptions')}</summary>
-            <div>
-              <button
-                type="button"
-                className="secondary"
-                disabled={!onMove?.up}
-                onClick={onMove?.up}
-              >
-                <ArrowUp size={18} />
-                {tr('shell.moveUp')}
-              </button>
-              <button
-                type="button"
-                className="secondary"
-                disabled={!onMove?.down}
-                onClick={onMove?.down}
-              >
-                <ArrowDown size={18} />
-                {tr('shell.moveDown')}
-              </button>
-              <button type="button" className="danger" onClick={onDelete}>
-                <Trash2 size={18} />
-                {tr('shell.deleteSong')}
-              </button>
-            </div>
-          </details>
-        )}
-      </form>
-    </Modal>
-  );
-}
-function SpotifyImport({
-  onImport,
-  onClose,
-  initialPlaylist,
-  onExamples,
-}: {
-  onImport: (songs: Song[], mode: 'append' | 'replace', note: string) => void;
-  onClose: () => void;
-  initialPlaylist: string;
-  onExamples: () => void;
-}) {
-  const [mode, setMode] = useState<'append' | 'replace'>(() =>
-      sessionStorage.getItem('spotify-import-mode') === 'replace' ? 'replace' : 'append',
-    ),
-    [busy, setBusy] = useState(false),
-    [error, setError] = useState('');
-  const [playlist, setPlaylist] = useState(initialPlaylist);
-  return (
-    <Modal title={tr('app.importASpotifyPlaylist')} onClose={onClose}>
-      <div className="notice spotify-import-access">
-        <Info size={22} aria-hidden="true" />
-        <div>
-          <strong>{tr('app.whichPlaylistsCanYouImport')}</strong>
-          <p>{tr('app.inDevelopmentModeSpotifyProvidesYourOwn')}</p>
-          <button className="text-button" onClick={onExamples}>
-            {tr('app.chooseAnExampleWithoutSigningIn')} <ArrowUpRight size={14} />
-          </button>
-        </div>
-      </div>
-      <p className="muted">{tr('app.chooseWhatToDoWithYourCurrent')}</p>
-      <div className="choice-list">
-        <label>
-          <input type="radio" checked={mode === 'append'} onChange={() => setMode('append')} />
-          <span>
-            <strong>{tr('app.appendNewTracks')}</strong>
-            <small>{tr('app.keepYourTracksAndEditsSkipDuplicates')}</small>
-          </span>
-        </label>
-        <label>
-          <input type="radio" checked={mode === 'replace'} onChange={() => setMode('replace')} />
-          <span>
-            <strong>{tr('app.replaceTheCurrentList')}</strong>
-            <small>{tr('app.removeTheCurrentListAndImportThe')}</small>
-          </span>
-        </label>
-      </div>
-      {!spotifyConnected() ? (
-        <>
-          <SpotifyLoginNotice purpose="import" />
-          <button
-            className="primary full"
-            onClick={() => {
-              sessionStorage.setItem('spotify-import-mode', mode);
-              sessionStorage.setItem('spotify-import-playlist', playlist);
-              beginSpotifyLogin().catch((e) => setError(e.message));
-            }}
-          >
-            {spotifyConfigured() ? tr('app.connectToSpotify') : tr('app.setUpSpotifyConnection')}
-          </button>
-        </>
-      ) : (
-        <form
-          onSubmit={async (e) => {
-            e.preventDefault();
-            const f = new FormData(e.currentTarget);
-            setBusy(true);
-            setError('');
-            try {
-              const r = await importPlaylist(String(f.get('playlist')));
-              if (!r.songs.length) throw new Error(tr('app.thePlaylistHasNoTracksThatCan'));
-              onImport(
-                r.songs,
-                mode,
-                tr('app.importSummary', { name: r.name, skipped: r.skipped }),
-              );
-              sessionStorage.removeItem('spotify-import-playlist');
-              onClose();
-            } catch (e) {
-              setError((e as Error).message);
-            } finally {
-              setBusy(false);
-            }
-          }}
-        >
-          <label>
-            {tr('app.playlistLink')}
-            <input
-              name="playlist"
-              required
-              value={playlist}
-              onChange={(e) => setPlaylist(e.target.value)}
-              placeholder={tr('app.pasteALinkToYourPlaylist')}
-            />
-          </label>
-          <p className="hint">{tr('app.weKeepPlaylistOrderYearsFromAlbum')}</p>
-          <button disabled={busy} className="primary full" type="submit">
-            {busy ? <LoaderCircle className="spin" size={18} /> : <Download size={18} />}{' '}
-            {busy ? tr('app.fetchingTracks') : tr('app.importPlaylist')}
-          </button>
-          <button
-            className="quiet"
-            type="button"
-            onClick={() => {
-              disconnectSpotify();
-              onClose();
-            }}
-          >
-            {tr('app.disconnectSpotify')}
-          </button>
-        </form>
-      )}
-      <button
-        className="spotify-settings-link"
-        onClick={() => {
-          sessionStorage.setItem('spotify-import-mode', mode);
-          sessionStorage.setItem('spotify-import-playlist', playlist);
-          openSpotifySetup('import');
-        }}
-      >
-        <Settings2 size={15} /> {tr('app.spotifyConnectionSettings')}
-      </button>
-      {error && (
-        <p className="error" role="alert">
-          {displayTranslation(error)}
-        </p>
-      )}
-    </Modal>
-  );
-}
 export default function App() {
   const { language, setLanguage } = useTranslation();
   const playlistPrompt = language === 'en' ? playlistPromptEn : playlistPromptPl;
@@ -551,12 +202,6 @@ export default function App() {
     [playState, setPlayState] = useState(tr('app.setUpPlaybackAndScanACard')),
     [command, setCommand] = useState<{ type: Command; seq: number } | null>(null);
   const displayTheme = (mode === 'scanner' || mode === 'player') && card ? card.theme : uiTheme;
-  const [spotifySetup, setSpotifySetup] = useState<{
-    purpose?: SpotifyPurpose;
-    clientId?: string;
-    revision: number;
-  }>({ revision: 0 });
-  const [, refreshSpotifySettings] = useState(0);
   const [playbackState, setPlaybackState] = useState<PlaybackState>('paused');
   const [playerRevision, setPlayerRevision] = useState(0);
   const playbackTransition = useRef(false);
@@ -567,16 +212,13 @@ export default function App() {
     if (state) setPlaybackState(state);
   }, []);
   const [output, setOutputState] = useState<PlaybackOutput>(() =>
-    mode === 'player'
-      ? 'browser'
-      : initialPlaybackOutput(localStorage.getItem('hiciarz-output'), spotifyConfigured()),
+    mode === 'player' ? 'browser' : initialPlaybackOutput(localStorage.getItem('hiciarz-output')),
   );
   const setOutput = async (value: PlaybackOutput) => {
     if (playbackTransition.current) return false;
     if (value === outputRef.current) return true;
     playbackTransition.current = true;
     try {
-      if (outputRef.current === 'spotify' && card) await spotifyRemote.stop();
       if (card && mode === 'scanner' && outputRef.current === 'browser')
         room.send(undefined, 'stop');
       if (mode !== 'player' && value !== 'browser' && (room.connected || room.pairUrl))
@@ -600,13 +242,6 @@ export default function App() {
       }
     }
   };
-  const spotifyRemote = useSpotifyRemote(
-    card,
-    command,
-    output === 'spotify' && (mode === 'scanner' || mode === 'player' || modal === 'playback'),
-    reportPlayback,
-    mode === 'player' ? 'player' : 'scanner',
-  );
   const outputRef = useRef(output);
   outputRef.current = output;
   const backgroundRequests = useRef(createLatestRequest()).current;
@@ -623,6 +258,7 @@ export default function App() {
   );
   useEffect(() => () => backgroundRequests.invalidate(), [backgroundRequests]);
   const fileRef = useRef<HTMLInputElement>(null),
+    importOptionsRef = useRef<HTMLDetailsElement>(null),
     lastScan = useRef({ id: '', time: 0 }),
     incomingCard = useRef<Card | null>(null),
     saveQueue = useRef(Promise.resolve()),
@@ -713,8 +349,7 @@ export default function App() {
     if (mode === 'player' && card && room.connected)
       room.reportPlayback({ cardId: card.id, state: playbackState, message: playState });
   }, [mode, card, room.connected, playbackState, playState]);
-  const gameReady =
-    output === 'spotify' ? spotifyRemote.ready : output === 'local' || room.connected;
+  const gameReady = output === 'local' || room.connected;
   useEffect(() => {
     window.scrollTo({ top: 0, behavior: 'auto' });
   }, [mode, card?.id]);
@@ -747,7 +382,6 @@ export default function App() {
     if (playbackTransition.current) return;
     playbackTransition.current = true;
     try {
-      if (outputRef.current === 'spotify' && card) await spotifyRemote.stop();
       if (outputRef.current === 'browser' && mode === 'scanner' && card)
         room.send(undefined, 'stop');
       clearRound();
@@ -783,38 +417,6 @@ export default function App() {
       if (room.send(undefined, action)) reportPlayback(tr('app.waitingForThePlayer'), 'loading');
     } else playerCommand(action);
   }
-  useEffect(() => {
-    const show = (event: Event) => {
-      const purpose = (event as CustomEvent<{ purpose?: SpotifyPurpose }>).detail?.purpose;
-      if (purpose === 'player')
-        sessionStorage.setItem(
-          'hiciarz-spotify-return-mode',
-          mode === 'player' ? 'player' : 'scanner',
-        );
-      setSpotifySetup((previous) => ({ purpose, revision: previous.revision + 1 }));
-      setModal('spotify-setup');
-    };
-    window.addEventListener(spotifySetupEvent, show);
-    return () => window.removeEventListener(spotifySetupEvent, show);
-  }, [mode]);
-  useEffect(() => {
-    let previousClientId = spotifyClientId();
-    const changed = () => {
-      previousClientId = spotifyClientId();
-      refreshSpotifySettings((n) => n + 1);
-    };
-    const storageChanged = (event: StorageEvent) => {
-      if (!isSpotifySettingsStorageKey(event.key)) return;
-      if (previousClientId !== spotifyClientId() || event.key === null) disconnectSpotify();
-      changed();
-    };
-    window.addEventListener(spotifySettingsEvent, changed);
-    window.addEventListener('storage', storageChanged);
-    return () => {
-      window.removeEventListener(spotifySettingsEvent, changed);
-      window.removeEventListener('storage', storageChanged);
-    };
-  }, []);
   useEffect(() => {
     let live = true;
     loadDecks()
@@ -862,42 +464,15 @@ export default function App() {
     setTab('songs');
     if (activeId) localStorage.setItem('hiciarz-active-deck', activeId);
   }, [activeId]);
-  const oauthStarted = useRef(false);
   useEffect(() => {
-    if (oauthStarted.current) return;
-    oauthStarted.current = true;
-    const purpose = spotifyLoginPurpose();
-    finishSpotify()
-      .then((done) => {
-        if (done) {
-          if (done === 'player') {
-            setOutput('spotify');
-            setMode(
-              sessionStorage.getItem('hiciarz-spotify-return-mode') === 'scanner'
-                ? 'scanner'
-                : 'player',
-            );
-            sessionStorage.removeItem('hiciarz-spotify-return-mode');
-            notify(tr('app.spotifyConnectedSelectAPlaybackDevice'));
-          } else {
-            setMode('editor');
-            notify(tr('app.spotifyConnectedSelectAPlaylistToImport'));
-            setModal('spotify');
-          }
-        }
-      })
-      .catch((e) => {
-        if (purpose === 'import') {
-          setMode('editor');
-          setModal('spotify');
-        } else if (purpose === 'player')
-          setMode(
-            sessionStorage.getItem('hiciarz-spotify-return-mode') === 'scanner'
-              ? 'scanner'
-              : 'player',
-          );
-        notify(e.message);
-      });
+    const hadOAuth = clearLegacySpotifySettings(localStorage, sessionStorage);
+    if (hadOAuth) {
+      const url = new URL(location.href);
+      if (url.searchParams.has('code') || url.searchParams.has('error')) {
+        for (const key of ['code', 'error', 'state']) url.searchParams.delete(key);
+        history.replaceState(history.state, '', url.href);
+      }
+    }
   }, []);
   const routeHandler = useRef<() => Promise<void>>(async () => {});
   routeHandler.current = async () => {
@@ -906,15 +481,11 @@ export default function App() {
     try {
       const q = readQR(raw);
       if (q.kind === 'spotify-setup') {
-        if (!(await setOutput('spotify')) || location.href !== raw) return;
-        setMode('scanner');
-        sessionStorage.setItem('hiciarz-spotify-return-mode', 'scanner');
-        setSpotifySetup((previous) => ({
-          purpose: 'player',
-          clientId: q.clientId,
-          revision: previous.revision + 1,
-        }));
-        setModal('spotify-setup');
+        const retired = new URL(raw);
+        retired.hash = '';
+        history.replaceState(history.state, '', retired.href);
+        notify(tr('legacySpotify.retiredQr'));
+        return;
       } else if (q.kind === 'pair') {
         if (!(await setOutput('browser')) || location.href !== raw) return;
         setMode('scanner');
@@ -932,7 +503,7 @@ export default function App() {
         const consumed = new URL(urlForView(location.href, 'scanner'));
         consumed.hash = '';
         history.replaceState(navigationState(history.state, 'scanner', null), '', consumed.href);
-        if (q.kind !== 'spotify-setup') setModal(null);
+        setModal(null);
       }
     } catch {
       // Ignore hashes that are not valid Hiciarz QR payloads.
@@ -981,9 +552,14 @@ export default function App() {
   }
   function importSongs(songs: Song[], mode: 'append' | 'replace', note = '') {
     const r = mergeSongs(deck.songs, songs, mode);
+    if (r.songs.length > 2000) {
+      notify(tr('trackFlow.deckLimit'));
+      return false;
+    }
     updateDeck({ songs: r.songs });
     setSelected(new Set());
     notify(tr('app.deckImportSummary', { count: r.songs.length, skipped: r.skipped, note }));
+    return true;
   }
   function chooseExample(id: string, destination: 'new' | 'append' = 'new') {
     const example = createExampleDeck(id);
@@ -991,7 +567,7 @@ export default function App() {
       setDecks((ds) => [...ds, example]);
       setActiveId(example.id);
       notify(tr('app.exampleCreated', { name: example.name, count: example.songs.length }));
-    } else importSongs(example.songs, 'append', tr('app.checkTheYearsBeforePrinting'));
+    } else if (!importSongs(example.songs, 'append', tr('app.checkTheYearsBeforePrinting'))) return;
     setFilter('');
     setSelected(new Set());
     setPreviewIndex(0);
@@ -1004,15 +580,7 @@ export default function App() {
     try {
       const q = readQR(raw);
       if (q.kind === 'spotify-setup') {
-        setSpotifySetup((previous) => ({
-          purpose: 'player',
-          clientId: q.clientId,
-          revision: previous.revision + 1,
-        }));
-        sessionStorage.setItem('hiciarz-spotify-return-mode', 'scanner');
-        setModal('spotify-setup');
-        clearScanFeedback();
-        vibrateOnScan();
+        notify(tr('legacySpotify.retiredQr'));
         return;
       }
       const now = Date.now();
@@ -1110,13 +678,6 @@ export default function App() {
     }
     playbackTransition.current = true;
     try {
-      if (outputRef.current === 'spotify' && card) {
-        try {
-          await spotifyRemote.stop();
-        } catch (error) {
-          notify((error as Error).message);
-        }
-      }
       if (mode === 'scanner' && outputRef.current === 'browser' && card)
         room.send(undefined, 'stop');
       const shouldRecord = recordHistory && !historyPopPending.current;
@@ -1235,10 +796,7 @@ export default function App() {
   const playbackDestination =
     output === 'local' || (mode === 'player' && output === 'browser')
       ? tr('app.onThisDevice')
-      : output === 'spotify'
-        ? spotifyRemote.devices.find((device) => device.id === spotifyRemote.device)?.name ||
-          'Spotify Connect'
-        : tr('app.secondScreen');
+      : tr('app.secondScreen');
   if (!loaded || !deck)
     return (
       <div className="boot">
@@ -1524,6 +1082,25 @@ export default function App() {
                           <Plus size={17} /> {tr('creator.add.' + (deck.gameMode || 'music'))}
                         </button>
                       </div>
+                      <button
+                        className="example-entry ai-playlist-entry"
+                        onClick={async () => {
+                          if (importOptionsRef.current) importOptionsRef.current.open = true;
+                          try {
+                            await navigator.clipboard.writeText(playlistPrompt);
+                            notify(tr('aiPlaylist.copied'));
+                          } catch {
+                            setModal('prompt');
+                          }
+                        }}
+                      >
+                        <Copy size={20} aria-hidden="true" />
+                        <span>
+                          <strong>{tr('aiPlaylist.title')}</strong>
+                          <small>{tr('aiPlaylist.description')}</small>
+                        </span>
+                        <ArrowUpRight size={18} aria-hidden="true" />
+                      </button>
                       <button className="example-entry" onClick={() => setModal('examples')}>
                         <Sparkles size={20} aria-hidden="true" />
                         <span>
@@ -1534,21 +1111,11 @@ export default function App() {
                         </span>
                         <ChevronRight size={18} aria-hidden="true" />
                       </button>
-                      <details className="creator-import-options">
+                      <details className="creator-import-options" ref={importOptionsRef}>
                         <summary>
-                          {tr('shell.addFrom')}
+                          {tr('aiPlaylist.importFile')}
                           <ChevronDown size={17} aria-hidden="true" />
                         </summary>
-                        <button
-                          className="secondary spotify-import-button"
-                          onClick={() => {
-                            sessionStorage.removeItem('spotify-import-playlist');
-                            setModal('spotify');
-                          }}
-                        >
-                          <Music2 size={18} />
-                          {tr('shell.spotify')}
-                        </button>
                         <div
                           className={'file-drop' + (draggingFile ? ' is-dragging' : '')}
                           onDragOver={(event) => {
@@ -1579,23 +1146,6 @@ export default function App() {
                             {tr('app.chooseFile')} <ArrowUpRight size={15} />
                           </button>
                         </div>
-                        <button
-                          className="secondary prompt-copy"
-                          aria-describedby="playlist-ai-help"
-                          onClick={async () => {
-                            try {
-                              await navigator.clipboard.writeText(playlistPrompt);
-                              notify(tr('app.promptCopiedPasteItIntoYourPreferred'));
-                            } catch {
-                              setModal('prompt');
-                            }
-                          }}
-                        >
-                          <Copy size={16} /> {tr('app.copyPromptForYourAi')}
-                        </button>
-                        <p id="playlist-ai-help" className="hint prompt-copy-help">
-                          {tr('app.playlistAiHelp')}
-                        </p>{' '}
                       </details>
                       {deck.songs.length > 0 && (
                         <div className="table-tools">
@@ -2180,19 +1730,21 @@ export default function App() {
                             command={command}
                             onState={reportPlayback}
                           />
-                          <div className="source-buttons">
-                            {(['spotify', 'youtube'] as const).map((s) => (
-                              <button
-                                disabled={!card.sources[s]}
-                                className={source === s ? 'secondary active-source' : 'secondary'}
-                                key={s}
-                                onClick={() => setSource(s)}
-                              >
-                                {s === 'spotify' ? tr('app.spotify') : tr('app.youtube')}
-                                {source === s && <Check size={15} />}
-                              </button>
-                            ))}
-                          </div>
+                          {card.sources.spotify && card.sources.youtube && (
+                            <div className="source-buttons">
+                              {(['spotify', 'youtube'] as const).map((s) => (
+                                <button
+                                  disabled={!card.sources[s]}
+                                  className={source === s ? 'secondary active-source' : 'secondary'}
+                                  key={s}
+                                  onClick={() => setSource(s)}
+                                >
+                                  {s === 'spotify' ? tr('app.spotify') : tr('app.youtube')}
+                                  {source === s && <Check size={15} />}
+                                </button>
+                              ))}
+                            </div>
+                          )}
                         </div>
                       )}
                       <PlayingCard
@@ -2217,9 +1769,7 @@ export default function App() {
                         }}
                         pairingRequired={output === 'browser'}
                         paired={room.connected}
-                        ready={
-                          modal !== 'spotify-setup' && (output !== 'spotify' || spotifyRemote.ready)
-                        }
+                        ready
                       />
                     </Suspense>
                   )}
@@ -2252,7 +1802,7 @@ export default function App() {
                         back={playingBack}
                         state={playbackState}
                         message={displayTranslation(playState)}
-                        disabled={output === 'spotify' && !spotifyRemote.ready}
+                        disabled={false}
                         onToggle={togglePlayback}
                       />
                       {output === 'browser' && (
@@ -2264,7 +1814,7 @@ export default function App() {
                           onState={reportPlayback}
                         />
                       )}
-                      {output === 'browser' && (
+                      {output === 'browser' && card.sources.spotify && card.sources.youtube && (
                         <div className="source-buttons">
                           {(['spotify', 'youtube'] as const).map((s) => (
                             <button
@@ -2418,24 +1968,14 @@ export default function App() {
               : undefined
           }
           onClose={() => setModal(null)}
-          onSave={(song) =>
+          onSave={(song) => {
+            if (!editSong && deck.songs.length >= 2000) throw new Error(tr('trackFlow.deckLimit'));
             updateDeck({
               songs: editSong
                 ? deck.songs.map((s) => (s.id === song.id ? song : s))
                 : [...deck.songs, song],
-            })
-          }
-        />
-      )}
-      {modal === 'spotify' && (
-        <SpotifyImport
-          initialPlaylist={sessionStorage.getItem('spotify-import-playlist') || ''}
-          onClose={() => {
-            sessionStorage.removeItem('spotify-import-playlist');
-            setModal(null);
+            });
           }}
-          onImport={importSongs}
-          onExamples={() => setModal('examples')}
         />
       )}
       {modal === 'examples' && (
@@ -2506,11 +2046,13 @@ export default function App() {
                   setDecks([...decks, d]);
                   setActiveId(d.id);
                   notify(tr('app.fullProjectOpened'));
-                } else
-                  importSongs(
+                } else if (
+                  !importSongs(
                     Array.isArray(pending.data) ? pending.data : pending.data.songs,
                     importMode,
-                  );
+                  )
+                )
+                  return;
                 setPending(undefined);
                 setModal(null);
               }}
@@ -2600,23 +2142,6 @@ export default function App() {
           </label>
         </Modal>
       )}
-      {modal === 'spotify-setup' && (
-        <Modal
-          title={tr('app.spotifyInHiciarz')}
-          wide
-          onClose={() => setModal(spotifySetup.purpose === 'import' ? 'spotify' : null)}
-        >
-          <SpotifySetup
-            key={spotifySetup.revision}
-            purpose={spotifySetup.purpose}
-            incomingClientId={spotifySetup.clientId}
-            onDone={() => {
-              if (spotifySetup.purpose === 'player') setOutput('spotify');
-              setModal(spotifySetup.purpose === 'import' ? 'spotify' : null);
-            }}
-          />
-        </Modal>
-      )}
       {modal === 'playback' && (
         <Modal title={tr('sound.title')} sheet onClose={() => setModal(null)}>
           <PlaybackSettings
@@ -2625,18 +2150,13 @@ export default function App() {
             preferred={preferred}
             paired={room.connected}
             scanning={mode === 'scanner'}
-            spotify={<SpotifyRemotePanel remote={spotifyRemote} compact />}
             onOutput={setOutput}
             onPreferred={(value) => {
               setPreferred(value);
               if (mode === 'player' && card?.sources[value]) setSource(value);
             }}
             onDisconnect={room.disconnect}
-            onStop={
-              card && (output !== 'spotify' || spotifyRemote.ready)
-                ? () => sendPlaybackCommand('stop')
-                : undefined
-            }
+            onStop={card ? () => sendPlaybackCommand('stop') : undefined}
             onScanner={() => {
               void changeMode('scanner');
             }}
@@ -2702,16 +2222,6 @@ export default function App() {
                 ))}
               </select>
             </label>
-          </section>
-          <section className="settings-section">
-            <div className="settings-row">
-              <h3>Spotify</h3>
-              <SpotifyAccount />
-            </div>
-            <button className="secondary full" onClick={() => openSpotifySetup()}>
-              <Settings2 size={18} />
-              {tr('app.spotifySettings')}
-            </button>
           </section>
           <AppInstall />
           <section className="settings-section">

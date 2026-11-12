@@ -1,0 +1,6 @@
+{
+  "aiPlaylist.title": "Przygotuj talię z AI",
+  "aiPlaylist.description": "Skopiuj prompt, użyj swojego AI i wczytaj gotowy plik JSON.",
+  "aiPlaylist.importFile": "Wczytaj playlistę z pliku",
+  "aiPlaylist.copied": "Prompt skopiowany. Wklej go do swojego AI, a gotowy plik JSON przeciągnij do pola importu."
+}

@@ -3,8 +3,6 @@
   "sound.title": "Gdzie ma grać muzyka?",
   "sound.thisScanner": "Na urządzeniu, którym skanujesz karty.",
   "sound.thisReceiver": "Na tym urządzeniu, sterowanym z połączonego skanera.",
-  "sound.spotify": "Spotify Connect",
-  "sound.spotifyHint": "Na głośniku lub innym urządzeniu z Twojego Spotify. Wymaga Premium.",
   "sound.secondScreenHint": "Telefon skanuje, a drugi telefon lub komputer odtwarza.",
   "sound.openSecondScreen": "Na drugim urządzeniu otwórz Hiciarza → Drugi ekran i wybierz „Połącz skaner”.",
   "sound.scanPairingCode": "Zeskanuj wyświetlony kod QR skanerem Hiciarza na tym telefonie.",

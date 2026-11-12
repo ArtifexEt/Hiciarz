@@ -22,10 +22,10 @@ Hiciarz zamienia ulubione nagrania w grę przy wspólnym stole. Przygotuj talię
 
 **[Otwórz Hiciarza na GitHub Pages →](https://artifexet.github.io/Hiciarz/)** Działa w przeglądarce na telefonie i komputerze. Możesz też dodać go do ekranu początkowego jako PWA.
 
-- **Wasza muzyka, Wasze talie.** Dodawaj utwory ręcznie, wczytuj pliki JSON/CSV lub importuj własne playlisty Spotify. Na początek czekają gotowe zestawy: świąteczne hity i muzyka z gier.
+- **Wasza muzyka, Wasze talie.** Wklejaj linki do utworów Spotify, sprawdzaj rok w MusicBrainz albo wczytuj pliki JSON/CSV. Na początek czekają gotowe zestawy: świąteczne hity i muzyka z gier.
 - **Karty w Waszym stylu.** Wybierz motyw, dodaj własny rewers i pobierz PDF do dwustronnego druku. Kwadratowe karty mają 60 × 60 mm.
 - **Kilka sposobów na wspólną grę.** Muzyczna oś czasu, zgadywanie filmów i gier oraz Bingo z planszami do wydrukowania.
-- **Muzyka tam, gdzie gracie.** Słuchaj na telefonie, steruj Spotify albo połącz skaner z odtwarzaczem na drugim ekranie.
+- **Muzyka tam, gdzie gracie.** Słuchaj na telefonie albo połącz skaner z odtwarzaczem na drugim ekranie.
 
 ## Zobacz Hiciarza
 
@@ -48,7 +48,7 @@ Przygotuj własną talię i od razu zobacz, jak będą wyglądać wydrukowane ka
 
 1. **[Otwórz Hiciarza](https://artifexet.github.io/Hiciarz/)** i wybierz **Twórz karty**. Zacznij od gotowej talii albo dodaj własne nagrania.
 2. **Wybierz wygląd i wydrukuj karty.** Pobierz PDF, drukuj na A4 dwustronnie w skali 100%, a następnie wytnij karty. Przed całą talią warto wykonać próbę wydruku.
-3. **Wybierz, gdzie ma grać muzyka.** W **Dźwięk** ustaw odtwarzanie na tym urządzeniu, Spotify Connect lub drugi ekran.
+3. **Wybierz, gdzie ma grać muzyka.** W **Dźwięk** ustaw odtwarzanie na tym urządzeniu lub drugi ekran.
 4. **Skanuj, słuchaj i zgaduj.** Zeskanuj QR z karty i sprawdź odpowiedź po jej odwróceniu. Jeśli masz już wydrukowaną talię, możesz od razu zacząć od **Skanuj karty**.
 
 Wolisz Bingo? [Otwórz generator plansz PDF](https://artifexet.github.io/Hiciarz/?view=bingo&sheet=print&level=beginner&lang=pl), wydrukuj plansze i losuj kategorie muzycznych zagadek. Wybierz poziom podstawowy lub zaawansowany i liczbę potrzebnych wydruków.
@@ -57,9 +57,9 @@ Wolisz Bingo? [Otwórz generator plansz PDF](https://artifexet.github.io/Hiciarz
 
 W przeglądarce możesz korzystać z osadzonych odtwarzaczy **Spotify i YouTube** bez konfigurowania połączenia Spotify w Hiciarzu. Spotify może udostępniać tylko fragment nagrania, a odtwarzacz może pokazywać tytuł i okładkę. Przy zgadywaniu przydaje się drugi ekran ustawiony poza wzrokiem graczy.
 
-**Spotify Connect** pozwala sterować muzyką na wybranym urządzeniu Spotify i wymaga konta Premium. Import playlist oraz Connect wymagają połączenia konta z Hiciarzem; dostęp zależy od ustawień integracji Spotify. Gotowe talie i import plików JSON/CSV są dostępne bez logowania.
+Hiciarz nie łączy konta Spotify. W kreatorze wklej link do konkretnego utworu, sprawdź podgląd i odsłuch, a następnie dobierz rok pierwszego wydania w MusicBrainz. Potwierdź dane przed dodaniem karty. Gotowe talie oraz import JSON/CSV również działają bez logowania.
 
-**[Jak połączyć Spotify i wybrać urządzenie →](web/docs/spotify.md)**
+**[Jak dodać utwór i korzystać z odsłuchu →](web/docs/spotify.md)**
 
 ## Także na Androidzie
 

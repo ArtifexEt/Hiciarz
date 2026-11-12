@@ -1,0 +1,170 @@
+.song-form .song-spotify-link {
+  margin: 0 0 12px;
+}
+.song-spotify-link > label {
+  margin: 0;
+}
+.song-source-entry {
+  display: flex;
+  align-items: stretch;
+  gap: 8px;
+  margin-top: 7px;
+}
+.song-source-entry input {
+  min-width: 0;
+  flex: 1;
+  margin: 0;
+}
+.song-source-entry button {
+  flex-shrink: 0;
+}
+.song-spotify-finder {
+  margin: 0 0 18px;
+  color: var(--ink);
+  font-size: 11px;
+}
+.song-spotify-finder summary {
+  width: fit-content;
+  cursor: pointer;
+  line-height: 1.6;
+}
+.song-search-entry {
+  display: flex;
+  align-items: end;
+  gap: 8px;
+  padding-top: 10px;
+}
+.song-search-entry label {
+  flex: 1;
+  min-width: 0;
+  margin: 0;
+}
+.song-search-entry input {
+  width: 100%;
+  border: 1px solid var(--line);
+  border-radius: 8px;
+  padding: 12px 13px;
+  background: var(--surface);
+  color: var(--ink);
+}
+.song-search-entry a {
+  text-decoration: none;
+  flex-shrink: 0;
+}
+.song-spotify-player {
+  margin: 16px 0;
+}
+.song-spotify-player iframe {
+  display: block;
+  width: 100%;
+  border: 0;
+  border-radius: 12px;
+  background: var(--soft);
+}
+.song-spotify-player > a {
+  margin-top: 8px;
+}
+.song-spotify-player .hint {
+  margin-bottom: 0;
+}
+.song-lookup-feedback:empty {
+  display: none;
+}
+.song-recording-results {
+  margin: 20px 0;
+  min-width: 0;
+  padding: 0;
+  border: 0;
+}
+.song-recording-results legend {
+  padding: 0 0 10px;
+  font-size: 12px;
+  font-weight: 600;
+}
+.song-recording-list {
+  display: grid;
+  gap: 6px;
+  max-height: 280px;
+  overflow-y: auto;
+  overscroll-behavior: contain;
+}
+.song-recording-choice {
+  display: flex;
+  align-items: center;
+  gap: 14px;
+  width: 100%;
+  min-height: 68px;
+  padding: 12px;
+  border: 1px solid var(--line);
+  border-radius: 9px;
+  background: var(--surface);
+  color: var(--ink);
+  text-align: left;
+}
+.song-recording-choice:hover,
+.song-recording-choice[aria-pressed='true'] {
+  background: var(--soft);
+  border-color: var(--accent-ink);
+}
+.song-recording-year {
+  flex: 0 0 48px;
+  color: var(--accent-ink);
+  font-size: 17px;
+  font-variant-numeric: tabular-nums;
+  font-weight: 600;
+}
+.song-recording-description {
+  display: grid;
+  flex: 1;
+  min-width: 0;
+  gap: 3px;
+  font-size: 11px;
+  overflow-wrap: anywhere;
+}
+.song-recording-description strong {
+  font-size: 12px;
+}
+.song-recording-description small {
+  color: var(--muted);
+  font-size: 10px;
+}
+.song-recording-choice > svg {
+  flex-shrink: 0;
+  color: var(--accent-ink);
+}
+.song-recording-results > a {
+  margin-top: 8px;
+}
+.song-year-actions {
+  display: flex;
+  justify-content: flex-start;
+  margin-top: 2px;
+}
+.song-form a:focus-visible,
+.song-form button:focus-visible,
+.song-form summary:focus-visible {
+  outline: 2px solid var(--accent-ink);
+  outline-offset: 3px;
+}
+@media (max-width: 520px) {
+  .song-source-entry,
+  .song-search-entry {
+    flex-direction: column;
+    align-items: stretch;
+  }
+  .song-source-entry button,
+  .song-search-entry a {
+    min-height: 44px;
+  }
+}
+@media (max-width: 360px) {
+  .modal.app-modal:has(.song-form) {
+    --dialog-inline-gap: 8px;
+  }
+  .modal.app-modal:has(.song-form) .modal-body {
+    padding: 12px;
+  }
+  .song-spotify-player {
+    margin-inline: -10px;
+  }
+}

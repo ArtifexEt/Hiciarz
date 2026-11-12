@@ -9,7 +9,6 @@ export default function Camera({
   paired = false,
   onStart,
   ready = true,
-  purpose = 'card',
   immersive = false,
   onConfigure,
 }: {
@@ -18,7 +17,6 @@ export default function Camera({
   paired?: boolean;
   onStart?: () => void;
   ready?: boolean;
-  purpose?: 'card' | 'setup';
   immersive?: boolean;
   onConfigure?: () => void;
 }) {
@@ -139,22 +137,18 @@ export default function Camera({
           <div className="camera-start">
             {!immersive && <ScanLine size={52} aria-hidden="true" />}
             <h3>
-              {purpose === 'setup'
-                ? t('components.Camera.scanSpotifyConfiguration')
-                : !ready
-                  ? t('plainPlayback.prepareSpotify')
-                  : pairingRequired && !paired
-                    ? t('plainPlayback.scanPairingCode')
-                    : t('components.Camera.scanAMusicCard')}
+              {!ready
+                ? t('plainPlayback.preparePlayback')
+                : pairingRequired && !paired
+                  ? t('plainPlayback.scanPairingCode')
+                  : t('components.Camera.scanAMusicCard')}
             </h3>
             <p>
-              {purpose === 'setup'
-                ? t('components.Camera.pointTheCameraAtTheConfiguration')
-                : !ready
-                  ? t('plainPlayback.chooseSpotifyDevice')
-                  : pairingRequired && !paired
-                    ? t('plainPlayback.pairingCodeLocation')
-                    : t('plainPlayback.pointAtCard')}
+              {!ready
+                ? t('plainPlayback.choosePlaybackOutput')
+                : pairingRequired && !paired
+                  ? t('plainPlayback.pairingCodeLocation')
+                  : t('plainPlayback.pointAtCard')}
             </p>
             {!immersive && startButton}
           </div>

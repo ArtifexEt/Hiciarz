@@ -129,6 +129,8 @@ describe('app navigation history state', () => {
       { modal: 'song' },
       { hiciarzNavigation: 'true', modal: 'song' },
       { hiciarzNavigation: true, modal: 'unknown' },
+      { hiciarzNavigation: true, modal: 'spotify' },
+      { hiciarzNavigation: true, modal: 'spotify-setup' },
       { hiciarzNavigation: true },
       Object.create({ hiciarzNavigation: true, modal: 'song' }),
     ]) {

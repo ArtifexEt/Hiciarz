@@ -2,32 +2,9 @@ import type { ComponentProps } from 'react';
 import { renderToStaticMarkup } from 'react-dom/server';
 import { afterEach, describe, expect, it } from 'vitest';
 import PlaybackSettings from './PlaybackSettings';
-import { SpotifyRemotePanel } from './SpotifyRemote';
 import { setLanguage, type Language } from './i18n';
 
 const noop = () => {};
-const remote: ComponentProps<typeof SpotifyRemotePanel>['remote'] = {
-  devices: [
-    {
-      id: 'speaker',
-      name: 'Living room speaker',
-      type: 'Speaker',
-      is_active: true,
-      is_restricted: false,
-    },
-  ],
-  device: 'speaker',
-  setDevice: noop,
-  linked: true,
-  loading: false,
-  error: '',
-  refresh: async () => {},
-  stop: async () => {},
-  disconnect: noop,
-  ready: true,
-  connecting: false,
-  connect: async () => {},
-};
 
 function render(overrides: Partial<ComponentProps<typeof PlaybackSettings>> = {}) {
   return renderToStaticMarkup(
@@ -37,7 +14,6 @@ function render(overrides: Partial<ComponentProps<typeof PlaybackSettings>> = {}
       preferred="spotify"
       paired={false}
       scanning={true}
-      spotify={<SpotifyRemotePanel remote={remote} compact />}
       onOutput={async () => true}
       onPreferred={noop}
       onDisconnect={noop}
@@ -123,16 +99,15 @@ describe.each<Language>(['pl', 'en'])('playback destination in %s', (language) =
     expectTranslated(markup);
   });
 
-  it('renders the supplied Spotify device panel instead of the local source selector', () => {
+  it('plays locally without account or device setup', () => {
     setLanguage(language);
-    const markup = render({ output: 'spotify' });
-    expect(selectedChoice(markup)[0]).toContain('Spotify Connect');
-    expect(markup).toContain('<option value="speaker" selected="">');
-    expect(markup).toContain('Living room speaker');
-    expect(markup).not.toContain(text.source);
-    expect(markup).not.toContain('<option value="youtube"');
+    const markup = render({ output: 'local' });
+    expect(selectedChoice(markup)[0]).toContain(text.device);
+    expect(markup).toContain(text.source);
+    expect(markup).toContain('<option value="spotify" selected="">Spotify</option>');
+    expect(markup).not.toContain('Spotify Connect');
     expect(markup).not.toContain(text.pairing);
-    expect(markup).not.toContain('<h2');
+    expect(markup).toContain(text.done);
     expectTranslated(markup);
   });
 });

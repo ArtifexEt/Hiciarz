@@ -3,8 +3,6 @@
   "sound.title": "Where should music play?",
   "sound.thisScanner": "On the device you use to scan cards.",
   "sound.thisReceiver": "On this device, controlled by the connected scanner.",
-  "sound.spotify": "Spotify Connect",
-  "sound.spotifyHint": "On a speaker or another device in your Spotify. Requires Premium.",
   "sound.secondScreenHint": "Your phone scans; another phone or computer plays music.",
   "sound.openSecondScreen": "On the other device, open Hiciarz → Second screen and choose “Connect scanner”.",
   "sound.scanPairingCode": "Use Hiciarz’s scanner on this phone to scan the QR code shown there.",

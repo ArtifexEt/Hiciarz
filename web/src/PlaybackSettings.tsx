@@ -1,5 +1,5 @@
-import { useId, useState, type ReactNode } from 'react';
-import { Check, Headphones, Monitor, Smartphone } from 'lucide-react';
+import { useId, useState } from 'react';
+import { Check, Monitor, Smartphone } from 'lucide-react';
 import { useTranslation } from './i18n';
 import type { PlaybackOutput } from './scanner-playback';
 
@@ -9,7 +9,6 @@ export default function PlaybackSettings({
   preferred,
   paired,
   scanning,
-  spotify,
   onOutput,
   onPreferred,
   onDisconnect,
@@ -22,7 +21,6 @@ export default function PlaybackSettings({
   preferred: 'spotify' | 'youtube';
   paired: boolean;
   scanning: boolean;
-  spotify: ReactNode;
   onOutput: (output: PlaybackOutput) => Promise<boolean>;
   onPreferred: (source: 'spotify' | 'youtube') => void;
   onDisconnect: () => void;
@@ -39,12 +37,6 @@ export default function PlaybackSettings({
       title: t('app.onThisDevice'),
       hint: t(receiver ? 'sound.thisReceiver' : 'sound.thisScanner'),
       Icon: Smartphone,
-    },
-    {
-      value: 'spotify',
-      title: t('sound.spotify'),
-      hint: t('sound.spotifyHint'),
-      Icon: Headphones,
     },
     ...(!receiver
       ? [
@@ -89,9 +81,7 @@ export default function PlaybackSettings({
         ))}
       </div>
       <div className="sound-details">
-        {output === 'spotify' ? (
-          spotify
-        ) : output === 'local' || receiver ? (
+        {output === 'local' || receiver ? (
           <>
             <label className="source-picker">
               {t('app.preferredSource')}

@@ -446,9 +446,6 @@ summary {
 .creator-import-options[open] > summary {
   margin-bottom: 12px;
 }
-.creator-import-options .spotify-import-button {
-  width: 100%;
-}
 .creator-import-options .file-drop {
   margin: 12px 0;
   color: var(--ink);
@@ -771,9 +768,6 @@ summary {
   gap: 8px;
   margin: 0;
 }
-.sound-details .spotify-remote {
-  margin: 0;
-}
 .sound-actions {
   margin-top: 22px;
   display: flex;
@@ -788,9 +782,6 @@ summary {
 .sound-details button,
 .sound-details select {
   min-height: 44px;
-}
-.sound-details .spotify-settings-link {
-  margin-top: 12px;
 }
 @media (min-width: 981px) {
   .modal.app-modal:has(.playback-settings) {

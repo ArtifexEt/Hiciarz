@@ -1,0 +1,6 @@
+{
+  "aiPlaylist.title": "Create a deck with AI",
+  "aiPlaylist.description": "Copy the prompt, use your AI assistant and import the JSON file.",
+  "aiPlaylist.importFile": "Import a playlist file",
+  "aiPlaylist.copied": "Prompt copied. Paste it into your AI assistant, then drag the resulting JSON file into the import area."
+}

@@ -21,22 +21,7 @@ Workflow [`.github/workflows/pages.yml`](../../.github/workflows/pages.yml) publ
 
 W Settings → Pages wybierz źródło **GitHub Actions**. Własny fork używa nazwy swojego repozytorium jako ścieżki bazowej. Dla hostingu w katalogu głównym ustaw `BASE_PATH=/` podczas budowania.
 
-Nie wpisuj sekretu Spotify do kodu ani zmiennych frontendu. Zmienne budowania trafiające do strony są publiczne.
-
-## Konfiguracja Spotify przez GitHub Actions
-
-1. W panelu Spotify ustaw dokładny Redirect URI strony, np. `https://artifexet.github.io/Hiciarz/`.
-2. W repozytorium otwórz Settings → Secrets and variables → Actions → New repository secret.
-3. Utwórz sekret **SPOTIFY_CLIENT_ID** z wartością Client ID. Nie dodawaj pliku z identyfikatorem do repozytorium.
-4. Uruchom ponownie workflow **Publish website** na gałęzi main.
-
-Client ID jest dołączany do gotowego frontendu podczas budowania. Client Secret nie jest potrzebny: logowanie używa PKCE. Nigdy nie przekazuj Client Secret do zmiennych VITE ani do plików strony.
-
-Użytkownik może nadpisać domyślny identyfikator w **Ustawienia → Ustawienia Spotify → Zmień połączenie**. Ustawienia pokazują wyłącznie rodzaj połączenia; zapisany Client ID nie jest wyświetlany ani wstawiany do formularza. Opcja **Własne połączenie** zawiera puste pole **Nowy Client ID** i instrukcję. Własny Client ID jest w localStorage i ma pierwszeństwo przed wartością buildu. Pozostawienie pustego pola zachowuje istniejące własne połączenie; wybór **Domyślne połączenie** usuwa własne nadpisanie. Zapisanie innej konfiguracji czyści sesję OAuth, token i wybrane urządzenie; tokeny nowego logowania są powiązane z wybranym Client ID. Zmiany konfiguracji między kartami przeglądarki również rozłączają wcześniejszą sesję.
-
-Ze względu na zgodność aplikacja nadal odczytuje starsze linki konfiguracji `#spotify=<Client ID>`. Odczyt wymaga zatwierdzenia przed zapisem i nie wyświetla identyfikatora. Interfejs nie generuje ani nie udostępnia QR konfiguracji. Ta konfiguracja nie przenosi tokenów ani sekretów.
-
-Zmienna repozytorium Actions **SPOTIFY_ONBOARDING** steruje automatycznym przewodnikiem: `true` lub `false`. Gdy jest pusta, workflow włącza go dla ArtifexEt/Hiciarz, a wyłącza dla forków. Lokalnie odpowiada jej `VITE_SPOTIFY_ONBOARDING`. Brak jakiegokolwiek Client ID nadal wymaga konfiguracji. Niezależnie od przełącznika, przed logowaniem bez własnego Client ID widoczna jest informacja o domyślnym połączeniu i możliwym braku dostępu dla konta oraz akcja **Zmień połączenie**. [Przewodnik dla użytkownika](spotify.md).
+Podgląd Spotify i metadane MusicBrainz działają bez kluczy API, Client ID i logowania w Hiciarzu. Workflow nie używa zmiennych `SPOTIFY_CLIENT_ID` ani `SPOTIFY_ONBOARDING`; zapisane wcześniej wartości można usunąć z konfiguracji repozytorium.
 
 ## Parowanie i sieć
 
@@ -52,17 +37,19 @@ Własny PeerServer (HTTPS/WSS) można wskazać publicznymi zmiennymi GitHub Acti
 
 Odtwarzacz korzysta z oficjalnych, widocznych embedów Spotify i YouTube. Nie wymaga naszego Spotify Client ID do osadzenia. Pełna długość, automatyczny start, logowanie w ramce i dostępność zależą od dostawcy, konta i przeglądarki. Niektóre nagrania blokują osadzanie; Spotify może odtwarzać tylko podgląd. Nie traktujemy ogólnego błędu jako dowodu usunięcia piosenki.
 
-Skaner oferuje trzy niezależne miejsca odtwarzania: **Na tym urządzeniu** (`local`, osadzony `Players` w skanerze), **Drugi ekran** (`browser`, karty i sterowanie przez PeerJS) oraz **Spotify Connect** (`spotify`, Web API i Spotify Connect). Wartość `browser` zachowuje dotychczasowe znaczenie w zapisanych preferencjach. Nowa instalacja bez konfiguracji Spotify zaczyna od odtwarzania lokalnego; istniejący wybór jest zachowany w `hiciarz-output`.
+Skaner oferuje dwa miejsca odtwarzania: **Na tym urządzeniu** (`local`, osadzony `Players` w skanerze) oraz **Drugi ekran** (`browser`, karty i sterowanie przez PeerJS). Wartość `browser` zachowuje dotychczasowe znaczenie w zapisanych preferencjach. Nowa instalacja zaczyna od odtwarzania lokalnego. Zapisany wcześniej wybór `spotify` jest migrowany do `local`.
 
 Lokalny skan lub link do karty uruchamia odtwarzacz bez połączenia PeerJS. Wybierane jest preferowane źródło, a jeśli karta go nie zawiera — dostępny serwis. Powrót do skanowania lub wyjście z widoku niszczy osadzony odtwarzacz; aparat jest zwalniany po odczycie karty. Przy zablokowanym automatycznym starcie użytkownik uruchamia dźwięk przyciskiem. Spotify Embed nie gwarantuje pełnego nagrania ani autoplay; [dokumentacja iFrame API](https://developer.spotify.com/documentation/embeds/references/iframe-api).
 
-Osadzone kontrolki dostawcy pozostają widoczne i mogą ujawnić odpowiedź na muzyczną zagadkę. W trybie drugiego ekranu skaner nadal pokazuje tylko rewers oraz pytanie. Pełny lokalny odtwarzacz Spotify z własnymi kontrolkami wymagałby osobnej integracji [Web Playback SDK](https://developer.spotify.com/documentation/web-playback-sdk/tutorials/getting-started), konta Premium i obsługi ograniczeń mobilnego autoplay.
+Osadzone kontrolki dostawcy pozostają widoczne i mogą ujawnić odpowiedź na muzyczną zagadkę. W trybie drugiego ekranu skaner nadal pokazuje tylko rewers oraz pytanie.
 
-**Import playlist jest osobny od odtwarzania widgetu.** Wymaga Client ID: użytkownik może wpisać własny w **Ustawienia → Ustawienia Spotify**, a administrator opcjonalnie ustawić domyślny jako sekret repozytorium Actions `SPOTIFY_CLIENT_ID`. Adres powrotu w Spotify Developer Dashboard musi odpowiadać adresowi strony, np. `https://artifexet.github.io/Hiciarz/` (sprawdź wielkość liter i końcowy ukośnik). Lokalnie używaj `http://127.0.0.1:5173/Hiciarz/`; Spotify nie dopuszcza `localhost` jako Redirect URI. [Wymagania adresu powrotu](https://developer.spotify.com/documentation/web-api/concepts/redirect_uri). Logowanie używa PKCE; Client Secret nie występuje. Token jest w sessionStorage i znika po zakończeniu sesji przeglądarki. Import pyta o dopisanie na końcu lub zastąpienie listy. Pobiera strony playlisty do 2000 utworów. Zakres playlist i dostęp kont zależą od uprawnień integracji Spotify.
+## Dane nagrania bez logowania
 
-Przy dopisywaniu zachowujemy istniejące rekordy i poprawki. Duplikaty identyfikujemy po źródle Spotify albo YouTube. Utwory z różnych serwisów bez wspólnego identyfikatora mogą wymagać ręcznego uporządkowania. Rok z albumu Spotify jest oznaczany do sprawdzenia.
+W formularzu dodawania karty link Spotify wskazuje konkretne nagranie. Publiczne oEmbed dostarcza tytuł podglądu i oficjalny iframe; odsłuch odbywa się w ramce Spotify. Nie pobieramy plików audio i nie korzystamy ze Spotify Web API.
 
-Obecna integracja w trybie deweloperskim Spotify pobiera zawartość playlist, których zalogowana osoba jest właścicielem lub współtwórcą. Inne playlisty, nawet publiczne, nie udostępniają jej listy utworów. Samo zapisanie playlisty w Bibliotece tego nie zmienia. [Zasady dostępu Spotify](https://developer.spotify.com/documentation/web-api/tutorials/february-2026-migration-guide).
+MusicBrainz służy do wyszukania metadanych i roku pierwszego wydania konkretnej wersji nagrania. Wyniki mogą zawierać wykonania koncertowe, remiksy lub inne nagrania o takim samym tytule. Użytkownik zatwierdza dopasowanie i może uzupełnić dane ręcznie. MusicBrainz nie udostępnia audio. Publiczny odczyt nie wymaga konta ani klucza API; aplikacja ogranicza częstotliwość zapytań. [MusicBrainz API](https://musicbrainz.org/doc/MusicBrainz_API) · [Limity](https://musicbrainz.org/doc/MusicBrainz_API/Rate_Limiting).
+
+Import JSON/CSV zachowuje dotychczasowy format i limit 2000 utworów. Przy dopisywaniu zachowujemy istniejące rekordy i poprawki. Duplikaty identyfikujemy po źródle Spotify albo YouTube. Linki do całych playlist nie są pobierane przez API.
 
 Sprawdzenie linków przez oEmbed potwierdza dostępność metadanych, nie gwarantuje odtwarzania ani dostępności w konkretnym regionie. Brak odpowiedzi może wynikać z CORS, limitów lub sieci.
 
@@ -78,7 +65,7 @@ Przy dodawaniu tekstu uzupełnij oba pliki słownika z odpowiedniej grupy oraz u
 
 ## Pliki dla AI
 
-[Instrukcja przygotowania playlisty](playlist-guide.md) i [gotowy prompt do skopiowania](playlist-prompt.txt) są dostępne w repozytorium. W etapie **Utwory** rozwiń **Import i pomoc AI** i wybierz **Poproś AI o pomoc w przygotowaniu playlisty**. Przycisk kopiuje instrukcję; wklej ją do swojego AI, a wygenerowany plik JSON wczytaj w tym samym obszarze. Import plików oraz własnego tła obsługuje również przeciąganie i upuszczanie.
+[Instrukcja przygotowania playlisty](playlist-guide.md) i [gotowy prompt do skopiowania](playlist-prompt.txt) są dostępne w repozytorium. W etapie **Utwory** wybierz **Przygotuj talię z AI**. Przycisk kopiuje instrukcję; wklej ją do swojego AI, a gotowy plik JSON wczytaj w **Wczytaj playlistę z pliku**. Przed drukiem sprawdź źródła i lata nagrań. Import plików oraz własnego tła obsługuje również przeciąganie i upuszczanie.
 
 Minimalna lista JSON:
 
@@ -107,15 +94,15 @@ Instrukcja dla AI: „Przygotuj tablicę JSON według powyższego schematu. Rok 
 
 ### Nawigacja, ustawienia i instalacja
 
-Interfejs korzysta z tych samych widoków w przeglądarce i PWA. Na telefonie stały dolny pasek zawiera **Skaner**, **Bingo**, **Talie**, **Dźwięk** i **Więcej**. Start jest dostępny przez logo lub **Więcej → Start**; menu **Więcej** zawiera również drugi ekran, ustawienia i pomoc. Desktop używa bocznego paska, w którym **Dźwięk** jest dostępny pod listą widoków. Menu **Opcje talii** przy nazwie talii skupia przełączanie, tworzenie, import, eksport i usuwanie. Etap **Utwory** zawiera gotowe przykłady oraz zwijany obszar **Import i pomoc AI**. Tworzenie ma jedną sekwencję **Utwory → Wygląd → Druk**; okno wydruku pokazuje podsumowanie parametrów i dwie akcje: pobranie PDF albo otwarcie podglądu.
+Interfejs korzysta z tych samych widoków w przeglądarce i PWA. Na telefonie stały dolny pasek zawiera **Skaner**, **Bingo**, **Talie**, **Dźwięk** i **Więcej**. Start jest dostępny przez logo lub **Więcej → Start**; menu **Więcej** zawiera również drugi ekran, ustawienia i pomoc. Desktop używa bocznego paska, w którym **Dźwięk** jest dostępny pod listą widoków. Menu **Opcje talii** przy nazwie talii skupia przełączanie, tworzenie, import, eksport i usuwanie. Etap **Utwory** zawiera widoczne wejście **Przygotuj talię z AI**, gotowe przykłady oraz zwijany obszar **Wczytaj playlistę z pliku**. Tworzenie ma jedną sekwencję **Utwory → Wygląd → Druk**; okno wydruku pokazuje podsumowanie parametrów i dwie akcje: pobranie PDF albo otwarcie podglądu.
 
-Przycisk **Dźwięk** otwiera wspólny panel ustawień odtwarzania. Na telefonie ma formę szuflady, a na komputerze trzy duże karty: **Na tym urządzeniu**, **Spotify Connect** i **Drugi ekran**. Służy do wyboru miejsca odtwarzania i urządzenia Spotify bez przechodzenia do innego widoku; jest dostępny także podczas Bingo. Konfiguracja Spotify pokazuje dwa warianty połączenia obok siebie na szerokim ekranie: domyślne, jeśli jest dostępne, i własne.
+Przycisk **Dźwięk** otwiera wspólny panel ustawień odtwarzania. Na telefonie ma formę szuflady, a na komputerze pokazuje **Na tym urządzeniu** i **Drugi ekran**. Wybór miejsca odtwarzania jest dostępny także podczas Bingo.
 
 Na telefonie skaner i Bingo zajmują dostępną wysokość ekranu (`100dvh`) z uwzględnieniem bezpiecznych obszarów systemu i dolnej nawigacji. Skaner ma aparat na całej szerokości, dolny przycisk startu/zatrzymania i wybór odtwarzania w górnym pasku. Bingo pokazuje poziom, kategorię i akcje gry; pomoc i druk są osobnymi szufladami obsługiwanymi przez historię aplikacji. Układ poziomy przenosi kontrolki obok aparatu lub kategorii. Błędy, powiększony tekst i osadzony odtwarzacz mogą rozszerzyć zawartość do przewijania.
 
 Widok jest zapisany w parametrze `?view=` (`home`, `scanner`, `editor`, `bingo`, `player`); brak lub nieznana wartość oznacza start. Zmiana widoku zachowuje pozostałe parametry oraz hash QR. Modale mają oznaczony stan `history.state`, więc systemowy lub przeglądarkowy **Wstecz** zamyka okno albo wraca do poprzedniego widoku. Przy zmianie widoku aplikacja sprząta stan skanera i odtwarzania, zamiast polegać na przeładowaniu strony.
 
-**Ustawienia** zawierają język, wygląd strony, konto i konfigurację Spotify, instalację, informacje o zapisie lokalnym oraz wersję i sprawdzanie aktualizacji. Wsparcie projektu jest zwykłym linkiem w ustawieniach.
+**Ustawienia** zawierają język, wygląd strony, instalację, informacje o zapisie lokalnym oraz wersję i sprawdzanie aktualizacji. Wsparcie projektu jest zwykłym linkiem w ustawieniach.
 
 Przycisk instalacji korzysta z zapamiętanego zdarzenia `beforeinstallprompt` i otwiera natywny prompt dopiero po kliknięciu. Jeśli przeglądarka iOS udostępnia instalację ręczną, przycisk pokazuje instrukcję **Udostępnij → Do ekranu początkowego → Dodaj**. W trybie zainstalowanej aplikacji propozycja instalacji jest ukryta. Manifest używa `display: standalone`, a obsługujące je systemy mogą pokazać skróty **Skanuj karty** (`?view=scanner`) i **Twórz karty** (`?view=editor`). Wszystkie ścieżki uwzględniają `BASE_PATH`.
 
@@ -129,7 +116,7 @@ Gdy widoczny jest komunikat **Wczytywanie tła…**, eksport jest niedostępny. 
 
 ### Format kodów kart
 
-Nowe karty używają krótkiego formatu `#2<skórka>s<Spotify ID>y<YouTube ID>`; obecne jest co najmniej jedno źródło. Kody skórek: `c` klasyczny, `m` minimalistyczny, `x` świąteczny, `w` zimowy, `f` rybki. Dane utworu, lokalny identyfikator rekordu i Client ID nie są zapisywane w QR. Przykładowa karta Spotify ma 62 znaki wraz z adresem głównej publikacji. Korekcja błędów M i czteromodułowy margines pozostają zachowane.
+Nowe karty używają krótkiego formatu `#2<skórka>s<Spotify ID>y<YouTube ID>`; obecne jest co najmniej jedno źródło. Kody skórek: `c` klasyczny, `m` minimalistyczny, `x` świąteczny, `w` zimowy, `f` rybki. Dane utworu i lokalny identyfikator rekordu nie są zapisywane w QR. Przykładowa karta Spotify ma 62 znaki wraz z adresem głównej publikacji. Korekcja błędów M i czteromodułowy margines pozostają zachowane.
 
 Czytnik nadal obsługuje starsze karty `#card=<Base64 JSON>`. Wcześniejsze wydruki nie wymagają wymiany. Nowa karta jest dopasowywana do lokalnej talii po źródłach i skórce, dzięki czemu dostępny jest jej własny rewers i preset druku. QR pozostaje samodzielny: do wskazania nagrania nie wymaga wspólnej bazy kart.
 
@@ -139,7 +126,7 @@ Gotowe listy znajdują się w folderze [examples/playlists](../examples/playlist
 
 Gdy nowa wersja aplikacji jest gotowa, pojawi się przycisk **Wczytaj nową wersję**. Przed odświeżeniem aplikacja zapisuje talie. W **Ustawieniach** znajdziesz numer wersji i **Sprawdź aktualizacje**. Aktualizacja nie wymaga czyszczenia danych strony.
 
-Talie i zdjęcia: IndexedDB. Preferencje wyglądu, języka i miejsca odtwarzania: localStorage. Dane sesji OAuth: sessionStorage. Eksporty nie zawierają tokenów. Czyszczenie danych strony usuwa lokalne talie — zapisuj JSON. Przy awarii zapisu aplikacja wyświetla komunikat. Kreator i eksport PDF korzystają z zasobów lokalnych po zapisaniu ich przez service worker; muzyka, API i parowanie wymagają sieci. Service worker zapisuje również przykładowe talie i dokumentację źródeł nagrań. Przy utracie połączenia interfejs pokazuje informację o dostępnej edycji i druku offline; stan `navigator.onLine` jest wskazówką, nie gwarancją dostępności serwisów zewnętrznych.
+Talie i zdjęcia: IndexedDB. Preferencje wyglądu, języka i miejsca odtwarzania: localStorage. Nie zapisujemy sesji OAuth ani tokenów Spotify. Czyszczenie danych strony usuwa lokalne talie — zapisuj JSON. Przy awarii zapisu aplikacja wyświetla komunikat. Kreator i eksport PDF korzystają z zasobów lokalnych po zapisaniu ich przez service worker; muzyka, API i parowanie wymagają sieci. Service worker zapisuje również przykładowe talie i dokumentację źródeł nagrań. Przy utracie połączenia interfejs pokazuje informację o dostępnej edycji i druku offline; stan `navigator.onLine` jest wskazówką, nie gwarancją dostępności serwisów zewnętrznych.
 
 Nie ma kont Hiciarza, analityki ani backendu przechowującego talie. Po wybraniu źródła przeglądarka kontaktuje się z tym dostawcą; parowanie kontaktuje się z usługami PeerJS/ICE.
 

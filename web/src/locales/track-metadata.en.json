@@ -1,0 +1,9 @@
+{
+  "trackMetadata.rateLimit": "{{service}} is limiting requests. Try again later or enter the details manually.",
+  "trackMetadata.unavailable": "{{service}} did not provide the details. Try again or enter them manually.",
+  "trackMetadata.timeout": "{{service}} did not respond in time. Try again or enter the details manually.",
+  "trackMetadata.network": "Could not read details from {{service}}. Check your connection or enter them manually.",
+  "trackMetadata.missingTitle": "Spotify did not return a title for this recording. Enter it manually.",
+  "trackMetadata.searchTooLong": "The title and artist must each be no longer than 200 characters.",
+  "trackMetadata.invalidRecordings": "Could not read MusicBrainz suggestions. Enter the year manually."
+}
