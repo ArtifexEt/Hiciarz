@@ -45,6 +45,8 @@ class HiciarzViewModel(application: Application) : AndroidViewModel(application)
     private var initializing = true
     private var pendingAction: AppAction? = null
     private var clipDeadline: Long? = null
+    private var standaloneScanSkin: CardSkin? = null
+    private var bingoScanSkin: CardSkin? = null
 
     init {
         // The APK owns its Spotify configuration; hidden legacy overrides must not break login.
@@ -74,13 +76,14 @@ class HiciarzViewModel(application: Application) : AndroidViewModel(application)
                 val restoredQuiz = restoreQuiz(active)
                 val mode = runCatching { CardlessMode.valueOf(prefs.getString("cardlessMode", null).orEmpty()) }
                     .getOrDefault(CardlessMode.BINGO)
+                bingoScanSkin = if (bingoStage == BingoStage.PLAYING)
+                    CardSkin.fromId(prefs.getString("bingoActiveSkin", "").orEmpty()) else null
                 mutableState.update { it.copy(decks = decks, activeDeckId = activeId, busy = false,
                     bingoHistory = history, bingoSong = currentBingo, bingoLevel = level, question = question,
                     bingoStage = bingoStage, bingoRound = prefs.getInt("bingoRound", history.size).coerceAtLeast(0),
                     bingoAnswerRevealed = currentBingo != null && prefs.getBoolean("bingoRevealed", false),
                     cardlessMode = mode, timeline = restoredTimeline, quiz = restoredQuiz,
-                    scannedSkin = if (mode == CardlessMode.BINGO && bingoStage == BingoStage.PLAYING)
-                        CardSkin.fromId(prefs.getString("bingoActiveSkin", "").orEmpty()) else null) }
+                    scannedSkin = if (mode == CardlessMode.BINGO) bingoScanSkin else null) }
             } catch (_: Exception) {
                 val examples = repository.current()
                 mutableState.update { it.copy(decks = examples, activeDeckId = examples.firstOrNull()?.id,
@@ -144,7 +147,12 @@ class HiciarzViewModel(application: Application) : AndroidViewModel(application)
                     AppTab.BINGO -> it.cardlessMode == CardlessMode.BINGO && it.bingoStage == BingoStage.SCAN
                     else -> false
                 }
-                it.copy(tab = action.tab, scannerEnabled = scanReady)
+                val skin = when (action.tab) {
+                    AppTab.SCAN -> standaloneScanSkin
+                    AppTab.BINGO -> if (it.cardlessMode == CardlessMode.BINGO) bingoScanSkin else null
+                    else -> it.scannedSkin
+                }
+                it.copy(tab = action.tab, scannerEnabled = scanReady, scannedSkin = skin)
             }
             AppAction.ConnectSpotify -> playback?.connect()
             AppAction.DisconnectSpotify -> {
@@ -175,6 +183,7 @@ class HiciarzViewModel(application: Application) : AndroidViewModel(application)
             }
             AppAction.ScanNext -> {
                 pauseOwned()
+                standaloneScanSkin = null
                 mutableState.update { it.copy(currentSong = null, scannedSkin = null,
                     answerRevealed = false, scannerEnabled = true) }
             }
@@ -217,6 +226,7 @@ class HiciarzViewModel(application: Application) : AndroidViewModel(application)
             }
             AppAction.ResetBingo -> {
                 pauseOwned()
+                bingoScanSkin = null
                 mutableState.update { it.copy(bingoHistory = emptyList(), bingoSong = null, bingoAnswerRevealed = false,
                     bingoStage = BingoStage.IDLE, bingoRound = 0, scannedSkin = null) }
                 saveBingo()
@@ -228,6 +238,7 @@ class HiciarzViewModel(application: Application) : AndroidViewModel(application)
             is AppAction.SetBingoLevel -> {
                 if (state.value.bingoLevel != action.level) {
                     pauseOwned()
+                    bingoScanSkin = null
                     mutableState.update { it.copy(bingoLevel = action.level, bingoHistory = emptyList(), bingoSong = null,
                         bingoAnswerRevealed = false, bingoStage = BingoStage.IDLE, bingoRound = 0, scannedSkin = null) }
                     saveBingo()
@@ -235,7 +246,11 @@ class HiciarzViewModel(application: Application) : AndroidViewModel(application)
             }
             is AppAction.SetCardlessMode -> {
                 if (state.value.cardlessMode != action.mode) pauseOwned()
-                mutableState.update { it.copy(cardlessMode = action.mode, scannedSkin = null) }; saveGames()
+                mutableState.update { it.copy(cardlessMode = action.mode,
+                    scannedSkin = if (action.mode == CardlessMode.BINGO) bingoScanSkin else null,
+                    scannerEnabled = if (it.tab == AppTab.BINGO)
+                        action.mode == CardlessMode.BINGO && it.bingoStage == BingoStage.SCAN
+                        else it.scannerEnabled) }; saveGames()
             }
             AppAction.StartTimeline -> startTimeline()
             is AppAction.ChooseTimelineGap -> {
@@ -259,6 +274,8 @@ class HiciarzViewModel(application: Application) : AndroidViewModel(application)
             }
             is AppAction.SetCardSkin -> {
                 updateSettings(state.value.settings.copy(cardSkin = action.skin))
+                standaloneScanSkin = null
+                bingoScanSkin = null
                 mutableState.update { it.copy(scannedSkin = null) }
                 saveBingo()
             }
@@ -295,13 +312,17 @@ class HiciarzViewModel(application: Application) : AndroidViewModel(application)
                     gameMode = card.gameMode ?: GameMode.CLASSIC)
             val scanned = song.copy(skin = card.skin ?: song.skin)
             if (bingo) {
+                bingoScanSkin = card.skin
                 mutableState.update { it.copy(bingoSong = scanned, bingoHistory = (it.bingoHistory + scanned).takeLast(500),
                     bingoStage = BingoStage.PLAYING, bingoAnswerRevealed = !it.settings.hideAnswers,
                     scannedSkin = card.skin, scannerEnabled = false, message = null) }
                 saveBingo()
-            } else mutableState.update { it.copy(tab = AppTab.SCAN, currentSong = scanned,
-                scannedSkin = card.skin, scannerEnabled = false,
-                answerRevealed = !it.settings.hideAnswers, message = null) }
+            } else {
+                standaloneScanSkin = card.skin
+                mutableState.update { it.copy(tab = AppTab.SCAN, currentSong = scanned,
+                    scannedSkin = card.skin, scannerEnabled = false,
+                    answerRevealed = !it.settings.hideAnswers, message = null) }
+            }
             play(song)
         } catch (error: Exception) {
             mutableState.update { it.copy(message = (error as? DeckFormatException)?.code ?: "invalid_qr", scannerEnabled = false) }
@@ -317,6 +338,7 @@ class HiciarzViewModel(application: Application) : AndroidViewModel(application)
 
     private fun drawBingo(startScan: Boolean = false) {
         pauseOwned()
+        bingoScanSkin = null
         val categories = BingoRules.categories(state.value.bingoLevel)
         mutableState.update { it.copy(tab = if (startScan) AppTab.BINGO else it.tab,
             cardlessMode = CardlessMode.BINGO, bingoSong = null,
@@ -330,6 +352,7 @@ class HiciarzViewModel(application: Application) : AndroidViewModel(application)
     private fun beginBingoScan() {
         if (state.value.bingoStage !in listOf(BingoStage.RULE, BingoStage.PLAYING)) return
         pauseOwned()
+        bingoScanSkin = null
         mutableState.update { it.copy(tab = AppTab.BINGO, cardlessMode = CardlessMode.BINGO,
             bingoStage = BingoStage.SCAN, bingoSong = null, bingoAnswerRevealed = false,
             scannerEnabled = true, scannedSkin = null, message = null) }
@@ -386,7 +409,6 @@ class HiciarzViewModel(application: Application) : AndroidViewModel(application)
     private fun resetGames(state: AppState): AppState = state.copy(
         cardlessMode = if (state.cardlessMode == CardlessMode.BINGO) CardlessMode.BINGO else defaultCardlessMode(state.activeDeck),
         timeline = TimelineState(), quiz = QuizState(),
-        scannedSkin = null,
     )
 
     private fun play(song: Song) {
@@ -454,7 +476,7 @@ class HiciarzViewModel(application: Application) : AndroidViewModel(application)
             .putString("bingoScans", JSONArray(value.bingoHistory.map(::savedSong)).toString())
             .putString("bingoCurrentScan", value.bingoSong?.let { savedSong(it).toString() })
             .putString("bingoStage", value.bingoStage.name).putInt("bingoRound", value.bingoRound)
-            .putString("bingoActiveSkin", value.scannedSkin?.id.orEmpty())
+            .putString("bingoActiveSkin", bingoScanSkin?.id.orEmpty())
             .putBoolean("bingoRevealed", value.bingoAnswerRevealed).apply()
     }
 

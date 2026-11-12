@@ -1,6 +1,7 @@
 package pl.artifex.hiciarz;
 
 import android.Manifest;
+import android.accessibilityservice.AccessibilityServiceInfo;
 import android.app.UiAutomation;
 import android.content.Intent;
 import android.content.pm.PackageInfo;
@@ -61,17 +62,30 @@ public final class ScannerReleaseSmokeTest {
 
     @Test public void minifiedCameraReadsAnActualQrCodeAndReopensAfterRotation() throws Exception {
         assertRegistrarsConstructible();
-        automation.grantRuntimePermission(target.getPackageName(), Manifest.permission.CAMERA);
+        assertTrue("Revoke CAMERA before instrumentation so the first scan tests the real permission flow",
+                target.checkSelfPermission(Manifest.permission.CAMERA) != PackageManager.PERMISSION_GRANTED);
+        AccessibilityServiceInfo accessibility = automation.getServiceInfo();
+        accessibility.flags |= AccessibilityServiceInfo.FLAG_REPORT_VIEW_IDS;
+        automation.setServiceInfo(accessibility);
         target.getSharedPreferences("hiciarz", 0).edit()
-                .putString("language", "en").putBoolean("hideAnswers", false).commit();
+                .putString("language", "en").putBoolean("hideAnswers", false)
+                .putString("cardSkin", "classic").putBoolean("followCardSkin", true).commit();
         shell("logcat -c");
         launch();
         waitUntil("Scanner tab must be available", 20_000,
                 () -> findAndClick(labels("Scan", "Skaner", "Skanuj")));
+        waitUntil("The scanner must offer its camera permission action", 20_000,
+                () -> findAndClick(labels("Enable camera", "Włącz aparat")));
+        waitUntil("Android must offer foreground camera access", 20_000,
+                this::acceptAndroidCameraPermission);
+        waitUntil("The camera request must grant access to the real release app", 10_000,
+                () -> target.checkSelfPermission(Manifest.permission.CAMERA) == PackageManager.PERMISSION_GRANTED);
         waitUntil("ML Kit must process a real frame in the minified APK", 30_000,
                 () -> readyCount() > 0);
         waitUntil("The camera must decode the fixture and show its actual song", 20_000,
                 () -> containsText("Dean Martin") && containsText("1959"));
+        waitUntil("The skin encoded in the actual QR must replace the chosen Classic theme", 10_000,
+                () -> containsText("Disco"));
 
         // Recreate the real release Activity and re-arm its scanner from the card.
         automation.setRotation(UiAutomation.ROTATION_FREEZE_90);
@@ -87,7 +101,7 @@ public final class ScannerReleaseSmokeTest {
                 () -> findAndClickOrScroll(labels("Scan next card", "Next card", "Skanuj kolejną kartę", "Następna karta")));
         scrollToTop();
         waitUntil("A new camera session must process frames after rotation", 30_000,
-                () -> readyCount() >= 2 && containsText("1959"));
+                () -> readyCount() >= 2 && containsText("1959") && containsText("Disco"));
     }
 
     @SuppressWarnings("deprecation")
@@ -131,6 +145,19 @@ public final class ScannerReleaseSmokeTest {
     private boolean containsText(String expected) {
         return walk(automation.getRootInActiveWindow(), node ->
                 node.getText() != null && node.getText().toString().contains(expected));
+    }
+
+    private boolean acceptAndroidCameraPermission() {
+        return walk(automation.getRootInActiveWindow(), node -> {
+            String resource = node.getViewIdResourceName();
+            CharSequence owner = node.getPackageName();
+            if (resource == null || owner == null ||
+                    !(owner.toString().endsWith(".permissioncontroller") ||
+                            owner.toString().endsWith(".packageinstaller"))) return false;
+            if (!(resource.endsWith(":id/permission_allow_foreground_only_button") ||
+                    resource.endsWith(":id/permission_allow_button"))) return false;
+            return node.isClickable() && node.performAction(AccessibilityNodeInfo.ACTION_CLICK);
+        });
     }
 
     private boolean findAndClick(Set<String> names) {

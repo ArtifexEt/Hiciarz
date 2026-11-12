@@ -50,7 +50,8 @@ internal fun GamesScreen(state: AppState, copy: UiCopy, onAction: (AppAction) ->
         }
         if (!active && state.cardlessMode != CardlessMode.BINGO) DeckSelector(state.activeDeck, copy, onDeck)
     }
-    if (options) ModalBottomSheet(onDismissRequest = { options = false }) {
+    if (options) ModalBottomSheet(onDismissRequest = { options = false },
+        sheetState = rememberModalBottomSheetState(skipPartiallyExpanded = true)) {
         GameOptionsSheet(state, copy, onAction,
             onLevel = selectLevel,
             onDeck = { options = false; onDeck() },
@@ -446,7 +447,8 @@ private fun BingoRuleLabel(state: AppState, copy: UiCopy) {
 @Composable
 private fun GameIntro(mode: CardlessMode, copy: UiCopy, title: String, detail: String) {
     Column(verticalArrangement = Arrangement.spacedBy(15.dp)) {
-        Box(Modifier.fillMaxWidth().height(152.dp).background(MaterialTheme.colorScheme.primaryContainer, PanelShape),
+        Box(Modifier.fillMaxWidth().height(if (mode == CardlessMode.BINGO) 104.dp else 152.dp)
+            .background(MaterialTheme.colorScheme.primaryContainer, PanelShape),
             contentAlignment = Alignment.Center) {
             when (mode) {
                 CardlessMode.TIMELINE -> TinyTimelinePreview(copy)

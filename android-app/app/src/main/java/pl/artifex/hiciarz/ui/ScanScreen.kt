@@ -139,7 +139,7 @@ internal fun CameraViewport(enabled: Boolean, copy: UiCopy, reservedHeight: Dp =
     }
     val preferredHeight = (LocalConfiguration.current.screenHeightDp * .48f).coerceIn(230f, 470f).dp
     val availableHeight = LocalPaneHeight.current?.let { (it - 36.dp - reservedHeight).coerceAtLeast(180.dp) }
-    val height = minOf(preferredHeight, availableHeight ?: preferredHeight)
+    val height = availableHeight ?: preferredHeight
     Box(Modifier.fillMaxWidth().height(height).clip(RoundedCornerShape(28.dp))
         .background(Color(0xFF22232D)).testTag("camera-preview"), contentAlignment = Alignment.Center) {
         if (permission && enabled && error == null) {

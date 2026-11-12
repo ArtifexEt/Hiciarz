@@ -6,6 +6,21 @@ Zmiany kolejnych wersji aplikacji Android. Opis GitHub Release jest pobierany z 
 
 <!-- Zapisuj tutaj zmiany, które nie trafiły jeszcze do sekcji konkretnej wersji. -->
 
+## [0.2.0-alpha.3] - 2026-11-12
+
+### Obsługa i wygląd
+
+- Wybór gry, talii i skórki otwiera się od razu w rozwiniętym panelu. Start Bingo zajmuje mniej miejsca, a aparat wykorzystuje wysokość swojego panelu na tablecie i rozłożonym ekranie.
+- Skaner i Bingo zachowują osobne skórki QR. Przełączanie zakładek i trybów nie przenosi wyglądu jednej karty na drugą; zapis Bingo zachowuje motyw po ponownym uruchomieniu.
+- Powrót z gry bez kart do trwającego skanowania Bingo ponownie przygotowuje aparat i zachowuje pytanie.
+- Pomoc „Zgadnij” opisuje także rozpoznawanie tytułu i wykonawcy oraz krótsze talie.
+- Uaktualniono dokumentację przebiegu Bingo na telefonie i tablecie oraz stan realizacji wcześniejszych uwag.
+
+### Weryfikacja
+
+- Trzy nowe regresje sprawdzają niezależność skórek, zapis rozgrywki, ręczny wybór wyglądu i powrót do skanowania Bingo.
+- Próba aparatu w zoptymalizowanym APK obejmuje pierwsze udzielenie zgody oraz sprawdzenie skórki Disco po odczycie QR.
+
 ## [0.2.0-alpha.2] - 2026-11-12
 
 ### Bingo na większym ekranie

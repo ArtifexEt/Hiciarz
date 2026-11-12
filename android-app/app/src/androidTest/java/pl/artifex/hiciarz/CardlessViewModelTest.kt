@@ -216,6 +216,72 @@ class CardlessViewModelTest {
         assertTrue(state().settings.autoPause)
     }
 
+    @Test fun eachScanningFlowKeepsItsOwnQrSkinAcrossTabsModesAndBingoRestore() {
+        dispatch(AppAction.ScanCode("https://example.org/#2xs0000000000000000000000"))
+        val standaloneSong = state().currentSong
+        assertEquals(CardSkin.CHRISTMAS, state().activeSkin)
+        dispatch(AppAction.SelectTab(AppTab.BINGO))
+        dispatch(AppAction.DrawBingo)
+        dispatch(AppAction.BeginBingoScan)
+        dispatch(AppAction.ScanCode("https://example.org/#2fs0000000000000000000001"))
+        val bingoSong = state().bingoSong
+        assertEquals(CardSkin.FISH, state().activeSkin)
+
+        dispatch(AppAction.SelectTab(AppTab.SCAN))
+        assertEquals(standaloneSong, state().currentSong)
+        assertEquals(CardSkin.CHRISTMAS, state().activeSkin)
+        dispatch(AppAction.SelectTab(AppTab.BINGO))
+        assertEquals(bingoSong, state().bingoSong)
+        assertEquals(CardSkin.FISH, state().activeSkin)
+        dispatch(AppAction.SetFollowCardSkin(false))
+        assertEquals(CardSkin.CLASSIC, state().activeSkin)
+        dispatch(AppAction.SelectTab(AppTab.SCAN))
+        assertEquals(CardSkin.CLASSIC, state().activeSkin)
+        dispatch(AppAction.SetFollowCardSkin(true))
+        assertEquals(CardSkin.CHRISTMAS, state().activeSkin)
+
+        dispatch(AppAction.SelectTab(AppTab.BINGO))
+        dispatch(AppAction.SetCardlessMode(CardlessMode.TIMELINE))
+        assertNull(state().scannedSkin)
+        assertEquals(CardSkin.CLASSIC, state().activeSkin)
+        recreate()
+        assertEquals(CardlessMode.TIMELINE, state().cardlessMode)
+        assertEquals(CardSkin.CLASSIC, state().activeSkin)
+        dispatch(AppAction.SetCardlessMode(CardlessMode.BINGO))
+        assertEquals(bingoSong, state().bingoSong)
+        assertEquals(CardSkin.FISH, state().activeSkin)
+        recreate()
+        assertEquals(CardSkin.FISH, state().activeSkin)
+        dispatch(AppAction.SelectDeck(state().decks.first { it.id != state().activeDeckId }.id))
+        assertEquals("Changing a deck keeps the independent printed-card round", bingoSong, state().bingoSong)
+        assertEquals(CardSkin.FISH, state().activeSkin)
+    }
+
+    @Test fun choosingADefaultSkinClearsBothPreviousQrOverridesUntilAnotherScan() {
+        dispatch(AppAction.ScanCode("https://example.org/#2xs0000000000000000000000"))
+        dispatch(AppAction.SelectTab(AppTab.BINGO))
+        dispatch(AppAction.DrawBingo)
+        dispatch(AppAction.BeginBingoScan)
+        dispatch(AppAction.ScanCode("https://example.org/#2fs0000000000000000000001"))
+        dispatch(AppAction.SelectTab(AppTab.SETTINGS))
+        dispatch(AppAction.SetCardSkin(CardSkin.MIXTAPE))
+        dispatch(AppAction.SelectTab(AppTab.SCAN))
+        assertEquals(CardSkin.MIXTAPE, state().activeSkin)
+        dispatch(AppAction.SelectTab(AppTab.BINGO))
+        assertEquals(CardSkin.MIXTAPE, state().activeSkin)
+        recreate()
+        assertEquals(CardSkin.MIXTAPE, state().activeSkin)
+        dispatch(AppAction.BeginBingoScan)
+        dispatch(AppAction.ScanCode("https://example.org/#2ds0000000000000000000002"))
+        assertEquals(CardSkin.DISCO, state().activeSkin)
+        dispatch(AppAction.ResetBingo)
+        dispatch(AppAction.SelectTab(AppTab.SCAN))
+        dispatch(AppAction.SelectTab(AppTab.BINGO))
+        assertEquals(CardSkin.MIXTAPE, state().activeSkin)
+        recreate()
+        assertEquals(CardSkin.MIXTAPE, state().activeSkin)
+    }
+
     @Test fun spotifyConfigurationComesFromTheApkInsteadOfAnInvisibleLegacyOverride() {
         prefs.edit().putString("clientId", "f".repeat(32)).commit()
         recreate()
@@ -287,6 +353,33 @@ class CardlessViewModelTest {
         dispatch(AppAction.SelectTab(AppTab.SCAN))
         assertFalse(state().scannerEnabled)
         assertEquals(standaloneSong, state().currentSong)
+    }
+
+    @Test fun pendingBingoScannerRearmsWhenReturningThroughTheCardlessGamePicker() {
+        dispatch(AppAction.DrawBingo)
+        dispatch(AppAction.BeginBingoScan)
+        val rule = state().question
+        val round = state().bingoRound
+        dispatch(AppAction.SelectTab(AppTab.DECKS))
+        assertFalse(state().scannerEnabled)
+        dispatch(AppAction.SetCardlessMode(CardlessMode.TIMELINE))
+        assertEquals(AppTab.DECKS, state().tab)
+        assertFalse("A mode choice outside the game must not start its camera", state().scannerEnabled)
+        dispatch(AppAction.SelectTab(AppTab.BINGO))
+        assertFalse(state().scannerEnabled)
+
+        dispatch(AppAction.SetCardlessMode(CardlessMode.BINGO))
+        assertEquals(BingoStage.SCAN, state().bingoStage)
+        assertEquals(rule, state().question)
+        assertEquals(round, state().bingoRound)
+        assertTrue("Returning to the pending Bingo scan must rearm its camera", state().scannerEnabled)
+        dispatch(AppAction.ScanCameraCode("spotify:track:0000000000000000000000",
+            bingo = true, bingoRound = round))
+        assertEquals(BingoStage.PLAYING, state().bingoStage)
+        assertEquals("0000000000000000000000", state().bingoSong?.spotifyId)
+        assertEquals(rule, state().question)
+        assertEquals(round, state().bingoRound)
+        assertTrue(state().playback.isPlaying)
     }
 
     private fun state() = model.state.value

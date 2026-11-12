@@ -23,8 +23,12 @@ The fixture is only used by tests and is not packaged in the released applicatio
 ```sh
 ./gradlew :app:assembleRelease :app:assembleDebugAndroidTest \
   -PhiciarzTestRunner=pl.artifex.hiciarz.ScannerReleaseSmokeInstrumentation
+adb shell pm revoke pl.artifex.hiciarz android.permission.CAMERA
+adb shell pm clear-permission-flags pl.artifex.hiciarz android.permission.CAMERA user-set user-fixed
 adb shell am instrument -w -r \
   pl.artifex.hiciarz.test/pl.artifex.hiciarz.ScannerReleaseSmokeInstrumentation
 ```
 
 The AndroidX runner assumes unminified Kotlin runtime names, so it cannot safely instrument a separately optimized release APK. This runner uses Android framework APIs and leaves production shrinking unchanged. A successful run ends with `OK (2 tests)`.
+
+Revoke permission before starting instrumentation: the test deliberately begins without camera access, presses the app's camera button and accepts Android's foreground permission prompt. It then checks a real decoded song, the QR's Disco skin, rotation and another scan with the existing permission. Revoking permission during instrumentation would terminate the app under test.

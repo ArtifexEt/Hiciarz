@@ -2,26 +2,35 @@
 
 Prace obejmują aplikację Android. Funkcje kreatora, drukowania i PWA pozostają na webie. Prywatny klucz podpisujący pozostaje w GitHub Secrets.
 
-## Zadania
+## Wdrożone i opublikowane
 
-- [ ] Naprawić uruchamianie skanera w minifikowanym APK i sprawdzić rzeczywiste klatki CameraX/ML Kit, również po ponownym otwarciu.
-- [ ] Porównać funkcje PWA: zasady, pomoc, warianty gry, języki, ukrywanie odpowiedzi, wyjście audio i motywy.
-- [ ] Przygotować nowy projekt ekranów z osobnym etapem krytyki: telefon, ekran zewnętrzny Folda, rozłożony ekran oraz pozycja zgięta.
-- [ ] Wdrożyć grę bez kart: układanie osi czasu i zgadywanie gry lub filmu, z wynikiem, kolejnymi rundami i brakiem powtórek.
-- [ ] Zachować Bingo prowadzone przez gospodarza: losowanie zasady → jawne uruchomienie skanera → odtworzenie zeskanowanej karty. Plansze pozostają papierowe, dostępne przez generator PDF w PWA.
-- [ ] Zachować motyw w kodzie QR i dodać ustawienie automatycznego stosowania motywu zeskanowanej karty.
-- [ ] Domyślnie wyłączyć limit odtwarzania i zachować jawne sterowanie muzyką.
-- [ ] Usunąć wejście do tworzenia/drukowania kart z Androida; zachować bibliotekę i import JSON/CSV.
-- [ ] Zachować proste sterowanie przez istniejące App Remote: połączenie, odtwarzanie, pauza i wznowienie. Bez wyboru urządzeń, źródeł odtwarzania i formularza Client ID w Androidzie.
-- [ ] Dodać dostępne z gry „Jak grać”, pomoc odtwarzania i rozwiązywanie problemów z aparatem.
-- [ ] Sprawdzić interfejs na małym telefonie, obu ekranach Folda, dużym tekście i w ciemnym motywie. Zaktualizować prawdziwe screenshoty i README.
-- [ ] Poczekać na CI i review, zmergować oraz opublikować podpisany APK jako nowe wydanie testowe.
+Zakres poniżej trafił do wydań `0.2.0-alpha.1` i `0.2.0-alpha.2`.
+
+- [x] Skaner w minifikowanym APK: rzeczywisty odczyt CameraX/ML Kit, obrót i ponowne otwarcie sprawdzone na emulatorze.
+- [x] Porównanie funkcji PWA: zasady, pomoc, warianty gry, języki, ukrywanie odpowiedzi, odtwarzanie i motywy — [podział funkcji](pwa-parity.md).
+- [x] Nowy projekt i dwie iteracje faktycznych ekranów: telefon, ekran zewnętrzny i wewnętrzny Folda oraz pozycja zgięta — [projekt i weryfikacja](design-v2.md).
+- [x] Oś czasu oraz zgadywanie gry lub filmu bez kart, z wynikiem, kolejnymi rundami i brakiem powtórek.
+- [x] Bingo prowadzącego: pytanie → skan → utwór. Telefon ma osobny krok skanowania, a układ dwóch paneli pokazuje pełne pytanie obok aparatu. Papierowe plansze pobiera się z generatora PDF w PWA.
+- [x] Dziewięć motywów QR i ustawienie automatycznego stosowania wyglądu zeskanowanej karty.
+- [x] Domyślnie wyłączona automatyczna pauza i jawne sterowanie muzyką.
+- [x] Kreator i drukowanie kart pozostawione w webie; Android zachowuje bibliotekę, import JSON/CSV i przeciąganie pliku.
+- [x] App Remote: połączenie, odtwarzanie, pauza i wznowienie, bez selektora urządzeń, źródeł i formularza Client ID.
+- [x] Kontekstowe „Jak grać”, pomoc Spotify i obsługa problemów z aparatem.
+- [x] Testy UI na emulowanych ekranach telefonu i Folda, większym tekście i w ciemnym motywie. Aktualne zrzuty i README.
+- [x] CI i review przed scaleniem; podpisane testowe APK w [Releases](https://github.com/ArtifexEt/Hiciarz/releases).
+
+## Próby na urządzeniach pozostające do wykonania
+
+- [ ] Autoryzacja i odtwarzanie na świeżym koncie Spotify bez wcześniejszej zgody i historii dopisywania do integracji.
+- [ ] Aparat i odtwarzanie na fizycznym Galaxy Fold7, w obu rozmiarach ekranu i pozycji zgiętej.
+
+Wyniki emulatorów nie potwierdzają tych dwóch prób.
 
 ## Kierunek projektu
 
 Rozgrywka jest główną treścią ekranu. W Bingo prowadzący najpierw pokazuje zasadę, a dopiero po wybraniu „Skanuj kartę” otwiera aparat. Odczyt QR uruchamia konkretny utwór i zachowuje wylosowaną kategorię; kolejna tura zaczyna się od następnej zasady. Lista talii oraz ustawienia używają natywnych wierszy, a skaner przede wszystkim pokazuje aparat. Na szerokim ekranie nawigację zastępuje rail i pojawiają się dwa panele; ważne elementy nie przecinają zawiasu.
 
-Oś czasu i quiz z grami lub filmami pozostają osobnymi, opcjonalnymi trybami bez drukowanych kart. Losowanie w Bingo nie wybiera nagrania z talii, nie włącza kamery automatycznie i nie wymaga zaimportowanej playlisty. Nie dodajemy cyfrowej planszy ani oceniania odpowiedzi przez aplikację.
+Oś czasu i quiz z grami lub filmami pozostają osobnymi, opcjonalnymi trybami bez drukowanych kart. Losowanie w Bingo nie wybiera nagrania z talii ani nie wymaga zaimportowanej playlisty. Na telefonie aparat otwiera osobny przycisk „Skanuj kartę”; w układzie dwóch paneli losowanie przygotowuje skaner obok pytania. Nie dodajemy cyfrowej planszy ani oceniania odpowiedzi przez aplikację.
 
 Przycisk plansz otwiera generator webowy z poziomem i językiem wybranym w Androidzie. W generatorze użytkownik dobiera liczbę plansz i pobiera PDF:
 
