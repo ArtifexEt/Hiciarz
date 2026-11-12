@@ -1,31 +1,31 @@
 <p align="center">
   <a href="https://artifexet.github.io/Hiciarz/">
-    <img src="web/docs/assets/readme-banner.svg" alt="Hiciarz — muzyczna gra z własnych kart. Kwadratowe karty ułożone w wachlarz." width="100%">
+    <img src="web/docs/assets/readme-banner.svg" alt="Hiciarz — skaner i kreator kart muzycznych. Kwadratowe karty ułożone w wachlarz." width="100%">
   </a>
 </p>
 
 <p align="center">
-  Twórz własne karty muzyczne, skanuj je telefonem i zgaduj hity ze znajomymi.
+  Twórz własne karty muzyczne, skanuj je telefonem i słuchaj ulubionych nagrań.
   <br>
   <strong>Od ulubionej playlisty do wspólnego wieczoru.</strong>
 </p>
 
 <p align="center">
-  <a href="https://artifexet.github.io/Hiciarz/"><img src="https://img.shields.io/badge/Zagraj_w_przegl%C4%85darce-083B34?style=for-the-badge&amp;logo=googlechrome&amp;logoColor=EDBD75" alt="Zagraj w przeglądarce — otwórz Hiciarza na GitHub Pages"></a>
-  <a href="#pierwsza-rozgrywka"><img src="https://img.shields.io/badge/Jak_zagra%C4%87-EDE8DC?style=for-the-badge&amp;logo=googledocs&amp;logoColor=253B34" alt="Jak zagrać"></a>
+  <a href="https://artifexet.github.io/Hiciarz/"><img src="https://img.shields.io/badge/Otw%C3%B3rz_aplikacj%C4%99-083B34?style=for-the-badge&amp;logo=googlechrome&amp;logoColor=EDBD75" alt="Otwórz Hiciarza na GitHub Pages"></a>
+  <a href="#pierwsze-kroki"><img src="https://img.shields.io/badge/Jak_korzysta%C4%87-EDE8DC?style=for-the-badge&amp;logo=googledocs&amp;logoColor=253B34" alt="Jak korzystać"></a>
   <a href="https://buymeacoffee.com/szymonrybka"><img src="https://img.shields.io/badge/Postaw_mi_kaw%C4%99-EDBD75?style=for-the-badge&amp;logo=buymeacoffee&amp;logoColor=253B34" alt="Wesprzyj autora"></a>
 </p>
 
-## Twój zestaw do muzycznej zabawy
+## Twoje karty z muzyką
 
-Hiciarz zamienia ulubione nagrania w grę przy wspólnym stole. Przygotuj talię z muzyką, którą lubicie, wydrukuj karty i skanuj je telefonem. Posłuchajcie utworu, spróbujcie odgadnąć rok i ułożyć go na osi czasu — albo sprawdźcie, kto rozpozna muzykę z filmu lub gry.
+Hiciarz łączy kreator kart, skaner QR i odtwarzacz. Przygotuj talię z ulubionymi nagraniami, wydrukuj karty i skanuj je telefonem, aby posłuchać muzyki. Na drugiej stronie znajdziesz dane utworu, a w taliach muzyki z filmów i gier także tytuł produkcji.
 
 **[Otwórz Hiciarza na GitHub Pages →](https://artifexet.github.io/Hiciarz/)** Działa w przeglądarce na telefonie i komputerze. Możesz też dodać go do ekranu początkowego jako PWA.
 
 - **Wasza muzyka, Wasze talie.** Wklejaj linki do utworów Spotify, sprawdzaj rok w MusicBrainz albo wczytuj pliki JSON/CSV. Na początek czekają gotowe zestawy: świąteczne hity i muzyka z gier.
 - **Karty w Waszym stylu.** Wybierz motyw, dodaj własny rewers i pobierz PDF do dwustronnego druku. Kwadratowe karty mają 60 × 60 mm.
-- **Kilka sposobów na wspólną grę.** Muzyczna oś czasu oraz zgadywanie filmów i gier. [Bingo z planszami do druku](https://artifexet.github.io/Bingo/) działa w osobnej aplikacji.
-- **Muzyka tam, gdzie gracie.** Słuchaj na telefonie albo połącz skaner z odtwarzaczem na drugim ekranie.
+- **Różne rodzaje kart.** Utwory muzyczne, muzyka z filmów i muzyka z gier. [Bingo z planszami do druku](https://artifexet.github.io/Bingo/) działa w osobnej aplikacji.
+- **Muzyka na wybranym urządzeniu.** Słuchaj na telefonie albo połącz skaner z odtwarzaczem na drugim ekranie.
 
 ## Zobacz Hiciarza
 
@@ -35,7 +35,7 @@ Przygotuj własną talię i od razu zobacz, jak będą wyglądać wydrukowane ka
 
 <table>
   <tr>
-    <th>Skanuj i zgaduj</th>
+    <th>Skanuj i słuchaj</th>
     <th>Osobna aplikacja Bingo</th>
   </tr>
   <tr>
@@ -44,18 +44,18 @@ Przygotuj własną talię i od razu zobacz, jak będą wyglądać wydrukowane ka
   </tr>
 </table>
 
-## Pierwsza rozgrywka
+## Pierwsze kroki
 
-1. **[Otwórz Hiciarza](https://artifexet.github.io/Hiciarz/)** i wybierz **Twórz karty**. Zacznij od gotowej talii albo dodaj własne nagrania.
+1. **[Otwórz Hiciarza](https://artifexet.github.io/Hiciarz/)** i wybierz **Twórz karty**. W **Talie → Utwory → Importuj** wybierz gotową talię, wczytaj plik albo przygotuj listę z AI. Możesz też dodawać nagrania ręcznie.
 2. **Wybierz wygląd i wydrukuj karty.** Pobierz PDF, drukuj na A4 dwustronnie w skali 100%, a następnie wytnij karty. Przed całą talią warto wykonać próbę wydruku.
 3. **Wybierz, gdzie ma grać muzyka.** W **Dźwięk** ustaw odtwarzanie na tym urządzeniu lub drugi ekran.
-4. **Skanuj, słuchaj i zgaduj.** Zeskanuj QR z karty i sprawdź odpowiedź po jej odwróceniu. Jeśli masz już wydrukowaną talię, możesz od razu zacząć od **Skanuj karty**.
+4. **Skanuj i słuchaj.** Zeskanuj QR z karty, aby uruchomić nagranie. Po drugiej stronie znajdziesz dane karty. Jeśli masz już wydrukowaną talię, możesz od razu zacząć od **Skanuj karty**.
 
 Bingo ma osobną aplikację i [repozytorium](https://github.com/ArtifexEt/Bingo). [Otwórz generator plansz PDF](https://artifexet.github.io/Bingo/?sheet=print&level=beginner&lang=pl), wydrukuj plansze i losuj kategorie muzycznych zagadek. Wybierz poziom podstawowy lub zaawansowany i liczbę potrzebnych wydruków.
 
 ## Spotify i inne sposoby słuchania
 
-W przeglądarce możesz korzystać z osadzonych odtwarzaczy **Spotify i YouTube** bez konfigurowania połączenia Spotify w Hiciarzu. Spotify może udostępniać tylko fragment nagrania, a odtwarzacz może pokazywać tytuł i okładkę. Przy zgadywaniu przydaje się drugi ekran ustawiony poza wzrokiem graczy.
+W przeglądarce możesz korzystać z osadzonych odtwarzaczy **Spotify i YouTube** bez konfigurowania połączenia Spotify w Hiciarzu. Spotify może udostępniać tylko fragment nagrania, a odtwarzacz może pokazywać tytuł i okładkę. Drugi ekran pozwala oddzielić skanowanie kart od odtwarzania muzyki.
 
 Hiciarz nie łączy konta Spotify. W kreatorze wklej link do konkretnego utworu, sprawdź podgląd i odsłuch, a następnie dobierz rok pierwszego wydania w MusicBrainz. Potwierdź dane przed dodaniem karty. Gotowe talie oraz import JSON/CSV również działają bez logowania.
 

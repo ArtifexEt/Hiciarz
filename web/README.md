@@ -3,12 +3,12 @@
 </p>
 
 <p align="center">
-  Twórz własne karty muzyczne, skanuj je telefonem i zgaduj hity ze znajomymi.
+  Twórz własne karty muzyczne, skanuj je telefonem i słuchaj ulubionych nagrań.
 </p>
 
 <p align="center">
   <a href="https://artifexet.github.io/Hiciarz/"><img src="https://img.shields.io/badge/Otw%C3%B3rz_aplikacj%C4%99-083935?style=for-the-badge&amp;logo=googlechrome&amp;logoColor=EDBD75" alt="Otwórz aplikację"></a>
-  <a href="#pierwsza-rozgrywka"><img src="https://img.shields.io/badge/Jak_zagra%C4%87-EDE8DC?style=for-the-badge&amp;logo=googledocs&amp;logoColor=253B34" alt="Jak zagrać"></a>
+  <a href="#pierwsze-kroki"><img src="https://img.shields.io/badge/Jak_korzysta%C4%87-EDE8DC?style=for-the-badge&amp;logo=googledocs&amp;logoColor=253B34" alt="Jak korzystać"></a>
   <a href="https://buymeacoffee.com/szymonrybka"><img src="https://img.shields.io/badge/Postaw_mi_kaw%C4%99-EDBD75?style=for-the-badge&amp;logo=buymeacoffee&amp;logoColor=253B34" alt="Wesprzyj autora — postaw mi kawę"></a>
 </p>
 
@@ -17,7 +17,7 @@
   &nbsp; Przeglądarka · Telefon · PWA · Własne talie · PDF do druku
 </p>
 
-Hiciarz łączy kreator kart, skaner QR i odtwarzacz. Przygotuj listę nagrań, wybierz wygląd i wydrukuj talię. Podczas gry zeskanuj kartę, posłuchaj utworu i odgadnij rok, film lub grę. Muzyczne [Bingo z planszami do druku](https://artifexet.github.io/Bingo/) jest osobną aplikacją w [repozytorium ArtifexEt/Bingo](https://github.com/ArtifexEt/Bingo).
+Hiciarz łączy kreator kart, skaner QR i odtwarzacz. Przygotuj listę nagrań, wybierz wygląd i wydrukuj talię. Zeskanuj kod QR, aby posłuchać utworu; na drugiej stronie karty znajdziesz jego dane. Muzyczne [Bingo z planszami do druku](https://artifexet.github.io/Bingo/) jest osobną aplikacją w [repozytorium ArtifexEt/Bingo](https://github.com/ArtifexEt/Bingo).
 
 **[Spotify: dodawanie utworów i odsłuch](docs/spotify.md)** · **[Format playlist JSON/CSV](docs/playlist-guide.md)** · **[Uruchomienie i publikacja](docs/configuration.md)**
 
@@ -57,13 +57,13 @@ Ekran startowy na komputerze:
   </tr>
 </table>
 
-## Pierwsza rozgrywka
+## Pierwsze kroki
 
 1. **[Otwórz Hiciarza](https://artifexet.github.io/Hiciarz/)** i wybierz **Twórz karty**. Jeśli masz już wydrukowaną talię, przejdź do **Skanuj karty**.
-2. **Przygotuj talię.** W widoku **Talie** wybierz wariant gry i gotowy przykład albo dodaj nagrania ręcznie. W **Dodaj utwór** wklej link Spotify, sprawdź nagranie i wyszukaj rok w MusicBrainz. **Przygotuj talię z AI** kopiuje prompt do Twojego asystenta. Gotowy JSON/CSV wczytaj w **Wczytaj playlistę z pliku** — także przez przeciągnięcie pliku. Sprawdź linki i lata przed drukiem.
+2. **Przygotuj talię.** W widoku **Talie → Utwory** wybierz **Rodzaj kart**, a następnie **Importuj**. Kreator pozwala wczytać plik JSON/CSV, wybrać gotową talię albo przygotować listę z AI. W kroku **Przygotuj talię z AI** skopiuj prompt do swojego asystenta, a później wczytaj gotowy plik. Nagrania możesz też dodawać ręcznie: w **Dodaj utwór** wklej link Spotify, sprawdź odsłuch i wyszukaj rok w MusicBrainz. Sprawdź linki i lata przed drukiem.
 3. **Wydrukuj karty.** Przejdź przez **Utwory → Wygląd → Druk** i wybierz **Pobierz / drukuj karty**. PDF mieści 12 kart 60 × 60 mm na A4. Drukuj dwustronnie w skali 100%, zgodnie z krawędzią obrotu pokazaną w oknie wydruku. Przed całą talią wykonaj próbę z **Próba wydruku i kalibracja**.
 4. **Wybierz miejsce odtwarzania.** Otwórz **Dźwięk** i wybierz jeden z wariantów opisanych poniżej.
-5. **Skanuj i zgaduj.** Zezwól na aparat, zeskanuj QR z karty i posłuchaj nagrania. Odpowiedź sprawdźcie po odwróceniu wydrukowanej karty. Jeśli przeglądarka zablokuje automatyczny start, użyj przycisku odtwarzania.
+5. **Skanuj i słuchaj.** Zezwól na aparat, zeskanuj QR z karty i posłuchaj nagrania. Po odwróceniu wydrukowanej karty znajdziesz jej dane. Jeśli przeglądarka zablokuje automatyczny start, użyj przycisku odtwarzania.
 
 ## Gdzie ma grać muzyka?
 
@@ -72,7 +72,7 @@ Ekran startowy na komputerze:
 | **Na tym urządzeniu** | Spotify lub YouTube odtwarza w skanerze na telefonie albo tablecie.            | Bez parowania i bez łączenia konta. Nagranie musi pozwalać na osadzanie; Spotify może udostępnić tylko fragment.                                                   |
 | **Drugi ekran**       | Telefon skanuje karty, a połączony komputer lub drugi telefon odtwarza muzykę. | Na drugim urządzeniu otwórz **Drugi ekran** i wybierz **Połącz skaner**. W skanerze zeskanuj QR parowania, a następnie karty. Oba urządzenia potrzebują internetu. |
 
-Osadzony odtwarzacz może pokazywać tytuł i okładkę. Przy zgadywaniu nagrań przydaje się drugi ekran ustawiony poza wzrokiem graczy.
+Osadzony odtwarzacz może pokazywać tytuł i okładkę. Drugi ekran pozwala oddzielić skanowanie kart od odtwarzania muzyki.
 
 Po skanie możesz zatrzymać lub wznowić utwór, przełączyć źródło dostępne na karcie i wybrać **Skanuj kolejną kartę**. Powrót do aparatu zatrzymuje lokalny odtwarzacz. Internet i dostępność nagrania w danym regionie są wymagane niezależnie od zapisania aplikacji jako PWA.
 
@@ -89,22 +89,22 @@ Podgląd Spotify może być niedostępny lub ograniczony do fragmentu. MusicBrai
 
 Całe playlisty wczytasz z pliku JSON/CSV zgodnego z formatem Hiciarza. Link do playlisty nie zastępuje listy jej utworów. [Dodawanie i odsłuch](docs/spotify.md) · [Format plików](docs/playlist-guide.md).
 
-## Talie, wygląd i warianty gry
+## Talie, wygląd i rodzaje kart
 
-- **Klasyczna oś czasu:** zgaduj rok nagrania i układaj muzyczną chronologię.
-- **Zgadnij film / Zgadnij grę:** wybierz wariant przez **W co gramy? → Inne warianty** i uzupełnij tytuł produkcji jako odpowiedź. Podgląd dostarcza dane nagrania; odpowiedź wpisujesz samodzielnie. Jest drukowana na stronie odpowiedzi karty i nie trafia do QR.
+- **Utwory muzyczne:** karty z tytułem, wykonawcą i rokiem wydania nagrania.
+- **Muzyka z filmów / Muzyka z gier:** wybierz kategorię przez **Rodzaj kart → Inne rodzaje kart** i uzupełnij tytuł produkcji. Podgląd dostarcza dane nagrania; tytuł filmu lub gry wpisujesz samodzielnie. Jest drukowany na stronie **Dane karty** i nie trafia do QR.
 - **Muzyczne Bingo:** [osobna aplikacja](https://artifexet.github.io/Bingo/) z losowaniem kategorii, poziomami trudności oraz planszami 5 × 5. Przygotujesz od 1 do 24 plansz, po 1, 2 lub 4 na stronie A4.
 - **Wygląd kart:** dziewięć motywów, własne rewersy z obsługą przeciągania plików, presety i oszczędny wydruk **Laser — lekki kolor**. Podgląd karty odzwierciedla układ PDF. Karty z własnym motywem zachowują go przy zmianie motywu talii; ujednolica je przycisk **Zastosuj motyw talii do wszystkich kart**. Skórka strony jest wybierana osobno w ustawieniach; nie zmienia motywu zapisanej talii.
 
 [Generator plansz Bingo — podstawowy PL](https://artifexet.github.io/Bingo/?sheet=print&level=beginner&lang=pl) · [Zaawansowany PL](https://artifexet.github.io/Bingo/?sheet=print&level=expert&lang=pl) · [Beginner EN](https://artifexet.github.io/Bingo/?sheet=print&level=beginner&lang=en). Generator, losowanie i zasady są utrzymywane w [osobnym repozytorium](https://github.com/ArtifexEt/Bingo). Dawne adresy Hiciarza z `?view=bingo` przekierowują do nowej aplikacji, zachowując prawidłowe parametry poziomu, języka i okna druku.
 
-**Wybierz gotową talię** udostępnia przykłady bez logowania:
+**Talie → Utwory → Importuj → Wybierz gotową talię** udostępnia przykłady bez logowania:
 
-| Przykład                          | Zawartość                                |
-| --------------------------------- | ---------------------------------------- |
-| Świąteczne hity                   | 151 piosenek z motywem Rybki świąteczne. |
-| Zgadnij grę — oryginalne nagrania | 294 karty z 93 gier.                     |
-| Zgadnij grę — symfonicznie        | 34 orkiestrowe aranżacje z 34 gier.      |
+| Przykład                            | Zawartość                                |
+| ----------------------------------- | ---------------------------------------- |
+| Świąteczne hity                     | 151 piosenek z motywem Rybki świąteczne. |
+| Muzyka z gier — oryginalne nagrania | 294 karty z 93 gier.                     |
+| Muzyka z gier — symfonicznie        | 34 orkiestrowe aranżacje z 34 gier.      |
 
 Przykład można otworzyć jako nową talię lub dopisać do obecnej. To edytowalna kopia zapisanych danych, która nie aktualizuje się automatycznie. Lata z wydań Spotify mogą oznaczać składanki lub reedycje — sprawdź je przed drukiem. [Pliki i źródła przykładów](examples/playlists/README.md).
 
@@ -118,7 +118,7 @@ Skaner wypełnia ekran telefonu, z głównymi przyciskami nad dolnym menu. Miejs
 
 W **Ustawieniach** zmienisz skórkę strony i język (**polski / angielski**), sprawdzisz aktualizacje i zainstalujesz Hiciarza. Na iOS aplikacja pokazuje instrukcję dodania do ekranu początkowego przez menu udostępniania. Zmiana języka obejmuje interfejs oraz napisy na PDF; dane wpisane do talii pozostają bez zmian. [Słowniki JSON](docs/configuration.md#tłumaczenia-json).
 
-Talie i grafiki są zapisywane **na tym urządzeniu**. W **Talie → Opcje talii** przełączysz projekty, utworzysz nowy, wczytasz plik lub pobierzesz pełną kopię JSON przez **Zapisz do pliku**. Listę utworów wyeksportujesz również jako CSV. Zapis do pliku pozwala przenieść projekt i chroni przed utratą danych po wyczyszczeniu przeglądarki.
+Talie i grafiki są zapisywane **na tym urządzeniu**. W **Talie** przełączysz projekty, utworzysz nowy lub pobierzesz pełną kopię JSON przez **Zapisz do pliku**. Plik wczytasz przez **Utwory → Importuj → Wczytaj z pliku**. Listę utworów wyeksportujesz również jako CSV. Zapis do pliku pozwala przenieść projekt i chroni przed utratą danych po wyczyszczeniu przeglądarki.
 
 Po zapisaniu zasobów PWA można bez sieci edytować talie i przygotowywać PDF. Muzyka, Spotify i parowanie wymagają internetu. Aparat na telefonie wymaga bezpiecznego kontekstu — korzystaj z publikacji HTTPS. [Dane lokalne i PWA](docs/configuration.md#dane-lokalne-i-pwa).
 
@@ -155,6 +155,6 @@ GitHub Actions uruchamia testy i budowanie. Workflow **Publish website** publiku
 | [Gotowy prompt](docs/playlist-prompt.txt)             | Instrukcja do skopiowania do wybranego AI.                         |
 | [Przykładowe playlisty](examples/playlists/README.md) | Gotowe pliki, źródła nagrań i dodawanie kolejnych zestawów.        |
 
-Linki do dokumentacji znajdziesz też w aplikacji: **Jak grać** (na telefonie **Więcej → Jak grać**). Przewodnik opisuje dodawanie kart bez łączenia konta Spotify.
+Linki do dokumentacji znajdziesz też w aplikacji: **Jak korzystać** (na telefonie **Więcej → Jak korzystać**). Przewodnik opisuje dodawanie kart bez łączenia konta Spotify.
 
 [Zgłoś usterkę](https://github.com/ArtifexEt/Hiciarz/issues/new) lub przejrzyj pomysły w [Issues](https://github.com/ArtifexEt/Hiciarz/issues). Jeśli Hiciarz uprzyjemnił Wam wieczór, możesz [postawić autorowi kawę](https://buymeacoffee.com/szymonrybka).

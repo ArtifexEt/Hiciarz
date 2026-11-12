@@ -43,7 +43,7 @@ Skaner oferuje dwa miejsca odtwarzania: **Na tym urządzeniu** (`local`, osadzon
 
 Lokalny skan lub link do karty uruchamia odtwarzacz bez połączenia PeerJS. Wybierane jest preferowane źródło, a jeśli karta go nie zawiera — dostępny serwis. Powrót do skanowania lub wyjście z widoku niszczy osadzony odtwarzacz; aparat jest zwalniany po odczycie karty. Przy zablokowanym automatycznym starcie użytkownik uruchamia dźwięk przyciskiem. Spotify Embed nie gwarantuje pełnego nagrania ani autoplay; [dokumentacja iFrame API](https://developer.spotify.com/documentation/embeds/references/iframe-api).
 
-Osadzone kontrolki dostawcy pozostają widoczne i mogą ujawnić odpowiedź na muzyczną zagadkę. W trybie drugiego ekranu skaner nadal pokazuje tylko rewers oraz pytanie.
+Osadzone kontrolki dostawcy pozostają widoczne i mogą pokazywać tytuł oraz okładkę nagrania. Przy odtwarzaniu na drugim ekranie skaner pokazuje rewers karty i rodzaj nagrania.
 
 ## Dane nagrania bez logowania
 
@@ -88,7 +88,7 @@ Minimalna lista JSON:
 
 Pola `title`, `artist`, `year` i przynajmniej jedno poprawne źródło są wymagane. `id` i `theme` opcjonalne. Motywy: `classic`, `minimal`, `vinyl`, `mixtape`, `memphis`, `disco`, `christmas`, `winter`, `fish`. Źródła przyjmują identyfikatory lub linki HTTPS odpowiedniego serwisu. Maksymalnie 2000 utworów.
 
-CSV: `id,title,artist,year,theme,spotify,youtube`. Pola zawierające przecinki lub nowe linie muszą być poprawnie cytowane. Działanie **Opcje talii → Zapisz do pliku** eksportuje pełny JSON wersji 1 z grafiką, motywem i ustawieniami wydruku. Wczytanie pełnego projektu jako nowej talii nie usuwa obecnej talii. Szablony plików są dostępne w **Jak grać**.
+CSV: `id,title,artist,year,theme,spotify,youtube`. Pola zawierające przecinki lub nowe linie muszą być poprawnie cytowane. Działanie **Opcje talii → Zapisz do pliku** eksportuje pełny JSON wersji 1 z grafiką, motywem i ustawieniami wydruku. Wczytanie pełnego projektu jako nowej talii nie usuwa obecnej talii. Szablony plików są dostępne w **Jak korzystać**.
 
 Instrukcja dla AI: „Przygotuj tablicę JSON według powyższego schematu. Rok ma dotyczyć pierwszego wydania wskazanego nagrania, nie składanki. Nie wymyślaj identyfikatorów Spotify ani YouTube. Zweryfikuj linki. Nie dodawaj komentarzy ani Markdown wewnątrz pliku.”
 
@@ -124,7 +124,7 @@ Nowe karty używają krótkiego formatu `#2<skórka>s<Spotify ID>y<YouTube ID>`;
 
 Czytnik nadal obsługuje starsze karty `#card=<Base64 JSON>`. Wcześniejsze wydruki nie wymagają wymiany. Nowa karta jest dopasowywana do lokalnej talii po źródłach i skórce, dzięki czemu dostępny jest jej własny rewers i preset druku. QR pozostaje samodzielny: do wskazania nagrania nie wymaga wspólnej bazy kart.
 
-Pierwsze uruchomienie zaczyna się od pustej talii. Na ekranie startowym wybierz **Twórz karty** lub otwórz **Talie**, a następnie **Wybierz gotową talię**, aby wczytać przykład. Zapisane talie przełączaj przez **Opcje talii** przy nazwie. Z każdego trybu wrócisz do startu przez logo Hiciarza lub **Więcej → Start**.
+Pierwsze uruchomienie zaczyna się od pustej talii. Na ekranie startowym wybierz **Twórz karty** lub otwórz **Talie → Utwory → Importuj → Wybierz gotową talię**, aby wczytać przykład. Zapisane talie przełączaj przez **Wszystkie talie** przy nazwie. Z każdego widoku wrócisz do startu przez logo Hiciarza lub **Więcej → Start**.
 
 Gotowe listy znajdują się w folderze [examples/playlists](../examples/playlists/README.md). Przykład **Świąteczne hity** zawiera statyczny zapis wszystkich 151 utworów z [polecanej playlisty](https://open.spotify.com/playlist/7wfTeAa7cxhA3qNE05XPKk) z 9 listopada 2026 i motyw Rybki świąteczne. Wczytasz go bez logowania do Spotify, jako nową talię lub dopisując utwory do obecnej. Lata wydań oznaczono do sprawdzenia przed drukiem. Możesz edytować własną kopię; przykład w repozytorium nie zmienia się razem z nią. Listy są dołączone do aplikacji i dostępne również po zapisaniu jej do pracy offline; odtwarzanie muzyki wymaga sieci.
 

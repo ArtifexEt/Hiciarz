@@ -1,5 +1,5 @@
 {
-  "printPreview.front": "Answer side: {{title}}",
+  "printPreview.front": "Card details: {{title}}",
   "printPreview.back": "QR side: {{title}}",
   "printPreview.preparing": "Preparing preview…",
   "printPreview.failed": "Could not load the card preview.",

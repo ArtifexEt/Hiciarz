@@ -14,27 +14,27 @@ Hiciarz korzysta z linków do utworów i oficjalnego odtwarzacza Spotify. Tworze
 
 MusicBrainz jest katalogiem metadanych; nie dostarcza plików audio. Brak wyniku lub dostępu do sieci pozwala nadal wpisać dane samodzielnie. [MusicBrainz API](https://musicbrainz.org/doc/MusicBrainz_API).
 
-## Odsłuch i rozgrywka
+## Odsłuch i skanowanie
 
 W **Dźwięk** wybierz **Na tym urządzeniu** albo **Drugi ekran**. Przy drugim ekranie otwórz Hiciarza na urządzeniu odtwarzającym, wybierz **Połącz skaner** i zeskanuj QR parowania telefonem.
 
 Spotify decyduje o dostępności nagrania w ramce. Może udostępnić tylko podgląd, wymagać ręcznego uruchomienia lub logowania we własnym odtwarzaczu. Nie gwarantujemy fragmentu dla każdego utworu. Hiciarz nie prowadzi logowania do konta Spotify i nie steruje urządzeniami Spotify Connect. [Spotify Embed](https://developer.spotify.com/documentation/embeds) · [Ograniczenia odtwarzacza](https://developer.spotify.com/documentation/embeds/tutorials/troubleshooting).
 
-Ramka Spotify pokazuje tytuł i okładkę. Przy zgadywaniu ustaw drugi ekran poza wzrokiem graczy.
+Ramka Spotify pokazuje tytuł i okładkę. Drugi ekran pozwala oddzielić skanowanie kart od odtwarzania muzyki.
 
 ## Całe playlisty
 
-Wczytaj plik JSON/CSV zgodny z [formatem Hiciarza](playlist-guide.md) albo wybierz gotową talię. W imporcie pliku działa wybór oraz przeciąganie i upuszczanie. Możesz dopisać utwory lub zastąpić listę; pełny projekt można otworzyć jako nową talię.
+Otwórz **Talie → Utwory → Importuj** i wczytaj plik JSON/CSV zgodny z [formatem Hiciarza](playlist-guide.md) albo wybierz gotową talię. Krok **Wczytaj z pliku** obsługuje wybór oraz przeciąganie i upuszczanie. Możesz dopisać utwory lub zastąpić listę; pełny projekt można otworzyć jako nową talię.
 
 Sam link do playlisty Spotify lub Apple Music nie zawiera danych potrzebnych do przygotowania wszystkich kart. Hiciarz nie pobiera tych playlist przez API. Jeśli przygotowujesz plik w innym narzędziu, sprawdź obecność tytułu, wykonawcy, roku oraz linku Spotify lub YouTube. Eksport Apple Music nie zapewnia automatycznie źródła odtwarzania obsługiwanego przez karty.
 
 ## Rozwiązywanie problemów
 
-| Problem | Co zrobić |
-| --- | --- |
-| Nie można odczytać podglądu | Sprawdź link do konkretnego utworu, połączenie i dostępność Spotify. Wpisz dane ręcznie, jeśli serwis nie odpowiada. |
-| Brak odsłuchu lub tylko fragment | Uruchom odtwarzanie w ramce. Dostępność zależy od Spotify, regionu i przeglądarki. |
-| Niewłaściwy rok w wynikach MusicBrainz | Wybierz właściwą wersję nagrania i popraw rok przed drukiem. |
-| Zapisany wcześniej Spotify Connect | Aplikacja wybierze odtwarzanie na tym urządzeniu. W razie potrzeby przełącz na drugi ekran. |
+| Problem                                | Co zrobić                                                                                                            |
+| -------------------------------------- | -------------------------------------------------------------------------------------------------------------------- |
+| Nie można odczytać podglądu            | Sprawdź link do konkretnego utworu, połączenie i dostępność Spotify. Wpisz dane ręcznie, jeśli serwis nie odpowiada. |
+| Brak odsłuchu lub tylko fragment       | Uruchom odtwarzanie w ramce. Dostępność zależy od Spotify, regionu i przeglądarki.                                   |
+| Niewłaściwy rok w wynikach MusicBrainz | Wybierz właściwą wersję nagrania i popraw rok przed drukiem.                                                         |
+| Zapisany wcześniej Spotify Connect     | Aplikacja wybierze odtwarzanie na tym urządzeniu. W razie potrzeby przełącz na drugi ekran.                          |
 
 Starsze wydrukowane karty z identyfikatorami Spotify i zapisane talie zachowują działanie. Dawne linki konfiguracji Spotify nie konfigurują już konta.
