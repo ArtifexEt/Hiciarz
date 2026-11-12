@@ -72,6 +72,7 @@ sealed interface AppAction {
     data object DisconnectSpotify : AppAction
     data object Pause : AppAction
     data object Resume : AppAction
+    data class PlayCard(val song: Song) : AppAction
     data object SwitchToPhone : AppAction
     data class ScanCode(val value: String) : AppAction
     data object ScanNext : AppAction

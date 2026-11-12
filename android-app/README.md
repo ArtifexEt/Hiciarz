@@ -92,6 +92,8 @@ Testy obejmują zgodność kart QR i importu JSON/CSV z kreatorem web oraz regu�
 
 CI uruchamia też natywny scenariusz Compose na emulatorze AOSP: wklejenie kodu, odkrycie karty, losowanie Bingo i zmianę języka. Sprawdza widoki telefonu i szerokiego okna, a 11 zrzutów PNG zapisuje w artefakcie `android-native-ui-…` obok raportu testu.
 
+Testy regresji sprawdzają globalne wznawianie Spotify po zmianie zakładki, odtwarzanie wybranej karty oraz zachowanie rundy Bingo przy ponownym wyborze tej samej talii. Działają na emulatorze bez konta Spotify.
+
 Przykładowe talie są kopiowane z `../web/examples/playlists/` podczas `preBuild`. Opcjonalna zmienna `HICIARZ_BUILD_ROOT` przenosi katalogi wynikowe Gradle na inny dysk; podane wyżej ścieżki dotyczą standardowego buildu bez tej zmiennej.
 
 ### Podpis i wersja

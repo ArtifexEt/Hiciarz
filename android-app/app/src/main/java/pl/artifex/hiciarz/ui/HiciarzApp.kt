@@ -438,7 +438,8 @@ private fun ScanResult(state: AppState, copy: Copy, onAction: (AppAction) -> Uni
     if (song != null) {
         AnswerCard(song, state.answerRevealed || !state.settings.hideAnswers, copy,
             onOpenDecks = { onAction(AppAction.SelectTab(AppTab.DECKS)) })
-        PlaybackControls(state.playback, state.settings, copy, onAction, expectedUri = song.spotifyUri)
+        PlaybackControls(state.playback, state.settings, copy, onAction,
+            expectedUri = song.spotifyUri, playAction = AppAction.PlayCard(song))
         if (!state.answerRevealed && state.settings.hideAnswers) {
             OutlinedButton(onClick = { onAction(AppAction.RevealAnswer) }, modifier = Modifier.fillMaxWidth().heightIn(min = 50.dp), shape = ControlShape) {
                 Icon(AppIcons.Eye, null, Modifier.size(20.dp))
@@ -507,7 +508,7 @@ private fun AnswerCard(song: Song, revealed: Boolean, copy: Copy, modifier: Modi
 
 @Composable
 private fun PlaybackControls(playback: PlaybackState, settings: AppSettings, copy: Copy, onAction: (AppAction) -> Unit,
-                             expectedUri: String? = null) {
+                             expectedUri: String? = null, playAction: AppAction = AppAction.Resume) {
     val connected = playback.connection == ConnectionStatus.CONNECTED
     val matchesCard = expectedUri == null || playback.trackUri == expectedUri
     val playing = matchesCard && playback.isPlaying
@@ -515,7 +516,7 @@ private fun PlaybackControls(playback: PlaybackState, settings: AppSettings, cop
     Surface(color = MaterialTheme.colorScheme.surface, shape = ControlShape) {
         Column(Modifier.padding(horizontal = 16.dp, vertical = 12.dp), verticalArrangement = Arrangement.spacedBy(10.dp)) {
             Row(verticalAlignment = Alignment.CenterVertically) {
-                FilledIconButton(onClick = { onAction(if (playing) AppAction.Pause else AppAction.Resume) },
+                FilledIconButton(onClick = { onAction(if (playing) AppAction.Pause else playAction) },
                     enabled = connected, modifier = Modifier.size(52.dp)) {
                     Icon(if (playing) AppIcons.Pause else AppIcons.Play,
                         copy.t(if (playing) "Wstrzymaj" else "Odtwórz", if (playing) "Pause" else "Play"), Modifier.size(24.dp))
@@ -609,7 +610,8 @@ private fun BingoScreen(state: AppState, copy: Copy, onAction: (AppAction) -> Un
                     }
                 }
             }
-            PlaybackControls(state.playback, state.settings, copy, onAction, expectedUri = song.spotifyUri)
+            PlaybackControls(state.playback, state.settings, copy, onAction,
+                expectedUri = song.spotifyUri, playAction = AppAction.PlayCard(song))
             if (state.bingoAnswerRevealed) {
                 BingoAnswer(song, state.question, copy)
             } else {

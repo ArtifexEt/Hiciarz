@@ -28,10 +28,10 @@ import pl.artifex.hiciarz.model.PlaybackState
 class SpotifyController(
     private val activity: Activity,
     private val clientIdProvider: () -> String,
-) : AutoCloseable {
+) : PlaybackTransport, AutoCloseable {
     private val handler = Handler(Looper.getMainLooper())
     private val mutableState = MutableStateFlow(PlaybackState(spotifyInstalled = spotifyInstalled()))
-    val state: StateFlow<PlaybackState> = mutableState.asStateFlow()
+    override val state: StateFlow<PlaybackState> = mutableState.asStateFlow()
 
     private var remote: SpotifyAppRemote? = null
     private var playerSubscription: Subscription<PlayerState>? = null
@@ -96,7 +96,7 @@ class SpotifyController(
         activity.window.decorView.viewTreeObserver.addOnWindowFocusChangeListener(focusListener)
     }
 
-    fun connect() = onMain {
+    override fun connect() = onMain {
         if (closed) return@onMain
         if (remote?.isConnected == true) {
             mutableState.value = mutableState.value.copy(connection = ConnectionStatus.CONNECTED, error = null)
@@ -128,7 +128,7 @@ class SpotifyController(
         scheduleVisibleConnection()
     }
 
-    fun play(uri: String) = onMain {
+    override fun play(uri: String) = onMain {
         if (closed) return@onMain
         if (!TRACK_URI.matches(uri)) {
             mutableState.value = mutableState.value.copy(error = "invalid_track")
@@ -139,7 +139,7 @@ class SpotifyController(
         if (remote?.isConnected == true) drainPendingCommands() else connect()
     }
 
-    fun pause() = onMain {
+    override fun pause() = onMain {
         if (closed) return@onMain
         // A stop while authorization is pending must also cancel its queued playback.
         clearPendingPlayback()
@@ -162,12 +162,12 @@ class SpotifyController(
     }
 
     /** Cancel work waiting for authorization or a device transfer without pausing other music. */
-    fun cancelPendingPlayback() = onMain {
+    override fun cancelPendingPlayback() = onMain {
         if (closed) return@onMain
         clearPendingPlayback()
     }
 
-    fun resume() = onMain {
+    override fun resume() = onMain {
         if (closed) return@onMain
         pendingPlayUri = null
         pendingResume = true
@@ -175,13 +175,13 @@ class SpotifyController(
     }
 
     /** Transfer the account's existing playback to this phone, including its Bluetooth output. */
-    fun switchToPhone() = onMain {
+    override fun switchToPhone() = onMain {
         if (closed) return@onMain
         if (!transferInProgress) pendingLocalTransfer = true
         if (remote?.isConnected == true) drainPendingCommands() else connect()
     }
 
-    fun disconnect() = onMain {
+    override fun disconnect() = onMain {
         if (closed) return@onMain
         releaseSession()
         mutableState.value = PlaybackState(spotifyInstalled = spotifyInstalled())
