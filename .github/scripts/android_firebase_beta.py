@@ -1,8 +1,9 @@
 #!/usr/bin/env python3
 """Publish signed APK betas to Firebase with short-lived, externally supplied access.
 
-No credential files or Firebase responses are persisted. The only retained state is
-public version/source metadata in an artifact from a verified successful publisher.
+No credential files or Firebase responses are persisted. Short-lived handoffs hold
+only the public plan and unsigned binary; retained publisher state is public
+version/source metadata from a verified successful publisher.
 """
 
 import argparse
@@ -32,6 +33,9 @@ API_ROOT = "https://firebaseappdistribution.googleapis.com"
 MAX_JSON = 2 * 1024 * 1024
 MAX_STATE_ZIP = 32 * 1024
 MAX_CERTIFICATE_OUTPUT = 64 * 1024
+MAX_APK = 512 * 1024 * 1024
+MAX_APK_EXPANDED = 1024 * 1024 * 1024
+MAX_BUILD_ZIP = MAX_APK + 1024 * 1024
 STATE_KEYS = {"schema", "package", "name", "code", "commit", "fingerprint"}
 FINGERPRINT_PATHS = (
     "android-app/app/src/main", "android-app/app/build.gradle.kts", "android-app/app/proguard-rules.pro",
@@ -105,7 +109,7 @@ def gh_bytes(repository, endpoint, *, limit=MAX_JSON):
     repository_name(repository)
     try:
         result = subprocess.run(["gh", "api", f"repos/{repository}/{endpoint}"],
-                                capture_output=True, check=False, timeout=90)
+                                capture_output=True, check=False, timeout=180)
     except (OSError, subprocess.TimeoutExpired):
         raise FirebaseError("GitHub metadata could not be retrieved.") from None
     if result.returncode or len(result.stdout) > limit:
@@ -428,17 +432,80 @@ def validate_plan(plan, *, live=False):
     return plan["state"]
 
 
+def receive_handoff(repository, artifact_id, digest, run_id, kind):
+    """Read one immutable artifact selected by the producing job's ID/digest outputs.
+
+    Never search by name or extract an archive into the checkout. A failed-job
+    retry may legitimately reuse an artifact from an earlier attempt of this run.
+    """
+    if (not re.fullmatch(r"[1-9][0-9]*", str(artifact_id))
+            or not re.fullmatch(r"[1-9][0-9]*", str(run_id))
+            or not isinstance(digest, str) or not re.fullmatch(r"[a-f0-9]{64}", digest)
+            or kind not in ("plan", "unsigned")):
+        raise FirebaseError("Invalid same-run artifact handoff.")
+    maximum = MAX_STATE_ZIP if kind == "plan" else MAX_BUILD_ZIP
+    metadata = gh_json(repository, f"actions/artifacts/{artifact_id}")
+    size = metadata.get("size_in_bytes")
+    name = metadata.get("name")
+    workflow_run = metadata.get("workflow_run")
+    if (type(metadata.get("id")) is not int or metadata["id"] != int(artifact_id) or metadata.get("expired") is not False
+            or type(size) is not int or not 1 <= size <= maximum
+            or metadata.get("digest") != "sha256:" + digest
+            or not isinstance(workflow_run, dict) or type(workflow_run.get("id")) is not int
+            or workflow_run["id"] != int(run_id) or not isinstance(name, str)
+            or not re.fullmatch(r"android-firebase-beta-" + kind + "-" + str(run_id) + r"-[1-9][0-9]*",
+                                name)):
+        raise FirebaseError("The artifact does not match this run and its producing job.")
+    raw = gh_bytes(repository, f"actions/artifacts/{artifact_id}/zip", limit=maximum)
+    if hashlib.sha256(raw).hexdigest() != digest:
+        raise FirebaseError("The handoff archive digest does not match its producing job.")
+    filename, expanded = ("plan.json", 8192) if kind == "plan" else ("unsigned.apk", MAX_APK)
+    try:
+        with zipfile.ZipFile(io.BytesIO(raw)) as archive:
+            entries = archive.infolist()
+            if (len(entries) != 1 or entries[0].filename != filename
+                    or not 1 <= entries[0].file_size <= expanded or entries[0].flag_bits & 1):
+                raise FirebaseError("The handoff archive contains unexpected files.")
+            return archive.read(entries[0])
+    except (zipfile.BadZipFile, ValueError, KeyError, RuntimeError):
+        raise FirebaseError("The handoff archive is invalid.") from None
+
+
 def validate_apk(apk):
-    if not apk.is_file() or not 1 <= apk.stat().st_size <= 512 * 1024 * 1024:
-        raise FirebaseError("A nonempty signed APK within the size limit is required.")
+    if not apk.is_file() or not 1 <= apk.stat().st_size <= MAX_APK:
+        raise FirebaseError("A nonempty APK within the size limit is required.")
     try:
         with zipfile.ZipFile(apk) as archive:
-            if "AndroidManifest.xml" not in archive.namelist() or "classes.dex" not in archive.namelist():
+            entries = archive.infolist()
+            names = archive.namelist()
+            if (len(names) != len(set(names)) or len(names) > 100_000
+                    or sum(entry.file_size for entry in entries) > MAX_APK_EXPANDED
+                    or any(entry.flag_bits & 1 for entry in entries)):
+                raise FirebaseError("The APK archive exceeds the limits or contains ambiguous files.")
+            if "AndroidManifest.xml" not in names or "classes.dex" not in names:
                 raise FirebaseError("The APK is missing its manifest or code.")
             if any(name.startswith("assets/decks") for name in archive.namelist()) or archive.testzip() is not None:
                 raise FirebaseError("The APK is corrupt or contains retired deck assets.")
     except zipfile.BadZipFile:
         raise FirebaseError("The file is not a valid APK archive.") from None
+
+
+def stage_unsigned_apk(source, destination):
+    """Remove the unprivileged build's ephemeral signatures without any owner key.
+
+    Rebuilding the ZIP also drops the v2/v3 signing block outside ZIP entries.
+    The isolated signer aligns and signs this file again with official SDK tools.
+    """
+    validate_apk(source)
+    if source.resolve() == destination.resolve():
+        raise FirebaseError("The unsigned APK must use a separate staging path.")
+    destination.parent.mkdir(parents=True, exist_ok=True)
+    signature = re.compile(r"META-INF/(?:MANIFEST\.MF|[^/]+\.(?:SF|RSA|DSA|EC)|SIG-[^/]+)", re.I)
+    with zipfile.ZipFile(source) as archive, zipfile.ZipFile(destination, "w") as output:
+        for entry in archive.infolist():
+            if not signature.fullmatch(entry.filename):
+                output.writestr(entry, archive.read(entry))
+    validate_apk(destination)
 
 
 def publish(api, plan, apk, groups, *, check_source):
@@ -479,7 +546,8 @@ def output_values(**values):
 
 def main(argv=None):
     parser = argparse.ArgumentParser(description=__doc__)
-    parser.add_argument("mode", choices=("preview", "check-config", "prepare", "publish", "verify-certificate"))
+    parser.add_argument("mode", choices=("preview", "check-config", "prepare", "publish", "verify-certificate",
+                                         "receive-plan", "receive-apk", "stage-apk"))
     parser.add_argument("--apk", type=Path)
     parser.add_argument("--directory", type=Path)
     args = parser.parse_args(argv)
@@ -497,6 +565,30 @@ def main(argv=None):
                                    os.environ.get("GITHUB_REF", ""), os.environ.get("FIREBASE_BETA_ENABLED", ""),
                                    preview=preview, sha=os.environ.get("GITHUB_SHA", ""))
         verify_source(commit, repository, current_main=not preview)
+        if args.mode in ("receive-plan", "receive-apk", "stage-apk"):
+            directory.mkdir(parents=True, exist_ok=True)
+            if args.mode == "stage-apk":
+                if args.apk is None:
+                    raise FirebaseError("Staging requires --apk.")
+                stage_unsigned_apk(args.apk, directory / "unsigned.apk")
+            else:
+                kind = "plan" if args.mode == "receive-plan" else "unsigned"
+                raw = receive_handoff(repository, os.environ.get("HANDOFF_ARTIFACT_ID", ""),
+                                      os.environ.get("HANDOFF_ARTIFACT_DIGEST", ""),
+                                      os.environ.get("GITHUB_RUN_ID", ""), kind)
+                if kind == "plan":
+                    plan = json.loads(raw)
+                    state = validate_plan(plan, live=True)
+                    if state["commit"] != commit or plan["repository"] != repository:
+                        raise FirebaseError("The plan does not match this run's checked source.")
+                    (directory / "plan.json").write_bytes(raw)
+                    output_values(name=state["name"], code=state["code"])
+                else:
+                    apk = directory / "unsigned.apk"
+                    apk.write_bytes(raw)
+                    validate_apk(apk)
+            print("Verified same-run build handoff." if args.mode != "stage-apk" else "Staged unsigned APK without distribution credentials.")
+            return 0
         if not preview:
             validate_config(os.environ)
             if os.environ.get("GITHUB_EVENT_NAME") == "workflow_dispatch":
