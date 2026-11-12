@@ -80,9 +80,9 @@ Po skanie możesz zatrzymać lub wznowić utwór, przełączyć źródło dostę
 
 Dodawanie kart i odtwarzanie nie wymagają logowania do Spotify w Hiciarzu ani konfiguracji aplikacji deweloperskiej.
 
-1. Wybierz **Talie → Utwory → Dodaj utwór**, wpisz tytuł i opcjonalnie wykonawcę, a następnie wyszukaj nagranie w MusicBrainz.
-2. Wybierz właściwą wersję z listy. Hiciarz uzupełni tytuł, wykonawcę i dostępny rok oraz sprawdzi linki Spotify powiązane z nagraniem. Jeśli MusicBrainz nie ma takiego linku, sprawdzi propozycje ListenBrainz. Przy kilku źródłach lub propozycji ListenBrainz wybierz link i sprawdź odsłuch. Gdy linku nadal brakuje, skorzystaj z wyszukiwania Spotify i wklej go samodzielnie; wybrane dane nagrania zostaną zachowane. Opcja **Mam link Spotify** pozwala też rozpocząć od gotowego linku.
-3. Posłuchaj podglądu, przejdź do **Dane utworu** i sprawdź wybraną wersję oraz datę. Brakujące informacje możesz wpisać lub wyszukać przez **Znajdź wykonawcę i rok w MusicBrainz**. Kroki są stale widoczne w nagłówku, a **Wstecz** i pozostałe akcje w stopce. Cofanie zachowuje wpisane dane.
+1. Wybierz **Talie → Utwory → Dodaj utwór**, wpisz tytuł i opcjonalnie wykonawcę, a następnie wybierz **Szukaj** w stopce. W osobnym kroku zaznacz właściwe nagranie i wybierz **Dalej**.
+2. Hiciarz uzupełni tytuł, wykonawcę i dostępny rok oraz sprawdzi linki Spotify. Jeden bezpośredni link MusicBrainz prowadzi od razu do danych karty. Przy kilku linkach lub propozycji ListenBrainz pojawia się krok **Spotify**: zaznacz link, sprawdź odsłuch i przejdź dalej. Jeśli linku brakuje, wybierz **Znajdź w Spotify** w stopce i wklej skopiowany link; wybrane dane nagrania zostaną zachowane. Brak wyników pozwala dodać kartę ręcznie.
+3. W kroku **Dane karty** sprawdź i popraw tytuł, wykonawcę oraz rok. Pola nie uruchamiają wyszukiwania podczas wpisywania. Aby zmienić nagranie, użyj **Wstecz** lub wcześniejszego kroku w nagłówku. Nagłówek i akcje w stopce pozostają widoczne; przewija się tylko treść. Cofanie zachowuje dane.
 4. Zatwierdź kartę po sprawdzeniu danych.
 
 Podgląd Spotify może być niedostępny lub ograniczony do fragmentu. MusicBrainz dostarcza metadane, a nie audio; rok pochodzi z MusicBrainz, nie z publicznego podglądu Spotify, i może wymagać korekty. Sam zgodny tytuł nie potwierdza nagrania z linku. Brak odpowiedzi serwisu nie blokuje ręcznego dodania karty.

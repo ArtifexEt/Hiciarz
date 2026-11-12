@@ -1,26 +1,23 @@
-.song-form-progress {
-  display: grid;
-  grid-template-columns: 1fr 1fr;
-  gap: 12px;
+.song-wizard-progress {
+  display: flex;
+  gap: 10px;
   margin: 0;
   padding: 0;
   list-style: none;
 }
-.song-form-progress li {
-  display: flex;
-  align-items: center;
-  gap: 8px;
+.song-wizard-progress > li {
+  flex: 1;
   min-width: 0;
-  padding: 0 0 10px;
+  padding-bottom: 8px;
   border-bottom: 2px solid var(--line);
-  color: var(--ink);
-  font-size: 11px;
+  color: var(--muted);
+  font-size: 12px;
   line-height: 1.4;
 }
-.song-form-progress li > button {
+.song-wizard-progress button {
   display: flex;
   align-items: center;
-  gap: 8px;
+  gap: 6px;
   width: 100%;
   min-height: 44px;
   padding: 0;
@@ -28,8 +25,9 @@
   color: inherit;
   text-align: left;
   font: inherit;
+  overflow-wrap: anywhere;
 }
-.song-form-progress li > button > span {
+.song-wizard-progress button > span[aria-hidden='true'] {
   display: grid;
   place-items: center;
   flex: 0 0 24px;
@@ -38,27 +36,15 @@
   border-radius: 50%;
   font-variant-numeric: tabular-nums;
 }
-.song-form-progress li[aria-current='step'] {
+.song-wizard-progress > li[aria-current='step'] {
   border-bottom-color: var(--accent-ink);
+  color: var(--ink);
   font-weight: 600;
 }
-.song-form-progress li[aria-current='step'] > button > span {
-  background: var(--accent);
+.song-wizard-progress > li[aria-current='step'] button > span[aria-hidden='true'] {
   border-color: transparent;
+  background: var(--accent);
   color: var(--accent-ink);
-}
-.song-source-summary {
-  margin-bottom: 18px;
-  padding-bottom: 12px;
-  border-bottom: 1px solid var(--line);
-}
-.song-source-summary .hint {
-  margin: 0;
-}
-.song-title-loading {
-  display: flex;
-  align-items: center;
-  gap: 8px;
 }
 .modal.app-modal .song-form-actions {
   margin: 0;
@@ -66,6 +52,167 @@
 }
 .song-form-actions .primary {
   flex: 1;
+  min-height: 44px;
+}
+.song-form-actions > a {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  text-decoration: none;
+}
+.song-form-page {
+  margin: 0;
+}
+.song-wizard-query,
+.song-wizard-results,
+.song-wizard-source,
+.song-wizard-review {
+  min-width: 0;
+}
+.song-wizard-query > .hint,
+.song-wizard-results > .hint,
+.song-wizard-source > .hint,
+.song-wizard-review > .hint {
+  margin: 0 0 18px;
+}
+.song-wizard-results-fieldset {
+  min-width: 0;
+  margin: 0;
+  padding: 0;
+  border: 0;
+}
+.song-wizard-results-fieldset > legend {
+  margin-bottom: 12px;
+  padding: 0;
+  font-size: 14px;
+  font-weight: 600;
+}
+.song-wizard-results-fieldset > .hint {
+  margin-bottom: 18px;
+}
+.song-wizard-query input[type='search'],
+.song-wizard-source input[type='url'] {
+  width: 100%;
+  padding: 12px 13px;
+  border: 1px solid var(--line);
+  border-radius: 8px;
+  background: var(--surface);
+  color: var(--ink);
+}
+.song-wizard-list {
+  display: grid;
+  gap: 8px;
+  min-width: 0;
+  margin: 0;
+  padding: 0;
+  border: 0;
+  list-style: none;
+}
+.song-wizard-list > legend {
+  padding: 0 0 12px;
+  font-size: 13px;
+  font-weight: 600;
+}
+.song-wizard-option {
+  display: flex;
+  flex-direction: row;
+  align-items: center;
+  gap: 12px;
+  min-width: 0;
+  min-height: 76px;
+  margin: 0;
+  padding: 14px;
+  border: 1px solid var(--line);
+  border-radius: 10px;
+  background: var(--surface);
+  color: var(--ink);
+  text-align: left;
+  font-weight: 400;
+  cursor: pointer;
+}
+.song-wizard-option:hover,
+.song-wizard-option:has(input:checked) {
+  border-color: var(--accent-ink);
+  background: var(--soft);
+}
+.song-wizard-option > input[type='radio'] {
+  flex: 0 0 18px;
+  width: 18px;
+  height: 18px;
+  margin: 0;
+}
+.song-wizard-option > span:not(.song-recording-year) {
+  min-width: 0;
+  flex: 1;
+}
+.song-recording-year {
+  flex: 0 0 48px;
+  color: var(--accent-ink);
+  font-size: 17px;
+  font-variant-numeric: tabular-nums;
+  font-weight: 600;
+}
+.song-recording-description,
+.song-wizard-option > span:not(.song-recording-year) {
+  display: grid;
+  gap: 4px;
+  overflow-wrap: anywhere;
+}
+.song-recording-description strong,
+.song-wizard-option strong {
+  font-size: 13px;
+}
+.song-recording-description small,
+.song-wizard-option small {
+  color: var(--muted);
+  font-size: 11px;
+  font-weight: 400;
+  overflow-wrap: anywhere;
+}
+.song-wizard-summary {
+  display: grid;
+  gap: 5px;
+  margin: 0 0 18px;
+  padding: 14px;
+  border: 1px solid var(--line);
+  border-radius: 10px;
+  background: var(--soft);
+  color: var(--ink);
+  overflow-wrap: anywhere;
+}
+.song-wizard-summary > span,
+.song-wizard-summary > small {
+  color: var(--muted);
+  font-size: 12px;
+}
+.song-wizard-feedback {
+  margin-bottom: 16px;
+}
+.song-wizard-feedback:empty {
+  display: none;
+}
+.song-wizard-feedback > p + p {
+  margin-top: 8px;
+}
+.song-wizard-feedback[role='status'],
+.song-wizard-feedback [role='status'] {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+.song-wizard-source-preview {
+  margin: 18px 0;
+}
+.song-wizard-source-preview iframe {
+  display: block;
+  width: 100%;
+  border: 0;
+  border-radius: 12px;
+  background: var(--soft);
+}
+.song-wizard-source-preview .hint {
+  margin-top: 8px;
 }
 .song-advanced-settings {
   margin: 16px 0;
@@ -79,254 +226,16 @@
 .song-advanced-settings .game-variants {
   margin-top: 8px;
 }
-.song-form .song-spotify-link {
-  margin: 0 0 12px;
-}
-.song-recording-search > .hint {
-  margin-top: 0;
-}
-.song-recording-search input[type='search'] {
-  width: 100%;
-  border: 1px solid var(--line);
-  border-radius: 8px;
-  padding: 12px 13px;
-  background: var(--surface);
-  color: var(--ink);
-}
-.song-recording-search > button {
-  min-height: 44px;
-  margin-top: 12px;
-}
-.song-selected-recording {
-  display: grid;
-  gap: 5px;
-  margin-top: 16px;
-  padding: 12px;
-  border: 1px solid var(--line);
-  border-radius: 9px;
-  background: var(--soft);
-  color: var(--ink);
-  overflow-wrap: anywhere;
-}
-.song-selected-recording > span {
-  font-size: 11px;
-  color: var(--muted);
-}
-.song-spotify-choices {
-  min-width: 0;
-  margin: 18px 0;
-  padding: 0;
-  border: 0;
-}
-.song-spotify-choices > legend {
-  font-weight: 600;
-  font-size: 12px;
-}
-.song-spotify-choice {
-  display: flex;
-  align-items: center;
-  gap: 8px;
-  padding: 10px;
-  border: 1px solid var(--line);
-  border-radius: 9px;
-}
-.song-spotify-choice > label {
-  display: flex;
-  align-items: center;
-  gap: 10px;
-  min-width: 0;
-  flex: 1;
-  margin: 0;
-  cursor: pointer;
-}
-.song-spotify-choice input {
-  width: 18px;
-  min-width: 18px;
-  height: 18px;
-  margin: 0;
-}
-.song-spotify-choice label > span {
-  display: grid;
-  gap: 4px;
-  min-width: 0;
-  font-size: 12px;
-}
-.song-spotify-choice small {
-  color: var(--muted);
-  font-size: 10px;
-  overflow-wrap: anywhere;
-}
-.song-spotify-choice > button {
-  flex-shrink: 0;
-  min-height: 44px;
-}
-.song-other-spotify-links {
-  margin-top: 8px;
-}
-.song-other-spotify-links > summary,
-.song-spotify-entry > summary {
-  min-height: 44px;
-  padding: 12px 0;
-  cursor: pointer;
-}
-.song-other-spotify-list {
-  display: grid;
-  gap: 6px;
-  max-height: 240px;
-  overflow-y: auto;
-  overscroll-behavior: contain;
-}
-.song-spotify-choices > a {
-  margin-top: 8px;
-}
-.song-spotify-entry {
-  margin-top: 16px;
-  border-top: 1px solid var(--line);
-}
-.song-spotify-link > label {
-  margin: 0;
-}
-.song-source-entry {
-  display: flex;
-  align-items: stretch;
-  gap: 8px;
-  margin-top: 7px;
-}
-.song-source-entry input {
-  min-width: 0;
-  flex: 1;
-  margin: 0;
-}
-.song-source-entry button {
-  flex-shrink: 0;
-}
-.song-spotify-finder {
-  margin: 0 0 18px;
-  color: var(--ink);
-  font-size: 11px;
-}
-.song-spotify-finder summary {
-  width: fit-content;
-  cursor: pointer;
-  line-height: 1.6;
-}
-.song-search-entry {
-  display: flex;
-  align-items: end;
-  gap: 8px;
-  padding-top: 10px;
-}
-.song-search-entry label {
-  flex: 1;
-  min-width: 0;
-  margin: 0;
-}
-.song-search-entry input {
-  width: 100%;
-  border: 1px solid var(--line);
-  border-radius: 8px;
-  padding: 12px 13px;
-  background: var(--surface);
-  color: var(--ink);
-}
-.song-search-entry a {
-  text-decoration: none;
-  flex-shrink: 0;
-}
-.song-spotify-player {
-  margin: 16px 0;
-}
-.song-spotify-player iframe {
-  display: block;
-  width: 100%;
-  border: 0;
-  border-radius: 12px;
-  background: var(--soft);
-}
-.song-spotify-player > a {
-  margin-top: 8px;
-}
-.song-spotify-player .hint {
-  margin-bottom: 0;
-}
-.song-lookup-feedback:empty {
-  display: none;
-}
-.song-recording-results {
-  margin: 20px 0;
-  min-width: 0;
-  padding: 0;
-  border: 0;
-}
-.song-recording-results legend {
-  padding: 0 0 10px;
-  font-size: 12px;
-  font-weight: 600;
-}
-.song-recording-list {
-  display: grid;
-  gap: 6px;
-  max-height: 280px;
-  overflow-y: auto;
-  overscroll-behavior: contain;
-}
-.song-recording-choice {
-  display: flex;
-  align-items: center;
-  gap: 14px;
-  width: 100%;
-  min-height: 68px;
-  padding: 12px;
-  border: 1px solid var(--line);
-  border-radius: 9px;
-  background: var(--surface);
-  color: var(--ink);
-  text-align: left;
-}
-.song-recording-choice:hover,
-.song-recording-choice[aria-pressed='true'] {
-  background: var(--soft);
-  border-color: var(--accent-ink);
-}
-.song-recording-year {
-  flex: 0 0 48px;
-  color: var(--accent-ink);
-  font-size: 17px;
-  font-variant-numeric: tabular-nums;
-  font-weight: 600;
-}
-.song-recording-description {
-  display: grid;
-  flex: 1;
-  min-width: 0;
-  gap: 3px;
-  font-size: 11px;
-  overflow-wrap: anywhere;
-}
-.song-recording-description strong {
-  font-size: 12px;
-}
-.song-recording-description small {
-  color: var(--muted);
-  font-size: 10px;
-}
-.song-recording-choice > svg {
-  flex-shrink: 0;
-  color: var(--accent-ink);
-}
-.song-recording-results > a {
-  margin-top: 8px;
-}
-.song-year-actions {
-  display: flex;
-  justify-content: flex-start;
-  margin-top: 2px;
-}
 .song-form a:focus-visible,
 .song-form button:focus-visible,
 .song-form summary:focus-visible,
-.song-form-progress button:focus-visible,
-.song-form-actions button:focus-visible {
+.song-wizard-progress button:focus-visible,
+.song-form-actions button:focus-visible,
+.song-form-actions a:focus-visible {
+  outline: 2px solid var(--accent-ink);
+  outline-offset: 3px;
+}
+.song-wizard-option:has(input:focus-visible) {
   outline: 2px solid var(--accent-ink);
   outline-offset: 3px;
 }
@@ -334,14 +243,15 @@
   .song-form .form-grid {
     grid-template-columns: 1fr;
   }
-  .song-source-entry,
-  .song-search-entry {
-    flex-direction: column;
-    align-items: stretch;
+  .song-wizard-progress {
+    gap: 6px;
   }
-  .song-source-entry button,
-  .song-search-entry a {
-    min-height: 44px;
+  .song-wizard-progress > li {
+    font-size: 11px;
+  }
+  .song-wizard-option {
+    gap: 10px;
+    padding: 12px;
   }
 }
 @media (max-width: 360px) {
@@ -351,7 +261,13 @@
   .modal.app-modal:has(.song-form) .modal-body {
     padding: 12px;
   }
-  .song-spotify-player {
-    margin-inline: -10px;
+  .song-wizard-progress button {
+    flex-direction: column;
+    align-items: flex-start;
+    gap: 4px;
+  }
+  .song-recording-year {
+    flex-basis: 40px;
+    font-size: 15px;
   }
 }

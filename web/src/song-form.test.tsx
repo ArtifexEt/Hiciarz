@@ -55,6 +55,16 @@ describe('Spotify card drafts', () => {
     expect(songFromDraft(draft, 'music', previous).sources).toEqual(previous.sources);
   });
 
+  it('replaces a legacy recording source while preserving the card ID and requiring the new link', () => {
+    const previous = demoDeck().songs.find(
+      (song) => song.sources.youtube && !song.sources.spotify,
+    )!;
+    const replaced = songFromDraft(draft, 'music', previous, false);
+    expect(replaced.id).toBe(previous.id);
+    expect(replaced.sources).toEqual({ spotify: '0GjEhVFGZW8afUYGChu3Rr' });
+    expect(() => songFromDraft({ ...draft, spotify: '' }, 'music', previous, false)).toThrow();
+  });
+
   it('keeps movie and game answers and requires a real year before saving', () => {
     expect(songFromDraft({ ...draft, answer: 'The Witcher 3' }, 'game').answer).toBe(
       'The Witcher 3',
@@ -162,30 +172,34 @@ describe('Spotify card drafts', () => {
   });
 });
 
-describe.each<Language>(['pl', 'en'])('Spotify song form in %s', (language) => {
-  it('starts with MusicBrainz search and keeps Spotify paste in a closed secondary disclosure', () => {
+describe.each<Language>(['pl', 'en'])('Song wizard in %s', (language) => {
+  it('starts with only the query fields and one search action in the fixed footer', () => {
     setLanguage(language);
     const markup = renderToStaticMarkup(<SongForm onSave={noop} onClose={noop} />);
-    expect(markup).toContain('name="spotify"');
-    expect(markup).toContain('name="recording-search-title"');
-    expect(markup).toContain('name="recording-search-artist"');
-    expect(markup).toContain(t('musicbrainzFirst.optionalArtist'));
-    expect(markup).toContain(t('musicbrainzFirst.search'));
-    expect(markup.indexOf('name="recording-search-title"')).toBeLessThan(
-      markup.indexOf('name="spotify"'),
+    const body = markup.slice(
+      markup.indexOf('class="modal-body"'),
+      markup.indexOf('class="modal-footer"'),
     );
-    expect(markup).toMatch(/<details class="song-spotify-finder song-spotify-entry">/);
-    expect(markup).toContain(t('musicbrainzFirst.haveSpotifyLink'));
+    const footer = markup.slice(markup.indexOf('class="modal-footer"'));
+    expect(body).toContain('song-wizard-query');
+    expect(body).toContain('name="title"');
+    expect(body).toContain('name="artist"');
+    expect(body).toContain(t('songWizard.optionalArtist'));
+    expect(body).toContain(t('songWizard.queryHint'));
+    expect(body).not.toContain('<button');
+    expect(body).not.toContain(t('songWizard.search'));
+    expect(footer).toContain(t('songWizard.search'));
+    expect(markup.match(/type="submit"/g)).toHaveLength(1);
     expect(markup.match(/<form\b/g)).toHaveLength(1);
-    expect(markup).toContain('https://open.spotify.com/search');
+    expect(markup).not.toContain('https://open.spotify.com/search');
     expect(markup).not.toContain('name="youtube"');
     expect(markup).not.toContain('accounts.spotify.com');
-    expect(markup).not.toMatch(/(?:songForm|app|creator|musicbrainzFirst)\.[A-Za-z]/);
+    expect(markup).not.toMatch(/(?:songForm|songWizard|app|creator)\.[A-Za-z]/);
     expect(markup).not.toContain('<iframe');
-    for (const field of ['title', 'artist', 'year', 'theme', 'answer'])
+    for (const field of ['spotify', 'year', 'theme', 'answer', 'recording'])
       expect(markup).not.toContain(`name="${field}"`);
     expect(markup.match(/aria-current="step"/g)).toHaveLength(1);
-    expect(markup).not.toContain('song-recording-results');
+    expect(markup).not.toContain('song-wizard-list');
   });
 
   it('opens an existing card directly on metadata and preserves edit actions', () => {
@@ -199,15 +213,18 @@ describe.each<Language>(['pl', 'en'])('Spotify song form in %s', (language) => {
         onMove={{ down: noop }}
       />,
     );
-    expect(markup).toContain('https://open.spotify.com/track/0GjEhVFGZW8afUYGChu3Rr');
-    expect(markup).not.toContain('<iframe');
+    expect(markup).toContain('song-wizard-review');
+    expect(markup).toContain('https://open.spotify.com/embed/track/0GjEhVFGZW8afUYGChu3Rr');
     expect(markup).not.toContain('name="spotify"');
     expect(markup).toContain('name="year"');
     expect(markup).toContain('name="title"');
     expect(markup).toContain('name="artist"');
     expect(markup.match(/aria-current="step"/g)).toHaveLength(1);
     expect(markup).toContain('song-extra-options');
-    expect(markup).not.toMatch(/(?:songForm|app|creator)\.[A-Za-z]/);
+    expect(markup).toContain(t('songWizard.reviewHint'));
+    expect(markup).not.toContain(t('metadataAutofill.findDetails'));
+    expect(markup).not.toContain('name="recording"');
+    expect(markup).not.toMatch(/(?:songForm|songWizard|app|creator)\.[A-Za-z]/);
   });
 
   it('keeps a music card in music mode when edited from a game deck', () => {
@@ -228,23 +245,48 @@ describe.each<Language>(['pl', 'en'])('Spotify song form in %s', (language) => {
     expect(markup).toContain('name="year"');
     expect(markup).not.toContain('name="spotify"');
     expect(markup).not.toContain('<iframe');
-    expect(markup).not.toMatch(/(?:songForm|app|creator)\.[A-Za-z]/);
+    expect(markup).not.toMatch(/(?:songForm|songWizard|app|creator)\.[A-Za-z]/);
+  });
+
+  it('shows only the visited stage and the edit-search affordance instead of fixed future stages', () => {
+    setLanguage(language);
+    const newMarkup = renderToStaticMarkup(<SongForm onSave={noop} onClose={noop} />);
+    const editMarkup = renderToStaticMarkup(
+      <SongForm song={demoDeck().songs[0]} onSave={noop} onClose={noop} />,
+    );
+    const navigation = (markup: string) =>
+      markup.slice(
+        markup.indexOf('class="modal-navigation"'),
+        markup.indexOf('class="modal-body"'),
+      );
+    const newNavigation = navigation(newMarkup);
+    const editNavigation = navigation(editMarkup);
+    expect(newNavigation.match(/<li\b/g)).toHaveLength(1);
+    expect(newNavigation).toContain(t('songWizard.stage.query'));
+    expect(editNavigation).toContain(t('songWizard.stage.review'));
+    expect(editNavigation).toContain(t('songWizard.changeQuery'));
+    for (const future of ['results', 'source']) {
+      expect(newNavigation).not.toContain(t('songWizard.stage.' + future));
+      expect(editNavigation).not.toContain(t('songWizard.stage.' + future));
+    }
   });
 
   it('keeps step navigation and associated submit actions outside the scrollable body', () => {
     setLanguage(language);
-    const markup = renderToStaticMarkup(
-      <SongForm song={demoDeck().songs[0]} onSave={noop} onClose={noop} />,
-    );
-    const navigation = markup.indexOf('class="modal-navigation"');
-    const body = markup.indexOf('class="modal-body"');
-    const footer = markup.indexOf('class="modal-footer"');
-    const formId = markup.match(/<form[^>]*\bid="([^"]+)"/)?.[1];
-    expect(navigation).toBeGreaterThan(0);
-    expect(navigation).toBeLessThan(body);
-    expect(footer).toBeGreaterThan(markup.indexOf('</form>'));
-    expect(markup.slice(footer)).toContain(`form="${formId}"`);
-    expect(markup.slice(navigation, body)).toContain('<button type="button"');
+    for (const song of [undefined, demoDeck().songs[0]]) {
+      const markup = renderToStaticMarkup(<SongForm song={song} onSave={noop} onClose={noop} />);
+      const navigation = markup.indexOf('class="modal-navigation"');
+      const body = markup.indexOf('class="modal-body"');
+      const footer = markup.indexOf('class="modal-footer"');
+      const formId = markup.match(/<form[^>]*\bid="([^"]+)"/)?.[1];
+      expect(navigation).toBeGreaterThan(0);
+      expect(navigation).toBeLessThan(body);
+      expect(footer).toBeGreaterThan(markup.indexOf('</form>'));
+      expect(markup.slice(footer)).toContain(`form="${formId}"`);
+      expect(markup.slice(footer).match(/type="submit"/g)).toHaveLength(1);
+      expect(markup.slice(body, footer)).not.toContain('type="submit"');
+      expect(markup.slice(navigation, body)).toContain('<button type="button"');
+    }
   });
 
   it('uses the deck default for new cards and hides per-card type overrides in More settings', () => {
