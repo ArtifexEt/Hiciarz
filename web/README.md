@@ -73,7 +73,7 @@ Ekran startowy na komputerze:
 | **Spotify Connect**   | Hiciarz wysyła polecenia do aplikacji Spotify lub głośnika dostępnego na Twoim koncie. | Połączenie Spotify, Premium i aktywne urządzenie. [Instrukcja](docs/spotify.md#odtwarzanie-przez-spotify-connect).                                                 |
 | **Drugi ekran**       | Telefon skanuje karty, a połączony komputer lub drugi telefon odtwarza muzykę.         | Na drugim urządzeniu otwórz **Drugi ekran** i wybierz **Połącz skaner**. W skanerze zeskanuj QR parowania, a następnie karty. Oba urządzenia potrzebują internetu. |
 
-Osadzony odtwarzacz może pokazywać tytuł i okładkę. Przy zgadywaniu nagrań przydaje się Spotify Connect lub drugi ekran ustawiony poza wzrokiem graczy. Głośnik Bluetooth dla odtwarzania lokalnego wybierasz w ustawieniach systemu.
+Osadzony odtwarzacz może pokazywać tytuł i okładkę. Przy zgadywaniu nagrań przydaje się Spotify Connect lub drugi ekran ustawiony poza wzrokiem graczy.
 
 Po skanie możesz zatrzymać lub wznowić utwór, przełączyć źródło dostępne na karcie i wybrać **Skanuj kolejną kartę**. Powrót do aparatu zatrzymuje lokalny odtwarzacz. Internet i dostępność nagrania w danym regionie są wymagane niezależnie od zapisania aplikacji jako PWA.
 

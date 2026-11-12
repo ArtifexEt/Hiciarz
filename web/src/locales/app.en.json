@@ -297,8 +297,6 @@
   "app.endSession": "End session",
   "app.clickConnectScannerToShowAQr": "Click “Connect scanner” to show a QR code. You do not need a Hiciarz account.",
   "app.preparePairingQrCode": "Prepare pairing QR code",
-  "app.howDoIChooseASpeaker": "How do I choose a speaker?",
-  "app.inSpotifyModeSelectADeviceFrom": "In Spotify mode, select a device from the list. In “On this device” mode, your browser and device settings control audio. Speaker connection options depend on your hardware.",
   "app.madeForMusicAndGoodCompany": "Made for music. And good company.",
   "app.aNewVersionIsReadyChooseLoad": "A new version is ready. Choose “Load new version”.",
   "app.updateCheckStartedWeWillLetYou": "Update check started. We will let you know when a new version is ready.",
