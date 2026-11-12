@@ -100,7 +100,7 @@ describe('JSON translations', () => {
     expect(themeNames.fish).toBe('Rybki świąteczne');
     setLanguage('en');
     expect(themeNames.fish).toBe('Christmas fish');
-    expect(cardQuestion('movie')).toBe('Which film is this music from?');
+    expect(cardQuestion('movie')).toBe('Film music');
     expect(() => validateSong(null, 1)).toThrow('Row 2: invalid record.');
     expect(newDeck().name).toBe('My new deck');
     expect(deck.name).toBe('Moja nowa talia');

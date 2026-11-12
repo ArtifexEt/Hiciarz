@@ -1,13 +1,13 @@
 {
-  "examples.game-symphonic.name": "Zgadnij grę — symfonicznie",
+  "examples.game-symphonic.name": "Muzyka z gier — symfonicznie",
   "examples.game-symphonic.description": "Orkiestrowe motywy z gier w wykonaniu London Philharmonic Orchestra. Zawiera wskazany motyw z Assassin’s Creed: Revelations.",
-  "examples.game-symphonic.yearNote": "Lata dotyczą wydań orkiestrowych aranżacji w Spotify, nie premier gier. Tutaj zgadujecie grę; rok nie jest pytaniem.",
-  "examples.game-originals.name": "Zgadnij grę — oryginalne nagrania",
+  "examples.game-symphonic.yearNote": "Lata dotyczą wydań orkiestrowych aranżacji w Spotify, nie premier gier. Karty zawierają również tytuły gier.",
+  "examples.game-originals.name": "Muzyka z gier — oryginalne nagrania",
   "examples.game-originals.description": "Rozpoznawalne motywy i piosenki z oryginalnych ścieżek dźwiękowych. Klasyki, wielkie serie i gry niezależne.",
-  "examples.game-originals.yearNote": "Lata pochodzą z wydań ścieżek dźwiękowych i mogą oznaczać reedycję. Odpowiedzią jest gra; rok nie jest pytaniem.",
+  "examples.game-originals.yearNote": "Lata pochodzą z wydań ścieżek dźwiękowych i mogą oznaczać reedycję. Karty zawierają również tytuły gier.",
   "examples.gallery.curatedOn": "Lista przygotowana {{date}}. ",
   "examples.gallery.sources": "Źródła nagrań",
-  "examples.gallery.mixedAppend": "Dopiszesz karty z innym pytaniem niż obecny wariant talii. Każda zachowa swój wariant. Aby grać w jeden sposób, utwórz nową talię.",
+  "examples.gallery.mixedAppend": "Dopiszesz karty innego rodzaju niż obecne ustawienie talii. Każda zachowa swój rodzaj. Aby mieć jednolity zestaw, utwórz nową talię.",
   "examples.gallery.cardCount": "{{count}} kart",
   "examples.catalog.sourceHttps": "Źródło przykładu musi być poprawnym publicznym adresem HTTPS."
 }

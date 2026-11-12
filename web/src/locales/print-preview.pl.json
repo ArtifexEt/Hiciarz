@@ -1,5 +1,5 @@
 {
-  "printPreview.front": "Strona odpowiedzi: {{title}}",
+  "printPreview.front": "Dane karty: {{title}}",
   "printPreview.back": "Strona z kodem QR: {{title}}",
   "printPreview.preparing": "Przygotowywanie podglądu…",
   "printPreview.failed": "Nie udało się wczytać podglądu karty.",

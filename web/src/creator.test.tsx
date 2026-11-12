@@ -49,15 +49,15 @@ describe('guided card creation', () => {
     expect(markup.match(/aria-current="step"/g)).toHaveLength(1);
   });
 
-  it('offers the classic game and discoverable variations as a single native radio group', () => {
+  it('offers music tracks and discoverable card types as a single native radio group', () => {
     setLanguage('pl');
     const markup = renderToStaticMarkup(<GameModePicker value="music" onChange={noop} />);
     expect(markup).toContain('<fieldset');
-    expect(markup).toContain('<legend>W co gramy?</legend>');
-    expect(markup).toContain('Klasyczna oś czasu');
-    expect(markup).toContain('Inne warianty');
-    expect(markup).toContain('Zgadnij grę');
-    expect(markup).toContain('Zgadnij film');
+    expect(markup).toContain('<legend>Rodzaj kart</legend>');
+    expect(markup).toContain('Utwory muzyczne');
+    expect(markup).toContain('Inne rodzaje kart');
+    expect(markup).toContain('Muzyka z gier');
+    expect(markup).toContain('Muzyka z filmów');
     expect(markup).not.toContain('<select');
     const options = radios(markup);
     expect(options.map((radio) => radio.value).sort()).toEqual(['game', 'movie', 'music']);
@@ -67,12 +67,12 @@ describe('guided card creation', () => {
     expect(markup).not.toMatch(/<details[^>]*\bopen=/);
   });
 
-  it('makes a saved game variation selected and discoverable without a dropdown', () => {
+  it('makes a saved game-music type selected and discoverable without a dropdown', () => {
     setLanguage('en');
     const markup = renderToStaticMarkup(<GameModePicker value="game" onChange={noop} />);
-    expect(markup).toContain('What are we playing?');
-    expect(markup).toContain('Other variations');
-    expect(markup).toContain('Guess the game');
+    expect(markup).toContain('Card type');
+    expect(markup).toContain('Other card types');
+    expect(markup).toContain('Game music');
     expect(markup).toMatch(/<details[^>]*\bopen=/);
     expect(
       radios(markup)
@@ -83,12 +83,12 @@ describe('guided card creation', () => {
     expect(markup).not.toMatch(/creator\.[A-Za-z]/);
   });
 
-  it('keeps all question types and the selected film available in the compact card form', () => {
+  it('keeps all card types and the selected film music available in the compact card form', () => {
     setLanguage('en');
     const markup = renderToStaticMarkup(<GameModePicker value="movie" compact onChange={noop} />);
-    expect(markup).toContain('Classic timeline');
-    expect(markup).toContain('Guess the game');
-    expect(markup).toContain('Guess the film');
+    expect(markup).toContain('Music tracks');
+    expect(markup).toContain('Game music');
+    expect(markup).toContain('Film music');
     expect(
       radios(markup)
         .filter((radio) => radio.checked)

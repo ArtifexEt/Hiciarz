@@ -24,13 +24,13 @@ describe('localized user flows', () => {
     );
   });
 
-  it('opens a game collection with curated-source copy in either interface language', () => {
+  it('opens a game-music collection with curated-source copy in either interface language', () => {
     vi.stubGlobal('localStorage', { setItem: vi.fn() });
     setLanguage('en');
     const gallery = renderToStaticMarkup(
       <PlaylistExamples initialMode="game" currentMode="music" onChoose={() => {}} />,
     );
-    expect(gallery).toContain('Guess the game');
+    expect(gallery).toContain('Game music');
     expect(gallery).toContain('Selection prepared on');
     expect(gallery).not.toContain('Playlist snapshot from');
     expect(gallery).not.toMatch(/(?:app|components|examples)\.[A-Za-z]/);
@@ -38,7 +38,7 @@ describe('localized user flows', () => {
     const polish = renderToStaticMarkup(
       <PlaylistExamples initialMode="game" currentMode="music" onChoose={() => {}} />,
     );
-    expect(polish).toContain('Zgadnij grę');
+    expect(polish).toContain('Muzyka z gier');
     expect(polish).toContain('Lista przygotowana');
   });
 
