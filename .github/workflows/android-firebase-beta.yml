@@ -174,12 +174,8 @@ jobs:
             echo 'The APK package or version does not match the release plan.' >&2
             exit 1
           fi
-          expected="$(printf '%s' "$ANDROID_SIGNING_CERT_SHA256" | tr -d '[:space:]:' | tr '[:upper:]' '[:lower:]')"
-          actual="$("$tools/apksigner" verify --print-certs "$apk" | sed -n 's/^Signer #1 certificate SHA-256 digest: //p' | tr '[:upper:]' '[:lower:]')"
-          if [[ "$actual" != "$expected" ]]; then
-            echo 'The APK signing certificate does not match the expected private test key.' >&2
-            exit 1
-          fi
+          "$tools/apksigner" verify --print-certs "$apk" |
+            python3 .github/scripts/android_firebase_beta.py verify-certificate
       - name: Refresh short-lived Firebase token for upload
         if: steps.version.outputs.publish == 'true'
         id: upload_auth

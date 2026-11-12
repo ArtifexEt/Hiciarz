@@ -1,10 +1,12 @@
 import copy
+import contextlib
 import hashlib
 import io
 import json
 import os
 from pathlib import Path
 import tempfile
+import types
 import unittest
 from unittest import mock
 import urllib.error
@@ -58,6 +60,69 @@ def fixture_apk(path):
     with zipfile.ZipFile(path, "w") as archive:
         archive.writestr("AndroidManifest.xml", "manifest")
         archive.writestr("classes.dex", "code")
+
+
+class CertificateTests(unittest.TestCase):
+    DIGEST = "ab" * 32
+
+    def test_old_and_current_sdk_signer_formats_match_the_expected_certificate(self):
+        for prefix in ("Signer #1 certificate", "V2 Signer: certificate", "V3 Signer: certificate",
+                       "V3.1 Signer: certificate", "V4 Signer #1: certificate"):
+            with self.subTest(prefix=prefix):
+                beta.verify_signing_certificate(f"{prefix} SHA-256 digest: {self.DIGEST.upper()}\n".encode(), self.DIGEST)
+
+    def test_same_certificate_repeated_across_signing_schemes_is_deduplicated(self):
+        raw = (f"Signer #1 certificate SHA-256 digest: {self.DIGEST}\n"
+               f"V2 Signer: certificate SHA-256 digest: {self.DIGEST.upper()}\n"
+               f"V3 Signer: certificate SHA-256 digest: {self.DIGEST}\n").encode()
+        beta.verify_signing_certificate(raw, ":".join(["AB"] * 32))
+
+    def test_missing_wrong_or_multiple_unique_certificates_fail_closed(self):
+        cases = (b"", b"Signer #1 certificate SHA-1 digest: irrelevant\n",
+                 f"V2 Signer: certificate SHA-256 digest: {'cd' * 32}\n".encode(),
+                 (f"Signer #1 certificate SHA-256 digest: {self.DIGEST}\n"
+                  f"Signer #2 certificate SHA-256 digest: {'cd' * 32}\n").encode(),
+                 (f"V2 Signer: certificate SHA-256 digest: {self.DIGEST}\n"
+                  f"V3 Signer: certificate SHA-256 digest: {'cd' * 32}\n").encode())
+        for raw in cases:
+            with self.subTest(raw=raw[:30]), self.assertRaises(beta.FirebaseError):
+                beta.verify_signing_certificate(raw, self.DIGEST)
+
+    def test_any_malformed_signer_digest_fails_even_alongside_a_valid_scheme(self):
+        for malformed in ("ab" * 31, "gg" * 32, "ab" * 33, self.DIGEST + " unexpected", ""):
+            raw = (f"V2 Signer: certificate SHA-256 digest: {self.DIGEST}\n"
+                   f"V3 Signer: certificate SHA-256 digest: {malformed}\n").encode()
+            with self.subTest(malformed=malformed), self.assertRaises(beta.FirebaseError):
+                beta.verify_signing_certificate(raw, self.DIGEST)
+
+    def test_invalid_expected_digest_invalid_text_and_oversized_output_are_rejected(self):
+        raw = f"V2 Signer: certificate SHA-256 digest: {self.DIGEST}\n".encode()
+        for expected in ("", "invalid-private-value", "ab" * 31, None):
+            with self.subTest(expected=expected), self.assertRaises(beta.FirebaseError):
+                beta.verify_signing_certificate(raw, expected)
+        for value in (b"\xff", b"a" * (beta.MAX_CERTIFICATE_OUTPUT + 1)):
+            with self.subTest(value=value[:30]), self.assertRaises(beta.FirebaseError):
+                beta.verify_signing_certificate(value, self.DIGEST)
+
+    def test_cli_verifies_bounded_stdin_before_loading_workflow_or_firebase_configuration(self):
+        stdin = mock.Mock()
+        stdin.buffer.read.return_value = f"V2 Signer: certificate SHA-256 digest: {self.DIGEST}\n".encode()
+        stdout = io.StringIO()
+        with mock.patch.object(beta.sys, "stdin", stdin), mock.patch.dict(os.environ, {"ANDROID_SIGNING_CERT_SHA256": self.DIGEST}, clear=True), \
+             mock.patch.object(beta, "verify_source") as verify_source, contextlib.redirect_stdout(stdout):
+            self.assertEqual(beta.main(["verify-certificate"]), 0)
+        stdin.buffer.read.assert_called_once_with(beta.MAX_CERTIFICATE_OUTPUT + 1)
+        verify_source.assert_not_called()
+        self.assertNotIn(self.DIGEST, stdout.getvalue())
+
+    def test_cli_failure_reports_only_safe_text_without_raw_certificate_output(self):
+        raw = f"V2 Signer: certificate SHA-256 digest: {self.DIGEST}\nprivate-response".encode()
+        stderr = io.StringIO()
+        with mock.patch.object(beta.sys, "stdin", types.SimpleNamespace(buffer=io.BytesIO(raw))), \
+             mock.patch.dict(os.environ, {"ANDROID_SIGNING_CERT_SHA256": "cd" * 32}, clear=True), contextlib.redirect_stderr(stderr):
+            self.assertEqual(beta.main(["verify-certificate"]), 1)
+        self.assertNotIn(self.DIGEST, stderr.getvalue())
+        self.assertNotIn("private-response", stderr.getvalue())
 
 
 class ContextTests(unittest.TestCase):

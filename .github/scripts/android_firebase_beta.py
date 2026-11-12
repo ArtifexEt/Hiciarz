@@ -31,6 +31,7 @@ STATE_ARTIFACT = "android-firebase-beta-state"
 API_ROOT = "https://firebaseappdistribution.googleapis.com"
 MAX_JSON = 2 * 1024 * 1024
 MAX_STATE_ZIP = 32 * 1024
+MAX_CERTIFICATE_OUTPUT = 64 * 1024
 STATE_KEYS = {"schema", "package", "name", "code", "commit", "fingerprint"}
 FINGERPRINT_PATHS = (
     "android-app/app/src/main", "android-app/app/build.gradle.kts", "android-app/app/proguard-rules.pro",
@@ -42,6 +43,36 @@ FINGERPRINT_PATHS = (
 
 class FirebaseError(ValueError):
     pass
+
+
+def verify_signing_certificate(raw, expected):
+    """Accept one unique signer certificate across old and current SDK formats."""
+    if not isinstance(raw, bytes) or len(raw) > MAX_CERTIFICATE_OUTPUT:
+        raise FirebaseError("APK certificate verification output exceeds the safety limit.")
+    normalized = re.sub(r"[\s:]", "", expected).lower() if isinstance(expected, str) else ""
+    if not re.fullmatch(r"[a-f0-9]{64}", normalized):
+        raise FirebaseError("Configure a valid ANDROID_SIGNING_CERT_SHA256 before verification.")
+    try:
+        text = raw.decode("utf-8")
+    except UnicodeError:
+        raise FirebaseError("APK certificate verification returned invalid text.") from None
+    hashes = set()
+    for line in text.splitlines():
+        line = line.strip()
+        # Other fields (DN, SHA-1, public-key digests) do not identify the
+        # signing certificate. Reject malformed signer SHA-256 lines even if
+        # another scheme also reports a valid expected digest.
+        if not re.search(r"\bSigner\b.*\bcertificate\s+SHA-256\s+digest\b", line):
+            continue
+        match = re.fullmatch(
+            r"(?:Signer #[1-9][0-9]* certificate|"
+            r"V[1-9][0-9]*(?:\.[0-9]+)? Signer(?: #[1-9][0-9]*)?: certificate)"
+            r" SHA-256 digest: ([a-fA-F0-9]{64})", line)
+        if not match:
+            raise FirebaseError("APK certificate verification returned a malformed signer digest.")
+        hashes.add(match[1].lower())
+    if hashes != {normalized}:
+        raise FirebaseError("The APK must have exactly one unique signing certificate matching the configured key.")
 
 
 def repository_name(value):
@@ -448,12 +479,17 @@ def output_values(**values):
 
 def main(argv=None):
     parser = argparse.ArgumentParser(description=__doc__)
-    parser.add_argument("mode", choices=("preview", "check-config", "prepare", "publish"))
+    parser.add_argument("mode", choices=("preview", "check-config", "prepare", "publish", "verify-certificate"))
     parser.add_argument("--apk", type=Path)
     parser.add_argument("--directory", type=Path)
     args = parser.parse_args(argv)
     directory = args.directory or Path(os.environ.get("RUNNER_TEMP", "tmp")) / "hiciarz-firebase-beta"
     try:
+        if args.mode == "verify-certificate":
+            verify_signing_certificate(sys.stdin.buffer.read(MAX_CERTIFICATE_OUTPUT + 1),
+                                       os.environ.get("ANDROID_SIGNING_CERT_SHA256", ""))
+            print("The APK signing certificate matches the configured key.")
+            return 0
         event = json.loads(Path(os.environ["GITHUB_EVENT_PATH"]).read_text(encoding="utf-8"))
         preview = args.mode == "preview"
         repository = os.environ.get("GITHUB_REPOSITORY", "")
