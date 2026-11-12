@@ -259,6 +259,19 @@ summary {
   outline: 2px dashed var(--accent-ink);
   outline-offset: 6px;
 }
+.deck-title-row {
+  display: flex;
+  align-items: center;
+  min-width: 0;
+  gap: 12px;
+}
+.app-shell .deck-settings-toggle {
+  width: 44px;
+  height: 44px;
+  min-height: 44px;
+  flex: 0 0 44px;
+  padding: 0;
+}
 .deck-workspace-bar .deck-title {
   display: flex;
   align-items: baseline;

@@ -40,12 +40,16 @@ export default function Modal({
   onClose,
   wide = false,
   sheet = false,
+  navigation,
+  footer,
 }: {
   title: string;
   children: ReactNode;
   onClose: () => void;
   wide?: boolean;
   sheet?: boolean;
+  navigation?: ReactNode;
+  footer?: ReactNode;
 }) {
   const { t } = useTranslation();
   const headingId = useId();
@@ -121,7 +125,9 @@ export default function Modal({
           <X size={20} aria-hidden="true" />
         </button>
       </div>
+      {navigation != null && <div className="modal-navigation">{navigation}</div>}
       <div className="modal-body">{children}</div>
+      {footer != null && <div className="modal-footer">{footer}</div>}
     </dialog>
   );
 }

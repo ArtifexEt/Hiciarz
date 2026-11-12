@@ -1,0 +1,78 @@
+.card-theme-select {
+  min-width: 0;
+}
+.card-theme-select > label {
+  display: block;
+  margin: 0 0 7px;
+  font-weight: 600;
+}
+.card-theme-trigger,
+.card-theme-option {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  width: 100%;
+  min-height: 48px;
+  padding: 8px 10px;
+  border: 1px solid var(--line);
+  border-radius: 8px;
+  background: var(--surface);
+  color: var(--ink);
+  text-align: left;
+  font-size: inherit;
+  line-height: 1.4;
+}
+.card-theme-trigger > img,
+.card-theme-option > img {
+  flex: 0 0 36px;
+  width: 36px;
+  height: 36px;
+  object-fit: cover;
+  border: 1px solid var(--line);
+  border-radius: 5px;
+}
+.card-theme-trigger > span,
+.card-theme-option > span {
+  flex: 1;
+  min-width: 0;
+  overflow-wrap: anywhere;
+}
+.card-theme-trigger > svg,
+.card-theme-option > svg {
+  flex-shrink: 0;
+}
+.card-theme-trigger:focus-visible {
+  outline: 2px solid var(--accent-ink);
+  outline-offset: 2px;
+}
+.card-theme-trigger[aria-expanded='true'] {
+  border-color: var(--accent-ink);
+}
+.card-theme-trigger:disabled {
+  cursor: default;
+  opacity: 0.5;
+}
+.card-theme-options {
+  display: grid;
+  gap: 4px;
+  max-height: 260px;
+  overflow-y: auto;
+  overscroll-behavior: contain;
+  margin-top: 6px;
+  padding: 5px;
+  border: 1px solid var(--line);
+  border-radius: 10px;
+  background: var(--surface);
+}
+.card-theme-option {
+  border-color: transparent;
+  cursor: pointer;
+}
+.card-theme-option.is-active,
+.card-theme-option:hover {
+  border-color: var(--accent-ink);
+  background: var(--soft);
+}
+.card-theme-option[aria-selected='true'] {
+  font-weight: 600;
+}

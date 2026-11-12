@@ -60,11 +60,32 @@
   border-radius: 10px;
 }
 .modal.app-modal .modal-body {
+  flex: 1 1 auto;
   min-height: 0;
   padding: 24px;
   overflow-y: auto;
   overscroll-behavior: contain;
   scrollbar-gutter: stable;
+}
+.modal.app-modal .modal-navigation,
+.modal.app-modal .modal-footer {
+  flex-shrink: 0;
+  padding: 16px 24px;
+  background: var(--surface);
+}
+.modal.app-modal .modal-navigation {
+  border-bottom: 1px solid var(--line);
+}
+.modal.app-modal .modal-footer {
+  padding-bottom: max(16px, env(safe-area-inset-bottom, 0px));
+  border-top: 1px solid var(--line);
+}
+.modal.app-modal .modal-footer .modal-actions {
+  margin: 0;
+  gap: 12px;
+}
+.modal.app-modal .modal-footer .modal-actions > button {
+  min-height: 44px;
 }
 .modal.app-modal .modal-body .modal-actions {
   gap: 12px;
@@ -107,6 +128,13 @@
   }
   .modal.app-modal .modal-body {
     padding: 18px;
+  }
+  .modal.app-modal .modal-navigation,
+  .modal.app-modal .modal-footer {
+    padding: 12px 18px;
+  }
+  .modal.app-modal .modal-footer {
+    padding-bottom: max(12px, env(safe-area-inset-bottom, 0px));
   }
   .modal.app-modal input,
   .modal.app-modal select,
