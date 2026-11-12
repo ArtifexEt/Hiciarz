@@ -175,6 +175,7 @@ export default function SongForm({
     } else if (field === 'title' || field === 'artist' || field === 'year') {
       revisions.current[field]++;
       setSelectedRecording('');
+      setLookupMessage('');
       delete suggestedFields.current[field];
     }
     draftRef.current = next;
@@ -324,6 +325,9 @@ export default function SongForm({
     draftRef.current = next;
     setDraft(next);
     setSelectedRecording(recording.id);
+    setLookupMessage(
+      recording.year ? 'metadataAutofill.selected' : 'metadataAutofill.selectedNoYear',
+    );
     setError('');
   }
 
