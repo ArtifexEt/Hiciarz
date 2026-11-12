@@ -62,8 +62,8 @@ android {
         applicationId = "pl.artifex.hiciarz"
         minSdk = 26
         targetSdk = 37
-        versionCode = providers.gradleProperty("versionCode").orElse("100005").get().toInt()
-        versionName = providers.gradleProperty("versionName").orElse("0.2.0-alpha.3").get()
+        versionCode = providers.gradleProperty("versionCode").orElse("100006").get().toInt()
+        versionName = providers.gradleProperty("versionName").orElse("0.2.0-alpha.4").get()
         testInstrumentationRunner = providers.gradleProperty("hiciarzTestRunner").orNull
             ?: "androidx.test.runner.AndroidJUnitRunner"
         buildConfigField("String", "SPOTIFY_CLIENT_ID", "\"${spotifyClientId.get().replace("\\", "\\\\").replace("\"", "\\\"")}\"")

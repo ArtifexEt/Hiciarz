@@ -4,6 +4,8 @@ Zmiany kolejnych wersji aplikacji Android. Opis GitHub Release jest pobierany z 
 
 ## [Unreleased]
 
+## [0.2.0-alpha.4] - 2026-11-12
+
 - Przebudowano skaner i Bingo: kwadratowe karty z pełną grafiką, kompaktowe odtwarzanie, pytanie jako główny element rundy i jeden wyróżniony przycisk na każdym etapie. Stała oprawa aplikacji pozostaje niezależna od skórek kart; opcje pomocnicze zajmują mniej miejsca.
 - Odkrywanie odpowiedzi jest dostępne dla kart z pasującymi danymi. Dla pozostałych aplikacja kieruje do odpowiedzi na wydruku zamiast pokazywać pusty awers.
 - Aplikacja otwiera się na skanerze. Nawigacja skupia się na Skanerze, Bingo i Opcjach; biblioteka talii pozostaje w PWA, a gry bez kart są na razie wyłączone w Androidzie. Wcześniejsze dane na urządzeniu są zachowane.
