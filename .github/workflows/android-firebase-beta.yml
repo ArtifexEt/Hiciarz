@@ -1,0 +1,221 @@
+name: Publish Android Firebase beta
+run-name: Firebase beta · ${{ github.event_name == 'workflow_dispatch' && inputs.dry_run && 'preview' || 'publish' }}
+
+on:
+  workflow_run:
+    workflows: ['Check web and Android']
+    types: [completed]
+    branches: [main]
+  workflow_dispatch:
+    inputs:
+      dry_run:
+        description: 'Podgląd bez dostępu do Firebase, podpisywania, budowania i publikacji'
+        required: false
+        default: true
+        type: boolean
+
+permissions:
+  contents: read
+  actions: read
+
+concurrency:
+  group: android-releases
+  cancel-in-progress: false
+  queue: max
+
+jobs:
+  beta:
+    name: Prepare or publish Firebase beta
+    if: >-
+      (github.event_name == 'workflow_dispatch' && github.ref == 'refs/heads/main') ||
+      (github.event_name == 'workflow_run' &&
+       github.event.workflow_run.conclusion == 'success' &&
+       github.event.workflow_run.event == 'push' &&
+       github.event.workflow_run.head_branch == 'main' &&
+       github.event.workflow_run.head_repository.full_name == github.repository)
+    runs-on: ubuntu-latest
+    environment: firebase-beta
+    timeout-minutes: 45
+    permissions:
+      contents: read
+      actions: read
+      id-token: write
+    env:
+      FIREBASE_BETA_ENABLED: ${{ vars.FIREBASE_BETA_ENABLED }}
+      SOURCE_SHA: ${{ github.event.workflow_run.head_sha || github.sha }}
+    steps:
+      - name: Select beta mode
+        id: mode
+        env:
+          MANUAL_PREVIEW: ${{ github.event_name == 'workflow_dispatch' && inputs.dry_run }}
+        run: |
+          set -euo pipefail
+          if [[ "$MANUAL_PREVIEW" == true ]]; then
+            printf 'active=true\ndry_run=true\n' >> "$GITHUB_OUTPUT"
+          elif [[ "$FIREBASE_BETA_ENABLED" == true ]]; then
+            printf 'active=true\ndry_run=false\n' >> "$GITHUB_OUTPUT"
+          else
+            printf 'active=false\ndry_run=false\n' >> "$GITHUB_OUTPUT"
+            printf '### Firebase beta skipped\n\nFIREBASE_BETA_ENABLED is not true. No authentication, build or upload was attempted.\n' >> "$GITHUB_STEP_SUMMARY"
+          fi
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        if: steps.mode.outputs.active == 'true'
+        with:
+          ref: ${{ env.SOURCE_SHA }}
+          fetch-depth: 0
+          persist-credentials: false
+      - name: Test Android release tooling
+        if: steps.mode.outputs.active == 'true'
+        run: python3 -m unittest discover -s .github/scripts -p 'test_android*.py' -v
+      - name: Preview without Firebase access
+        if: steps.mode.outputs.active == 'true' && steps.mode.outputs.dry_run == 'true'
+        run: python3 .github/scripts/android_firebase_beta.py preview
+      - name: Validate publishing configuration and checked main source
+        if: steps.mode.outputs.active == 'true' && steps.mode.outputs.dry_run == 'false'
+        env:
+          GH_TOKEN: ${{ github.token }}
+          FIREBASE_PROJECT_ID: ${{ secrets.FIREBASE_PROJECT_ID }}
+          FIREBASE_APP_ID: ${{ secrets.FIREBASE_APP_ID }}
+          FIREBASE_WORKLOAD_IDENTITY_PROVIDER: ${{ secrets.FIREBASE_WORKLOAD_IDENTITY_PROVIDER }}
+          FIREBASE_SERVICE_ACCOUNT: ${{ secrets.FIREBASE_SERVICE_ACCOUNT }}
+          FIREBASE_TESTER_GROUPS: ${{ vars.FIREBASE_TESTER_GROUPS }}
+          ANDROID_SIGNING_CERT_SHA256: ${{ vars.ANDROID_SIGNING_CERT_SHA256 }}
+          SPOTIFY_CLIENT_ID: ${{ secrets.SPOTIFY_CLIENT_ID }}
+        run: python3 .github/scripts/android_firebase_beta.py check-config
+      - name: Authenticate to plan Firebase release
+        if: steps.mode.outputs.active == 'true' && steps.mode.outputs.dry_run == 'false'
+        id: plan_auth
+        uses: google-github-actions/auth@7c6bc770dae815cd3e89ee6cdf493a5fab2cc093 # v3.0.0
+        with:
+          workload_identity_provider: ${{ secrets.FIREBASE_WORKLOAD_IDENTITY_PROVIDER }}
+          service_account: ${{ secrets.FIREBASE_SERVICE_ACCOUNT }}
+          project_id: ${{ secrets.FIREBASE_PROJECT_ID }}
+          token_format: access_token
+          access_token_scopes: https://www.googleapis.com/auth/cloud-platform
+          create_credentials_file: false
+          export_environment_variables: false
+      - name: Prepare live version plan
+        if: steps.mode.outputs.active == 'true' && steps.mode.outputs.dry_run == 'false'
+        id: version
+        env:
+          GH_TOKEN: ${{ github.token }}
+          FIREBASE_ACCESS_TOKEN: ${{ steps.plan_auth.outputs.access_token }}
+          FIREBASE_PROJECT_ID: ${{ secrets.FIREBASE_PROJECT_ID }}
+          FIREBASE_APP_ID: ${{ secrets.FIREBASE_APP_ID }}
+          FIREBASE_WORKLOAD_IDENTITY_PROVIDER: ${{ secrets.FIREBASE_WORKLOAD_IDENTITY_PROVIDER }}
+          FIREBASE_SERVICE_ACCOUNT: ${{ secrets.FIREBASE_SERVICE_ACCOUNT }}
+          FIREBASE_TESTER_GROUPS: ${{ vars.FIREBASE_TESTER_GROUPS }}
+          FIREBASE_VERSION_CODE_FLOOR: ${{ vars.FIREBASE_VERSION_CODE_FLOOR }}
+          ANDROID_SIGNING_CERT_SHA256: ${{ vars.ANDROID_SIGNING_CERT_SHA256 }}
+          SPOTIFY_CLIENT_ID: ${{ secrets.SPOTIFY_CLIENT_ID }}
+        run: python3 .github/scripts/android_firebase_beta.py prepare
+      - uses: actions/setup-java@77dd5b2ce225ea11469928ac317850245a74ae78 # v6.2.0
+        if: steps.version.outputs.publish == 'true'
+        with:
+          distribution: temurin
+          java-version: 17
+      - uses: android-actions/setup-android@be39fa834029ff78f1a44aa3bb0819b8fc2bd8fd # v4.0.4
+        if: steps.version.outputs.publish == 'true'
+      - uses: gradle/actions/setup-gradle@8da46b539cd8fe6ab27ca75128919a18d757604c # v6.4.1
+        if: steps.version.outputs.publish == 'true'
+        with:
+          cache-disabled: true
+      - name: Install Android platform
+        if: steps.version.outputs.publish == 'true'
+        run: sdkmanager 'platforms;android-37.0' 'build-tools;37.0.0'
+      - name: Prepare private test signing
+        if: steps.version.outputs.publish == 'true'
+        env:
+          HICIARZ_KEYSTORE_BASE64: ${{ secrets.HICIARZ_KEYSTORE_BASE64 }}
+          HICIARZ_KEYSTORE_PASSWORD: ${{ secrets.HICIARZ_KEYSTORE_PASSWORD }}
+          HICIARZ_KEY_ALIAS: ${{ secrets.HICIARZ_KEY_ALIAS }}
+          HICIARZ_KEY_PASSWORD: ${{ secrets.HICIARZ_KEY_PASSWORD }}
+        run: |
+          set -euo pipefail
+          if [[ -z "$HICIARZ_KEYSTORE_BASE64" || -z "$HICIARZ_KEYSTORE_PASSWORD" ||
+                -z "$HICIARZ_KEY_ALIAS" || -z "$HICIARZ_KEY_PASSWORD" ]]; then
+            echo 'Configure all four encrypted HICIARZ signing secrets for this guarded publishing job.' >&2
+            exit 1
+          fi
+          umask 077
+          printf '%s' "$HICIARZ_KEYSTORE_BASE64" | base64 --decode > "$RUNNER_TEMP/hiciarz-firebase-signing.jks"
+          printf 'HICIARZ_KEYSTORE_FILE=%s\n' "$RUNNER_TEMP/hiciarz-firebase-signing.jks" >> "$GITHUB_ENV"
+      - name: Test, lint and build signed APK without shared caches
+        if: steps.version.outputs.publish == 'true'
+        working-directory: android-app
+        env:
+          HICIARZ_REQUIRE_SPOTIFY_CONFIG: 'true'
+          HICIARZ_PRODUCTION_SIGNING: 'false'
+          HICIARZ_KEYSTORE_PASSWORD: ${{ secrets.HICIARZ_KEYSTORE_PASSWORD }}
+          HICIARZ_KEY_ALIAS: ${{ secrets.HICIARZ_KEY_ALIAS }}
+          HICIARZ_KEY_PASSWORD: ${{ secrets.HICIARZ_KEY_PASSWORD }}
+          SPOTIFY_CLIENT_ID: ${{ secrets.SPOTIFY_CLIENT_ID }}
+          BETA_VERSION: ${{ steps.version.outputs.name }}
+          BETA_VERSION_CODE: ${{ steps.version.outputs.code }}
+        run: |
+          set -euo pipefail
+          ./gradlew --no-daemon --no-build-cache --no-configuration-cache \
+            :app:testDebugUnitTest :app:lintRelease :app:assembleRelease \
+            -PversionName="$BETA_VERSION" -PversionCode="$BETA_VERSION_CODE"
+      - name: Verify APK version and expected signing certificate
+        if: steps.version.outputs.publish == 'true'
+        env:
+          BETA_VERSION: ${{ steps.version.outputs.name }}
+          BETA_VERSION_CODE: ${{ steps.version.outputs.code }}
+          ANDROID_SIGNING_CERT_SHA256: ${{ vars.ANDROID_SIGNING_CERT_SHA256 }}
+        run: |
+          set -euo pipefail
+          apk='android-app/app/build/outputs/apk/release/app-release.apk'
+          tools="$ANDROID_HOME/build-tools/37.0.0"
+          badging="$("$tools/aapt2" dump badging "$apk")"
+          if [[ "$badging" != *"package: name='pl.artifex.hiciarz'"* ]] ||
+             [[ "$badging" != *"versionCode='$BETA_VERSION_CODE'"* ]] ||
+             [[ "$badging" != *"versionName='$BETA_VERSION'"* ]]; then
+            echo 'The APK package or version does not match the release plan.' >&2
+            exit 1
+          fi
+          expected="$(printf '%s' "$ANDROID_SIGNING_CERT_SHA256" | tr -d '[:space:]:' | tr '[:upper:]' '[:lower:]')"
+          actual="$("$tools/apksigner" verify --print-certs "$apk" | sed -n 's/^Signer #1 certificate SHA-256 digest: //p' | tr '[:upper:]' '[:lower:]')"
+          if [[ "$actual" != "$expected" ]]; then
+            echo 'The APK signing certificate does not match the expected private test key.' >&2
+            exit 1
+          fi
+      - name: Refresh short-lived Firebase token for upload
+        if: steps.version.outputs.publish == 'true'
+        id: upload_auth
+        uses: google-github-actions/auth@7c6bc770dae815cd3e89ee6cdf493a5fab2cc093 # v3.0.0
+        with:
+          workload_identity_provider: ${{ secrets.FIREBASE_WORKLOAD_IDENTITY_PROVIDER }}
+          service_account: ${{ secrets.FIREBASE_SERVICE_ACCOUNT }}
+          project_id: ${{ secrets.FIREBASE_PROJECT_ID }}
+          token_format: access_token
+          access_token_scopes: https://www.googleapis.com/auth/cloud-platform
+          create_credentials_file: false
+          export_environment_variables: false
+      - name: Upload and distribute to the configured tester groups
+        if: steps.version.outputs.publish == 'true'
+        id: publish
+        env:
+          GH_TOKEN: ${{ github.token }}
+          FIREBASE_ACCESS_TOKEN: ${{ steps.upload_auth.outputs.access_token }}
+          FIREBASE_PROJECT_ID: ${{ secrets.FIREBASE_PROJECT_ID }}
+          FIREBASE_APP_ID: ${{ secrets.FIREBASE_APP_ID }}
+          FIREBASE_WORKLOAD_IDENTITY_PROVIDER: ${{ secrets.FIREBASE_WORKLOAD_IDENTITY_PROVIDER }}
+          FIREBASE_SERVICE_ACCOUNT: ${{ secrets.FIREBASE_SERVICE_ACCOUNT }}
+          FIREBASE_TESTER_GROUPS: ${{ vars.FIREBASE_TESTER_GROUPS }}
+          ANDROID_SIGNING_CERT_SHA256: ${{ vars.ANDROID_SIGNING_CERT_SHA256 }}
+          SPOTIFY_CLIENT_ID: ${{ secrets.SPOTIFY_CLIENT_ID }}
+        run: python3 .github/scripts/android_firebase_beta.py publish --apk android-app/app/build/outputs/apk/release/app-release.apk
+      - name: Retain only public version and source state after confirmed distribution
+        if: steps.publish.outputs.published == 'true'
+        uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7.0.2
+        with:
+          name: android-firebase-beta-state
+          path: ${{ runner.temp }}/hiciarz-firebase-beta/state.json
+          if-no-files-found: error
+          retention-days: 90
+      - name: Remove temporary signing and plan files
+        if: always()
+        run: |
+          rm -f "$RUNNER_TEMP/hiciarz-firebase-signing.jks"
+          rm -f "$RUNNER_TEMP/hiciarz-firebase-beta/plan.json" "$RUNNER_TEMP/hiciarz-firebase-beta/state.json"

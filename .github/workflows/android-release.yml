@@ -25,6 +25,7 @@ permissions:
 
 concurrency:
   group: android-releases
+  queue: max
   cancel-in-progress: false
 
 jobs:
@@ -38,7 +39,7 @@ jobs:
       run:
         working-directory: android-app
     env:
-      SPOTIFY_CLIENT_ID: ${{ vars.SPOTIFY_CLIENT_ID || secrets.SPOTIFY_CLIENT_ID }}
+      SPOTIFY_CLIENT_ID: ${{ secrets.SPOTIFY_CLIENT_ID }}
       HICIARZ_PRODUCTION_SIGNING: 'false'
       ANDROID_SIGNING_CERT_SHA256: ${{ vars.ANDROID_SIGNING_CERT_SHA256 }}
     steps:
@@ -112,7 +113,7 @@ jobs:
           HICIARZ_KEY_PASSWORD: ${{ secrets.HICIARZ_KEY_PASSWORD }}
         run: |
           if [[ ! "$SPOTIFY_CLIENT_ID" =~ ^[A-Fa-f0-9]{32}$ ]]; then
-            echo 'Set the SPOTIFY_CLIENT_ID repository variable before publishing an APK.' >&2
+            echo 'Set the SPOTIFY_CLIENT_ID Actions secret before publishing an APK.' >&2
             exit 1
           fi
           ./gradlew --no-daemon :app:testDebugUnitTest :app:lintRelease :app:assembleRelease \

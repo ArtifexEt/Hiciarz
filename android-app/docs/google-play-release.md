@@ -1,10 +1,52 @@
-# Beta Hiciarza w Google Play
+# Plan bety Hiciarza: Firebase i Google Play
 
 Stan wymagań: 12 listopada 2026. Zakres: natywna aplikacja z `android-app/`, pakiet `pl.artifex.hiciarz`. Podstawowy przebieg to zeskanowanie kodu QR i uruchomienie wskazanego utworu w aplikacji Spotify użytkownika. Android zawiera Skaner i Opcje. Karty przygotowuje się w webowym Hiciarzu. [Bingo i generator plansz](https://artifexet.github.io/Bingo/) mają osobne [repozytorium](https://github.com/ArtifexEt/Bingo).
 
-**Bieżący cel to szybka beta przez Internal testing, aktualizowana automatycznie po udanym sprawdzeniu zmian aplikacji na `main`.** Techniczna podstawa Androida i testowe wydania APK już istnieją. Pierwszy etap obejmuje aktywne konto Play, podpisany AAB, instalację przez link testowy i sprawdzenie Spotify na fizycznym telefonie. Konfigurację zamkniętej bety oraz materiały sklepu przygotowujemy równolegle. Warunki integracji Spotify wymagają weryfikacji względem pełnego zakresu skanera; nie ustalono, że publikacja Hiciarza jest niedopuszczalna.
+**Bieżący cel to beta przez Firebase App Distribution, aktualizowana automatycznie po udanym sprawdzeniu zmian aplikacji na `main`.** Dostęp do Play wymaga wyjaśnienia, więc pierwszy kanał testów opieramy na podpisanym APK. Projekt Firebase został utworzony na bezpłatnym planie Spark z Gemini w konsoli i nowym kontem Google Analytics; wymagane warunki zostały zaakceptowane za zgodą właściciela. Aplikacja Android jest zarejestrowana. Integracja SDK z aplikacją oraz automat Firebase pozostają do wdrożenia. Zachowany poniżej plan Google Play opisuje późniejszy kanał dystrybucji.
 
-## Najkrótsza droga do testów
+Warunki integracji Spotify wymagają weryfikacji względem pełnego zakresu skanera; nie ustalono, że publikacja Hiciarza jest niedopuszczalna. Odbiór Spotify na fizycznym telefonie pozostaje konieczny w każdym kanale.
+
+## Teraz: beta w Firebase App Distribution
+
+### 1. Projekt i pierwsza instalacja
+
+1. Projekt i aplikacja Android z pakietem `pl.artifex.hiciarz` są utworzone. Google Analytics jest włączone; wybrano Polskę jako kraj konta, a dodatkowe udostępnianie danych do benchmarków, produktów Google, wsparcia i specjalistów kont jest wyłączone. Samo włączenie Analytics w projekcie nie dodaje SDK do APK. Rzeczywistych identyfikatorów projektu i aplikacji nie zapisujemy w tym dokumencie. [Konfiguracja Firebase dla Androida](https://firebase.google.com/docs/android/setup).
+2. Włączyć **Gemini in Firebase** jako pomoc dla osoby pracującej w konsoli. Nie oznacza to funkcji AI w Hiciarzu. Plan skanera nie obejmuje Firebase AI Logic, wywołań modelu ani przekazywania zdjęć, QR lub danych Spotify do Gemini. [Gemini w konsoli](https://firebase.google.com/docs/ai-assistance/gemini-in-firebase).
+3. Przygotować podpisany APK ze stałym kluczem testowej dystrybucji i rosnącym `versionCode`; zarejestrować jego SHA-1 w Spotify. Klucz efemeryczny używany przez CI służy sprawdzaniu kodu, a nie ciągłości instalacji testerów. Przesłać pierwszy APK ręcznie do App Distribution i sprawdzić instalację oraz aktualizację. Ten wariant nie wymaga połączenia z Google Play ani SDK App Distribution w aplikacji. [App Distribution](https://firebase.google.com/docs/app-distribution), [dystrybucja APK w konsoli](https://firebase.google.com/docs/app-distribution/android/distribute-console).
+4. Utworzyć prywatną grupę testerów w Firebase. Adresy i zaproszenia utrzymywać w konsoli, poza publicznym repo. Tester przyjmuje zaproszenie na koncie Google, pobiera APK i zezwala na instalację z wybranego źródła. Kolejne wydanie wywołuje powiadomienie; instalacja wymaga działania testera. [Instrukcja dla testerów](https://firebase.google.com/docs/app-distribution/get-set-up-as-a-tester?platform=android).
+
+Na pierwszy etap wystarczą powiadomienia Firebase poza aplikacją. Opcjonalne alerty i feedback wymagające SDK App Distribution rozważyć osobno; pełna implementacja tego SDK nie może trafić do przyszłego wariantu Play. [Opcjonalny SDK i ograniczenie publikacji w Play](https://firebase.google.com/docs/app-distribution/collect-feedback-from-testers).
+
+### 2. Automat i prywatna konfiguracja GitHub
+
+- Wdrożyć osobny upload APK do Firebase po sukcesie istniejącego CI dla zaufanego pushu na `main`, z checkoutem dokładnie sprawdzonego commitu. Zachować pomijanie wydania przy niezmienionych wejściach aplikacji; samo edytowanie webu, talii lub dokumentacji nie publikuje Androida. Zmiany konfiguracji faktycznie pakowanej do APK muszą także wpływać na porównanie wejść.
+- Przechowywać dostęp do Firebase, identyfikatory projektu i aplikacji, grupę testerów oraz konfigurację podpisu w prywatnej konfiguracji GitHub. Ograniczyć środowisko publikacji do `main`. Preferować krótkotrwałe uwierzytelnienie; jeśli potrzebny jest klucz konta usługi, przechowywać go wyłącznie jako sekret z minimalnymi uprawnieniami, poza repo, artefaktami i logami. [Upload przez Firebase CLI](https://firebase.google.com/docs/app-distribution/android/distribute-cli?apptype=apk).
+- Świeży klon i PR mają domyślnie budować oraz testować aplikację bez dostępu do Firebase i bez publikacji. Automat pozostaje wyłączony do ukończenia konfiguracji i pierwszego odbioru. W podsumowaniu CI pokazywać wynik, wersję i commit, bez prywatnych identyfikatorów, adresów testerów, konfiguracji JSON i podpisanych linków pobierania.
+- Przy późniejszym dodaniu Analytics dostarczać `google-services.json` z prywatnej konfiguracji wyłącznie do odpowiedniego wariantu. Ten plik zawiera publiczną konfigurację klienta, a nie uprawnienia administratora, ale zgodnie z przyjętym zakresem nie zapisujemy rzeczywistych wartości Firebase w repo. Nigdy nie zastępować go JSON-em konta usługi. Testy PR muszą nadal działać bez konfiguracji projektu. [Plik konfiguracji Firebase](https://firebase.google.com/docs/android/google-services-plugin-and-file).
+
+**Odbiór dystrybucji:** zaproszony tester instaluje APK, skanuje QR i odtwarza utwór przez Spotify; kolejna zmiana aplikacji po zielonym CI daje aktualizację zachowującą ustawienia. Zmiana tylko dokumentacji nie publikuje nowego APK. Analytics nie blokuje pierwszej bety.
+
+### 3. Plan integracji Google Analytics w skanerze
+
+Obecny kod nie zawiera Firebase Analytics. `HiciarzApplication` jest punktem konfiguracji, `HiciarzViewModel` obsługuje akcje skanera i odtwarzania, a `SettingsScreen` zapewnia miejsce na ustawienia prywatności. Integrację wykonać jako oddzielną zmianę po uruchomieniu dystrybucji.
+
+1. Dodać Google services Gradle plugin oraz główny moduł `firebase-analytics` zarządzany przez Firebase BoM; używać aktualnych, przypiętych wersji zgodnych z projektem. Nie dodawać dawnych modułów `-ktx`. Oddzielić konfigurację testów od rzeczywistego projektu, aby uruchomienia CI nie zasilały statystyk. [Konfiguracja Android SDK](https://firebase.google.com/docs/android/setup), [Analytics dla Androida](https://firebase.google.com/docs/analytics/android/get-started).
+2. Zastosować dobrowolną zgodę na analitykę. Domyślnie ustawić w manifeście `firebase_analytics_collection_enabled=false` i cztery domyślne zgody na `false`: `google_analytics_default_allow_analytics_storage`, `google_analytics_default_allow_ad_storage`, `google_analytics_default_allow_ad_user_data`, `google_analytics_default_allow_ad_personalization_signals`. Przełącznik w Opcjach ma umożliwiać odmowę, zgodę i jej późniejsze cofnięcie bez wpływu na skanowanie lub Spotify. [Kontrola zbierania](https://firebase.google.com/docs/analytics/android/configure-data-collection), [consent w Androidzie](https://developers.google.com/tag-platform/security/guides/app-consent?platform=android).
+3. Po zgodzie udzielić wyłącznie `ANALYTICS_STORAGE` i dopiero wtedy włączyć collection; `AD_STORAGE`, `AD_USER_DATA` i `AD_PERSONALIZATION` pozostają `DENIED`. Wyłączyć Advertising ID przez `google_analytics_adid_collection_enabled=false` i usunąć scalane uprawnienie `AD_ID`. Nie włączać integracji reklamowych ani Google signals. Przy cofnięciu zgody najpierw wyłączyć collection i ustawić wszystkie zgody na `DENIED`. Sam consent `DENIED` w zaawansowanym trybie nie gwarantuje braku wysyłania sygnałów, dlatego sprawdzić zachowanie przed zgodą. [Tryby zgody](https://developers.google.com/tag-platform/security/concepts/consent-mode), [Advertising ID i manifest](https://developers.google.com/android/reference/com/google/android/gms/ads/identifier/AdvertisingIdClient.Info).
+4. Dodać mały interfejs analityki z implementacją pustą dla testów i listą dozwolonych zdarzeń: wynik skanu, wynik połączenia Spotify i stała kategoria błędu. Opcjonalne czasy operacji grupować w przedziały; ekrany oznaczać wyłącznie stałymi nazwami Skaner/Opcje. Zdarzenia emitować raz przy wyniku akcji lub zmianie stanu, nie przy każdej klatce kamery, pozycji utworu lub rekompozycji Compose. **Nie zbierać zdjęć, treści QR, URL/URI i identyfikatorów utworów, tytułów, danych kont Spotify, tokenów, emaili, surowych komunikatów wyjątków ani własnego `user_id`.**
+5. Uwzględnić automatyczne zdarzenia SDK i dane urządzenia, aplikacji oraz identyfikator instancji; sama ograniczona lista zdarzeń własnych nie oznacza anonimowej analityki. Zaktualizować politykę, link w Opcjach i przyszły Data safety, podać cel, opcjonalność oraz retencję. Ustalić obsługę wniosków o dane; `resetAnalyticsData()` usuwa dane z urządzenia i resetuje identyfikator, nie stanowi obietnicy usunięcia historii z serwerów. [Dane Analytics](https://support.google.com/analytics/answer/11593727?hl=en), [automatyczne zdarzenia](https://support.google.com/analytics/answer/9234069?hl=en), [referencja SDK](https://firebase.google.com/docs/reference/android/com/google/firebase/analytics/FirebaseAnalytics).
+
+**Odbiór Analytics:** na czystej instalacji odmowa i brak decyzji nie wysyłają zdarzeń Analytics; zgoda umożliwia wyłącznie zaplanowany pomiar, a cofnięcie oraz restart zachowują wybór. Sprawdzić scalony manifest, brak `AD_ID`, brak prywatnych payloadów i brak podwójnych zdarzeń po obrocie lub powrocie z tła. Użyć DebugView na urządzeniu testowym: `adb shell setprop debug.firebase.analytics.app pl.artifex.hiciarz`, a po odbiorze `adb shell setprop debug.firebase.analytics.app .none.`. Zdarzenia debug są wyłączane z głównych danych Analytics. [DebugView](https://firebase.google.com/docs/analytics/debugview).
+
+### 4. Później: Firebase Hosting
+
+Hosting może udostępnić politykę, pomoc i stronę bety, a następnie opcjonalnie istniejący frontend Vite. To osobny etap, bez automatycznej migracji obecnej strony GitHub Pages i bez dodawania AI. Dla hostowania webu w katalogu głównym zbudować `web/dist` z `BASE_PATH=/` zamiast obecnego `/Hiciarz/`; sprawdzić PWA, ścieżki zasobów, linki kart i przekierowania. Najpierw wdrożyć kanał preview, po odbiorze stronę live. Dostęp do publikacji utrzymywać w prywatnym środowisku GitHub ograniczonym do zaufanej gałęzi; nie nadawać go kodowi PR. Osobno ocenić analitykę webu i jego zgodę — zgoda w Androidzie jej nie zastępuje. [Firebase Hosting](https://firebase.google.com/docs/hosting), [preview i integracja GitHub](https://firebase.google.com/docs/hosting/github-integration).
+
+## Późniejsza ścieżka Google Play
+
+Poniższe etapy i listy gotowości dotyczą przyszłej bety oraz publikacji przez Play. Ich wykonanie wymaga aktywnego konta Play; nie są warunkiem uruchomienia podpisanych APK w Firebase App Distribution.
+
+## Najkrótsza droga do testów w Google Play
 
 | Tor | Cel | Kiedy uruchomić |
 | --- | --- | --- |
@@ -290,4 +332,4 @@ Pierwszy internal uruchomić po przygotowaniu konta, podpisanego AAB i podstawow
 - [ ] Zachowano artefakty, mapowanie, certyfikaty publiczne i wyniki odbioru wydania.
 - [ ] Ustalono kraje, moment publikacji i osobę reagującą na błędy po premierze.
 
-**Bieżący cel jest ukończony**, gdy zaproszeni testerzy instalują Hiciarza przez Google Play, skanują QR i uruchamiają muzykę, a kolejny sprawdzony merge dostarcza aktualizację internal przez automat. Publiczna premiera pozostaje osobnym etapem.
+**Etap Google Play jest ukończony**, gdy zaproszeni testerzy instalują Hiciarza przez Google Play, skanują QR i uruchamiają muzykę, a kolejny sprawdzony merge dostarcza aktualizację internal przez automat. Obecny cel Firebase ma osobne kryterium odbioru opisane na początku planu. Publiczna premiera pozostaje osobnym etapem.

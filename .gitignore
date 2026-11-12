@@ -45,6 +45,12 @@ signing.env
 gha-creds-*.json
 *service-account*.json
 *credentials*.json
+*firebase-adminsdk*.json
+google-services.json
+.firebaserc
+.firebase/
+firebase-debug.log
+firebase-debug.*.log
 
 # Private, local protocol research and device logs
 /research/

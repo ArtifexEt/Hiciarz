@@ -56,7 +56,7 @@ jobs:
       run:
         working-directory: android-app
     env:
-      SPOTIFY_CLIENT_ID: ${{ vars.SPOTIFY_CLIENT_ID || secrets.SPOTIFY_CLIENT_ID }}
+      SPOTIFY_CLIENT_ID: ''
       HICIARZ_KEYSTORE_FILE: ''
       HICIARZ_PRODUCTION_SIGNING: 'false'
     steps:

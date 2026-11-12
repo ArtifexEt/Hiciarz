@@ -21,6 +21,16 @@ fun signingValue(name: String): String = providers.environmentVariable(name).orN
     ?.takeIf { it.isNotBlank() } ?: error("Missing signing environment variable: $name")
 val spotifyClientId = providers.environmentVariable("SPOTIFY_CLIENT_ID")
     .orElse(providers.gradleProperty("spotifyClientId")).orElse("")
+val configuredSpotifyClientId = spotifyClientId.get().trim()
+val validSpotifyClientId = configuredSpotifyClientId.matches(Regex("[A-Fa-f0-9]{32}"))
+val requireSpotifyConfiguration = productionSigning || providers.environmentVariable("HICIARZ_REQUIRE_SPOTIFY_CONFIG")
+    .orElse("false").get().toBooleanStrict()
+require(configuredSpotifyClientId.isEmpty() || validSpotifyClientId) {
+    "Set your own 32-character Spotify Client ID through SPOTIFY_CLIENT_ID or -PspotifyClientId."
+}
+require(!requireSpotifyConfiguration || validSpotifyClientId) {
+    "This distribution build requires your own SPOTIFY_CLIENT_ID; the repository has no default integration."
+}
 abstract class BundleCardSkins @Inject constructor(private val files: FileSystemOperations) : DefaultTask() {
     @get:InputDirectory @get:PathSensitive(PathSensitivity.RELATIVE)
     abstract val inputDirectory: DirectoryProperty
@@ -50,7 +60,7 @@ android {
         versionName = providers.gradleProperty("versionName").orElse("0.2.0-alpha.5").get()
         testInstrumentationRunner = providers.gradleProperty("hiciarzTestRunner").orNull
             ?: "androidx.test.runner.AndroidJUnitRunner"
-        buildConfigField("String", "SPOTIFY_CLIENT_ID", "\"${spotifyClientId.get().replace("\\", "\\\\").replace("\"", "\\\"")}\"")
+        buildConfigField("String", "SPOTIFY_CLIENT_ID", "\"$configuredSpotifyClientId\"")
         buildConfigField("String", "SPOTIFY_REDIRECT_URI", "\"hiciarz://spotify-callback\"")
         buildConfigField("boolean", "TEST_SIGNING", (!productionSigning).toString())
     }
