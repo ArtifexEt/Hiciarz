@@ -1,108 +1,81 @@
-# Hiciarz
+<p align="center">
+  <a href="https://artifexet.github.io/Hiciarz/">
+    <img src="web/docs/assets/readme-banner.svg" alt="Hiciarz — muzyczna gra z własnych kart. Kwadratowe karty ułożone w wachlarz." width="100%">
+  </a>
+</p>
 
-Hiciarz łączy drukowane karty muzyczne z aplikacją do grania. W tym repozytorium są dwa niezależnie budowane projekty:
+<p align="center">
+  Twórz własne karty muzyczne, skanuj je telefonem i zgaduj hity ze znajomymi.
+  <br>
+  <strong>Od ulubionej playlisty do wspólnego wieczoru.</strong>
+</p>
 
-| Projekt | Przeznaczenie |
-| --- | --- |
-| [`android-app/`](android-app/README.md) | Natywna aplikacja Android: skanowanie, talie, Bingo i sterowanie aplikacją Spotify przez App Remote. |
-| [`web/`](web/) | Dotychczasowa aplikacja internetowa: tworzenie i import talii, podgląd kart oraz druk PDF. |
+<p align="center">
+  <a href="https://artifexet.github.io/Hiciarz/"><img src="https://img.shields.io/badge/Zagraj_w_przegl%C4%85darce-083B34?style=for-the-badge&amp;logo=googlechrome&amp;logoColor=EDBD75" alt="Zagraj w przeglądarce — otwórz Hiciarza na GitHub Pages"></a>
+  <a href="#pierwsza-rozgrywka"><img src="https://img.shields.io/badge/Jak_zagra%C4%87-EDE8DC?style=for-the-badge&amp;logo=googledocs&amp;logoColor=253B34" alt="Jak zagrać"></a>
+  <a href="https://buymeacoffee.com/szymonrybka"><img src="https://img.shields.io/badge/Postaw_mi_kaw%C4%99-EDBD75?style=for-the-badge&amp;logo=buymeacoffee&amp;logoColor=253B34" alt="Wesprzyj autora"></a>
+</p>
 
-**[Pobierz testowy APK z GitHub Releases](https://github.com/ArtifexEt/Hiciarz/releases)** · **[Dokumentacja strony](web/README.md)** · **[Format talii JSON/CSV](web/docs/playlist-guide.md)** · **[Zgłoś usterkę](https://github.com/ArtifexEt/Hiciarz/issues/new/choose)**
+## Twój zestaw do muzycznej zabawy
 
-Publiczna strona pod adresem [artifexet.github.io/Hiciarz](https://artifexet.github.io/Hiciarz/) zachowuje wszystkie dotychczasowe funkcje i PWA. Zmiany web trafiające na `main` publikują się automatycznie. Zmiany dotyczące wyłącznie Androida i wydania APK nie uruchamiają publikacji strony.
+Hiciarz zamienia ulubione nagrania w grę przy wspólnym stole. Przygotuj talię z muzyką, którą lubicie, wydrukuj karty i skanuj je telefonem. Posłuchajcie utworu, spróbujcie odgadnąć rok i ułożyć go na osi czasu — albo sprawdźcie, kto rozpozna muzykę z filmu lub gry.
 
-## Android — wydanie testowe
+**[Otwórz Hiciarza na GitHub Pages →](https://artifexet.github.io/Hiciarz/)** Działa w przeglądarce na telefonie i komputerze. Możesz też dodać go do ekranu początkowego jako PWA.
 
-Aplikacja jest napisana w Kotlinie i Jetpack Compose. Muzykę odtwarza zainstalowana aplikacja Spotify; Hiciarz wysyła do niej polecenia App Remote. Nie potrzebuje Client Secret.
+- **Wasza muzyka, Wasze talie.** Dodawaj utwory ręcznie, wczytuj pliki JSON/CSV lub importuj własne playlisty Spotify. Na początek czekają gotowe zestawy: świąteczne hity i muzyka z gier.
+- **Karty w Waszym stylu.** Wybierz motyw, dodaj własny rewers i pobierz PDF do dwustronnego druku. Kwadratowe karty mają 60 × 60 mm.
+- **Kilka sposobów na wspólną grę.** Muzyczna oś czasu, zgadywanie filmów i gier oraz Bingo z planszami do wydrukowania.
+- **Muzyka tam, gdzie gracie.** Słuchaj na telefonie, steruj Spotify albo połącz skaner z odtwarzaczem na drugim ekranie.
 
-Wymagania:
+## Zobacz Hiciarza
 
-- Android 8.0 lub nowszy.
-- Oficjalna aplikacja Spotify, zalogowana na konto Premium do odtwarzania konkretnych nagrań.
-- Internet do połączenia Spotify i odtwarzania muzyki.
-- Zgoda na aparat do skanowania QR; talie można też wybierać w aplikacji.
+Przygotuj własną talię i od razu zobacz, jak będą wyglądać wydrukowane karty:
 
-### Instalacja
+[![Kreator Hiciarza z listą utworów i podglądem kwadratowej karty](web/docs/screenshots/editor-desktop.png)](https://artifexet.github.io/Hiciarz/?view=editor)
 
-1. Otwórz [Releases](https://github.com/ArtifexEt/Hiciarz/releases) i wybierz najnowsze wydanie oznaczone **Pre-release**.
-2. Pobierz `hiciarz-android-…-test.apk` i otwórz plik na telefonie.
-3. Uruchom Hiciarza, połącz Spotify i zaakceptuj jego ekran zgody.
+<table>
+  <tr>
+    <th>Skanuj i zgaduj</th>
+    <th>Zagraj w muzyczne Bingo</th>
+  </tr>
+  <tr>
+    <td width="50%" align="center"><a href="https://artifexet.github.io/Hiciarz/?view=scanner"><img src="web/docs/screenshots/scanner-mobile.png" alt="Skaner kart Hiciarza na telefonie" width="250"></a></td>
+    <td width="50%" align="center"><a href="https://artifexet.github.io/Hiciarz/?view=bingo"><img src="web/docs/screenshots/bingo-mobile.png" alt="Muzyczne Bingo w Hiciarzu" width="250"></a></td>
+  </tr>
+</table>
 
-APK z Releases jest podpisane **prywatnym kluczem do wydań testowych**, przechowywanym wyłącznie w GitHub Secrets. Klucza ani jego haseł nie ma w repozytorium lub artefaktach. Kolejne wydania z tym samym podpisem można instalować jako aktualizacje. Zmiana podpisu wymaga ponownej instalacji; zachowaj pliki importowanych talii, aby móc je ponownie wczytać.
+## Pierwsza rozgrywka
 
-Plik `.sha256` w wydaniu pozwala sprawdzić integralność APK. Publiczny odcisk podpisu znajduje się w dołączonym `SIGNING-CERTIFICATE.txt`, a numery wersji i commit w `BUILD-INFO.txt`. [Dokumentacja Androida](android-app/README.md) opisuje konfigurację i weryfikację wydania.
+1. **[Otwórz Hiciarza](https://artifexet.github.io/Hiciarz/)** i wybierz **Twórz karty**. Zacznij od gotowej talii albo dodaj własne nagrania.
+2. **Wybierz wygląd i wydrukuj karty.** Pobierz PDF, drukuj na A4 dwustronnie w skali 100%, a następnie wytnij karty. Przed całą talią warto wykonać próbę wydruku.
+3. **Wybierz, gdzie ma grać muzyka.** W **Dźwięk** ustaw odtwarzanie na tym urządzeniu, Spotify Connect lub drugi ekran.
+4. **Skanuj, słuchaj i zgaduj.** Zeskanuj QR z karty i sprawdź odpowiedź po jej odwróceniu. Jeśli masz już wydrukowaną talię, możesz od razu zacząć od **Skanuj karty**.
 
-Dotychczasowe próby App Remote potwierdziły odtwarzanie i pauzę na testowanych kontach poza bieżącą listą użytkowników integracji. Nie jest to jeszcze potwierdzenie publicznego onboardingu konta, którego nigdy nie dodawano do tej listy.
+Wolisz Bingo? Otwórz **Bingo**, wydrukuj plansze i losuj kategorie muzycznych zagadek.
 
-### Konfiguracja Spotify dla własnego buildu
+## Spotify i inne sposoby słuchania
 
-GitHub Actions przekazuje domyślny Client ID przez zmienną repozytorium `SPOTIFY_CLIENT_ID`. Jest to publiczny identyfikator aplikacji, dołączany do APK. Workflow obsługuje również istniejący sekret Actions o tej samej nazwie. **Nie ustawiaj Client Secret.**
+W przeglądarce możesz korzystać z osadzonych odtwarzaczy **Spotify i YouTube** bez konfigurowania połączenia Spotify w Hiciarzu. Spotify może udostępniać tylko fragment nagrania, a odtwarzacz może pokazywać tytuł i okładkę. Przy zgadywaniu przydaje się drugi ekran ustawiony poza wzrokiem graczy.
 
-W Spotify Developer Dashboard konfiguracja aplikacji Android musi odpowiadać faktycznemu pakietowi i podpisowi:
+**Spotify Connect** pozwala sterować muzyką na wybranym urządzeniu Spotify i wymaga konta Premium. Import playlist oraz Connect wymagają połączenia konta z Hiciarzem; dostęp zależy od ustawień integracji Spotify. Gotowe talie i import plików JSON/CSV są dostępne bez logowania.
 
-- Pakiet: `pl.artifex.hiciarz`.
-- SHA-1: odcisk użytego klucza, dostępny w `SIGNING-CERTIFICATE.txt` danego wydania lub przez `./gradlew signingReport`.
-- Redirect URI: `hiciarz://spotify-callback`.
+**[Jak połączyć Spotify i wybrać urządzenie →](web/docs/spotify.md)**
 
-Zmiana klucza podpisującego wymaga dopisania jego właściwego odcisku w konfiguracji Spotify. Konfiguracja przeglądarkowego OAuth jest opisana osobno w [dokumentacji web](web/docs/spotify.md).
+## Także na Androidzie
 
-### Lokalny build Androida
+Wolisz natywną aplikację na telefonie? **[Pobierz testowy APK z GitHub Releases](https://github.com/ArtifexEt/Hiciarz/releases)**. Pozwala skanować karty, korzystać z talii i grać w Bingo, sterując zainstalowaną aplikacją Spotify. Wymaga Androida 8.0 lub nowszego; karty przygotujesz i wydrukujesz w przeglądarce.
 
-Wymagane: JDK 17 i Android SDK z platformą `android-37.0` oraz Build Tools `37.0.0`. Gradle Wrapper jest dołączony do projektu.
+[Instalacja i wymagania aplikacji Android](android-app/README.md#instalacja-wydania-testowego).
 
-```sh
-cd android-app
-./gradlew :app:testDebugUnitTest :app:lintRelease :app:assembleRelease
-```
+## Własne talie i pomoc
 
-Wynik: `android-app/app/build/outputs/apk/release/app-release.apk`.
+Talie zapisują się na używanym urządzeniu. Pobierz kopię JSON, aby zachować swój zestaw lub przenieść go z kreatora do aplikacji Android. Muzyka wymaga internetu; po zapisaniu zasobów PWA możesz bez sieci edytować talie i przygotowywać PDF.
 
-Bez własnej konfiguracji podpisu lokalny build używa zwykłego klucza debug Androida. Oficjalne wydania testowe z GitHub korzystają z prywatnego podpisu skonfigurowanego w Secrets; [dokumentacja Androida](android-app/README.md#podpis-i-wersja) opisuje wymagane zmienne. Lokalny identyfikator Spotify można przekazać przez zmienną środowiskową `SPOTIFY_CLIENT_ID`. Wersję buildu można ustawić przez `-PversionName=0.1.0-alpha.1 -PversionCode=100001`.
+- [Instrukcja korzystania z wersji przeglądarkowej](web/README.md)
+- [Gotowe talie i pliki do pobrania](web/examples/playlists/README.md)
+- [Format JSON/CSV i przygotowanie playlisty z pomocą AI](web/docs/playlist-guide.md)
+- [Konfiguracja i rozwijanie projektu](web/docs/configuration.md) · [Dokumentacja Androida](android-app/README.md)
 
-## Web — uruchomienie lokalne
+Masz pomysł lub coś nie działa? [Napisz w Issues](https://github.com/ArtifexEt/Hiciarz/issues/new/choose).
 
-Kod strony, dokumentacja dotychczasowych funkcji i przykładowe talie są w [`web/`](web/). Wymagane Node.js 22+ i pnpm 11.
-
-Z głównego katalogu repozytorium:
-
-```sh
-pnpm install --frozen-lockfile
-pnpm dev
-pnpm test
-pnpm build
-```
-
-Skrypty delegują do `web/`; wynik budowania trafia do `web/dist/`. Można też uruchamiać je bezpośrednio przez `pnpm --dir web …`.
-
-Przeniesienie do osobnego folderu nie usuwa jeszcze dotychczasowych funkcji PWA ani ekranów gry. Przebudowa strony na sam kreator pozostaje kolejnym etapem, po testach aplikacji Android.
-
-## GitHub Actions i wydania
-
-### Kontrola kodu
-
-Workflow **Check web and Android** uruchamia:
-
-- testy i produkcyjny build web;
-- testy jednostkowe Androida, lint i build APK;
-- zapis APK oraz raportów jako artefaktów workflow.
-
-### Publikacja APK
-
-Wypchnięcie tagu `android-v<wersja>` uruchamia **Publish Android test release**:
-
-```sh
-git tag android-v0.1.0-alpha.1
-git push origin android-v0.1.0-alpha.1
-```
-
-Workflow można też uruchomić ręcznie z zakładki Actions, podając nową wersję i opcjonalny `version_code`. Wydanie otrzymuje status **Pre-release** oraz APK, sumę SHA-256, informację o podpisie i metadane buildu. Wersja jest sprawdzana z manifestu gotowego APK. Istniejące opublikowane wersje nie są nadpisywane — poprawka wymaga nowej wersji.
-
-### Publikacja strony
-
-Workflow **Publish website** buduje `web/` i wdraża go do GitHub Pages po zmianach na `main` w `web/`, głównych plikach konfiguracji pnpm/package lub samym workflow publikacji. Nadal można go uruchomić ręcznie przez **Actions → Publish website → Run workflow**, np. po zmianie zmiennych repozytorium. Sam commit w `android-app/` nie wdraża strony. PWA pozostaje dostępne obok aplikacji Android.
-
-## Dane i zgłoszenia
-
-Talie JSON są wspólnym formatem między kreatorem web a aplikacją Android. Przykłady znajdują się w [`web/examples/playlists/`](web/examples/playlists/). Tokenów Spotify i Client Secret nie należy umieszczać w eksportach, zgłoszeniach ani repozytorium.
-
-Usterkę zgłosisz przez [nowe GitHub Issue](https://github.com/ArtifexEt/Hiciarz/issues/new/choose). Przy problemie z APK podaj wersję aplikacji, model telefonu, wersję Androida oraz kroki prowadzące do błędu.
+Jeśli Hiciarz uprzyjemnił Wam wieczór, możesz [postawić autorowi kawę](https://buymeacoffee.com/szymonrybka).
