@@ -83,8 +83,10 @@ public final class ScannerReleaseSmokeTest {
                 () -> target.checkSelfPermission(Manifest.permission.CAMERA) == PackageManager.PERMISSION_GRANTED);
         waitUntil("ML Kit must process a real frame in the minified APK", 30_000,
                 () -> readyCount() > 0);
-        waitUntil("The camera must decode the fixture and show its actual song", 20_000,
-                () -> containsText("Dean Martin") && containsText("1959"));
+        waitUntil("The camera must decode the fixture and show card playback", 20_000,
+                () -> containsText("Scan a new card") && containsCardSkin("Disco"));
+        assertTrue("Legacy answer visibility must not expose the fixture's metadata",
+                !containsText("Dean Martin") && !containsText("1959") && !containsText("Reveal answer"));
         waitUntil("The skin encoded in the actual QR must replace the chosen Classic theme", 10_000,
                 () -> containsCardSkin("Disco"));
 
@@ -92,7 +94,7 @@ public final class ScannerReleaseSmokeTest {
         automation.setRotation(UiAutomation.ROTATION_FREEZE_90);
         waitUntil("The card must survive landscape recreation", 20_000,
                 () -> target.getResources().getConfiguration().orientation == Configuration.ORIENTATION_LANDSCAPE &&
-                        containsText("1959"));
+                        containsCardSkin("Disco"));
         // Return to the phone layout so this black-box test does not depend on
         // which adaptive pane owns the card actions in the short landscape window.
         automation.setRotation(UiAutomation.ROTATION_FREEZE_0);
@@ -102,7 +104,9 @@ public final class ScannerReleaseSmokeTest {
                 () -> findAndClickOrScroll(labels("Scan a new card", "Skanuj nową", "Scan next card", "Next card", "Skanuj kolejną kartę", "Następna karta")));
         scrollToTop();
         waitUntil("A new camera session must process frames after rotation", 30_000,
-                () -> readyCount() >= 2 && containsText("1959") && containsCardSkin("Disco"));
+                () -> readyCount() >= 2 && containsText("Scan a new card") && containsCardSkin("Disco"));
+        assertTrue("Scanning again keeps card data hidden",
+                !containsText("Dean Martin") && !containsText("1959"));
     }
 
     @SuppressWarnings("deprecation")

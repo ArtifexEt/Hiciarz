@@ -7,7 +7,6 @@ import androidx.compose.ui.test.*
 import androidx.compose.ui.test.junit4.createEmptyComposeRule
 import androidx.test.core.app.ActivityScenario
 import androidx.test.platform.app.InstrumentationRegistry
-import androidx.lifecycle.ViewModelProvider
 import pl.artifex.hiciarz.model.AppSettings
 import pl.artifex.hiciarz.model.AppState
 import pl.artifex.hiciarz.model.AppTab
@@ -35,7 +34,7 @@ class AdaptiveNativeTest {
         InstrumentationRegistry.getInstrumentation().targetContext
             .getSharedPreferences("hiciarz", 0).edit().clear().putString("language", "pl").commit()
         activity = ActivityScenario.launch(MainActivity::class.java)
-        compose.waitUntil(15_000) { compose.onAllNodesWithText("Wklej kod lub link").fetchSemanticsNodes().isNotEmpty() }
+        compose.waitUntil(15_000) { compose.onAllNodesWithTag("camera-preview").fetchSemanticsNodes().isNotEmpty() }
     }
 
     @After fun restoreDisplay() {
@@ -58,6 +57,9 @@ class AdaptiveNativeTest {
 
         val horizontal = publishFold(FoldingFeature.Orientation.HORIZONTAL)
         assertPanesAvoid(horizontal, vertical = false)
+        val camera = compose.onNodeWithTag("camera-preview").assertIsDisplayed().getUnclippedBoundsInRoot()
+        val cameraPane = compose.onNodeWithTag("primary-pane").getUnclippedBoundsInRoot()
+        assertTrue("The entire camera must fit above the horizontal hinge", camera.bottom <= cameraPane.bottom)
         val navigation = compose.onNodeWithTag("app-bottom-navigation").fetchSemanticsNode().boundsInRoot
         assertTrue("Tabletop navigation crosses the hinge", navigation.top >= horizontal.bottom - 1f)
         captureNative(compose, "fold-tabletop-scanner-pl")
@@ -79,7 +81,7 @@ class AdaptiveNativeTest {
         compose.waitUntil(15_000) {
             InstrumentationRegistry.getInstrumentation().targetContext.resources.configuration.fontScale > 1.3f
         }
-        compose.onNodeWithText("Jak grać").performScrollTo().assertIsDisplayed()
+        compose.onNodeWithText("Jak tworzyć karty").performScrollTo().assertIsDisplayed()
         compose.onNodeWithText("English").performScrollTo().assertIsDisplayed()
         captureNative(compose, "phone-settings-large-dark-pl")
         resize("1800x1000", 280, 1000..1050)
@@ -119,15 +121,10 @@ class AdaptiveNativeTest {
         compose.onNodeWithTag("camera-preview").assertIsDisplayed()
         val camera = compose.onNodeWithTag("camera-preview").fetchSemanticsNode().boundsInRoot
         assertEquals("Tablet camera must remain square", camera.width, camera.height, 1f)
-        compose.onNodeWithText("Wklej kod lub link").assertIsDisplayed()
+        compose.onNodeWithText("Wklej kod lub link").assertDoesNotExist()
         captureNative(compose, "tablet-scanner-pl")
 
-        lateinit var model: HiciarzViewModel
-        activity.onActivity { model = ViewModelProvider(it)[HiciarzViewModel::class.java] }
-        compose.onNodeWithText("Wklej kod lub link").performScrollTo().performClick()
-        compose.onNodeWithText("Link Spotify lub kod Hiciarza").performTextInput("spotify:track:0000000000000000000000")
-        compose.onNodeWithText("Odtwórz").performClick()
-        compose.waitUntil(5_000) { model.state.value.currentSong != null }
+        scanNativeCard(activity, compose, "spotify:track:0000000000000000000000")
         compose.onNodeWithTag("card-playback-toggle").assertIsDisplayed()
         compose.onNodeWithTag("camera-preview").assertDoesNotExist()
         compose.onNodeWithText("Skanuj nową").assertIsDisplayed()

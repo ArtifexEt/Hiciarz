@@ -11,13 +11,9 @@ import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
-import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.LocalContext
-import androidx.compose.ui.text.input.KeyboardCapitalization
-import androidx.compose.ui.text.input.KeyboardType
-import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.ui.unit.dp
 import pl.artifex.hiciarz.BuildConfig
 import pl.artifex.hiciarz.R
@@ -29,12 +25,11 @@ internal fun SettingsScreen(state: AppState, copy: UiCopy, onAction: (AppAction)
     val context = LocalContext.current
     AdaptivePanes(primary = {
         SectionTitle(copy.t("Ustawienia", "Settings"))
-        SettingGroup("Spotify") {
+        SettingGroup(copy.t("Odtwarzanie", "Playback")) {
             SettingRow(if (state.playback.connection == ConnectionStatus.CONNECTED)
-                copy.t("Połączenie aktywne", "Connected") else copy.t("Połącz Spotify", "Connect Spotify"),
-                AppIcons.Music, copy.t("Odtwarzanie i pauza", "Playback controls"), onAudio)
-        }
-        SettingGroup(copy.t("Podczas gry", "During a game")) {
+                copy.t("Spotify połączone", "Spotify connected") else copy.t("Połącz Spotify", "Connect Spotify"),
+                AppIcons.Music, onClick = onAudio)
+            GroupDivider()
             SwitchRow(copy.t("Automatyczna pauza", "Automatic pause"), state.settings.autoPause,
                 onChange = { onAction(AppAction.SetAutoPause(it)) })
             if (state.settings.autoPause) {
@@ -48,9 +43,6 @@ internal fun SettingsScreen(state: AppState, copy: UiCopy, onAction: (AppAction)
                     }
                 }
             }
-            GroupDivider()
-            SwitchRow(copy.t("Ukrywaj odpowiedzi skanowanych kart", "Hide scanned card answers"), state.settings.hideAnswers,
-                onChange = { onAction(AppAction.SetHideAnswers(it)) })
         }
     }, secondary = {
         SettingGroup(copy.t("Wygląd", "Appearance")) {
@@ -71,7 +63,11 @@ internal fun SettingsScreen(state: AppState, copy: UiCopy, onAction: (AppAction)
             }
         }
         SettingGroup(copy.t("Pomoc", "Help")) {
-            SettingRow(copy.t("Jak grać", "How to play"), AppIcons.Help, onClick = onHelp)
+            SettingRow(copy.t("Jak tworzyć karty", "Create cards"), AppIcons.Help, onClick = onHelp)
+            GroupDivider()
+            SettingRow(copy.t("Hiciarz na GitHub Pages", "Hiciarz on GitHub Pages"), AppIcons.Link) {
+                openUrl(context, "https://artifexet.github.io/Hiciarz/")
+            }
             GroupDivider()
             SettingRow(copy.t("Zgłoś usterkę", "Report an issue"), AppIcons.Info) {
                 openUrl(context, "https://github.com/ArtifexEt/Hiciarz/issues/new/choose")
@@ -167,21 +163,6 @@ internal fun SkinSelectionSheet(state: AppState, copy: UiCopy, onAction: (AppAct
             }
         }
     }
-}
-
-@Composable
-internal fun ManualEntryDialog(copy: UiCopy, onDismiss: () -> Unit, onSubmit: (String) -> Unit) {
-    var value by rememberSaveable { mutableStateOf("") }
-    AlertDialog(onDismissRequest = onDismiss, title = {
-        HideStatusBar()
-        Text(copy.t("Kod lub link do utworu", "Card code or track link"))
-    },
-        text = { OutlinedTextField(value, { if (it.length <= 8000) value = it },
-            modifier = Modifier.fillMaxWidth(), minLines = 2, maxLines = 4,
-            label = { Text(copy.t("Link Spotify lub kod Hiciarza", "Spotify link or Hiciarz code")) },
-            keyboardOptions = KeyboardOptions(capitalization = KeyboardCapitalization.None, keyboardType = KeyboardType.Uri)) },
-        confirmButton = { TextButton(onClick = { onSubmit(value.trim()) }, enabled = value.isNotBlank()) { Text(copy.t("Odtwórz", "Play")) } },
-        dismissButton = { TextButton(onClick = onDismiss) { Text(copy.t("Anuluj", "Cancel")) } })
 }
 
 @Composable

@@ -5,6 +5,7 @@ import android.graphics.Bitmap
 import androidx.compose.ui.semantics.SemanticsActions
 import androidx.compose.ui.test.*
 import androidx.compose.ui.test.junit4.createEmptyComposeRule
+import androidx.lifecycle.ViewModelProvider
 import androidx.test.core.app.ActivityScenario
 import androidx.test.platform.app.InstrumentationRegistry
 import java.io.File
@@ -14,6 +15,7 @@ import org.junit.After
 import org.junit.Before
 import org.junit.Rule
 import org.junit.Test
+import pl.artifex.hiciarz.model.AppAction
 import pl.artifex.hiciarz.model.CardSkin
 
 /** Real scanner navigation and settings callbacks, without a Spotify account or camera permission. */
@@ -23,10 +25,10 @@ class NativeFlowTest {
 
     @Before fun launch() {
         InstrumentationRegistry.getInstrumentation().targetContext
-            .getSharedPreferences("hiciarz", 0).edit().clear().putString("language", "pl").commit()
+            .getSharedPreferences("hiciarz", 0).edit().clear().putString("language", "pl").putBoolean("hideAnswers", false).commit()
         activity = ActivityScenario.launch(MainActivity::class.java)
         compose.waitUntil(15_000) {
-            compose.onAllNodesWithText("Wklej kod lub link").fetchSemanticsNodes().isNotEmpty()
+            compose.onAllNodesWithTag("camera-preview").fetchSemanticsNodes().isNotEmpty()
         }
     }
 
@@ -38,6 +40,8 @@ class NativeFlowTest {
         compose.onNodeWithText("Talie").assertDoesNotExist()
         compose.onNodeWithText("Graj bez kart").assertDoesNotExist()
         compose.onNodeWithTag("mode-timeline").assertDoesNotExist()
+        compose.onNodeWithText("Wklej kod lub link").assertDoesNotExist()
+        compose.onNodeWithContentDescription("Jak grać").assertDoesNotExist()
         captureNative(compose, "phone-scan-pl")
         enterCode("https://example.org/#2fs0000000000000000000000")
         compose.onNodeWithTag("card-playback-toggle").assertIsDisplayed()
@@ -49,15 +53,20 @@ class NativeFlowTest {
         enterCode(KNOWN_FISH_CARD)
         compose.onNodeWithText(KNOWN_TITLE).assertDoesNotExist()
         compose.onNodeWithText("1964").assertDoesNotExist()
-        compose.onNodeWithText("Odkryj odpowiedź").performScrollTo().performClick()
-        compose.onNodeWithText(KNOWN_TITLE).performScrollTo().assertIsDisplayed()
-        compose.onNodeWithText("1964").assertIsDisplayed()
-        captureNative(compose, "phone-scan-revealed-pl")
+        compose.onNodeWithText("Odkryj odpowiedź").assertDoesNotExist()
+        captureNative(compose, "phone-scan-known-hidden-pl")
         compose.onNodeWithText("Skanuj nową").performScrollTo().performClick()
         compose.onNodeWithTag("camera-preview").assertIsDisplayed()
 
         compose.onNodeWithText("Opcje").performClick()
         compose.onNodeWithText("Automatyczna pauza").performScrollTo().assertIsOff()
+        compose.onNodeWithText("Ukrywaj odpowiedzi skanowanych kart").assertDoesNotExist()
+        compose.onNodeWithText("Jak grać").assertDoesNotExist()
+        compose.onNodeWithText("Jak tworzyć karty").performScrollTo().performClick()
+        compose.onNodeWithText("Zasady").assertDoesNotExist()
+        compose.onNodeWithText("Otwórz kreator kart").performScrollTo().assertIsDisplayed()
+        InstrumentationRegistry.getInstrumentation().uiAutomation.performGlobalAction(AccessibilityService.GLOBAL_ACTION_BACK)
+        compose.waitForIdle()
         compose.onNodeWithText("Client ID", substring = true).assertDoesNotExist()
         compose.onNodeWithText("Gdzie gra muzyka", substring = true).assertDoesNotExist()
         captureNative(compose, "phone-settings-pl")
@@ -81,10 +90,7 @@ class NativeFlowTest {
     }
 
     private fun enterCode(code: String) {
-        compose.onNodeWithText("Wklej kod lub link").performScrollTo().performClick()
-        compose.onNodeWithText("Link Spotify lub kod Hiciarza").performTextInput(code)
-        compose.onNodeWithText("Odtwórz").performClick()
-        compose.waitForIdle()
+        scanNativeCard(activity, compose, code)
     }
 
     private fun waitForFishArtwork() {
@@ -147,4 +153,19 @@ internal fun nativeShell(command: String) {
     android.os.ParcelFileDescriptor.AutoCloseInputStream(
         InstrumentationRegistry.getInstrumentation().uiAutomation.executeShellCommand(command),
     ).use { it.readBytes() }
+}
+
+/** Feed the same callback used by the camera, without exposing a manual-entry UI. */
+internal fun scanNativeCard(
+    activity: ActivityScenario<MainActivity>,
+    compose: androidx.compose.ui.test.junit4.ComposeTestRule,
+    code: String,
+) {
+    lateinit var model: HiciarzViewModel
+    activity.onActivity {
+        model = ViewModelProvider(it)[HiciarzViewModel::class.java]
+        model.dispatch(AppAction.ScanCameraCode(code))
+    }
+    compose.waitUntil(10_000) { model.state.value.currentSong != null }
+    compose.waitForIdle()
 }

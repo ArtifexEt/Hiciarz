@@ -40,82 +40,54 @@ import kotlin.math.abs
 
 @Composable
 internal fun ScanScreen(state: AppState, copy: UiCopy, onAction: (AppAction) -> Unit,
-                        onManual: () -> Unit, cameraActive: Boolean = true) {
+                        cameraActive: Boolean = true) {
     val song = state.currentSong
-    val hasAnswer = song?.let(::hasScannedAnswer) == true
-    val revealed = hasAnswer && (state.answerRevealed || !state.settings.hideAnswers)
-    AdaptivePanes(primary = {
+    AdaptivePanes(singleColumn = true, primary = {
         if (song == null) {
             Column(verticalArrangement = Arrangement.spacedBy(12.dp)) {
                 SectionTitle(copy.t("Skanuj kartę", "Scan a card"))
-                CameraViewport(state.scannerEnabled && cameraActive, copy, reservedHeight = 44.dp) { onAction(AppAction.ScanCameraCode(it)) }
+                CameraViewport(state.scannerEnabled && cameraActive, copy, reservedHeight = 52.dp) { onAction(AppAction.ScanCameraCode(it)) }
             }
         } else {
             Column(Modifier.fillMaxWidth(), verticalArrangement = Arrangement.spacedBy(12.dp)) {
-                CardPlayback(state.playback, song, copy, onAction, answerVisible = revealed) {
-                    ScannedTicket(song, revealed, state.activeSkin, copy)
-                }
-                Button(onClick = { onAction(AppAction.ScanNext) },
-                    modifier = Modifier.fillMaxWidth().heightIn(min = 52.dp).testTag("scan-new-card"), shape = ControlShape,
-                    colors = ButtonDefaults.buttonColors(containerColor = MaterialTheme.colorScheme.secondary,
-                        contentColor = MaterialTheme.colorScheme.onSecondary)) {
-                    Icon(AppIcons.Scan, null, Modifier.size(20.dp))
-                    Spacer(Modifier.width(10.dp))
-                    Text(copy.t("Skanuj nową", "Scan a new card"))
+                CardPlayback(state.playback, song, copy, onAction) {
+                    ScannedTicket(song, state.activeSkin, copy)
                 }
             }
         }
     }, secondary = {
-        if (song == null) {
-            Box(Modifier.fillMaxWidth(), contentAlignment = Alignment.Center) {
-                TextButton(onClick = onManual, modifier = Modifier.heightIn(min = 48.dp)) {
-                    Icon(AppIcons.Link, null, Modifier.size(18.dp))
-                    Spacer(Modifier.width(8.dp))
-                    Text(copy.t("Wklej kod lub link", "Paste code or link"))
-                }
+        if (song != null) {
+            Button(onClick = { onAction(AppAction.ScanNext) },
+                modifier = Modifier.fillMaxWidth().heightIn(min = 52.dp).testTag("scan-new-card"), shape = ControlShape,
+                colors = ButtonDefaults.buttonColors(containerColor = MaterialTheme.colorScheme.secondary,
+                    contentColor = MaterialTheme.colorScheme.onSecondary)) {
+                Icon(AppIcons.Scan, null, Modifier.size(20.dp))
+                Spacer(Modifier.width(10.dp))
+                Text(copy.t("Skanuj nową", "Scan a new card"))
             }
-        } else {
-            Column(Modifier.fillMaxWidth(), verticalArrangement = Arrangement.spacedBy(12.dp)) {
-                if (hasAnswer && !revealed) {
-                    OutlinedButton(onClick = { onAction(AppAction.RevealAnswer) },
-                        modifier = Modifier.fillMaxWidth().heightIn(min = 48.dp), shape = ControlShape) {
-                        Icon(AppIcons.Eye, null, Modifier.size(20.dp))
-                        Spacer(Modifier.width(10.dp))
-                        Text(copy.t("Odkryj odpowiedź", "Reveal answer"))
-                    }
+        }
+        // On a separating fold, keep useful actions in the other pane instead of
+        // stretching the camera or card across the hinge.
+        if (LocalFoldGeometry.current != null) {
+            val context = LocalContext.current
+            SettingGroup(copy.t("Nowe karty", "New cards")) {
+                SettingRow(copy.t("Otwórz kreator kart", "Open card creator"), AppIcons.Decks) {
+                    openUrl(context, "https://artifexet.github.io/Hiciarz/?view=editor")
                 }
             }
         }
     })
 }
 
-private fun hasScannedAnswer(song: Song): Boolean = when (song.gameMode) {
-    GameMode.CLASSIC -> song.year != null
-    GameMode.GAME, GameMode.MOVIE -> song.answer.isNotBlank()
-}
-
 @Composable
-internal fun ScannedTicket(song: Song, revealed: Boolean, skin: CardSkin, copy: UiCopy) {
-    FlippingTicket(cardKey = song.spotifyId, revealed = revealed && hasScannedAnswer(song),
+internal fun ScannedTicket(song: Song, skin: CardSkin, copy: UiCopy) {
+    // A scan only selects the artwork and track. Legacy answer preferences never expose metadata.
+    YearTicket(
+        skin = skin, year = "", eyebrow = "", cardId = song.id, playbackOverlay = true,
         modifier = Modifier.semantics(mergeDescendants = true) {
             stateDescription = copy.t("Skórka: ${copy.skin(skin)}", "Skin: ${copy.skin(skin)}")
-        }) { answerVisible ->
-        YearTicket(
-            skin = skin,
-            year = when {
-                !answerVisible -> ""
-                song.gameMode != GameMode.CLASSIC -> song.answer
-                else -> song.year?.toString() ?: "—"
-            },
-            eyebrow = if (answerVisible) copy.t("Odpowiedź", "The answer") else "",
-            title = if (answerVisible) song.title else null,
-            subtitle = if (answerVisible) song.artist else null,
-            footer = if (answerVisible && song.gameMode != GameMode.CLASSIC) song.year?.toString() else null,
-            answerSide = answerVisible,
-            cardId = song.id,
-            playbackOverlay = true,
-        )
-    }
+        },
+    )
 }
 
 @Composable

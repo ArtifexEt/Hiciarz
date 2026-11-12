@@ -2,9 +2,9 @@
 
 Plan publikacji w sklepie: [proces wydania w Google Play](docs/google-play-release.md).
 
-Natywna aplikacja Kotlin / Jetpack Compose do skanowania drukowanych kart QR i uruchamiania przypisanej muzyki. Otwiera się na skanerze, a nawigacja zawiera **Skaner i Opcje**. Spotify odtwarza muzykę w swojej aplikacji, a Hiciarz steruje nim przez oficjalny App Remote SDK. Biblioteka talii, kreator kart i generator PDF są dostępne w [`../web/`](../web/). [Bingo i plansze do druku](https://artifexet.github.io/Bingo/) mają osobne [repozytorium](https://github.com/ArtifexEt/Bingo).
+Natywna aplikacja Kotlin / Jetpack Compose do skanowania drukowanych kart QR i uruchamiania przypisanej muzyki. Otwiera się na skanerze, a kompaktowe dolne menu zawiera dwie pozycje z ikonami: **Skaner i Opcje**. Spotify odtwarza muzykę w swojej aplikacji, a Hiciarz steruje nim przez oficjalny App Remote SDK. Biblioteka talii, kreator kart i generator PDF są dostępne w [Hiciarzu na GitHub Pages](https://artifexet.github.io/Hiciarz/). W Opcjach znajduje się instrukcja tworzenia nowych kart i [odnośnik do kreatora](https://artifexet.github.io/Hiciarz/?view=editor). [Bingo i plansze do druku](https://artifexet.github.io/Bingo/) mają osobne [repozytorium](https://github.com/ArtifexEt/Bingo).
 
-Skaner i karta zachowują kwadratowe proporcje również na tablecie. Pauza i wznowienie znajdują się na obrazie karty, a pod nią jest przycisk „Skanuj nową”. Odtwarzanie i skórka działają na podstawie QR także dla utworów, których danych aplikacja nie zna. Odkrywanie jest dostępne, gdy zapisane dane pozwalają wyświetlić odpowiedź; dla pozostałych kart odpowiedź pozostaje na wydruku.
+Skaner i karta zachowują kwadratowe proporcje również na tablecie. Pauza i wznowienie znajdują się na obrazie karty, a pod nią jest przycisk „Skanuj nową”. Odtwarzanie i skórka działają na podstawie QR także dla utworów, których danych aplikacja nie zna. Aplikacja wyświetla wyłącznie rewers karty; nie pokazuje jej tytułu, wykonawcy, roku ani odpowiedzi. Kod odczytuje aparat — nie ma formularza do wklejania kodów ani linków.
 
 Kod QR może automatycznie włączyć jedną z dziewięciu skórek. Palety i grafiki odpowiadają wersji web i uwzględniają tryb ciemny; rybki mają animowane ozdoby i lampki. W Opcjach można wybrać własny wygląd i wyłączyć śledzenie skórki karty. Automatyczna pauza jest domyślnie wyłączona. Na dużym oknie nawigacja przechodzi na bok, a panele uwzględniają zgięcie ekranu. [Podział funkcji PWA i Androida](docs/pwa-parity.md) opisuje pełny zakres.
 
@@ -16,9 +16,7 @@ Zegar i systemowy pasek statusu są ukryte również w panelach opcji i dialogac
 
 Zrzuty pochodzą z aplikacji na emulatorze AOSP bez zainstalowanego Spotify. Układy Folda korzystają z emulowanego okna i pozycji zawiasu przekazywanej przez WindowManager.
 
-| Skaner | Odkryta karta |
-| --- | --- |
-| <img src="docs/screenshots/phone-scan-pl.png" width="240" alt="Skaner QR z nawigacją Skaner i Opcje" /> | <img src="docs/screenshots/phone-scan-revealed-pl.png" width="240" alt="Dane karty po odkryciu" /> |
+<img src="docs/screenshots/phone-scan-pl.png" width="240" alt="Skaner QR z kompaktowym menu Skaner i Opcje" />
 
 | Rybki | Opcje i większy tekst |
 | --- | --- |
@@ -40,7 +38,7 @@ Zrzuty pochodzą z aplikacji na emulatorze AOSP bez zainstalowanego Spotify. Uk�
 2. Otwórz plik na telefonie i zezwól użytej przeglądarce lub menedżerowi plików na instalację tego APK, jeśli Android o to poprosi.
 3. W zainstalowanym Spotify zaloguj się na konto Premium. Otwórz Hiciarza, wybierz połączenie ze Spotify i zaakceptuj zgodę.
 
-Wymagany jest Android 8.0 / API 26 lub nowszy. Aparat jest potrzebny do skanowania QR. Przygotowanie i import talii JSON/CSV odbywają się w PWA. Wcześniej zapisane talie pozostają na urządzeniu i mogą uzupełniać informacje o zeskanowanej karcie.
+Wymagany jest Android 8.0 / API 26 lub nowszy. Aparat jest potrzebny do skanowania QR. Przygotowanie i import talii JSON/CSV odbywają się w PWA. Wcześniej zapisane talie pozostają na urządzeniu; ich dane nie są pokazywane na ekranie karty.
 
 Wydania z Releases są podpisane **prywatnym kluczem do testów**, przechowywanym w GitHub Secrets. Klucz i hasła nie trafiają do repozytorium ani do pobieranych artefaktów. Ten sam pakiet i podpis pozwalają instalować kolejne wersje bez usuwania aplikacji. Zmiana podpisu wymaga odinstalowania poprzedniej wersji i usuwa jej dane. Zachowaj pliki JSON / CSV importowanych talii, aby można je było wczytać ponownie.
 
@@ -112,7 +110,7 @@ Ustaw `ANDROID_HOME` na lokalizację Android SDK albo dodaj `sdk.dir=…` do lok
 
 Testy obejmują zgodność kart QR i importu JSON/CSV z kreatorem web, skórki, zachowanie skanera po odtworzeniu procesu oraz migrację danych ze starszych wersji. Nie potwierdzają autoryzacji Spotify na prawdziwym urządzeniu; tę część należy sprawdzić ręcznie.
 
-CI uruchamia też natywne scenariusze Compose na emulatorze AOSP: skanowanie i wklejenie kodu, odkrycie karty, zmianę skórki i języka, pomoc oraz przełączanie między Skanerem i Opcjami. Osobny scenariusz zmienia rzeczywiste okno Activity i publikuje pozycję pionowego oraz poziomego zgięcia przez WindowManager, sprawdzając, że panele nie nachodzą na zawias. Obejmuje ekran telefonu 360 dp, zewnętrzny i wewnętrzny ekran Folda, krótki widok poziomy, tryb ciemny i powiększenie tekstu. Zrzuty PNG trafiają do artefaktu `android-native-ui-…` obok raportu testów. Jest to test emulatora, a nie deklaracja sprawdzenia na fizycznym Fold7.
+CI uruchamia też natywne scenariusze Compose na emulatorze AOSP: obsługę wyniku skanowania, ukrycie danych karty także po aktualizacji starszych ustawień, zmianę skórki i języka, pomoc w tworzeniu kart oraz przełączanie między Skanerem i Opcjami. Scenariusze UI przekazują kod przez `ScanCameraCode`; odczyt QR przez aparat sprawdza osobny test zoptymalizowanego APK. Osobny scenariusz zmienia rzeczywiste okno Activity i publikuje pozycję pionowego oraz poziomego zgięcia przez WindowManager, sprawdzając, że panele nie nachodzą na zawias. Obejmuje ekran telefonu 360 dp, zewnętrzny i wewnętrzny ekran Folda, krótki widok poziomy, tryb ciemny i powiększenie tekstu. Zrzuty PNG trafiają do artefaktu `android-native-ui-…` obok raportu testów. Jest to test emulatora, a nie deklaracja sprawdzenia na fizycznym Fold7.
 
 Testy regresji sprawdzają globalne wznawianie Spotify po zmianie zakładki, odtwarzanie wybranej karty oraz poprawną aktualizację stanu przy rozłączeniu i ponownym podłączeniu Spotify. Działają na emulatorze bez konta Spotify.
 

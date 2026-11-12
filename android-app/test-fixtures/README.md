@@ -6,7 +6,7 @@
 https://artifexet.github.io/Hiciarz/#2ds2uFaJJtFpPDc5Pa95XzTvg
 ```
 
-The bundled deck identifies this recording as **Dean Martin — Let It Snow! Let It Snow! Let It Snow! (1959)**. The release camera smoke test checks that these decoded card details appear after a real CameraX → ML Kit frame, without Spotify, login or network access.
+The bundled deck identifies this recording as **Dean Martin — Let It Snow! Let It Snow! Let It Snow! (1959)**. The release camera smoke test checks playback controls and the decoded Disco skin after a real CameraX → ML Kit frame. It also verifies that card details remain hidden, including with an older visibility setting. The test runs without Spotify, login or network access.
 
 The 200 px QR sits at (30, 30) on a white 640 × 480 canvas. This placement keeps its finder markers inside both emulator analysis and preview crops; larger centered codes are clipped by the imagefile backend. The final PNG is independently decodable with ZXing.
 
@@ -31,4 +31,4 @@ adb shell am instrument -w -r \
 
 The AndroidX runner assumes unminified Kotlin runtime names, so it cannot safely instrument a separately optimized release APK. This runner uses Android framework APIs and leaves production shrinking unchanged. A successful run ends with `OK (2 tests)`.
 
-Revoke permission before starting instrumentation: the test deliberately begins without camera access, presses the app's camera button and accepts Android's foreground permission prompt. It then checks a real decoded song, the QR's Disco skin, rotation and another scan with the existing permission. Revoking permission during instrumentation would terminate the app under test.
+Revoke permission before starting instrumentation: the test deliberately begins without camera access, presses the app's camera button and accepts Android's foreground permission prompt. It then checks the decoded card's playback screen, the QR's Disco skin, rotation and another scan with the existing permission. Revoking permission during instrumentation would terminate the app under test.
