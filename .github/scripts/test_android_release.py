@@ -272,7 +272,8 @@ class GitAndOutputTests(unittest.TestCase):
             changelog.write_text(CHANGELOG)
             output, summary = base / "output", base / "summary"
             environment = {"GITHUB_OUTPUT": str(output), "GITHUB_STEP_SUMMARY": str(summary),
-                           "GITHUB_SHA": COMMIT, "GITHUB_RUN_NUMBER": "1", "GITHUB_REF_TYPE": "branch"}
+                           "GITHUB_SHA": COMMIT, "GITHUB_RUN_NUMBER": "1", "GITHUB_REF_TYPE": "branch",
+                           "GITHUB_REF_NAME": "main"}
             stdout = io.StringIO()
             with mock.patch.dict(os.environ, environment), \
                  mock.patch.object(release, "load_releases", return_value=[github_release("0.1.0-alpha.2")]), \
@@ -300,13 +301,35 @@ class GitAndOutputTests(unittest.TestCase):
             changelog = base / "CHANGELOG.md"
             changelog.write_text(CHANGELOG)
             stderr = io.StringIO()
-            with mock.patch.object(release, "load_releases", side_effect=release.ReleaseError("HTTP 503: unavailable")), \
+            with mock.patch.dict(os.environ, {"GITHUB_REF_TYPE": "branch", "GITHUB_REF_NAME": "main"}), \
+                 mock.patch.object(release, "load_releases", side_effect=release.ReleaseError("HTTP 503: unavailable")), \
                  contextlib.redirect_stderr(stderr):
                 result = release.main(["--repository", REPOSITORY, "--changelog", str(changelog),
                                        "--output-dir", str(base / "artifacts")])
             self.assertEqual(result, 1)
             self.assertIn("Release preflight failed: HTTP 503", stderr.getvalue())
             self.assertFalse((base / "artifacts").exists())
+
+    def test_tag_cli_selects_the_tagged_section_instead_of_the_latest_entry(self):
+        with tempfile.TemporaryDirectory() as directory:
+            base = Path(directory)
+            changelog = base / "CHANGELOG.md"
+            changelog.write_text(CHANGELOG)
+            environment = {"GITHUB_REF_TYPE": "tag", "GITHUB_REF_NAME": "android-v0.1.0-alpha.2",
+                           "GITHUB_SHA": COMMIT, "GITHUB_RUN_NUMBER": "1"}
+            with mock.patch.dict(os.environ, environment, clear=True), \
+                 mock.patch.object(release, "load_releases", return_value=[]), \
+                 mock.patch.object(release, "check_git_refs", return_value=COMMIT) as refs, \
+                 contextlib.redirect_stdout(io.StringIO()):
+                result = release.main(["--repository", REPOSITORY, "--changelog", str(changelog),
+                                       "--output-dir", str(base / "artifacts")])
+            self.assertEqual(result, 0)
+            plan = json.loads((base / "artifacts/RELEASE-PLAN.json").read_text())
+            self.assertEqual(plan["name"], "0.1.0-alpha.2")
+            refs.assert_called_once_with("android-v0.1.0-alpha.2", COMMIT, "")
+            notes = (base / "artifacts/RELEASE-NOTES.md").read_text()
+            self.assertIn("Old release sentinel", notes)
+            self.assertNotIn("New release sentinel", notes)
 
 
 if __name__ == "__main__":
