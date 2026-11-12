@@ -21,10 +21,8 @@ import {
   ChevronDown,
   ChevronLeft,
   ChevronRight,
-  Copy,
   Download,
   FileJson,
-  FolderOpen,
   Headphones,
   House,
   Info,
@@ -43,7 +41,6 @@ import {
   ShieldCheck,
   Shuffle,
   Smartphone,
-  Sparkles,
   Trash2,
   Upload,
   X,
@@ -83,6 +80,7 @@ import {
   type PlaybackOutput,
 } from './scanner-playback';
 import PlaylistExamples from './PlaylistExamples';
+import ImportWizard, { type ImportStep } from './ImportWizard';
 import { createExampleDeck } from './examples';
 import playlistPromptPl from '../docs/playlist-prompt.txt?raw';
 import playlistPromptEn from '../docs/playlist-prompt.en.txt?raw';
@@ -166,6 +164,7 @@ export default function App() {
   const { language, setLanguage } = useTranslation();
   const playlistPrompt = language === 'en' ? playlistPromptEn : playlistPromptPl;
   const [draggingFile, setDraggingFile] = useState(false);
+  const [importStep, setImportStep] = useState<ImportStep>('choose');
   const [draggingImage, setDraggingImage] = useState(false);
   const [backgroundBusy, setBackgroundBusy] = useState(false);
   const updateAvailable = useSyncExternalStore(subscribeToUpdates, updateIsReady);
@@ -239,6 +238,7 @@ export default function App() {
   const outputRef = useRef(output);
   outputRef.current = output;
   const backgroundRequests = useRef(createLatestRequest()).current;
+  const importRequests = useRef(createLatestRequest()).current;
   const invalidateBackground = useCallback(() => {
     backgroundRequests.invalidate();
     setBackgroundBusy(false);
@@ -246,14 +246,14 @@ export default function App() {
   const setActiveId = useCallback(
     (id: string) => {
       invalidateBackground();
+      importRequests.invalidate();
       setActiveIdState(id);
     },
-    [invalidateBackground],
+    [invalidateBackground, importRequests],
   );
   useEffect(() => () => backgroundRequests.invalidate(), [backgroundRequests]);
-  const fileRef = useRef<HTMLInputElement>(null),
-    importOptionsRef = useRef<HTMLDetailsElement>(null),
-    lastScan = useRef({ id: '', time: 0 }),
+  useEffect(() => () => importRequests.invalidate(), [importRequests]);
+  const lastScan = useRef({ id: '', time: 0 }),
     incomingCard = useRef<Card | null>(null),
     saveQueue = useRef(Promise.resolve()),
     toastTimer = useRef<ReturnType<typeof setTimeout> | undefined>(undefined),
@@ -288,14 +288,29 @@ export default function App() {
     toastTimer.current = setTimeout(() => setMessage(''), 6000);
   }, []);
   async function readImportFile(file: File) {
-    try {
-      if (file.size > 8 * 1024 * 1024) throw new Error(tr('app.theFileIsTooLargeTheLimit'));
-      setPending({ data: parseImport(await file.text(), file.name), name: file.name });
-      setImportMode('append');
-      setModal('file');
-    } catch (error) {
-      notify((error as Error).message);
-    }
+    let message: string | undefined;
+    await importRequests.run(
+      async () => {
+        if (file.size > 8 * 1024 * 1024) throw new Error(tr('app.theFileIsTooLargeTheLimit'));
+        return { data: parseImport(await file.text(), file.name), name: file.name };
+      },
+      (pending) => {
+        setPending(pending);
+        setImportMode('append');
+        setModal('file');
+      },
+      (error) => {
+        message = (error as Error).message;
+        notify(message);
+      },
+    );
+    return message;
+  }
+  function openImport(step: ImportStep = 'choose') {
+    importRequests.invalidate();
+    setImportStep(step);
+    setPending(undefined);
+    setModal('import');
   }
   async function readBackground(file: File) {
     setBackgroundBusy(true);
@@ -694,6 +709,7 @@ export default function App() {
       incomingCard.current = null;
       historyPopPending.current = false;
       if (shouldRecord) {
+        importRequests.invalidate();
         const method = readNavigationState(history.state).modal ? 'replaceState' : 'pushState';
         history[method](
           navigationState(history.state, destination, null),
@@ -756,6 +772,7 @@ export default function App() {
     const target = parseAppView(location.href);
     const candidate = readNavigationState(event.state).modal ?? parseEntryModal(location.href);
     const nextModal = availableModal(candidate);
+    importRequests.invalidate();
     if (nextModal !== candidate)
       history.replaceState(navigationState(history.state, target, nextModal), '', location.href);
     setModal(nextModal);
@@ -996,14 +1013,6 @@ export default function App() {
                   </button>
                   <button
                     className="secondary"
-                    title={tr('shell.dropFile')}
-                    onClick={() => fileRef.current?.click()}
-                  >
-                    <FolderOpen size={18} aria-hidden="true" />
-                    {tr('shell.importDeck')}
-                  </button>
-                  <button
-                    className="secondary"
                     onClick={() =>
                       download(JSON.stringify(deck, null, 2), `${deck.name || 'talia'}.json`)
                     }
@@ -1053,81 +1062,25 @@ export default function App() {
                         <div>
                           <h2>{tr('creator.collection.' + (deck.gameMode || 'music'))}</h2>
                         </div>
-                        <button
-                          className="secondary compact"
-                          onClick={() => {
-                            setEditSong(undefined);
-                            setModal('song');
-                          }}
-                        >
-                          <Plus size={17} /> {tr('creator.add.' + (deck.gameMode || 'music'))}
-                        </button>
-                      </div>
-                      <button
-                        className="example-entry ai-playlist-entry"
-                        onClick={async () => {
-                          if (importOptionsRef.current) importOptionsRef.current.open = true;
-                          try {
-                            await navigator.clipboard.writeText(playlistPrompt);
-                            notify(tr('aiPlaylist.copied'));
-                          } catch {
-                            setModal('prompt');
-                          }
-                        }}
-                      >
-                        <Copy size={20} aria-hidden="true" />
-                        <span>
-                          <strong>{tr('aiPlaylist.title')}</strong>
-                          <small>{tr('aiPlaylist.description')}</small>
-                        </span>
-                        <ArrowUpRight size={18} aria-hidden="true" />
-                      </button>
-                      <button className="example-entry" onClick={() => setModal('examples')}>
-                        <Sparkles size={20} aria-hidden="true" />
-                        <span>
-                          <strong>{tr('creator.chooseExamples')}</strong>
-                          <small>
-                            {tr('creator.exampleDescription.' + (deck.gameMode || 'music'))}
-                          </small>
-                        </span>
-                        <ChevronRight size={18} aria-hidden="true" />
-                      </button>
-                      <details className="creator-import-options" ref={importOptionsRef}>
-                        <summary>
-                          {tr('aiPlaylist.importFile')}
-                          <ChevronDown size={17} aria-hidden="true" />
-                        </summary>
-                        <div
-                          className={'file-drop' + (draggingFile ? ' is-dragging' : '')}
-                          onDragOver={(event) => {
-                            event.preventDefault();
-                            event.dataTransfer.dropEffect = 'copy';
-                            setDraggingFile(true);
-                          }}
-                          onDragLeave={(event) => {
-                            if (
-                              !(event.relatedTarget instanceof Node) ||
-                              !event.currentTarget.contains(event.relatedTarget)
-                            )
-                              setDraggingFile(false);
-                          }}
-                          onDrop={(event) => {
-                            event.preventDefault();
-                            setDraggingFile(false);
-                            const file = event.dataTransfer.files[0];
-                            if (file) void readImportFile(file);
-                          }}
-                        >
-                          <FileJson size={22} />
-                          <div>
-                            <strong>{tr('shell.file')}</strong>
-                            <span>{tr('shell.dropFile')}</span>
-                          </div>
-                          <button className="text-button" onClick={() => fileRef.current?.click()}>
-                            {tr('app.chooseFile')} <ArrowUpRight size={15} />
+                        <div className="song-panel-actions">
+                          <button
+                            className="secondary compact"
+                            aria-haspopup="dialog"
+                            onClick={() => openImport()}
+                          >
+                            <Upload size={17} aria-hidden="true" /> {tr('importWizard.open')}
+                          </button>
+                          <button
+                            className="secondary compact"
+                            onClick={() => {
+                              setEditSong(undefined);
+                              setModal('song');
+                            }}
+                          >
+                            <Plus size={17} /> {tr('creator.add.' + (deck.gameMode || 'music'))}
                           </button>
                         </div>
-                      </details>
+                      </div>
                       {deck.songs.length > 0 && (
                         <div className="table-tools">
                           <label className="search">
@@ -1862,18 +1815,6 @@ export default function App() {
           )}
         </main>
       </div>
-      <input
-        ref={fileRef}
-        aria-label={tr('app.importFile')}
-        className="sr-only"
-        type="file"
-        accept=".json,.csv,application/json,text/csv"
-        onChange={(event) => {
-          const file = event.target.files?.[0];
-          if (file) void readImportFile(file);
-          event.target.value = '';
-        }}
-      />
       <div
         className="scan-announcement"
         role="status"
@@ -1982,80 +1923,107 @@ export default function App() {
           />
         </Modal>
       )}
-      {modal === 'file' && pending && (
-        <Modal title={tr('app.importFile')} onClose={() => setModal(null)}>
-          <p className="muted">
-            {pending.name} ·{' '}
-            {trackCount(
-              Array.isArray(pending.data) ? pending.data.length : pending.data.songs.length,
-            )}
-          </p>
-          <div className="choice-list">
-            {!Array.isArray(pending.data) && (
-              <label>
-                <input
-                  type="radio"
-                  checked={importMode === 'replace'}
-                  onChange={() => setImportMode('replace')}
-                />
-                <span>
-                  <strong>{tr('app.openFullProjectAsANewDeck')}</strong>
-                  <small>{tr('app.importTracksBackgroundThemeAndPrintSettings')}</small>
-                </span>
-              </label>
-            )}
-            {Array.isArray(pending.data) && (
-              <label>
-                <input
-                  type="radio"
-                  checked={importMode === 'replace'}
-                  onChange={() => setImportMode('replace')}
-                />
-                <span>
-                  <strong>{tr('app.replaceTheCurrentTrackList')}</strong>
-                  <small>{tr('app.theCurrentTracksWillBeReplaced')}</small>
-                </span>
-              </label>
-            )}
-            <label>
-              <input
-                type="radio"
-                checked={importMode === 'append'}
-                onChange={() => setImportMode('append')}
-              />
-              <span>
-                <strong>{tr('app.appendTracksToTheCurrentDeck')}</strong>
-                <small>{tr('app.keepEditsAndSkipDuplicates')}</small>
-              </span>
-            </label>
-          </div>
-          <div className="modal-actions">
-            <button className="secondary" onClick={() => setModal(null)}>
-              {tr('app.cancel')}
-            </button>
-            <button
-              className="primary"
-              onClick={() => {
-                if (!Array.isArray(pending.data) && importMode === 'replace') {
-                  const d = { ...pending.data, id: crypto.randomUUID() };
-                  setDecks([...decks, d]);
-                  setActiveId(d.id);
-                  notify(tr('app.fullProjectOpened'));
-                } else if (
-                  !importSongs(
-                    Array.isArray(pending.data) ? pending.data : pending.data.songs,
-                    importMode,
-                  )
-                )
-                  return;
-                setPending(undefined);
-                setModal(null);
-              }}
-            >
-              {tr('app.import')}
-            </button>
-          </div>
-        </Modal>
+      {(modal === 'import' || (modal === 'file' && pending)) && (
+        <ImportWizard
+          step={importStep}
+          onStep={(step) => {
+            importRequests.invalidate();
+            setImportStep(step);
+          }}
+          gameMode={deck.gameMode || 'music'}
+          onClose={() => {
+            importRequests.invalidate();
+            setPending(undefined);
+            setModal(null);
+          }}
+          onFile={readImportFile}
+          onChooseExample={chooseExample}
+          confirmation={
+            modal === 'file' && pending ? (
+              <>
+                <p className="muted">
+                  {pending.name} ·{' '}
+                  {trackCount(
+                    Array.isArray(pending.data) ? pending.data.length : pending.data.songs.length,
+                  )}
+                </p>
+                <div className="choice-list">
+                  {!Array.isArray(pending.data) && (
+                    <label>
+                      <input
+                        type="radio"
+                        checked={importMode === 'replace'}
+                        onChange={() => setImportMode('replace')}
+                      />
+                      <span>
+                        <strong>{tr('app.openFullProjectAsANewDeck')}</strong>
+                        <small>{tr('app.importTracksBackgroundThemeAndPrintSettings')}</small>
+                      </span>
+                    </label>
+                  )}
+                  {Array.isArray(pending.data) && (
+                    <label>
+                      <input
+                        type="radio"
+                        checked={importMode === 'replace'}
+                        onChange={() => setImportMode('replace')}
+                      />
+                      <span>
+                        <strong>{tr('app.replaceTheCurrentTrackList')}</strong>
+                        <small>{tr('app.theCurrentTracksWillBeReplaced')}</small>
+                      </span>
+                    </label>
+                  )}
+                  <label>
+                    <input
+                      type="radio"
+                      checked={importMode === 'append'}
+                      onChange={() => setImportMode('append')}
+                    />
+                    <span>
+                      <strong>{tr('app.appendTracksToTheCurrentDeck')}</strong>
+                      <small>{tr('app.keepEditsAndSkipDuplicates')}</small>
+                    </span>
+                  </label>
+                </div>
+                <div className="modal-actions">
+                  <button
+                    className="secondary"
+                    onClick={() => {
+                      if (importStep === 'choose' || importStep === 'examples')
+                        setImportStep('file');
+                      setPending(undefined);
+                      setModal('import');
+                    }}
+                  >
+                    <ChevronLeft size={17} aria-hidden="true" /> {tr('importWizard.previous')}
+                  </button>
+                  <button
+                    className="primary"
+                    onClick={() => {
+                      if (!Array.isArray(pending.data) && importMode === 'replace') {
+                        const d = { ...pending.data, id: crypto.randomUUID() };
+                        setDecks([...decks, d]);
+                        setActiveId(d.id);
+                        notify(tr('app.fullProjectOpened'));
+                      } else if (
+                        !importSongs(
+                          Array.isArray(pending.data) ? pending.data : pending.data.songs,
+                          importMode,
+                        )
+                      )
+                        return;
+                      setPending(undefined);
+                      setModal(null);
+                    }}
+                  >
+                    {tr('app.import')}
+                  </button>
+                </div>
+              </>
+            ) : undefined
+          }
+        />
       )}
       {modal === 'delete' && (
         <Modal title={tr('app.deleteThisDeck')} onClose={() => setModal(null)}>
