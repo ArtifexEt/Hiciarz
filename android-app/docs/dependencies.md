@@ -2,6 +2,12 @@
 
 Gradle pobiera standardowe zależności z Google Maven i Maven Central.
 
+## AndroidSVG 1.4
+
+`com.caverock:androidsvg-aar:1.4` renderuje grafiki SVG rewersów. Zadanie `prepareBundledCardSkins` kopiuje źródła z `web/public/themes/` do APK, razem z bitmapą `fish-santa.webp`. Android i PWA korzystają z tych samych plików, dostępnych także bez sieci. Grafiki są ładowane poza głównym wątkiem i przechowywane w pamięci między zmianami ekranów.
+
+Biblioteka jest dostępna na licencji Apache 2.0. [Dokumentacja i obsługiwane elementy SVG](https://bigbadaboom.github.io/androidsvg/).
+
 ## Spotify App Remote SDK 0.8.0
 
 Spotify udostępnia App Remote jako AAR, bez oficjalnego repozytorium Maven. Zadanie `downloadSpotifyAppRemote` pobiera bibliotekę automatycznie z przypiętego commita oficjalnego repozytorium i sprawdza SHA-256 przed użyciem. Konfiguracja znajduje się w [`../gradle/spotify-app-remote.gradle.kts`](../gradle/spotify-app-remote.gradle.kts).

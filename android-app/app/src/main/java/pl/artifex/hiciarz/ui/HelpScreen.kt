@@ -11,15 +11,11 @@ import androidx.compose.ui.unit.dp
 import pl.artifex.hiciarz.model.*
 
 internal enum class HelpTopic {
-    ALL, TIMELINE, QUIZ, BINGO, SCAN, AUDIO;
+    ALL, BINGO, SCAN, AUDIO;
     companion object {
         fun forState(state: AppState): HelpTopic = when (state.tab) {
-            AppTab.SCAN -> SCAN
-            AppTab.BINGO -> when (state.cardlessMode) {
-                CardlessMode.TIMELINE -> TIMELINE
-                CardlessMode.QUIZ -> QUIZ
-                CardlessMode.BINGO -> BINGO
-            }
+            AppTab.SCAN, AppTab.DECKS -> SCAN
+            AppTab.BINGO -> BINGO
             else -> ALL
         }
     }
@@ -31,21 +27,6 @@ internal fun HelpScreen(topic: HelpTopic, copy: UiCopy, level: BingoLevel, onTop
     val article: @Composable () -> Unit = {
         when (topic) {
             HelpTopic.ALL -> Unit
-            HelpTopic.TIMELINE -> HelpArticle(copy.t("Oś czasu", "Timeline"), listOf(
-                copy.t("Pierwszy utwór z odkrytym rokiem rozpoczyna Twoją oś.", "A starter track with its year revealed begins your timeline."),
-                copy.t("Posłuchaj kolejnego utworu. Wybierz miejsce przed, między albo po znanych latach.", "Listen to the next track. Choose a gap before, between or after the years you know."),
-                copy.t("Wybierz „Sprawdź miejsce”. Trafiona karta zostaje na osi; błędną odkładamy. Utwory z tego samego roku mogą być w dowolnej kolejności.",
-                    "Tap “Check position”. A correct card stays on your timeline; a wrong card is discarded. Tracks from the same year can be in either order."),
-                copy.t("Zbierz 10 kart. Dla krótszej talii celem są wszystkie dostępne utwory.", "Collect 10 cards. With a smaller deck, collect all available tracks."),
-            ))
-            HelpTopic.QUIZ -> HelpArticle(copy.t("Zgadnij", "Guess"), listOf(
-                copy.t("Wybierz talię muzyczną, z gier lub filmów.", "Choose a music, game or film deck."),
-                copy.t("Posłuchaj i podaj tytuł z wykonawcą. W taliach z gier lub filmów odgadujesz grę albo film.",
-                    "Listen and name the title and artist. With game or film decks, name the game or film."),
-                copy.t("Odkryj odpowiedź. Prowadzący zaznacza „Zgadłem” albo „Pomyłka”.", "Reveal the answer. The host marks “Got it” or “Not this time”."),
-                copy.t("Zdobądź 10 punktów lub odgadnij wszystkie utwory krótszej talii. Nagrania się nie powtarzają.",
-                    "Earn 10 points, or guess every track in a smaller deck. Recordings do not repeat."),
-            ))
             HelpTopic.BINGO -> HelpArticle("Bingo", listOf(
                 copy.t("Pobierz plansze PDF i przygotuj wydruki dla graczy. Wybierz pasujący poziom pytań.",
                     "Download the PDF boards and print them for the players. Select the matching question level."),
@@ -59,7 +40,7 @@ internal fun HelpScreen(topic: HelpTopic, copy: UiCopy, level: BingoLevel, onTop
             HelpTopic.SCAN -> HelpArticle(copy.t("Z drukowanymi kartami", "With printed cards"), listOf(
                 copy.t("Połóż kartę kodem QR do góry i skieruj na nią aparat. Utwór uruchomi się w Spotify.", "Put a card QR-side up and point the camera at it. The track starts in Spotify."),
                 copy.t("Powiedz rok i umieść kartę na własnej osi czasu. Dla wariantów z gier lub filmów zgadnij źródło.", "Name the year and place the card in your timeline. For game and film variants, name the source."),
-                copy.t("Odkryj odpowiedź dopiero po decyzji. Gdy talia nie jest dodana do aplikacji, odpowiedź znajdziesz na drukowanej karcie.", "Reveal after making your choice. If the deck is not imported, read the answer on the printed card."),
+                copy.t("Po podaniu odpowiedzi odwróć drukowaną kartę i sprawdź wynik.", "After making your guess, turn over the printed card to check the answer."),
                 copy.t("Wybierz „Następna karta”. Skórkę odczytaną z QR można włączać automatycznie w ustawieniach.", "Tap “Next card”. Settings can automatically apply the skin encoded in the QR."),
             ))
             HelpTopic.AUDIO -> HelpArticle(copy.t("Spotify i odtwarzanie", "Spotify and playback"), listOf(
@@ -97,8 +78,8 @@ internal fun HelpScreen(topic: HelpTopic, copy: UiCopy, level: BingoLevel, onTop
             HelpArticle(copy.t("Przed pierwszą rundą", "Before your first round"), listOf(
                 copy.t("Otwórz Spotify i zaloguj się w jego aplikacji. W Hiciarzu wybierz „Połącz Spotify” i zaakceptuj jednorazową zgodę.",
                     "Open Spotify and sign in there. In Hiciarz, choose “Connect Spotify” and accept the one-time permission."),
-                copy.t("W Bingo i Skanerze używasz drukowanych kart. Oś czasu i Zgadywanie pozwalają grać bez kart, z wybraną talią.",
-                    "Bingo and Scan use printed cards. Timeline and Guess let you play without cards, using a selected deck."),
+                copy.t("Zeskanuj drukowaną kartę, żeby odtworzyć utwór. W Bingo najpierw wylosuj pytanie i przygotuj papierowe plansze dla graczy.",
+                    "Scan a printed card to play its track. For Bingo, first draw a question and prepare printed boards for the players."),
                 copy.t("Przyciski odtwarzania w Hiciarzu sterują muzyką w Spotify. Automatyczna pauza jest domyślnie wyłączona.",
                     "Hiciarz controls playback in Spotify. Automatic pause is off by default."),
             ))
@@ -108,9 +89,7 @@ internal fun HelpScreen(topic: HelpTopic, copy: UiCopy, level: BingoLevel, onTop
             helpLinks(copy).filter { it.first != topic }.forEachIndexed { index, item ->
                 if (index > 0) GroupDivider()
                 SettingRow(item.second, icon = when (item.first) {
-                    HelpTopic.TIMELINE -> AppIcons.Timeline
                     HelpTopic.BINGO -> AppIcons.Bingo
-                    HelpTopic.QUIZ -> AppIcons.Game
                     HelpTopic.SCAN -> AppIcons.Scan
                     else -> AppIcons.Speaker
                 }) { onTopic(item.first) }
@@ -120,8 +99,6 @@ internal fun HelpScreen(topic: HelpTopic, copy: UiCopy, level: BingoLevel, onTop
 }
 
 private fun helpLinks(copy: UiCopy) = listOf(
-    HelpTopic.TIMELINE to copy.t("Oś czasu", "Timeline"),
-    HelpTopic.QUIZ to copy.t("Zgadnij", "Guess"),
     HelpTopic.BINGO to "Bingo",
     HelpTopic.SCAN to copy.t("Drukowane karty", "Printed cards"),
     HelpTopic.AUDIO to copy.t("Spotify i odtwarzanie", "Spotify and playback"),

@@ -30,6 +30,21 @@ class CardlessViewModelTest {
     @Before fun launch() { prefs.edit().clear().commit(); createModel() }
     @After fun close() { main { store.clear() } }
 
+    @Test fun coldLaunchUsesTheScannerAndLegacyDeckRoutesDoNotOpenTheLibrary() {
+        assertEquals(AppTab.SCAN, state().tab)
+        assertEquals(CardlessMode.BINGO, state().cardlessMode)
+        dispatch(AppAction.SelectTab(AppTab.DECKS))
+        assertEquals(AppTab.SCAN, state().tab)
+        assertTrue(state().scannerEnabled)
+
+        val savedDeckIds = state().decks.map { it.id }
+        prefs.edit().putString("cardlessMode", "QUIZ").commit()
+        recreate()
+        assertEquals(AppTab.SCAN, state().tab)
+        assertEquals(CardlessMode.BINGO, state().cardlessMode)
+        assertEquals(savedDeckIds, state().decks.map { it.id })
+    }
+
     @Test fun bingoDrawsOnlyARuleThenWaitsForAnExplicitScanAndKeepsThatRule() {
         dispatch(AppAction.DrawBingo)
         assertEquals(BingoStage.RULE, state().bingoStage)
@@ -68,6 +83,9 @@ class CardlessViewModelTest {
         assertEquals(played, state().bingoSong)
         assertEquals(rule, state().question)
         assertTrue(state().bingoAnswerRevealed)
+        assertEquals(AppTab.SCAN, state().tab)
+        assertEquals(CardSkin.CLASSIC, state().activeSkin)
+        dispatch(AppAction.SelectTab(AppTab.BINGO))
         assertEquals(CardSkin.FISH, state().activeSkin)
 
         // A deliberate rescan of the same physical card remains a legitimate host action.
@@ -245,12 +263,15 @@ class CardlessViewModelTest {
         assertNull(state().scannedSkin)
         assertEquals(CardSkin.CLASSIC, state().activeSkin)
         recreate()
-        assertEquals(CardlessMode.TIMELINE, state().cardlessMode)
+        assertEquals(AppTab.SCAN, state().tab)
+        assertEquals(CardlessMode.BINGO, state().cardlessMode)
         assertEquals(CardSkin.CLASSIC, state().activeSkin)
-        dispatch(AppAction.SetCardlessMode(CardlessMode.BINGO))
+        dispatch(AppAction.SelectTab(AppTab.BINGO))
         assertEquals(bingoSong, state().bingoSong)
         assertEquals(CardSkin.FISH, state().activeSkin)
         recreate()
+        assertEquals(CardSkin.CLASSIC, state().activeSkin)
+        dispatch(AppAction.SelectTab(AppTab.BINGO))
         assertEquals(CardSkin.FISH, state().activeSkin)
         dispatch(AppAction.SelectDeck(state().decks.first { it.id != state().activeDeckId }.id))
         assertEquals("Changing a deck keeps the independent printed-card round", bingoSong, state().bingoSong)
@@ -355,20 +376,14 @@ class CardlessViewModelTest {
         assertEquals(standaloneSong, state().currentSong)
     }
 
-    @Test fun pendingBingoScannerRearmsWhenReturningThroughTheCardlessGamePicker() {
+    @Test fun pendingBingoScannerRearmsAfterSettingsWithoutChangingItsRound() {
         dispatch(AppAction.DrawBingo)
         dispatch(AppAction.BeginBingoScan)
         val rule = state().question
         val round = state().bingoRound
-        dispatch(AppAction.SelectTab(AppTab.DECKS))
+        dispatch(AppAction.SelectTab(AppTab.SETTINGS))
         assertFalse(state().scannerEnabled)
-        dispatch(AppAction.SetCardlessMode(CardlessMode.TIMELINE))
-        assertEquals(AppTab.DECKS, state().tab)
-        assertFalse("A mode choice outside the game must not start its camera", state().scannerEnabled)
         dispatch(AppAction.SelectTab(AppTab.BINGO))
-        assertFalse(state().scannerEnabled)
-
-        dispatch(AppAction.SetCardlessMode(CardlessMode.BINGO))
         assertEquals(BingoStage.SCAN, state().bingoStage)
         assertEquals(rule, state().question)
         assertEquals(round, state().bingoRound)

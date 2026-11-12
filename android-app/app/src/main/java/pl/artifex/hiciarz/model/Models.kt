@@ -1,5 +1,6 @@
 package pl.artifex.hiciarz.model
 
+// DECKS is a legacy route; the current app redirects it to SCAN.
 enum class AppTab { SCAN, BINGO, DECKS, SETTINGS }
 enum class GameMode { CLASSIC, GAME, MOVIE }
 enum class BingoLevel { BEGINNER, EXPERT }
@@ -94,7 +95,7 @@ data class QuizState(
 }
 
 data class AppState(
-    val tab: AppTab = AppTab.BINGO,
+    val tab: AppTab = AppTab.SCAN,
     val playback: PlaybackState = PlaybackState(),
     val settings: AppSettings = AppSettings(),
     val decks: List<Deck> = emptyList(),

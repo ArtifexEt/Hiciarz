@@ -23,13 +23,13 @@ import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import pl.artifex.hiciarz.model.*
 
-internal val PanelShape = RoundedCornerShape(24.dp)
-internal val ControlShape = RoundedCornerShape(16.dp)
+internal val PanelShape = RoundedCornerShape(16.dp)
+internal val ControlShape = RoundedCornerShape(12.dp)
 
 @Composable
 internal fun SectionTitle(title: String, actionLabel: String? = null, onAction: (() -> Unit)? = null) {
     Row(Modifier.fillMaxWidth(), verticalAlignment = Alignment.CenterVertically) {
-        Text(title, style = MaterialTheme.typography.headlineMedium, modifier = Modifier.weight(1f).semantics { heading() })
+        Text(title, style = MaterialTheme.typography.headlineLarge, modifier = Modifier.weight(1f).semantics { heading() })
         if (actionLabel != null && onAction != null) TextButton(onClick = onAction) { Text(actionLabel) }
     }
 }
@@ -48,8 +48,8 @@ internal fun SettingGroup(title: String, content: @Composable ColumnScope.() -> 
 @Composable
 internal fun SettingRow(label: String, icon: ImageVector? = null, detail: String? = null, onClick: () -> Unit) {
     Row(Modifier.fillMaxWidth().clickable(onClick = onClick).heightIn(min = 64.dp)
-        .padding(horizontal = 18.dp, vertical = 14.dp), verticalAlignment = Alignment.CenterVertically,
-        horizontalArrangement = Arrangement.spacedBy(14.dp)) {
+        .padding(horizontal = 16.dp, vertical = 12.dp), verticalAlignment = Alignment.CenterVertically,
+        horizontalArrangement = Arrangement.spacedBy(12.dp)) {
         if (icon != null) Icon(icon, null, Modifier.size(22.dp), tint = MaterialTheme.colorScheme.onSurfaceVariant)
         Column(Modifier.weight(1f), verticalArrangement = Arrangement.spacedBy(3.dp)) {
             Text(label, style = MaterialTheme.typography.bodyLarge)
@@ -62,7 +62,7 @@ internal fun SettingRow(label: String, icon: ImageVector? = null, detail: String
 @Composable
 internal fun SwitchRow(label: String, checked: Boolean, hint: String? = null, onChange: (Boolean) -> Unit) {
     Row(Modifier.fillMaxWidth().toggleable(checked, role = Role.Switch, onValueChange = onChange)
-        .heightIn(min = 64.dp).padding(horizontal = 18.dp, vertical = 12.dp),
+        .heightIn(min = 60.dp).padding(horizontal = 16.dp, vertical = 12.dp),
         verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(12.dp)) {
         Column(Modifier.weight(1f), verticalArrangement = Arrangement.spacedBy(3.dp)) {
             Text(label, style = MaterialTheme.typography.bodyLarge)
@@ -107,22 +107,28 @@ internal fun PlaybackControls(
 ) {
     val matches = expectedUri == null || expectedUri == playback.trackUri
     val playing = matches && playback.isPlaying
-    Row(modifier.fillMaxWidth().padding(vertical = 4.dp), verticalAlignment = Alignment.CenterVertically,
-        horizontalArrangement = Arrangement.spacedBy(14.dp)) {
+    Row(modifier.fillMaxWidth(), verticalAlignment = Alignment.CenterVertically,
+        horizontalArrangement = Arrangement.spacedBy(12.dp)) {
         FilledIconButton(
             onClick = { onAction(if (playing) AppAction.Pause else playAction) },
             enabled = playback.connection == ConnectionStatus.CONNECTED,
-            modifier = Modifier.size(64.dp), shape = CircleShape,
+            modifier = Modifier.size(48.dp), shape = CircleShape,
         ) {
             Icon(if (playing) AppIcons.Pause else AppIcons.Play,
-                copy.t(if (playing) "Wstrzymaj" else "Odtwórz", if (playing) "Pause" else "Play"), Modifier.size(28.dp))
+                copy.t(if (playing) "Wstrzymaj" else "Odtwórz", if (playing) "Pause" else "Play"), Modifier.size(22.dp))
         }
         Column(Modifier.weight(1f), verticalArrangement = Arrangement.spacedBy(3.dp)) {
-            Text(if (playing) copy.t("Muzyka gra", "Music is playing") else copy.t("Posłuchaj utworu", "Listen to the track"),
+            Text(when {
+                playback.connection == ConnectionStatus.CONNECTING -> copy.t("Łączenie ze Spotify…", "Connecting to Spotify…")
+                playback.connection != ConnectionStatus.CONNECTED -> copy.t("Spotify niepołączone", "Spotify not connected")
+                playing -> copy.t("Muzyka gra", "Music is playing")
+                else -> copy.t("Posłuchaj utworu", "Listen to the track")
+            },
                 style = MaterialTheme.typography.titleSmall)
+        }
+        if (playback.connection == ConnectionStatus.CONNECTED)
             Text(if (matches) formatTime(playback.positionMs) else "0:00", style = MaterialTheme.typography.bodySmall,
                 color = MaterialTheme.colorScheme.onSurfaceVariant)
-        }
         if (settings.autoPause) Surface(color = MaterialTheme.colorScheme.secondaryContainer, shape = CircleShape) {
             Text("${settings.clipSeconds} s", Modifier.padding(horizontal = 12.dp, vertical = 8.dp),
                 style = MaterialTheme.typography.labelMedium)

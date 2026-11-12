@@ -1,22 +1,24 @@
 # Hiciarz na Androida
 
-Natywna aplikacja Kotlin / Jetpack Compose do skanowania drukowanych kart, prowadzenia Bingo i grania bez kart w Oś czasu lub Zgadnij. Spotify odtwarza muzykę w swojej aplikacji, a Hiciarz steruje nim przez oficjalny App Remote SDK. Kreator kart i generator plansz PDF pozostają w [`../web/`](../web/).
+Natywna aplikacja Kotlin / Jetpack Compose do skanowania drukowanych kart i prowadzenia Bingo. Otwiera się na skanerze, a dolna nawigacja zawiera **Skaner, Bingo i Opcje**. Spotify odtwarza muzykę w swojej aplikacji, a Hiciarz steruje nim przez oficjalny App Remote SDK. Biblioteka talii, kreator i generator PDF pozostają w [`../web/`](../web/). Gry bez kart są na razie wyłączone w Androidzie.
 
 W Bingo telefon prowadzącego najpierw losuje kategorię, a dopiero wybranie „Skanuj kartę” uruchamia aparat. Na szerszym ekranie losowanie od razu przygotowuje skaner, a pełne pytanie pozostaje obok aparatu i sterowania odtwarzaniem. Skan rozpoczyna utwór; gracze zaznaczają odpowiedzi na papierowych planszach. „Plansze do pobrania” otwiera generator z wybranym poziomem i językiem. Zasady każdej gry są dostępne pod „Jak grać”.
 
-QR może automatycznie włączyć jedną z dziewięciu skórek. Skaner i Bingo zachowują własny motyw karty podczas przełączania. Ustawienia pozwalają wybrać własny wygląd i wyłączyć śledzenie skórki karty. Automatyczna pauza jest domyślnie wyłączona. Na dużym oknie i rozłożonym telefonie nawigacja przechodzi na bok, a niezależne panele uwzględniają zgięcie ekranu. [Porównanie funkcji z PWA](docs/pwa-parity.md) opisuje pełny zakres.
+Skaner i karta zajmują główną część ekranu. Karty zachowują kwadratowe proporcje i pełną grafikę, a sterowanie pod nimi wyróżnia bieżące działanie: odkrycie odpowiedzi lub następną kartę. Odkrywanie w aplikacji jest dostępne, gdy zapisane dane pozwalają sprawdzić odpowiedź; dla pozostałych kart odpowiedź pozostaje na wydruku. Oprawa nawigacji i przycisków jest stała, a skórkę wybiera się w Opcjach.
+
+QR może automatycznie włączyć jedną z dziewięciu skórek. Android pakuje te same grafiki rewersów co PWA, także rybkę w czapce Mikołaja. Skaner i Bingo zachowują własny motyw karty podczas przełączania. Ustawienia pozwalają wybrać własny wygląd i wyłączyć śledzenie skórki karty. Automatyczna pauza jest domyślnie wyłączona. Na dużym oknie i rozłożonym telefonie nawigacja przechodzi na bok, a niezależne panele uwzględniają zgięcie ekranu. [Porównanie funkcji z PWA](docs/pwa-parity.md) opisuje pełny zakres.
 
 ## Ekrany aplikacji
 
-Zrzuty pochodzą z uruchomionej aplikacji na emulatorze AOSP. Karta z rokiem 1959 pokazuje rzeczywisty odczyt QR aparatem w zoptymalizowanym APK oraz automatyczne zastosowanie skórki Disco. W emulatorze Spotify nie jest zainstalowane.
+Zrzuty pochodzą z uruchomionej aplikacji na emulatorze AOSP. Pokazują skaner, przebieg Bingo i te same grafiki skórek co PWA. W emulatorze Spotify nie jest zainstalowane.
 
-| Bingo · telefon prowadzącego | Oś czasu · gra bez kart |
+| Bingo · telefon prowadzącego | Skaner · aparat |
 | --- | --- |
-| <img src="docs/screenshots/phone-bingo-playing-pl.png" width="240" alt="Bingo z wylosowaną kategorią, ukrytą kartą oraz odkryciem odpowiedzi i następną rundą" /> | <img src="docs/screenshots/phone-timeline-revealed-pl.png" width="240" alt="Karta utworu, oś z latami i wynik decyzji mieszczą się w widoku gry" /> |
+| <img src="docs/screenshots/phone-bingo-playing-pl.png" width="240" alt="Bingo z wylosowaną kategorią, ukrytą kartą oraz odkryciem odpowiedzi i następną rundą" /> | <img src="docs/screenshots/phone-scan-pl.png" width="240" alt="Natywny skaner QR z powiększeniem, latarką i dolną nawigacją" /> |
 
-| Skaner · aparat | Odczytana karta · gotowy APK |
+| Rybki · rewers | Odkryta karta |
 | --- | --- |
-| <img src="docs/screenshots/phone-scan-pl.png" width="240" alt="Natywny skaner QR z powiększeniem, latarką i dolną nawigacją" /> | <img src="docs/screenshots/phone-card-release-en.png" width="240" alt="Karta Dean Martin z rokiem 1959 i skórką Disco odczytaną z QR przez aparat" /> |
+| <img src="docs/screenshots/phone-scan-fish-pl.png" width="240" alt="Rewers karty ze źródłową grafiką rybek z PWA" /> | <img src="docs/screenshots/phone-scan-revealed-pl.png" width="240" alt="Jasna strona odpowiedzi po obrocie karty" /> |
 
 | Rozłożony ekran · dwa panele | Tabletop · poziome zgięcie |
 | --- | --- |
@@ -29,17 +31,17 @@ Zrzuty pochodzą z uruchomionej aplikacji na emulatorze AOSP. Karta z rokiem 195
 Układy Folda sprawdzono w emulowanym oknie z pozycją zawiasu przekazywaną przez WindowManager. Nie jest to test na fizycznym Fold7.
 
 <details>
-<summary>Talie, skórki, pomoc i większy tekst</summary>
+<summary>Skórki, pomoc i większy tekst</summary>
 
-| Biblioteka talii | Dziewięć skórek |
+| Dziewięć skórek | Jak grać w Bingo |
 | --- | --- |
-| <img src="docs/screenshots/phone-decks-pl.png" width="240" alt="Import JSON i CSV, trzy przykładowe talie i rozpoczęcie gry bez kart" /> | <img src="docs/screenshots/phone-skins-pl.png" width="240" alt="Natywny arkusz dziewięciu skórek z ustawieniem automatycznego odczytu wyglądu z QR" /> |
+| <img src="docs/screenshots/phone-skins-pl.png" width="240" alt="Dziewięć skórek ze wspólnymi grafikami rewersów PWA i Androida" /> | <img src="docs/screenshots/phone-help-bingo-pl.png" width="240" alt="Cztery kolejne kroki gry Bingo i link do generatora plansz" /> |
 
 | Jak grać w Bingo | Tryb ciemny · tekst 135% |
 | --- | --- |
 | <img src="docs/screenshots/phone-help-bingo-pl.png" width="240" alt="Cztery kolejne kroki gry Bingo i link do generatora plansz" /> | <img src="docs/screenshots/phone-settings-large-dark-pl.png" width="240" alt="Powiększone ustawienia w ciemnym motywie z czytelną dolną nawigacją" /> |
 
-[Ekran przygotowania Bingo](docs/screenshots/phone-games-pl.png) · [Arkusz wyboru gry i talii](docs/screenshots/phone-game-options-pl.png)
+[Ekran przygotowania Bingo](docs/screenshots/phone-games-pl.png)
 
 </details>
 
@@ -49,7 +51,7 @@ Układy Folda sprawdzono w emulowanym oknie z pozycją zawiasu przekazywaną prz
 2. Otwórz plik na telefonie i zezwól użytej przeglądarce lub menedżerowi plików na instalację tego APK, jeśli Android o to poprosi.
 3. W zainstalowanym Spotify zaloguj się na konto Premium. Otwórz Hiciarza, wybierz połączenie ze Spotify i zaakceptuj zgodę.
 
-Wymagany jest Android 8.0 / API 26 lub nowszy. Aparat jest potrzebny do skanowania QR. Talię JSON lub CSV z kreatora można zaimportować z pliku.
+Wymagany jest Android 8.0 / API 26 lub nowszy. Aparat jest potrzebny do skanowania QR. Przygotowanie i import talii JSON/CSV odbywają się w PWA. Wcześniej zapisane talie pozostają na urządzeniu i mogą uzupełniać informacje o zeskanowanej karcie.
 
 Wydania z Releases są podpisane **prywatnym kluczem do testów**, przechowywanym w GitHub Secrets. Klucz i hasła nie trafiają do repozytorium ani do pobieranych artefaktów. Ten sam pakiet i podpis pozwalają instalować kolejne wersje bez usuwania aplikacji. Zmiana podpisu wymaga odinstalowania poprzedniej wersji i usuwa jej dane. Zachowaj pliki JSON / CSV importowanych talii, aby można je było wczytać ponownie.
 
@@ -121,11 +123,11 @@ Ustaw `ANDROID_HOME` na lokalizację Android SDK albo dodaj `sdk.dir=…` do lok
 
 Testy obejmują zgodność kart QR i importu JSON/CSV z kreatorem web, skórki, reguły Bingo, Osi czasu i quizu oraz zachowanie gry po odtworzeniu procesu. Nie potwierdzają autoryzacji Spotify na prawdziwym urządzeniu; tę część należy sprawdzić ręcznie.
 
-CI uruchamia też natywne scenariusze Compose na emulatorze AOSP: losowanie pytania Bingo przed skanem, wklejenie kodu, odkrycie karty, Oś czasu, zmianę skórki i języka oraz zasady. Osobny scenariusz zmienia rzeczywiste okno Activity i publikuje pozycję pionowego oraz poziomego zgięcia przez WindowManager, sprawdzając, że panele nie nachodzą na zawias. Obejmuje ekran telefonu 360 dp, zewnętrzny i wewnętrzny ekran Folda, krótki widok poziomy, tryb ciemny i powiększenie tekstu. Zrzuty PNG trafiają do artefaktu `android-native-ui-…` obok raportu testów. Jest to test emulatora, a nie deklaracja sprawdzenia na fizycznym Fold7.
+CI uruchamia też natywne scenariusze Compose na emulatorze AOSP: losowanie pytania Bingo przed skanem, wklejenie kodu, odkrycie karty, zmianę skórki i języka oraz zasady. Osobny scenariusz zmienia rzeczywiste okno Activity i publikuje pozycję pionowego oraz poziomego zgięcia przez WindowManager, sprawdzając, że panele nie nachodzą na zawias. Obejmuje ekran telefonu 360 dp, zewnętrzny i wewnętrzny ekran Folda, krótki widok poziomy, tryb ciemny i powiększenie tekstu. Zrzuty PNG trafiają do artefaktu `android-native-ui-…` obok raportu testów. Jest to test emulatora, a nie deklaracja sprawdzenia na fizycznym Fold7.
 
-Testy regresji sprawdzają globalne wznawianie Spotify po zmianie zakładki, odtwarzanie wybranej karty oraz zachowanie rundy Bingo przy ponownym wyborze tej samej talii. Działają na emulatorze bez konta Spotify.
+Testy regresji sprawdzają globalne wznawianie Spotify po zmianie zakładki, odtwarzanie wybranej karty oraz poprawną aktualizację stanu przy rozłączeniu i ponownym podłączeniu Spotify. Działają na emulatorze bez konta Spotify.
 
-Przykładowe talie są kopiowane z `../web/examples/playlists/` podczas `preBuild`. Opcjonalna zmienna `HICIARZ_BUILD_ROOT` przenosi katalogi wynikowe Gradle na inny dysk; podane wyżej ścieżki dotyczą standardowego buildu bez tej zmiennej.
+Grafiki skórek są kopiowane z `../web/public/themes/` podczas budowania. Wcześniej zapisane talie i pakiet przykładów służą do uzupełniania danych skanowanych kart, bez ekranu biblioteki w Androidzie. Opcjonalna zmienna `HICIARZ_BUILD_ROOT` przenosi katalogi wynikowe Gradle na inny dysk; podane wyżej ścieżki dotyczą standardowego buildu bez tej zmiennej.
 
 ### Podpis i wersja
 

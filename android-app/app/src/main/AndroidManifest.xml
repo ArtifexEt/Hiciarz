@@ -23,8 +23,6 @@
                 <action android:name="android.intent.action.SEND" />
                 <category android:name="android.intent.category.DEFAULT" />
                 <data android:mimeType="text/plain" />
-                <data android:mimeType="application/json" />
-                <data android:mimeType="text/csv" />
             </intent-filter>
         </activity>
     </application>

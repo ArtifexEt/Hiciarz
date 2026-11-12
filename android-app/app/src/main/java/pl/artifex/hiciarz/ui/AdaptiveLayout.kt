@@ -70,8 +70,8 @@ internal fun AdaptivePanes(
             }
             else -> Column(
                 Modifier.fillMaxSize().verticalScroll(rememberScrollState())
-                    .padding(horizontal = 20.dp).padding(top = 8.dp, bottom = 28.dp),
-                verticalArrangement = Arrangement.spacedBy(20.dp),
+                    .padding(horizontal = 20.dp).padding(top = 16.dp, bottom = 24.dp),
+                verticalArrangement = Arrangement.spacedBy(16.dp),
             ) {
                 primary()
                 secondary()
@@ -86,8 +86,8 @@ private fun Pane(modifier: Modifier, content: @Composable ColumnScope.() -> Unit
         CompositionLocalProvider(LocalPaneHeight provides maxHeight) {
             Column(
                 Modifier.fillMaxSize().verticalScroll(rememberScrollState())
-                    .padding(horizontal = 20.dp).padding(top = 8.dp, bottom = 28.dp),
-                verticalArrangement = Arrangement.spacedBy(20.dp),
+                    .padding(horizontal = 20.dp).padding(top = 16.dp, bottom = 24.dp),
+                verticalArrangement = Arrangement.spacedBy(16.dp),
                 content = content,
             )
         }

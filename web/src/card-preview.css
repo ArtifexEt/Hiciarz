@@ -4,6 +4,7 @@
   overflow: hidden;
   background: #fff;
   border: 1px solid var(--line);
+  box-shadow: 0 4px 16px #20352d12;
 }
 .card-preview-svg {
   display: block;
@@ -31,7 +32,6 @@
 }
 .print-preview-card {
   width: min(100%, 260px);
-  box-shadow: 0 4px 16px #20352d12;
 }
 .card-theme-note {
   margin: 12px 0;

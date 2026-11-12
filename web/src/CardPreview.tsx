@@ -3,6 +3,7 @@ import { LoaderCircle, RotateCcw } from 'lucide-react';
 import { useTranslation } from './i18n';
 import type { Deck, Song } from './model';
 import type { CardArtwork, CardElement } from './card-artwork';
+import FlipCard from './FlipCard';
 import './card-preview.css';
 
 function Element({ element }: { element: CardElement }) {
@@ -115,15 +116,7 @@ async function preloadImages(artwork: CardArtwork) {
   await document.fonts.load('400 12px Noto');
 }
 
-export default function CardPreview({
-  song,
-  deck,
-  back = false,
-}: {
-  song: Song;
-  deck: Deck;
-  back?: boolean;
-}) {
+function CardPreviewFace({ song, deck, back = false }: { song: Song; deck: Deck; back?: boolean }) {
   const { language, t } = useTranslation();
   const [retry, setRetry] = useState(0);
   const request = useMemo(
@@ -181,5 +174,23 @@ export default function CardPreview({
         </div>
       )}
     </div>
+  );
+}
+
+export default function CardPreview({
+  song,
+  deck,
+  back = false,
+}: {
+  song: Song;
+  deck: Deck;
+  back?: boolean;
+}) {
+  return (
+    <FlipCard
+      flipped={back}
+      front={<CardPreviewFace song={song} deck={deck} />}
+      back={<CardPreviewFace song={song} deck={deck} back />}
+    />
   );
 }

@@ -52,7 +52,7 @@ class HiciarzViewModelPlaybackTest {
         val bingoUri = requireNotNull(snapshot().bingoSong).spotifyUri
         assertNotEquals(SCANNED_URI, bingoUri)
 
-        for (tab in AppTab.entries) {
+        for (tab in listOf(AppTab.SCAN, AppTab.BINGO, AppTab.SETTINGS)) {
             dispatch(AppAction.Pause)
             dispatch(AppAction.SelectTab(tab))
             main { player.commands.clear() }

@@ -10,6 +10,8 @@ import android.os.Handler
 import android.os.Looper
 import android.os.SystemClock
 import android.view.ViewTreeObserver
+import androidx.lifecycle.Lifecycle
+import androidx.lifecycle.LifecycleOwner
 import com.spotify.android.appremote.api.ConnectionParams
 import com.spotify.android.appremote.api.Connector
 import com.spotify.android.appremote.api.SpotifyAppRemote
@@ -25,9 +27,11 @@ import pl.artifex.hiciarz.model.ConnectionStatus
 import pl.artifex.hiciarz.model.PlaybackState
 
 /** Activity-scoped Spotify transport. It never requests a Web API token or a client secret. */
-class SpotifyController(
+class SpotifyController internal constructor(
     private val activity: Activity,
     private val clientIdProvider: () -> String,
+    private val spotifyInstalledProvider: () -> Boolean = { SpotifyAppRemote.isSpotifyInstalled(activity) },
+    private val connectRemote: (Context, ConnectionParams, Connector.ConnectionListener) -> Unit = SpotifyAppRemote::connect,
 ) : PlaybackTransport, AutoCloseable {
     private val handler = Handler(Looper.getMainLooper())
     private val mutableState = MutableStateFlow(PlaybackState(spotifyInstalled = spotifyInstalled()))
@@ -52,6 +56,10 @@ class SpotifyController(
 
     private val focusListener = ViewTreeObserver.OnWindowFocusChangeListener { focused ->
         if (focused) scheduleVisibleConnection()
+    }
+    private val visibleConnection = Runnable {
+        connectScheduled = false
+        if (!closed && connectPending && canStartConnection()) startConnection()
     }
     private val connectionTimeout = Runnable {
         if (!closed && mutableState.value.connection == ConnectionStatus.CONNECTING) {
@@ -183,8 +191,30 @@ class SpotifyController(
 
     override fun disconnect() = onMain {
         if (closed) return@onMain
-        releaseSession()
-        mutableState.value = PlaybackState(spotifyInstalled = spotifyInstalled())
+        releaseSession(disconnectedState = PlaybackState(spotifyInstalled = spotifyInstalled()))
+    }
+
+    /** Reconcile the service and installation after returning from Spotify or the Play Store. */
+    fun refreshConnection() = onMain {
+        if (closed) return@onMain
+        val installed = spotifyInstalled()
+        val appRemote = remote
+        when {
+            !installed && mutableState.value.connection != ConnectionStatus.DISCONNECTED ->
+                failConnection("spotify_not_installed")
+            appRemote != null && !appRemote.isConnected -> failConnection("spotify_disconnected")
+            appRemote != null -> {
+                mutableState.value = mutableState.value.copy(
+                    connection = ConnectionStatus.CONNECTED,
+                    spotifyInstalled = installed,
+                )
+                refreshPlayerState(appRemote, generation)
+            }
+            else -> mutableState.value = mutableState.value.copy(spotifyInstalled = installed)
+        }
+        // A pending authorization may proceed when the Activity regains focus. A deliberately
+        // disconnected session has no pending connection and is never restarted here.
+        scheduleVisibleConnection()
     }
 
     override fun close() = onMain {
@@ -197,14 +227,17 @@ class SpotifyController(
     }
 
     private fun scheduleVisibleConnection() {
-        if (closed || !connectPending || connectScheduled || !activity.hasWindowFocus()) return
+        if (closed || !connectPending || connectScheduled || !canStartConnection()) return
         connectScheduled = true
-        handler.postDelayed({
-            connectScheduled = false
-            if (!closed && connectPending && !activity.isFinishing && !activity.isDestroyed
-                && activity.hasWindowFocus()
-            ) startConnection()
-        }, 350L)
+        handler.postDelayed(visibleConnection, 350L)
+    }
+
+    private fun canStartConnection(): Boolean {
+        if (activity.isFinishing || activity.isDestroyed) return false
+        // ModalBottomSheet owns a Dialog window: the Activity remains foreground/resumed but
+        // hasWindowFocus() is false until the sheet closes. Authorization must work inside it.
+        val lifecycle = (activity as? LifecycleOwner)?.lifecycle
+        return lifecycle?.currentState?.isAtLeast(Lifecycle.State.RESUMED) ?: activity.hasWindowFocus()
     }
 
     private fun startConnection() {
@@ -238,7 +271,7 @@ class SpotifyController(
         handler.removeCallbacks(connectionTimeout)
         handler.postDelayed(connectionTimeout, 90_000L)
         runCatching {
-            SpotifyAppRemote.connect(sdkContext, params, object : Connector.ConnectionListener {
+            connectRemote(sdkContext, params, object : Connector.ConnectionListener {
                 override fun onConnected(appRemote: SpotifyAppRemote) = onMain {
                     if (closed || currentGeneration != generation) {
                         SpotifyAppRemote.disconnect(appRemote)
@@ -433,16 +466,16 @@ class SpotifyController(
     }
 
     private fun failConnection(code: String) {
-        releaseSession()
-        mutableState.value = mutableState.value.copy(
+        val disconnected = mutableState.value.copy(
             connection = ConnectionStatus.DISCONNECTED,
             isPlaying = false,
             error = code,
             spotifyInstalled = spotifyInstalled(),
         )
+        releaseSession(disconnectedState = disconnected)
     }
 
-    private fun releaseSession(clearPendingCommands: Boolean = true) {
+    private fun releaseSession(clearPendingCommands: Boolean = true, disconnectedState: PlaybackState? = null) {
         ++generation
         ++commandGeneration
         ++transferGeneration
@@ -459,14 +492,17 @@ class SpotifyController(
         capabilitiesChecked = false
         canPlayOnDemand = null
         handler.removeCallbacks(connectionTimeout)
+        handler.removeCallbacks(visibleConnection)
         handler.removeCallbacks(capabilityTimeout)
         handler.removeCallbacks(transferTimeout)
         handler.removeCallbacks(progressTicker)
         val subscription = playerSubscription
         playerSubscription = null
-        runCatching { subscription?.cancel() }
         val oldRemote = remote
         remote = null
+        // Publish only after invalidating callbacks, before calling into the old SDK session.
+        if (disconnectedState != null) mutableState.value = disconnectedState
+        runCatching { subscription?.cancel() }
         runCatching { if (oldRemote != null) SpotifyAppRemote.disconnect(oldRemote) }
     }
 
@@ -474,7 +510,7 @@ class SpotifyController(
         !closed && generation == currentGeneration && remote === appRemote
 
     private fun spotifyInstalled(): Boolean =
-        runCatching { SpotifyAppRemote.isSpotifyInstalled(activity) }.getOrDefault(false)
+        runCatching { spotifyInstalledProvider() }.getOrDefault(false)
 
     private fun onMain(action: () -> Unit) {
         if (Looper.myLooper() == Looper.getMainLooper()) action() else handler.post(action)

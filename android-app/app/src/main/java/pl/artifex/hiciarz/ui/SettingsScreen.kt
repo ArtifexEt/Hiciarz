@@ -127,6 +127,10 @@ internal fun PlaybackSheet(state: AppState, copy: UiCopy, onAction: (AppAction) 
                     else -> copy.t("Połącz Spotify", "Connect Spotify")
                 })
             }
+            if (connecting) OutlinedButton(onClick = { onAction(AppAction.DisconnectSpotify) },
+                modifier = Modifier.fillMaxWidth().heightIn(min = 50.dp), shape = ControlShape) {
+                Text(copy.t("Anuluj łączenie", "Cancel connection"))
+            }
             if (BuildConfig.TEST_SIGNING) Text(copy.t("Wydanie testowe: niektóre konta mogą nie zaakceptować połączenia.",
                 "Test build: some accounts may be unable to connect."),
                 style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
@@ -154,8 +158,6 @@ internal fun SkinSelectionSheet(state: AppState, copy: UiCopy, onAction: (AppAct
                             modifier = Modifier.fillMaxWidth().aspectRatio(.9f)) {
                             Box {
                                 SkinPattern(skin, Modifier.fillMaxSize())
-                                Text("1984", color = skin.palette().paper, style = MaterialTheme.typography.headlineMedium,
-                                    modifier = Modifier.align(Alignment.Center))
                                 if (selected) Icon(AppIcons.Check, copy.t("Wybrana skórka", "Selected skin"),
                                     Modifier.align(Alignment.BottomEnd).padding(9.dp).size(18.dp), tint = skin.palette().accent)
                             }
@@ -165,17 +167,6 @@ internal fun SkinSelectionSheet(state: AppState, copy: UiCopy, onAction: (AppAct
                 }
             }
         }
-    }
-}
-
-@Composable
-internal fun DeckSelectionSheet(state: AppState, copy: UiCopy, onChoose: (Deck) -> Unit) {
-    Column(Modifier.fillMaxWidth().heightIn(max = 620.dp).verticalScroll(rememberScrollState())
-        .padding(horizontal = 20.dp).padding(bottom = 26.dp), verticalArrangement = Arrangement.spacedBy(12.dp)) {
-        Text(copy.t("Wybierz talię", "Choose a deck"), style = MaterialTheme.typography.headlineLarge,
-            modifier = Modifier.padding(horizontal = 4.dp))
-        state.decks.forEach { deck -> DeckRow(deck, deck.id == state.activeDeckId, copy, onChoose = { onChoose(deck) }) }
-        if (state.decks.isEmpty()) Text(copy.t("Dodaj plik JSON lub CSV w zakładce Talie.", "Import a JSON or CSV file in Decks."))
     }
 }
 

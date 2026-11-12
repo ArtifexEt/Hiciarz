@@ -1,7 +1,6 @@
 package pl.artifex.hiciarz
 
 import android.content.Intent
-import android.net.Uri
 import android.os.Bundle
 import android.view.WindowManager
 import androidx.activity.ComponentActivity
@@ -24,7 +23,7 @@ class MainActivity : ComponentActivity() {
         super.onCreate(savedInstanceState)
         enableEdgeToEdge()
         model = ViewModelProvider(this)[HiciarzViewModel::class.java]
-        spotify = SpotifyController(this) { model.clientId() }
+        spotify = SpotifyController(this, clientIdProvider = { model.clientId() })
         model.attachPlayback(spotify)
         setContent {
             val state = model.state.collectAsStateWithLifecycle().value
@@ -45,15 +44,17 @@ class MainActivity : ComponentActivity() {
     private fun handleIntent(intent: Intent?) {
         if (intent == null) return
         if (intent.action == Intent.ACTION_SEND) {
-            @Suppress("DEPRECATION")
-            val stream = intent.getParcelableExtra<Uri>(Intent.EXTRA_STREAM)
-            if (stream != null && stream.scheme == "content") model.dispatch(AppAction.ImportDeck(stream.toString()))
-            else intent.getStringExtra(Intent.EXTRA_TEXT)?.let { model.dispatch(AppAction.ScanCode(it)) }
+            intent.getStringExtra(Intent.EXTRA_TEXT)?.let { model.dispatch(AppAction.ScanCode(it)) }
         } else if (intent.action == Intent.ACTION_VIEW) {
             val uri = intent.data ?: return
             if (uri.scheme == "hiciarz" && uri.host == "spotify-callback") return
             model.dispatch(AppAction.ScanCode(uri.toString()))
         }
+    }
+
+    override fun onPostResume() {
+        super.onPostResume()
+        if (::spotify.isInitialized) spotify.refreshConnection()
     }
 
     override fun onDestroy() {
