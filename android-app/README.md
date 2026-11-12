@@ -1,6 +1,10 @@
 # Hiciarz na Androida
 
-Natywna aplikacja Kotlin / Jetpack Compose do skanowania drukowanych kart, grania w Bingo i korzystania z własnych talii. Spotify odtwarza muzykę w swojej aplikacji, a Hiciarz steruje nim przez oficjalny App Remote SDK. Kreator kart i druk PDF pozostają w [`../web/`](../web/).
+Natywna aplikacja Kotlin / Jetpack Compose do skanowania drukowanych kart, prowadzenia Bingo i grania bez kart w Oś czasu lub Zgadnij. Spotify odtwarza muzykę w swojej aplikacji, a Hiciarz steruje nim przez oficjalny App Remote SDK. Kreator kart i generator plansz PDF pozostają w [`../web/`](../web/).
+
+W Bingo telefon prowadzącego najpierw losuje kategorię, a dopiero wybranie „Skanuj kartę” uruchamia aparat. Skan rozpoczyna utwór; gracze zaznaczają odpowiedzi na papierowych planszach. „Plansze do pobrania” otwiera generator z wybranym poziomem i językiem. Zasady każdej gry są dostępne pod „Jak grać”.
+
+QR może automatycznie włączyć jedną z dziewięciu skórek. Ustawienia pozwalają wybrać własny wygląd i wyłączyć śledzenie skórki karty. Automatyczna pauza jest domyślnie wyłączona. Na dużym oknie i rozłożonym telefonie nawigacja przechodzi na bok, a niezależne panele uwzględniają zgięcie ekranu. [Porównanie funkcji z PWA](docs/pwa-parity.md) opisuje pełny zakres.
 
 ## Ekrany aplikacji
 
@@ -61,7 +65,7 @@ export SPOTIFY_CLIENT_ID='wstaw_swoj_32_znakowy_client_id'
 ./gradlew :app:assembleRelease
 ```
 
-Alternatywnie Gradle obsługuje `-PspotifyClientId=…`. Zmienna środowiskowa ma pierwszeństwo. W aplikacji można też zmienić Client ID w ustawieniach. **Client Secret nie jest potrzebny i nie należy go dodawać do aplikacji ani repozytorium.**
+Alternatywnie Gradle obsługuje `-PspotifyClientId=…`. Zmienna środowiskowa ma pierwszeństwo. Aplikacja korzysta z identyfikatora dołączonego podczas budowania i nie pokazuje formularza konfiguracji Client ID. **Client Secret nie jest potrzebny i nie należy go dodawać do aplikacji ani repozytorium.**
 
 Instrukcja konfiguracji odpowiada [oficjalnemu przewodnikowi App Remote dla Androida](https://developer.spotify.com/documentation/android/tutorials/getting-started).
 
@@ -90,9 +94,9 @@ Ustaw `ANDROID_HOME` na lokalizację Android SDK albo dodaj `sdk.dir=…` do lok
 | Raport testów JUnit | `app/build/reports/tests/testDebugUnitTest/index.html` |
 | Raport lint | `app/build/reports/lint-results-release.html` |
 
-Testy obejmują zgodność kart QR i importu JSON/CSV z kreatorem web oraz reguły Bingo. Nie potwierdzają autoryzacji Spotify na prawdziwym urządzeniu; tę część należy sprawdzić ręcznie.
+Testy obejmują zgodność kart QR i importu JSON/CSV z kreatorem web, skórki, reguły Bingo, Osi czasu i quizu oraz zachowanie gry po odtworzeniu procesu. Nie potwierdzają autoryzacji Spotify na prawdziwym urządzeniu; tę część należy sprawdzić ręcznie.
 
-CI uruchamia też natywny scenariusz Compose na emulatorze AOSP: wklejenie kodu, odkrycie karty, losowanie Bingo i zmianę języka. Sprawdza widoki telefonu i szerokiego okna, a 11 zrzutów PNG zapisuje w artefakcie `android-native-ui-…` obok raportu testu.
+CI uruchamia też natywne scenariusze Compose na emulatorze AOSP: losowanie pytania Bingo przed skanem, wklejenie kodu, odkrycie karty, Oś czasu, zmianę skórki i języka oraz zasady. Osobny scenariusz zmienia rzeczywiste okno Activity i publikuje pozycję pionowego oraz poziomego zgięcia przez WindowManager, sprawdzając, że panele nie nachodzą na zawias. Obejmuje ekran telefonu 360 dp, zewnętrzny i wewnętrzny ekran Folda, krótki widok poziomy, tryb ciemny i powiększenie tekstu. Zrzuty PNG trafiają do artefaktu `android-native-ui-…` obok raportu testów. Jest to test emulatora, a nie deklaracja sprawdzenia na fizycznym Fold7.
 
 Testy regresji sprawdzają globalne wznawianie Spotify po zmianie zakładki, odtwarzanie wybranej karty oraz zachowanie rundy Bingo przy ponownym wyborze tej samej talii. Działają na emulatorze bez konta Spotify.
 

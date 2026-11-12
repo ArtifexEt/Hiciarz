@@ -1,4 +1,5 @@
 {
   "bingoApp.emptyQuestion": "What are we guessing?",
-  "bingoApp.scanCard": "Scan a card"
+  "bingoApp.scanCard": "Scan a card",
+  "bingoApp.boards": "Bingo boards"
 }

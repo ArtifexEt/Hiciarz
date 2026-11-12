@@ -43,8 +43,54 @@ export function parseAppView(url: string): AppView {
 
 export function urlForView(url: string, view: AppView): string {
   const next = new URL(url);
+  next.searchParams.delete('sheet');
   if (view === 'home') next.searchParams.delete('view');
   else next.searchParams.set('view', view);
+  return next.href;
+}
+
+/** Only safe, non-destructive help and Bingo PDF entry points can open from a link. */
+export function parseEntryModal(url: string): AppModal {
+  try {
+    const sheet = new URL(url).searchParams.get('sheet');
+    const view = parseAppView(url);
+    if (sheet === 'print' && view === 'bingo') return 'bingo-print';
+    if (sheet === 'help') return view === 'bingo' ? 'bingo-help' : 'help';
+  } catch {
+    /* Invalid external links use the normal view. */
+  }
+  return null;
+}
+
+export function parseBingoLevel(url: string): 'beginner' | 'expert' {
+  try {
+    return new URL(url).searchParams.get('level') === 'expert' ? 'expert' : 'beginner';
+  } catch {
+    return 'beginner';
+  }
+}
+
+export function parseEntryLanguage(url: string): 'pl' | 'en' | undefined {
+  try {
+    const value = new URL(url).searchParams.get('lang');
+    if (value === 'pl' || value === 'en') return value;
+  } catch {
+    /* Keep the saved language for malformed links. */
+  }
+  return undefined;
+}
+
+export function urlForModal(url: string, view: AppView, modal: AppModal): string {
+  const next = new URL(urlForView(url, view));
+  if (view === 'bingo' && modal === 'bingo-print') next.searchParams.set('sheet', 'print');
+  else if (modal === 'help' || (view === 'bingo' && modal === 'bingo-help'))
+    next.searchParams.set('sheet', 'help');
+  return next.href;
+}
+
+export function urlForBingoLevel(url: string, level: 'beginner' | 'expert'): string {
+  const next = new URL(url);
+  next.searchParams.set('level', level);
   return next.href;
 }
 

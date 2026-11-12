@@ -1,8 +1,10 @@
 package pl.artifex.hiciarz
 
+import android.accessibilityservice.AccessibilityService
 import android.graphics.Bitmap
-import androidx.compose.ui.graphics.asAndroidBitmap
 import androidx.compose.ui.semantics.SemanticsActions
+import androidx.compose.ui.semantics.SemanticsProperties
+import androidx.compose.ui.semantics.getOrNull
 import androidx.compose.ui.test.*
 import androidx.compose.ui.test.junit4.createEmptyComposeRule
 import androidx.test.core.app.ActivityScenario
@@ -13,7 +15,7 @@ import org.junit.Before
 import org.junit.Rule
 import org.junit.Test
 
-/** Exercises the native UI without Spotify, camera permissions or an account. */
+/** Real navigation and game callbacks, with no Spotify account or camera permission required. */
 class NativeFlowTest {
     @get:Rule val compose = createEmptyComposeRule()
     private lateinit var activity: ActivityScenario<MainActivity>
@@ -22,78 +24,114 @@ class NativeFlowTest {
         InstrumentationRegistry.getInstrumentation().targetContext
             .getSharedPreferences("hiciarz", 0).edit().clear().putString("language", "pl").commit()
         activity = ActivityScenario.launch(MainActivity::class.java)
+        compose.waitUntil(15_000) {
+            compose.onAllNodesWithText("Wylosuj pytanie").fetchSemanticsNodes().isNotEmpty()
+        }
     }
 
-    @After fun close() {
-        shell("wm size reset")
-        shell("wm density reset")
-        if (::activity.isInitialized) activity.close()
+    @After fun close() { if (::activity.isInitialized) activity.close() }
+
+    @Test fun bingoRequiresAQuestionThenAnExplicitScanAndKeepsItsRule() {
+        captureNative(compose, "phone-games-pl")
+        compose.onNodeWithContentDescription("Jak grać").performClick()
+        compose.onNodeWithText("Plansze do pobrania").performScrollTo().assertIsDisplayed()
+        captureNative(compose, "phone-help-bingo-pl", scrollTop = false)
+        compose.onNodeWithContentDescription("Wróć").performClick()
+
+        compose.onNodeWithText("Wylosuj pytanie").performScrollTo().performClick()
+        compose.onNodeWithText("Skanuj kartę").performScrollTo().assertIsDisplayed()
+        compose.onNodeWithTag("camera-preview").assertDoesNotExist()
+        captureNative(compose, "phone-bingo-question-pl")
+        compose.onNodeWithText("Skanuj kartę").performClick()
+        compose.onNodeWithTag("camera-preview").assertIsDisplayed()
+        compose.onNodeWithText("Wróć do pytania").performScrollTo().performClick()
+        compose.onNodeWithText("Skanuj kartę").performScrollTo().assertIsDisplayed()
+        compose.onNodeWithText("Skanuj kartę").performClick()
+        enterCode("https://example.org/#2vs0000000000000000000000")
+        compose.onNodeWithTag("camera-preview").assertDoesNotExist()
+        compose.onNodeWithText("Następna runda").performScrollTo().assertIsDisplayed()
+        captureNative(compose, "phone-bingo-playing-pl")
+        compose.onNodeWithText("Odkryj odpowiedź").performScrollTo().performClick()
+        compose.onNodeWithText("Odpowiedź na drukowanej karcie").performScrollTo().assertIsDisplayed()
+        compose.onNodeWithText("Następna runda").performScrollTo().performClick()
+        compose.onNodeWithText("Skanuj kartę").performScrollTo().assertIsDisplayed()
     }
 
-    @Test fun scanRevealBingoAndLanguageUseNativeScreens() {
+    @Test fun timelineScanSkinsSettingsAndLanguageUseNativeScreens() {
         compose.onNodeWithText("Talie").performClick()
         compose.waitUntil(15_000) {
             compose.onAllNodesWithText("Świąteczne przeboje").fetchSemanticsNodes().isNotEmpty()
         }
-        capture("phone-decks-pl")
+        captureNative(compose, "phone-decks-pl")
+        compose.onNodeWithText("Graj bez kart").performScrollTo().performClick()
+        compose.onNodeWithTag("mode-timeline").assertIsSelected()
+        compose.onNodeWithText("Zacznij grę").performScrollTo().performClick()
+        val firstGap = SemanticsMatcher("timeline gap before the starter") { node ->
+            node.config.getOrNull(SemanticsProperties.ContentDescription)?.any { it.startsWith("Przed ") } == true
+        }
+        compose.onNodeWithText("Pomyłki: 0").performScrollTo()
+        compose.onNode(firstGap).assertIsDisplayed().performClick()
+        compose.onNodeWithText("Sprawdź miejsce").performScrollTo().assertIsEnabled().performClick()
+        compose.onNodeWithText("Następny utwór").performScrollTo().assertIsDisplayed()
+        captureNative(compose, "phone-timeline-revealed-pl")
 
         compose.onNodeWithText("Skaner").performClick()
-        capture("phone-scan-pl")
-        compose.onNodeWithText("Wklej kod lub link").performScrollTo().performClick()
-        compose.onNodeWithText("Link Spotify lub kod Hiciarza")
-            .performTextInput("spotify:track:0000000000000000000000")
-        compose.onNodeWithText("Odtwórz").performClick()
+        captureNative(compose, "phone-scan-pl")
+        enterCode("https://example.org/#2vs0000000000000000000000")
         compose.onNodeWithText("Który to rok?").performScrollTo().assertIsDisplayed()
+        compose.onNodeWithText("Winyl").performScrollTo().assertIsDisplayed()
+        captureNative(compose, "phone-scan-vinyl-pl")
         compose.onNodeWithText("Odkryj odpowiedź").performScrollTo().performClick()
         compose.onNodeWithText("Odpowiedź na drukowanej karcie").performScrollTo().assertIsDisplayed()
-        capture("phone-scan-revealed-pl", scrollTop = false)
-
-        compose.onNodeWithText("Bingo").performClick()
-        compose.onNodeWithText("Podstawowy").assertIsDisplayed()
-        compose.onNodeWithText("Zaawansowany").assertIsDisplayed()
-        capture("phone-bingo-pl")
-        compose.onNodeWithText("Losuj utwór i pytanie").performScrollTo().performClick()
-        compose.onNodeWithText("Odkryj odpowiedź").performScrollTo().assertIsDisplayed()
-        capture("phone-bingo-question-pl", scrollTop = false)
+        captureNative(compose, "phone-scan-revealed-pl")
+        compose.onNodeWithText("Następna karta").performScrollTo().performClick()
+        compose.onNodeWithText("Klasyczna").performScrollTo().assertIsDisplayed()
 
         compose.onNodeWithText("Ustawienia").performClick()
-        capture("phone-settings-pl")
+        compose.onNodeWithText("Automatyczna pauza").performScrollTo().assertIsOff()
+        compose.onNodeWithText("Client ID", substring = true).assertDoesNotExist()
+        compose.onNodeWithText("Gdzie gra muzyka", substring = true).assertDoesNotExist()
+        captureNative(compose, "phone-settings-pl")
+        compose.onNodeWithText("Używaj skórki zeskanowanej karty").performScrollTo().performClick()
+        compose.onNodeWithText("Skórka domyślna").performScrollTo().performClick()
+        compose.onNodeWithText("Zima").performScrollTo().performClick()
+        captureNative(compose, "phone-skins-pl")
+        InstrumentationRegistry.getInstrumentation().uiAutomation.performGlobalAction(AccessibilityService.GLOBAL_ACTION_BACK)
+        compose.waitForIdle()
         compose.onNodeWithText("English").performScrollTo().performClick()
         compose.onNodeWithText("Scan").assertIsDisplayed()
         compose.onNodeWithText("Decks").assertIsDisplayed()
         compose.onNodeWithText("Language").performScrollTo().assertIsDisplayed()
-        capture("phone-settings-en")
-
-        shell("wm size 1800x1200")
-        shell("wm density 240")
-        compose.waitUntil(15_000) {
-            InstrumentationRegistry.getInstrumentation().targetContext.resources.configuration.screenWidthDp >= 600
-        }
-        capture("tablet-settings-en")
-        compose.onNodeWithText("Decks").performClick()
-        capture("tablet-decks-en")
-        compose.onNodeWithText("Bingo").performClick()
-        capture("tablet-bingo-en")
-        compose.onNodeWithText("Scan").performClick()
-        capture("tablet-scan-en")
+        captureNative(compose, "phone-settings-en")
     }
 
-    private fun capture(name: String, scrollTop: Boolean = true) {
-        if (scrollTop) {
-            compose.onAllNodes(hasScrollAction()).onFirst()
+    private fun enterCode(code: String) {
+        compose.onNodeWithText("Wklej kod lub link").performScrollTo().performClick()
+        compose.onNodeWithText("Link Spotify lub kod Hiciarza").performTextInput(code)
+        compose.onNodeWithText("Odtwórz").performClick()
+        compose.waitForIdle()
+    }
+}
+
+internal fun captureNative(compose: androidx.compose.ui.test.junit4.ComposeTestRule, name: String, scrollTop: Boolean = true) {
+    if (scrollTop) {
+        val count = compose.onAllNodes(hasScrollAction()).fetchSemanticsNodes().size
+        repeat(count) { index ->
+            compose.onAllNodes(hasScrollAction())[index]
                 .performSemanticsAction(SemanticsActions.ScrollBy) { it(0f, -100_000f) }
         }
-        compose.waitForIdle()
-        val context = InstrumentationRegistry.getInstrumentation().targetContext
-        val directory = File(context.filesDir, "screenshots").apply { mkdirs() }
-        File(directory, "$name.png").outputStream().use {
-            compose.onRoot().captureToImage().asAndroidBitmap().compress(Bitmap.CompressFormat.PNG, 100, it)
-        }
     }
+    compose.waitForIdle()
+    val context = InstrumentationRegistry.getInstrumentation().targetContext
+    val directory = File(context.filesDir, "screenshots").apply { mkdirs() }
+    File(directory, "$name.png").outputStream().use {
+        InstrumentationRegistry.getInstrumentation().uiAutomation.takeScreenshot()
+            .compress(Bitmap.CompressFormat.PNG, 100, it)
+    }
+}
 
-    private fun shell(command: String) {
-        android.os.ParcelFileDescriptor.AutoCloseInputStream(
-            InstrumentationRegistry.getInstrumentation().uiAutomation.executeShellCommand(command),
-        ).use { it.readBytes() }
-    }
+internal fun nativeShell(command: String) {
+    android.os.ParcelFileDescriptor.AutoCloseInputStream(
+        InstrumentationRegistry.getInstrumentation().uiAutomation.executeShellCommand(command),
+    ).use { it.readBytes() }
 }

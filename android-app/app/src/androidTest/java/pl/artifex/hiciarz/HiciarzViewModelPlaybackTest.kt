@@ -48,7 +48,7 @@ class HiciarzViewModelPlaybackTest {
     @Test fun globalResumeKeepsTheBingoRecordingFromEveryTab() {
         dispatch(AppAction.ScanCode(SCANNED_URI))
         assertEquals(SCANNED_URI, snapshot().currentSong?.spotifyUri)
-        dispatch(AppAction.DrawBingo)
+        scanBingoCard()
         val bingoUri = requireNotNull(snapshot().bingoSong).spotifyUri
         assertNotEquals(SCANNED_URI, bingoUri)
 
@@ -68,7 +68,7 @@ class HiciarzViewModelPlaybackTest {
     @Test fun cardPlayUsesItsExplicitRecordingAndResumesItWithoutRestarting() {
         dispatch(AppAction.ScanCode(SCANNED_URI))
         val scannedSong = requireNotNull(snapshot().currentSong)
-        dispatch(AppAction.DrawBingo)
+        scanBingoCard()
         dispatch(AppAction.Pause)
         dispatch(AppAction.SelectTab(AppTab.BINGO))
         main { player.commands.clear() }
@@ -90,8 +90,9 @@ class HiciarzViewModelPlaybackTest {
     }
 
     @Test fun reselectingTheActiveDeckPreservesTheRoundAndItsSavedHistory() {
-        dispatch(AppAction.DrawBingo)
-        dispatch(AppAction.DrawBingo)
+        scanBingoCard()
+        dispatch(AppAction.RevealBingoAnswer)
+        scanBingoCard()
         dispatch(AppAction.RevealBingoAnswer)
         val before = snapshot()
         val deckId = requireNotNull(before.activeDeckId)
@@ -133,6 +134,13 @@ class HiciarzViewModelPlaybackTest {
         assertTrue(snapshot().playback.isPlaying)
         assertEquals(EXTERNAL_URI, snapshot().playback.trackUri)
         assertFalse(player.commands.any { it.operation == "pause" })
+    }
+
+    private fun scanBingoCard() {
+        dispatch(AppAction.DrawBingo)
+        dispatch(AppAction.BeginBingoScan)
+        val card = requireNotNull(snapshot().activeDeck).songs.first { it.spotifyUri != SCANNED_URI }
+        dispatch(AppAction.ScanCode(card.spotifyUri))
     }
 
     private fun createModel() {

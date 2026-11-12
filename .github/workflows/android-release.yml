@@ -6,9 +6,9 @@ on:
   workflow_dispatch:
     inputs:
       version:
-        description: 'Version, for example 0.1.0-alpha.1 (creates android-v<version>)'
+        description: 'Version, for example 0.2.0-alpha.1 (creates android-v<version>)'
         required: true
-        default: '0.1.0-alpha.1'
+        default: '0.2.0-alpha.1'
         type: string
       version_code:
         description: 'Optional positive Android version code; otherwise generated from the run number'

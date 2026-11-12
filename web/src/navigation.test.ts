@@ -3,8 +3,13 @@ import {
   navigationState,
   keepScannerPairing,
   parseAppView,
+  parseEntryModal,
+  parseEntryLanguage,
+  parseBingoLevel,
   readNavigationState,
   urlForView,
+  urlForModal,
+  urlForBingoLevel,
   views,
 } from './navigation';
 
@@ -56,6 +61,46 @@ describe('app navigation URLs', () => {
     expect(home.searchParams.getAll('view')).toEqual([]);
     expect(home.searchParams.get('source')).toBe('qr');
     expect(home.hash).toBe('#pair=room');
+  });
+});
+
+describe('direct links from the Android app', () => {
+  it('opens the Bingo generator with the requested level and language, preserving the card hash', () => {
+    const url =
+      'https://example.com/Hiciarz/?view=bingo&sheet=print&level=expert&lang=en#2fs0123456789012345678901';
+    expect(parseAppView(url)).toBe('bingo');
+    expect(parseEntryModal(url)).toBe('bingo-print');
+    expect(parseBingoLevel(url)).toBe('expert');
+    expect(parseEntryLanguage(url)).toBe('en');
+    const changed = new URL(urlForBingoLevel(url, 'beginner'));
+    expect(changed.searchParams.get('sheet')).toBe('print');
+    expect(changed.searchParams.get('lang')).toBe('en');
+    expect(changed.hash).toBe('#2fs0123456789012345678901');
+  });
+
+  it('supports help links but refuses unrelated or destructive dialogs', () => {
+    expect(parseEntryModal('https://example.com/?view=bingo&sheet=help')).toBe('bingo-help');
+    expect(parseEntryModal('https://example.com/?view=scanner&sheet=help')).toBe('help');
+    for (const sheet of ['delete', 'song', 'spotify', 'print-cards', 'unknown'])
+      expect(parseEntryModal(`https://example.com/?view=bingo&sheet=${sheet}`)).toBeNull();
+    expect(parseEntryModal('https://example.com/?view=editor&sheet=print')).toBeNull();
+  });
+
+  it('builds a copyable generator URL and removes the sheet when switching views or closing it', () => {
+    const original = 'https://example.com/Hiciarz/?view=bingo&level=expert&lang=pl';
+    const generator = urlForModal(original, 'bingo', 'bingo-print');
+    expect(parseEntryModal(generator)).toBe('bingo-print');
+    expect(new URL(urlForView(generator, 'scanner')).searchParams.has('sheet')).toBe(false);
+    expect(new URL(urlForModal(generator, 'bingo', null)).searchParams.has('sheet')).toBe(false);
+    expect(parseBingoLevel(urlForModal(generator, 'bingo', null))).toBe('expert');
+  });
+
+  it('keeps defaults for malformed or unsupported external options', () => {
+    for (const url of ['not a URL', 'https://example.com/?level=admin&lang=xx']) {
+      expect(parseEntryModal(url)).toBeNull();
+      expect(parseBingoLevel(url)).toBe('beginner');
+      expect(parseEntryLanguage(url)).toBeUndefined();
+    }
   });
 });
 

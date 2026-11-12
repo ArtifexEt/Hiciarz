@@ -100,6 +100,8 @@ Dokładne kroki, poprawny Redirect URI, ustawienia forka oraz pomoc przy błęda
 - **Muzyczne Bingo:** otwórz **Bingo**, wybierz poziom i użyj **Losuj kategorię**. Zestawy **Na dobry początek** i **Dla znawców** zawierają po pięć kategorii pytań. Każde losowanie jest niezależne. Odpowiedzi sprawdzacie na kartach, punkty zaznaczacie na papierze; pełny rząd, kolumna lub przekątna daje Bingo. Ikona drukarki otwiera **Plansze do druku** — różne plansze 5 × 5, po dwie na A4.
 - **Wygląd kart:** dziewięć motywów, własne rewersy z obsługą przeciągania plików, presety i oszczędny wydruk **Laser — lekki kolor**. Podgląd karty odzwierciedla układ PDF. Karty z własnym motywem zachowują go przy zmianie motywu talii; ujednolica je przycisk **Zastosuj motyw talii do wszystkich kart**. Skórka strony jest wybierana osobno w ustawieniach; nie zmienia motywu zapisanej talii.
 
+[Otwórz generator plansz Bingo — podstawowy PL](https://artifexet.github.io/Hiciarz/?view=bingo&sheet=print&level=beginner&lang=pl) · [Zaawansowany PL](https://artifexet.github.io/Hiciarz/?view=bingo&sheet=print&level=expert&lang=pl) · [Beginner EN](https://artifexet.github.io/Hiciarz/?view=bingo&sheet=print&level=beginner&lang=en). Linki z aplikacji Android otwierają ten sam generator. Parametry `level=beginner|expert` i `lang=pl|en` wybierają poziom oraz język, a w oknie można ustawić liczbę plansz i pobrać PDF.
+
 **Wybierz gotową talię** udostępnia przykłady bez logowania:
 
 | Przykład                          | Zawartość                                |

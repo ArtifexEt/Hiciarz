@@ -1,0 +1,208 @@
+package pl.artifex.hiciarz
+
+import android.app.Application
+import androidx.lifecycle.ViewModelProvider
+import androidx.lifecycle.ViewModelStore
+import androidx.test.ext.junit.runners.AndroidJUnit4
+import androidx.test.platform.app.InstrumentationRegistry
+import kotlinx.coroutines.flow.MutableStateFlow
+import kotlinx.coroutines.flow.StateFlow
+import kotlinx.coroutines.flow.first
+import kotlinx.coroutines.runBlocking
+import kotlinx.coroutines.withTimeout
+import org.junit.After
+import org.junit.Assert.*
+import org.junit.Before
+import org.junit.Test
+import org.junit.runner.RunWith
+import pl.artifex.hiciarz.model.*
+import pl.artifex.hiciarz.playback.PlaybackTransport
+
+/** Full game transitions and saved state, with no Spotify account or camera required. */
+@RunWith(AndroidJUnit4::class)
+class CardlessViewModelTest {
+    private val instrumentation = InstrumentationRegistry.getInstrumentation()
+    private val application = instrumentation.targetContext.applicationContext as Application
+    private val prefs = application.getSharedPreferences("hiciarz", 0)
+    private lateinit var store: ViewModelStore
+    private lateinit var model: HiciarzViewModel
+
+    @Before fun launch() { prefs.edit().clear().commit(); createModel() }
+    @After fun close() { main { store.clear() } }
+
+    @Test fun bingoDrawsOnlyARuleThenWaitsForAnExplicitScanAndKeepsThatRule() {
+        dispatch(AppAction.DrawBingo)
+        assertEquals(BingoStage.RULE, state().bingoStage)
+        assertNull(state().bingoSong)
+        assertTrue(state().bingoHistory.isEmpty())
+        assertFalse(state().playback.isPlaying)
+        val rule = state().question
+
+        dispatch(AppAction.BeginBingoScan)
+        assertEquals(BingoStage.SCAN, state().bingoStage)
+        assertTrue(state().scannerEnabled)
+        val round = state().bingoRound
+        dispatch(AppAction.CancelBingoScan)
+        assertEquals(BingoStage.RULE, state().bingoStage)
+        assertEquals(rule, state().question)
+        assertEquals(round, state().bingoRound)
+        dispatch(AppAction.ScanCameraCode("https://example.org/#2fs0000000000000000000000g", bingo = true))
+        assertEquals(BingoStage.RULE, state().bingoStage)
+        assertEquals(AppTab.BINGO, state().tab)
+        assertNull(state().bingoSong)
+        assertFalse(state().playback.isPlaying)
+        dispatch(AppAction.BeginBingoScan)
+        dispatch(AppAction.ScanCameraCode("https://example.org/#2fs0000000000000000000000g", bingo = true))
+        assertEquals(AppTab.BINGO, state().tab)
+        assertEquals(BingoStage.PLAYING, state().bingoStage)
+        assertEquals(rule, state().question)
+        assertNull(state().currentSong)
+        assertEquals("0000000000000000000000", state().bingoSong?.spotifyId)
+        assertEquals(CardSkin.FISH, state().activeSkin)
+        assertEquals(1, state().bingoHistory.size)
+        assertTrue(state().playback.isPlaying)
+        dispatch(AppAction.RevealBingoAnswer)
+        val played = state().bingoSong
+        recreate()
+        assertEquals(BingoStage.PLAYING, state().bingoStage)
+        assertEquals(played, state().bingoSong)
+        assertEquals(rule, state().question)
+        assertTrue(state().bingoAnswerRevealed)
+        assertEquals(CardSkin.FISH, state().activeSkin)
+
+        // A deliberate rescan of the same physical card remains a legitimate host action.
+        dispatch(AppAction.BeginBingoScan)
+        dispatch(AppAction.ScanCode("https://example.org/#2fs0000000000000000000000g"))
+        assertEquals(2, state().bingoHistory.size)
+        dispatch(AppAction.DrawBingo)
+        assertEquals(BingoStage.RULE, state().bingoStage)
+        assertNull(state().bingoSong)
+        assertFalse(state().playback.isPlaying)
+        val nextRule = state().question
+        recreate()
+        assertEquals(BingoStage.RULE, state().bingoStage)
+        assertEquals(nextRule, state().question)
+        assertEquals(2, state().bingoHistory.size)
+        dispatch(AppAction.BeginBingoScan)
+        recreate()
+        assertEquals("A cold launch must not restart the camera", BingoStage.RULE, state().bingoStage)
+    }
+
+    @Test fun timelinePlacesARealCardAndRestoresTheSameRoundBeforeContinuing() {
+        dispatch(AppAction.StartTimeline)
+        val initial = state().timeline
+        assertTrue(initial.started)
+        assertEquals(initial, run { dispatch(AppAction.StartTimeline); state().timeline })
+        val song = requireNotNull(initial.currentSong)
+        dispatch(AppAction.ChooseTimelineGap(TimelineRules.validGaps(initial.board, song).first()))
+        dispatch(AppAction.RevealTimeline)
+        val checked = state().timeline
+        assertTrue(checked.correct!!)
+        assertEquals(2, checked.board.size)
+        recreate()
+        assertEquals(checked, state().timeline)
+        dispatch(AppAction.NextTimeline)
+        assertEquals(checked.round + 1, state().timeline.round)
+        assertFalse(state().timeline.revealed)
+        assertNotEquals(song.spotifyId, state().timeline.currentSong?.spotifyId)
+    }
+
+    @Test fun gameSoundtrackDeckDefaultsToSourceQuizAndJudgementsPersist() {
+        val gameDeck = state().decks.first { it.gameMode == GameMode.GAME }
+        dispatch(AppAction.SetCardlessMode(CardlessMode.TIMELINE))
+        dispatch(AppAction.SelectDeck(gameDeck.id))
+        assertEquals(CardlessMode.QUIZ, state().cardlessMode)
+        dispatch(AppAction.StartQuiz)
+        val first = state().quiz
+        dispatch(AppAction.NextQuiz)
+        assertEquals(first, state().quiz)
+        dispatch(AppAction.RevealQuiz)
+        dispatch(AppAction.SubmitQuizAnswer(true))
+        val answered = state().quiz
+        assertTrue(answered.answered)
+        assertEquals(1, answered.correctCount)
+        dispatch(AppAction.SubmitQuizAnswer(true))
+        assertEquals(1, state().quiz.correctCount)
+        recreate()
+        assertEquals(answered, state().quiz)
+        dispatch(AppAction.NextQuiz)
+        assertNotEquals(first.currentSong?.spotifyId, state().quiz.currentSong?.spotifyId)
+        assertEquals(2, state().quiz.round)
+    }
+
+    @Test fun cardSkinFollowsTheQrOnlyWhenEnabledAndDoesNotLeakIntoANewGame() {
+        dispatch(AppAction.ScanCode("https://example.org/#2fs0000000000000000000000"))
+        assertEquals(CardSkin.FISH, state().activeSkin)
+        assertEquals(CardSkin.FISH, state().currentSong?.skin)
+        dispatch(AppAction.SetFollowCardSkin(false))
+        dispatch(AppAction.SetCardSkin(CardSkin.MIXTAPE))
+        dispatch(AppAction.ScanCode("https://example.org/#2xs0000000000000000000000"))
+        assertEquals(CardSkin.MIXTAPE, state().activeSkin)
+        dispatch(AppAction.SetFollowCardSkin(true))
+        assertEquals(CardSkin.CHRISTMAS, state().activeSkin)
+        dispatch(AppAction.ScanNext)
+        assertEquals(CardSkin.MIXTAPE, state().activeSkin)
+        dispatch(AppAction.StartTimeline)
+        assertNull(state().scannedSkin)
+        recreate()
+        assertEquals(CardSkin.MIXTAPE, state().settings.cardSkin)
+        assertTrue(state().settings.followCardSkin)
+    }
+
+    @Test fun automaticPauseDefaultsOffAndOnlyAnExplicitNewChoiceSurvives() {
+        assertFalse(state().settings.autoPause)
+        prefs.edit().putBoolean("autoPause", true).remove("autoPauseExplicit").commit()
+        recreate()
+        assertFalse(state().settings.autoPause)
+        dispatch(AppAction.SetAutoPause(true))
+        recreate()
+        assertTrue(state().settings.autoPause)
+    }
+
+    @Test fun spotifyConfigurationComesFromTheApkInsteadOfAnInvisibleLegacyOverride() {
+        prefs.edit().putString("clientId", "f".repeat(32)).commit()
+        recreate()
+        assertEquals(BuildConfig.SPOTIFY_CLIENT_ID, model.clientId())
+        assertFalse(prefs.contains("clientId"))
+    }
+
+    @Test fun aLateScannerCameraResultCannotPlayAfterLeavingTheScanner() {
+        dispatch(AppAction.SelectTab(AppTab.SCAN))
+        dispatch(AppAction.SelectTab(AppTab.SETTINGS))
+        dispatch(AppAction.ScanCameraCode("spotify:track:0000000000000000000000"))
+        assertEquals(AppTab.SETTINGS, state().tab)
+        assertNull(state().currentSong)
+        assertFalse(state().playback.isPlaying)
+    }
+
+    private fun state() = model.state.value
+    private fun dispatch(action: AppAction) = main { model.dispatch(action) }
+    private fun recreate() { main { store.clear() }; createModel() }
+
+    private fun createModel() {
+        main {
+            store = ViewModelStore()
+            model = ViewModelProvider(store, ViewModelProvider.AndroidViewModelFactory.getInstance(application))[HiciarzViewModel::class.java]
+            model.attachPlayback(LocalPlayback())
+        }
+        runBlocking { withTimeout(10_000) { model.state.first { !it.busy } } }
+        instrumentation.waitForIdleSync()
+    }
+
+    private fun main(action: () -> Unit) {
+        instrumentation.runOnMainSync { action() }
+        instrumentation.waitForIdleSync()
+    }
+
+    private class LocalPlayback : PlaybackTransport {
+        private val mutableState = MutableStateFlow(PlaybackState(connection = ConnectionStatus.CONNECTED))
+        override val state: StateFlow<PlaybackState> = mutableState
+        override fun connect() = Unit
+        override fun play(uri: String) { mutableState.value = mutableState.value.copy(trackUri = uri, isPlaying = true) }
+        override fun pause() { mutableState.value = mutableState.value.copy(isPlaying = false) }
+        override fun resume() { mutableState.value = mutableState.value.copy(isPlaying = true) }
+        override fun cancelPendingPlayback() = Unit
+        override fun switchToPhone() = Unit
+        override fun disconnect() { mutableState.value = PlaybackState() }
+    }
+}

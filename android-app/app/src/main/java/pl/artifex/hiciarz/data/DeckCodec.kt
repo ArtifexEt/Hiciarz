@@ -8,13 +8,14 @@ import java.util.UUID
 import org.json.JSONArray
 import org.json.JSONObject
 import pl.artifex.hiciarz.model.Deck
+import pl.artifex.hiciarz.model.CardSkin
 import pl.artifex.hiciarz.model.GameMode
 import pl.artifex.hiciarz.model.Song
 
 class DeckFormatException(val code: String) : IllegalArgumentException(code)
 
 /** Printed cards identify their variant; a direct Spotify link carries only a recording. */
-data class ScannedCard(val spotifyId: String, val gameMode: GameMode? = null)
+data class ScannedCard(val spotifyId: String, val gameMode: GameMode? = null, val skin: CardSkin? = null)
 
 /** The same version-1 deck files and compact card codes as the web creator. */
 object DeckCodec {
@@ -61,7 +62,7 @@ object DeckCodec {
                 "g" -> GameMode.GAME
                 else -> GameMode.CLASSIC
             }
-            return ScannedCard(spotify, gameMode)
+            return ScannedCard(spotify, gameMode, CardSkin.fromCode(hash[1]))
         }
         val values = query(hash)
         if (values.containsKey("pair")) throw DeckFormatException("pairing_not_supported")
@@ -73,7 +74,8 @@ object DeckCodec {
             val sources = card.optJSONObject("sources") ?: throw DeckFormatException("invalid_qr")
             if (sources.optString("spotify").isBlank() && sources.optString("youtube").isNotBlank())
                 throw DeckFormatException("unsupported_youtube")
-            ScannedCard(spotifyId(sources.getString("spotify")), mode(card.optString("gameMode", "music")))
+            ScannedCard(spotifyId(sources.getString("spotify")), mode(card.optString("gameMode", "music")),
+                CardSkin.fromId(card.optString("theme", "classic")) ?: CardSkin.CLASSIC)
         } catch (error: DeckFormatException) { throw error }
         catch (_: Exception) { throw DeckFormatException("invalid_qr") }
     }
@@ -108,6 +110,7 @@ object DeckCodec {
                 songs = songs.distinctBy { it.spotifyId to it.gameMode },
                 gameMode = mode,
                 bundled = bundled,
+                skin = CardSkin.fromId(objectDeck.optString("theme", "classic")) ?: CardSkin.CLASSIC,
             )
         } catch (error: DeckFormatException) { throw error }
         catch (_: Exception) { throw DeckFormatException("invalid_deck") }
@@ -128,7 +131,8 @@ object DeckCodec {
         if (answer.length > 200 || (mode != GameMode.CLASSIC && answer.isEmpty()))
             throw DeckFormatException("invalid_deck")
         return Song(row.optString("id").takeIf { it.isNotBlank() && it.length <= 100 }
-            ?: "spotify-$spotify", title, artist, year, spotify, answer, mode)
+            ?: "spotify-$spotify", title, artist, year, spotify, answer, mode,
+            CardSkin.fromId(row.optString("theme")))
     }
 
     private fun mode(raw: String) = when (raw) {
@@ -140,9 +144,11 @@ object DeckCodec {
 
     fun encode(deck: Deck): String = JSONObject().put("version", 1).put("id", deck.id)
         .put("name", deck.name).put("gameMode", modeName(deck.gameMode))
+        .put("theme", deck.skin.id)
         .put("songs", JSONArray(deck.songs.map { song -> JSONObject().put("id", song.id)
             .put("title", song.title).put("artist", song.artist).put("year", song.year)
             .put("gameMode", modeName(song.gameMode)).put("answer", song.answer)
+            .apply { song.skin?.let { put("theme", it.id) } }
             .put("sources", JSONObject().put("spotify", song.spotifyId)) })).toString()
 
     private fun modeName(mode: GameMode) = when (mode) {

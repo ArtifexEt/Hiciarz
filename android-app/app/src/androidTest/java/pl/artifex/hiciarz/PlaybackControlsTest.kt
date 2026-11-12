@@ -13,6 +13,10 @@ import pl.artifex.hiciarz.model.AppAction
 import pl.artifex.hiciarz.model.AppSettings
 import pl.artifex.hiciarz.model.AppState
 import pl.artifex.hiciarz.model.AppTab
+import pl.artifex.hiciarz.model.CardlessMode
+import pl.artifex.hiciarz.model.BingoStage
+import pl.artifex.hiciarz.model.BingoLevel
+import pl.artifex.hiciarz.model.QuestionType
 import pl.artifex.hiciarz.model.ConnectionStatus
 import pl.artifex.hiciarz.model.Deck
 import pl.artifex.hiciarz.model.PlaybackState
@@ -65,6 +69,11 @@ class PlaybackControlsTest {
         val deck = Deck("test-deck", "Test deck", listOf(scanned, bingo))
         val state = AppState(
             tab = tab,
+            cardlessMode = CardlessMode.BINGO,
+            bingoStage = BingoStage.PLAYING,
+            bingoRound = 1,
+            bingoLevel = BingoLevel.EXPERT,
+            question = QuestionType.TITLE,
             playback = PlaybackState(
                 connection = ConnectionStatus.CONNECTED,
                 isPlaying = false,

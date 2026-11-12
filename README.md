@@ -51,7 +51,7 @@ Przygotuj własną talię i od razu zobacz, jak będą wyglądać wydrukowane ka
 3. **Wybierz, gdzie ma grać muzyka.** W **Dźwięk** ustaw odtwarzanie na tym urządzeniu, Spotify Connect lub drugi ekran.
 4. **Skanuj, słuchaj i zgaduj.** Zeskanuj QR z karty i sprawdź odpowiedź po jej odwróceniu. Jeśli masz już wydrukowaną talię, możesz od razu zacząć od **Skanuj karty**.
 
-Wolisz Bingo? Otwórz **Bingo**, wydrukuj plansze i losuj kategorie muzycznych zagadek.
+Wolisz Bingo? [Otwórz generator plansz PDF](https://artifexet.github.io/Hiciarz/?view=bingo&sheet=print&level=beginner&lang=pl), wydrukuj plansze i losuj kategorie muzycznych zagadek. Wybierz poziom podstawowy lub zaawansowany i liczbę potrzebnych wydruków.
 
 ## Spotify i inne sposoby słuchania
 
@@ -63,7 +63,7 @@ W przeglądarce możesz korzystać z osadzonych odtwarzaczy **Spotify i YouTube*
 
 ## Także na Androidzie
 
-Wolisz natywną aplikację na telefonie? **[Pobierz testowy APK z GitHub Releases](https://github.com/ArtifexEt/Hiciarz/releases)**. Pozwala skanować karty, korzystać z talii i grać w Bingo, sterując zainstalowaną aplikacją Spotify. Wymaga Androida 8.0 lub nowszego; karty przygotujesz i wydrukujesz w przeglądarce.
+Wolisz natywną aplikację na telefonie? **[Pobierz testowy APK z GitHub Releases](https://github.com/ArtifexEt/Hiciarz/releases)**. W Bingo prowadzący losuje zasadę, skanuje drukowaną kartę i odtwarza jej utwór w Spotify. Oś czasu i quiz z grami lub filmami pozwalają też grać bez wydrukowanych kart. Aplikacja wymaga Androida 8.0 lub nowszego; karty i plansze Bingo przygotujesz w przeglądarce.
 
 [Instalacja i wymagania aplikacji Android](android-app/README.md#instalacja-wydania-testowego).
 
