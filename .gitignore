@@ -25,6 +25,9 @@ local.properties
 *.keystore
 *.p12
 *.pfx
+/android-app/release-artifacts/
+__pycache__/
+*.py[cod]
 
 # Local signing material and credentials
 /android-app/signing/
