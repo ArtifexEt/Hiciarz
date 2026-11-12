@@ -25,5 +25,16 @@ local.properties
 *.p12
 *.pfx
 
+# Local signing material and credentials
+/android-app/signing/
+*.pem
+*.key
+*.crt
+*.cer
+*.der
+keystore.properties
+key.properties
+signing.env
+
 # Private, local protocol research and device logs
 /research/
