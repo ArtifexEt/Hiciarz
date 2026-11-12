@@ -60,7 +60,7 @@ Ekran startowy na komputerze:
 ## Pierwsze kroki
 
 1. **[Otwórz Hiciarza](https://artifexet.github.io/Hiciarz/)** i wybierz **Twórz karty**. Jeśli masz już wydrukowaną talię, przejdź do **Skanuj karty**.
-2. **Przygotuj talię.** Przyciskiem ustawień przy nazwie otwórz **Ustawienia talii** i wybierz domyślny rodzaj nowych kart. W **Utwory → Importuj** wczytaj JSON/CSV, wybierz gotową talię albo skopiuj prompt do swojego AI i wczytaj przygotowany plik. Pojedyncze nagranie dodasz przez **Dodaj utwór**: wklej link Spotify, sprawdź odsłuch i proponowane dane. Sprawdź linki i lata przed drukiem.
+2. **Przygotuj talię.** Przyciskiem ustawień przy nazwie otwórz **Ustawienia talii** i wybierz domyślny rodzaj nowych kart. W **Utwory → Importuj** wczytaj JSON/CSV, wybierz gotową talię albo skopiuj prompt do swojego AI i wczytaj przygotowany plik. Pojedyncze nagranie dodasz przez **Dodaj utwór**: wyszukaj je w MusicBrainz, wybierz właściwą wersję i sprawdź uzupełnione dane oraz dostępny link Spotify. Link możesz też wkleić samodzielnie. Sprawdź linki i lata przed drukiem.
 3. **Wydrukuj karty.** Przejdź przez **Utwory → Wygląd → Druk** i wybierz **Pobierz / drukuj karty**. PDF mieści 12 kart 60 × 60 mm na A4. Drukuj dwustronnie w skali 100%, zgodnie z krawędzią obrotu pokazaną w oknie wydruku. Przed całą talią wykonaj próbę z **Próba wydruku i kalibracja**.
 4. **Wybierz miejsce odtwarzania.** Otwórz **Dźwięk** i wybierz jeden z wariantów opisanych poniżej.
 5. **Skanuj i słuchaj.** Zezwól na aparat, zeskanuj QR z karty i posłuchaj nagrania. Po odwróceniu wydrukowanej karty znajdziesz jej dane. Jeśli przeglądarka zablokuje automatyczny start, użyj przycisku odtwarzania.
@@ -80,9 +80,9 @@ Po skanie możesz zatrzymać lub wznowić utwór, przełączyć źródło dostę
 
 Dodawanie kart i odtwarzanie nie wymagają logowania do Spotify w Hiciarzu ani konfiguracji aplikacji deweloperskiej.
 
-1. Wybierz **Talie → Utwory → Dodaj utwór** i wklej link do konkretnego nagrania Spotify.
-2. Posłuchaj podglądu w pierwszym kroku i wybierz **Dalej: dane utworu**. Spotify dostarcza tytuł; Hiciarz dodatkowo sprawdza powiązanie linku w MusicBrainz. Jednoznaczne dopasowanie może uzupełnić wykonawcę i rok. W pozostałych przypadkach wybierz właściwe nagranie z propozycji albo wpisz dane samodzielnie.
-3. **Znajdź wykonawcę i rok w MusicBrainz** działa także na podstawie samego tytułu. Sprawdź wybraną wersję i datę; ręcznie wpisane dane pozostają edytowalne. Kroki są stale widoczne w nagłówku, a **Wstecz** i pozostałe akcje w stopce. Powrót do linku zachowuje wpisane dane.
+1. Wybierz **Talie → Utwory → Dodaj utwór**, wpisz tytuł i opcjonalnie wykonawcę, a następnie wyszukaj nagranie w MusicBrainz.
+2. Wybierz właściwą wersję z listy. Hiciarz uzupełni tytuł, wykonawcę i dostępny rok oraz sprawdzi linki Spotify powiązane z nagraniem. Jeśli MusicBrainz nie ma takiego linku, sprawdzi propozycje ListenBrainz. Przy kilku źródłach lub propozycji ListenBrainz wybierz link i sprawdź odsłuch. Gdy linku nadal brakuje, skorzystaj z wyszukiwania Spotify i wklej go samodzielnie; wybrane dane nagrania zostaną zachowane. Opcja **Mam link Spotify** pozwala też rozpocząć od gotowego linku.
+3. Posłuchaj podglądu, przejdź do **Dane utworu** i sprawdź wybraną wersję oraz datę. Brakujące informacje możesz wpisać lub wyszukać przez **Znajdź wykonawcę i rok w MusicBrainz**. Kroki są stale widoczne w nagłówku, a **Wstecz** i pozostałe akcje w stopce. Cofanie zachowuje wpisane dane.
 4. Zatwierdź kartę po sprawdzeniu danych.
 
 Podgląd Spotify może być niedostępny lub ograniczony do fragmentu. MusicBrainz dostarcza metadane, a nie audio; rok pochodzi z MusicBrainz, nie z publicznego podglądu Spotify, i może wymagać korekty. Sam zgodny tytuł nie potwierdza nagrania z linku. Brak odpowiedzi serwisu nie blokuje ręcznego dodania karty.

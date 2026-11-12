@@ -1,0 +1,23 @@
+{
+  "musicbrainzFirst.intro": "Find a recording in MusicBrainz to choose its artist and year. A title is enough; add the artist if the right version is missing.",
+  "musicbrainzFirst.optionalArtist": "Artist (optional)",
+  "musicbrainzFirst.search": "Search MusicBrainz",
+  "musicbrainzFirst.enterTitle": "Enter a recording title to start searching.",
+  "musicbrainzFirst.chooseRecording": "Choose the right recording. If the original version is missing, add the artist or refine the title.",
+  "musicbrainzFirst.noResults": "No recordings found. Check the title, add the artist, or paste a Spotify link below and enter the details manually.",
+  "musicbrainzFirst.findingSpotify": "Finding a Spotify link for the selected recording…",
+  "musicbrainzFirst.chooseSpotify": "This recording has several Spotify links. Preview them and select the right link.",
+  "musicbrainzFirst.linkFound": "Found a Spotify link attached to this recording in MusicBrainz. Check the preview and continue.",
+  "musicbrainzFirst.noSpotify": "The title, artist and available year have been kept. No Spotify link was found — find it on Spotify or paste it below.",
+  "musicbrainzFirst.linksUnavailable": "The selected recording details have been kept. Spotify links could not be loaded — paste a link below or try again.",
+  "musicbrainzFirst.suggestedSpotify": "Suggested Spotify link — check the preview before selecting it. It may lead to a different recording version.",
+  "musicbrainzFirst.musicbrainzLinks": "Links attached to the selected recording in MusicBrainz.",
+  "musicbrainzFirst.spotifyChoices": "Choose a Spotify link",
+  "musicbrainzFirst.spotifyOption": "Spotify link {{number}}",
+  "musicbrainzFirst.otherSpotify": "Other suggestions ({{count}})",
+  "musicbrainzFirst.listen": "Preview",
+  "musicbrainzFirst.previewCandidate": "Suggested track preview — select its link to use it on the card.",
+  "musicbrainzFirst.listenBrainzSource": "Suggestions: ListenBrainz",
+  "musicbrainzFirst.haveSpotifyLink": "I have a Spotify link / find on Spotify",
+  "musicbrainzFirst.selectedRecording": "Selected recording details"
+}

@@ -7,6 +7,10 @@ export type SpotifyTrackDetails = SpotifyTrackMetadata & {
   suggestions: RecordingSuggestion[];
   lookupError?: string;
 };
+export type RecordingSpotifyLinks = {
+  links: string[];
+  source: 'musicbrainz' | 'listenbrainz';
+};
 export type RecordingSuggestion = {
   id: string;
   title: string;
@@ -75,11 +79,12 @@ function object(value: unknown): Record<string, unknown> {
     : {};
 }
 
-async function requestJson(
+async function requestData(
   url: string,
-  service: 'Spotify' | 'MusicBrainz',
+  service: 'Spotify' | 'MusicBrainz' | 'ListenBrainz',
   signal?: AbortSignal,
   allowMissing = false,
+  body?: unknown,
 ) {
   checkAbort(signal);
   const controller = new AbortController();
@@ -94,7 +99,11 @@ async function requestJson(
     const response = await fetch(url, {
       signal: controller.signal,
       credentials: 'omit',
-      headers: { Accept: 'application/json' },
+      headers: {
+        Accept: 'application/json',
+        ...(body ? { 'Content-Type': 'application/json' } : {}),
+      },
+      ...(body ? { method: 'POST', body: JSON.stringify(body) } : {}),
     });
     checkAbort(signal);
     if (allowMissing && response.status === 404) return {};
@@ -114,7 +123,7 @@ async function requestJson(
     }
     const result: unknown = await response.json();
     checkAbort(signal);
-    return object(result);
+    return result;
   } catch (error) {
     checkAbort(signal);
     if (timedOut) throw new Error(t('trackMetadata.timeout', { service }));
@@ -125,6 +134,15 @@ async function requestJson(
     clearTimeout(timer);
     signal?.removeEventListener('abort', cancel);
   }
+}
+
+async function requestJson(
+  url: string,
+  service: 'Spotify' | 'MusicBrainz',
+  signal?: AbortSignal,
+  allowMissing = false,
+) {
+  return object(await requestData(url, service, signal, allowMissing));
 }
 
 function requestMusicBrainz(url: string, signal?: AbortSignal, allowMissing = false) {
@@ -255,6 +273,79 @@ export async function findRecordingSuggestions(
 
   const data = await requestMusicBrainz(url.href, signal);
   return recordingSuggestions(data);
+}
+
+/** Only recording-level track URLs can identify the selected recording on Spotify. */
+export async function loadRecordingSpotifyLinks(
+  id: string,
+  signal?: AbortSignal,
+): Promise<RecordingSpotifyLinks> {
+  checkAbort(signal);
+  if (typeof id !== 'string' || !recordingId.test(id.trim()))
+    throw new TypeError('Invalid MusicBrainz recording ID');
+  id = id.trim().toLowerCase();
+  const url = new URL(`https://musicbrainz.org/ws/2/recording/${id}`);
+  url.searchParams.set('inc', 'url-rels');
+  url.searchParams.set('fmt', 'json');
+  const links = new Set<string>();
+  try {
+    const data = await requestMusicBrainz(url.href, signal);
+    if (Array.isArray(data.relations)) {
+      for (const raw of data.relations) {
+        const relation = object(raw);
+        const resource = object(relation.url).resource;
+        if (
+          relation['target-type'] !== 'url' ||
+          typeof resource !== 'string' ||
+          (relation.ended !== undefined && relation.ended !== false)
+        )
+          continue;
+        try {
+          const target = new URL(resource);
+          if (
+            target.origin !== 'https://open.spotify.com' ||
+            target.username ||
+            target.password ||
+            !/^\/(?:intl-[a-z-]+\/)?track\/[a-z\d]{22}\/?$/i.test(target.pathname)
+          )
+            continue;
+          links.add(`https://open.spotify.com/track/${spotifyId(target.href)}`);
+        } catch {
+          // Other services and malformed resources are not Spotify track links.
+        }
+      }
+    }
+  } catch {
+    checkAbort(signal);
+    // Direct recording relationships are optional; Labs can suggest a mapping
+    // independently when the MusicBrainz lookup is unavailable or has no link.
+  }
+  if (links.size) return { links: [...links], source: 'musicbrainz' };
+  const data = await requestData(
+    'https://labs.api.listenbrainz.org/spotify-id-from-mbid/json',
+    'ListenBrainz',
+    signal,
+    false,
+    [{ recording_mbid: id }],
+  );
+  if (!Array.isArray(data))
+    throw new Error(t('trackMetadata.network', { service: 'ListenBrainz' }));
+  for (const raw of data) {
+    const mapping = object(raw);
+    if (
+      typeof mapping.recording_mbid !== 'string' ||
+      mapping.recording_mbid.toLowerCase() !== id ||
+      !Array.isArray(mapping.spotify_track_ids)
+    )
+      continue;
+    for (const track of mapping.spotify_track_ids) {
+      if (typeof track === 'string' && /^[a-z\d]{22}$/i.test(track))
+        links.add(`https://open.spotify.com/track/${spotifyId(track)}`);
+    }
+  }
+  // Labs derives candidate mappings from metadata; the UI must require review,
+  // unlike direct MusicBrainz recording URL relationships.
+  return { links: [...links], source: 'listenbrainz' };
 }
 
 function recordingSuggestions(data: Record<string, unknown>) {
