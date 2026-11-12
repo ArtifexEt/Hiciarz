@@ -1,3 +1,8 @@
 allowBuilds:
   esbuild: true
   core-js: false
+
+# Workbox's declared glob 11 range includes cancellation bypass and vulnerable
+# minimatch releases. Glob 14 keeps the APIs used by Workbox and brings minimatch 11.
+overrides:
+  workbox-build>glob: ^14.0.2
