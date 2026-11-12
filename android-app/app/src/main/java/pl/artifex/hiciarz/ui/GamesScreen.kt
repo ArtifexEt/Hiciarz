@@ -13,6 +13,7 @@ import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.platform.testTag
 import androidx.compose.ui.semantics.heading
 import androidx.compose.ui.semantics.semantics
+import androidx.compose.ui.semantics.stateDescription
 import androidx.compose.ui.unit.dp
 import pl.artifex.hiciarz.model.*
 
@@ -260,7 +261,10 @@ private fun BingoTicket(song: Song, question: QuestionType, revealed: Boolean, s
         QuestionType.BAND_OR_SOLO -> song.artist
         else -> song.year?.toString()
     }
-    FlippingTicket(cardKey = song.spotifyId to question, revealed = revealed) { answerVisible ->
+    FlippingTicket(cardKey = song.spotifyId to question, revealed = revealed,
+        modifier = Modifier.semantics(mergeDescendants = true) {
+            stateDescription = copy.t("Skórka: ${copy.skin(skin)}", "Skin: ${copy.skin(skin)}")
+        }) { answerVisible ->
         YearTicket(skin, if (answerVisible) answer.orEmpty() else "?",
             eyebrow = if (answerVisible) copy.t("Odpowiedź", "The answer") else "",
             title = when {

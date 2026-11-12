@@ -24,6 +24,8 @@ import androidx.compose.ui.graphics.StrokeCap
 import androidx.compose.ui.platform.LocalConfiguration
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.platform.testTag
+import androidx.compose.ui.semantics.semantics
+import androidx.compose.ui.semantics.stateDescription
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.Dp
@@ -107,7 +109,10 @@ internal fun ScannedTicket(song: Song, revealed: Boolean, skin: CardSkin, copy: 
         GameMode.GAME -> copy.t("Jaka to gra?", "Which game?")
         GameMode.MOVIE -> copy.t("Jaki to film?", "Which film?")
     }
-    FlippingTicket(cardKey = song.spotifyId, revealed = revealed && hasScannedAnswer(song)) { answerVisible ->
+    FlippingTicket(cardKey = song.spotifyId, revealed = revealed && hasScannedAnswer(song),
+        modifier = Modifier.semantics(mergeDescendants = true) {
+            stateDescription = copy.t("Skórka: ${copy.skin(skin)}", "Skin: ${copy.skin(skin)}")
+        }) { answerVisible ->
         YearTicket(
             skin = skin,
             year = when {
