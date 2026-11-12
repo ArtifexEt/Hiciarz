@@ -3,6 +3,7 @@ import { afterEach, describe, expect, it } from 'vitest';
 import SongForm, {
   draftForRecording,
   draftWithMetadata,
+  draftWithRecordingSpotifyLink,
   draftWithSpotifySource,
   songFromDraft,
   type SongDraft,
@@ -89,6 +90,46 @@ describe('Spotify card drafts', () => {
     expect(() => songFromDraft(undated, 'music')).toThrow();
   });
 
+  it('clears the previous playback source when explicitly choosing a different source recording', () => {
+    const next = draftForRecording(
+      draft,
+      {
+        id: 'different-recording',
+        title: 'Głucha noc',
+        artist: 'Peja/Slums Attack',
+        year: 2001,
+        disambiguation: '',
+      },
+      true,
+    );
+    expect(next).toMatchObject({
+      spotify: '',
+      title: 'Głucha noc',
+      artist: 'Peja/Slums Attack',
+      year: '2001',
+    });
+    const linked = draftWithRecordingSpotifyLink(next, draft.spotify, '');
+    expect(linked).toMatchObject({ spotify: draft.spotify, title: 'Głucha noc', year: '2001' });
+  });
+
+  it('fills an untouched blank playback source without losing the selected MusicBrainz metadata', () => {
+    const withoutSource = { ...draft, spotify: '', year: '' };
+    expect(draftWithRecordingSpotifyLink(withoutSource, draft.spotify, '')).toEqual({
+      ...withoutSource,
+      spotify: draft.spotify,
+    });
+    expect(
+      draftWithRecordingSpotifyLink(
+        draft,
+        'https://open.spotify.com/track/2kj7OFRtWj9bkm8jqnT2EY',
+        '',
+      ),
+    ).toBe(draft);
+    expect(draftWithRecordingSpotifyLink(withoutSource, draft.spotify, 'previous-source')).toBe(
+      withoutSource,
+    );
+  });
+
   it('fills untouched blank metadata without replacing existing manual fields', () => {
     const revisions = { title: 0, artist: 0, year: 0 };
     const manual = { ...draft, title: 'My edited title', artist: '', year: '' };
@@ -122,14 +163,24 @@ describe('Spotify card drafts', () => {
 });
 
 describe.each<Language>(['pl', 'en'])('Spotify song form in %s', (language) => {
-  it('starts a new card with only link entry and preview controls in the first step', () => {
+  it('starts with MusicBrainz search and keeps Spotify paste in a closed secondary disclosure', () => {
     setLanguage(language);
     const markup = renderToStaticMarkup(<SongForm onSave={noop} onClose={noop} />);
     expect(markup).toContain('name="spotify"');
+    expect(markup).toContain('name="recording-search-title"');
+    expect(markup).toContain('name="recording-search-artist"');
+    expect(markup).toContain(t('musicbrainzFirst.optionalArtist'));
+    expect(markup).toContain(t('musicbrainzFirst.search'));
+    expect(markup.indexOf('name="recording-search-title"')).toBeLessThan(
+      markup.indexOf('name="spotify"'),
+    );
+    expect(markup).toMatch(/<details class="song-spotify-finder song-spotify-entry">/);
+    expect(markup).toContain(t('musicbrainzFirst.haveSpotifyLink'));
+    expect(markup.match(/<form\b/g)).toHaveLength(1);
     expect(markup).toContain('https://open.spotify.com/search');
     expect(markup).not.toContain('name="youtube"');
     expect(markup).not.toContain('accounts.spotify.com');
-    expect(markup).not.toMatch(/(?:songForm|app|creator)\.[A-Za-z]/);
+    expect(markup).not.toMatch(/(?:songForm|app|creator|musicbrainzFirst)\.[A-Za-z]/);
     expect(markup).not.toContain('<iframe');
     for (const field of ['title', 'artist', 'year', 'theme', 'answer'])
       expect(markup).not.toContain(`name="${field}"`);

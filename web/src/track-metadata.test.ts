@@ -358,6 +358,315 @@ describe('MusicBrainz recording suggestions', () => {
   });
 });
 
+describe('MusicBrainz recording Spotify links', () => {
+  function relation(resource: unknown, targetType = 'url') {
+    return { 'target-type': targetType, url: { resource } };
+  }
+
+  it('looks up recording URL relationships and canonicalizes distinct track links in source order', async () => {
+    const secondTrack = '4uLU6hMCjMI75M1A2tKUQC';
+    fetchMock.mockResolvedValue(
+      json({
+        id: mbid,
+        relations: [
+          relation(`https://open.spotify.com/track/${trackId}?si=shared#fragment`),
+          relation(`https://open.spotify.com/intl-pl/track/${secondTrack}/?si=shared`),
+          relation(`https://open.spotify.com/track/${trackId}`),
+        ],
+      }),
+    );
+    await expect(metadata.loadRecordingSpotifyLinks(` ${mbid.toUpperCase()} `)).resolves.toEqual({
+      links: [
+        `https://open.spotify.com/track/${trackId}`,
+        `https://open.spotify.com/track/${secondTrack}`,
+      ],
+      source: 'musicbrainz',
+    });
+    expect(fetchMock).toHaveBeenCalledOnce();
+    const request = new URL(fetchMock.mock.calls[0][0]);
+    expect(request.origin + request.pathname).toBe(
+      `https://musicbrainz.org/ws/2/recording/${mbid}`,
+    );
+    expect(request.searchParams.get('inc')).toBe('url-rels');
+    expect(request.searchParams.get('fmt')).toBe('json');
+  });
+
+  it.each([{}, { relations: [] }, { relations: null }, { relations: {} }])(
+    'returns no links when the recording has no usable URL relationships: %j',
+    async (response) => {
+      fetchMock.mockResolvedValueOnce(json(response)).mockResolvedValueOnce(json([]));
+      await expect(metadata.loadRecordingSpotifyLinks(mbid)).resolves.toEqual({
+        links: [],
+        source: 'listenbrainz',
+      });
+      expect(fetchMock).toHaveBeenCalledTimes(2);
+    },
+  );
+
+  it('ignores unrelated, malformed and unsafe resources instead of following or returning them', async () => {
+    fetchMock.mockResolvedValue(
+      json({
+        relations: [
+          null,
+          {},
+          relation(`https://open.spotify.com/track/${trackId}`, 'recording'),
+          relation(`https://open.spotify.com/album/${trackId}`),
+          relation(`https://open.spotify.com/artist/${trackId}`),
+          relation(`https://open.spotify.com/episode/${trackId}`),
+          relation(`https://open.spotify.com/show/${trackId}`),
+          relation(`https://open.spotify.com/playlist/${trackId}`),
+          relation(`https://open.spotify.com.evil.example/track/${trackId}`),
+          relation(`https://open.spotify.com@evil.example/track/${trackId}`),
+          relation(`https://evil.example@open.spotify.com/track/${trackId}`),
+          relation(`https://user:password@open.spotify.com/track/${trackId}`),
+          relation(`http://open.spotify.com/track/${trackId}`),
+          relation(`https://open.spotify.com:444/track/${trackId}`),
+          relation(`https://open.spotify.com/prefix/track/${trackId}`),
+          relation(`https://open.spotify.com/track/${trackId}/extra`),
+          relation(`https://open.spotify.com/track/${trackId.slice(1)}`),
+          relation(`spotify:track:${trackId}`),
+          relation(trackId),
+          relation('javascript:alert(1)'),
+          relation(null),
+          relation({ resource: `https://open.spotify.com/track/${trackId}` }),
+          relation(`https://open.spotify.com/track/${trackId}`),
+        ],
+      }),
+    );
+    await expect(metadata.loadRecordingSpotifyLinks(mbid)).resolves.toEqual({
+      links: [`https://open.spotify.com/track/${trackId}`],
+      source: 'musicbrainz',
+    });
+    expect(fetchMock).toHaveBeenCalledOnce();
+  });
+
+  it.each([
+    '',
+    'not-an-mbid',
+    '026fa041-3917-4c73-9079-ed16e36f20f8/extra',
+    `https://musicbrainz.org/recording/${mbid}`,
+  ])('rejects invalid recording IDs before HTTP: %s', async (id) => {
+    await expect(metadata.loadRecordingSpotifyLinks(id)).rejects.toThrow(TypeError);
+    expect(fetchMock).not.toHaveBeenCalled();
+  });
+
+  it('shares spacing and cancellation with recording searches without sending a stale lookup', async () => {
+    fetchMock.mockImplementation(async (raw: string) =>
+      json(
+        new URL(raw).searchParams.has('query')
+          ? { recordings: [] }
+          : {
+              relations: [relation(`https://open.spotify.com/track/${trackId}`)],
+            },
+      ),
+    );
+    await metadata.findRecordingSuggestions('First');
+    const controller = new AbortController();
+    const stale = metadata.loadRecordingSpotifyLinks(mbid, controller.signal);
+    const rejected = expect(stale).rejects.toMatchObject({ name: 'AbortError' });
+    controller.abort();
+    await rejected;
+    const current = metadata.loadRecordingSpotifyLinks(mbid);
+    await vi.advanceTimersByTimeAsync(999);
+    expect(fetchMock).toHaveBeenCalledTimes(1);
+    await vi.advanceTimersByTimeAsync(1);
+    await expect(current).resolves.toEqual({
+      links: [`https://open.spotify.com/track/${trackId}`],
+      source: 'musicbrainz',
+    });
+    expect(fetchMock).toHaveBeenCalledTimes(2);
+  });
+
+  it('cancels an in-flight lookup and preserves AbortError', async () => {
+    const controller = new AbortController();
+    fetchMock.mockImplementation(
+      (_url, { signal }: RequestInit) =>
+        new Promise((_resolve, reject) => {
+          signal?.addEventListener('abort', () =>
+            reject(new DOMException('Aborted', 'AbortError')),
+          );
+        }),
+    );
+    const request = metadata.loadRecordingSpotifyLinks(mbid, controller.signal);
+    const rejected = expect(request).rejects.toMatchObject({ name: 'AbortError' });
+    await vi.advanceTimersByTimeAsync(0);
+    controller.abort();
+    await rejected;
+    expect(fetchMock).toHaveBeenCalledOnce();
+    await expect(
+      metadata.loadRecordingSpotifyLinks(mbid, AbortSignal.abort()),
+    ).rejects.toMatchObject({ name: 'AbortError' });
+    expect(fetchMock).toHaveBeenCalledOnce();
+  });
+
+  it('honors the shared rate-limit window and bounded busy retry', async () => {
+    fetchMock.mockResolvedValueOnce(json({}, 429, { 'Retry-After': '10' }));
+    await expect(metadata.findRecordingSuggestions('Dancing Queen')).rejects.toThrow(
+      'MusicBrainz ogranicza',
+    );
+    expect(fetchMock).toHaveBeenCalledOnce();
+    fetchMock.mockResolvedValueOnce(json([]));
+    await expect(metadata.loadRecordingSpotifyLinks(mbid)).resolves.toEqual({
+      links: [],
+      source: 'listenbrainz',
+    });
+    expect(fetchMock).toHaveBeenCalledTimes(2);
+    expect(new URL(fetchMock.mock.calls[1][0]).hostname).toBe('labs.api.listenbrainz.org');
+    await vi.advanceTimersByTimeAsync(10000);
+    fetchMock
+      .mockResolvedValueOnce(json({}, 503, { 'Retry-After': '2' }))
+      .mockResolvedValueOnce(
+        json({ relations: [relation(`https://open.spotify.com/track/${trackId}`)] }),
+      );
+    const request = metadata.loadRecordingSpotifyLinks(mbid);
+    await vi.advanceTimersByTimeAsync(1999);
+    expect(fetchMock).toHaveBeenCalledTimes(3);
+    await vi.advanceTimersByTimeAsync(1);
+    await expect(request).resolves.toEqual({
+      links: [`https://open.spotify.com/track/${trackId}`],
+      source: 'musicbrainz',
+    });
+    expect(fetchMock).toHaveBeenCalledTimes(4);
+  });
+
+  it('falls back to one credential-free Labs POST and accepts IDs only for the requested recording', async () => {
+    const secondTrack = '4uLU6hMCjMI75M1A2tKUQC';
+    fetchMock.mockResolvedValueOnce(json({ relations: [] })).mockResolvedValueOnce(
+      json([
+        {
+          recording_mbid: '126fa041-3917-4c73-9079-ed16e36f20f8',
+          spotify_track_ids: [secondTrack],
+        },
+        null,
+        {
+          recording_mbid: mbid.toUpperCase(),
+          spotify_track_ids: [
+            trackId,
+            trackId,
+            'short',
+            null,
+            42,
+            `https://open.spotify.com/track/${secondTrack}`,
+            `spotify:track:${secondTrack}`,
+          ],
+        },
+        { recording_mbid: mbid, spotify_track_ids: [secondTrack] },
+      ]),
+    );
+    await expect(metadata.loadRecordingSpotifyLinks(mbid)).resolves.toEqual({
+      links: [
+        `https://open.spotify.com/track/${trackId}`,
+        `https://open.spotify.com/track/${secondTrack}`,
+      ],
+      source: 'listenbrainz',
+    });
+    expect(fetchMock).toHaveBeenCalledTimes(2);
+    const [raw, options] = fetchMock.mock.calls[1];
+    expect(raw).toBe('https://labs.api.listenbrainz.org/spotify-id-from-mbid/json');
+    expect(options.method).toBe('POST');
+    expect(JSON.parse(options.body)).toEqual([{ recording_mbid: mbid }]);
+    expect(options.credentials).toBe('omit');
+    expect(options.headers['Content-Type']).toBe('application/json');
+    expect(options.headers).not.toHaveProperty('Authorization');
+  });
+
+  it('uses Labs independently after a failed optional MusicBrainz lookup', async () => {
+    fetchMock
+      .mockRejectedValueOnce(new TypeError('Failed to fetch'))
+      .mockResolvedValueOnce(json([{ recording_mbid: mbid, spotify_track_ids: [trackId] }]));
+    await expect(metadata.loadRecordingSpotifyLinks(mbid)).resolves.toEqual({
+      links: [`https://open.spotify.com/track/${trackId}`],
+      source: 'listenbrainz',
+    });
+    expect(fetchMock).toHaveBeenCalledTimes(2);
+  });
+
+  it.each([
+    {
+      mapping: [
+        { recording_mbid: '126fa041-3917-4c73-9079-ed16e36f20f8', spotify_track_ids: [trackId] },
+      ],
+    },
+    { mapping: [{ recording_mbid: mbid, spotify_track_ids: null }] },
+    {
+      mapping: [{ recording_mbid: mbid, spotify_track_ids: ['short', '', null, { id: trackId }] }],
+    },
+  ])('does not turn mismatched or malformed mapping fields into links: %j', async ({ mapping }) => {
+    fetchMock.mockResolvedValueOnce(json({})).mockResolvedValueOnce(json(mapping));
+    await expect(metadata.loadRecordingSpotifyLinks(mbid)).resolves.toEqual({
+      links: [],
+      source: 'listenbrainz',
+    });
+  });
+
+  it('does not treat ended recording URLs as current links or suppress Labs fallback', async () => {
+    fetchMock
+      .mockResolvedValueOnce(
+        json({
+          relations: [{ ...relation(`https://open.spotify.com/track/${trackId}`), ended: true }],
+        }),
+      )
+      .mockResolvedValueOnce(json([]));
+    await expect(metadata.loadRecordingSpotifyLinks(mbid)).resolves.toEqual({
+      links: [],
+      source: 'listenbrainz',
+    });
+    expect(fetchMock).toHaveBeenCalledTimes(2);
+  });
+
+  it.each([{}, null, 'unexpected response'])(
+    'rejects an invalid Labs response instead of inventing links: %j',
+    async (mapping) => {
+      fetchMock.mockResolvedValueOnce(json({})).mockResolvedValueOnce(json(mapping));
+      await expect(metadata.loadRecordingSpotifyLinks(mbid)).rejects.toThrow('ListenBrainz');
+      expect(fetchMock).toHaveBeenCalledTimes(2);
+    },
+  );
+
+  it('does not retry a failing Labs service or expose a MusicBrainz fallback as a verified link', async () => {
+    fetchMock.mockResolvedValueOnce(json({})).mockResolvedValueOnce(json({}, 503));
+    await expect(metadata.loadRecordingSpotifyLinks(mbid)).rejects.toThrow(
+      'ListenBrainz nie udostępnił',
+    );
+    await vi.advanceTimersByTimeAsync(5000);
+    expect(fetchMock).toHaveBeenCalledTimes(2);
+  });
+
+  it('aborts a pending Labs fallback immediately', async () => {
+    const controller = new AbortController();
+    fetchMock.mockResolvedValueOnce(json({})).mockImplementationOnce(
+      (_url, { signal }: RequestInit) =>
+        new Promise((_resolve, reject) => {
+          signal?.addEventListener('abort', () =>
+            reject(new DOMException('Aborted', 'AbortError')),
+          );
+        }),
+    );
+    const request = metadata.loadRecordingSpotifyLinks(mbid, controller.signal);
+    const rejected = expect(request).rejects.toMatchObject({ name: 'AbortError' });
+    await vi.advanceTimersByTimeAsync(0);
+    expect(fetchMock).toHaveBeenCalledTimes(2);
+    controller.abort();
+    await rejected;
+  });
+
+  it('times out a pending Labs fallback so manual linking remains available', async () => {
+    fetchMock.mockResolvedValueOnce(json({})).mockImplementationOnce(
+      (_url, { signal }: RequestInit) =>
+        new Promise((_resolve, reject) => {
+          signal?.addEventListener('abort', () =>
+            reject(new DOMException('Aborted', 'AbortError')),
+          );
+        }),
+    );
+    const request = metadata.loadRecordingSpotifyLinks(mbid);
+    const rejected = expect(request).rejects.toThrow('ListenBrainz nie odpowiedział na czas');
+    await vi.advanceTimersByTimeAsync(12000);
+    await rejected;
+    expect(fetchMock).toHaveBeenCalledTimes(2);
+  });
+});
+
 describe('Spotify-linked recording enrichment', () => {
   it('fills only a recording explicitly linked to the canonical Spotify URL', async () => {
     fetchMock

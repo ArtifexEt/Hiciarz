@@ -320,7 +320,7 @@
   "app.yourDecksAreSavedInThisBrowser": "Your decks are saved in this browser. Download a project file to back them up or move them to another device.",
   "app.fromPlaylistToAGreatEvening": "From playlist to a great evening",
   "app.prepareADeck": "Prepare a deck",
-  "app.addTracksManuallyFromAFileOr": "Paste a Spotify link, check the recording and look up its year in MusicBrainz, or enter the details yourself. Choose a theme and download the PDF.",
+  "app.addTracksManuallyFromAFileOr": "Search MusicBrainz and choose a recording to fill in its details and any available Spotify link. You can also paste a link yourself. Choose a theme and download the PDF.",
   "app.printAndCutOut": "Print and cut out",
   "app.a4DoubleSidedPrinting100ScalePrint": "A4, double-sided printing, 100% scale. Print a calibration sheet first and choose the correct flip edge.",
   "app.connectAndScan": "Connect and scan",

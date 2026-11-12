@@ -1,0 +1,23 @@
+{
+  "musicbrainzFirst.intro": "Znajdź nagranie w MusicBrainz, aby wybrać wykonawcę i rok. Wystarczy tytuł; dodaj wykonawcę, jeśli brakuje właściwej wersji.",
+  "musicbrainzFirst.optionalArtist": "Wykonawca (opcjonalnie)",
+  "musicbrainzFirst.search": "Szukaj w MusicBrainz",
+  "musicbrainzFirst.enterTitle": "Wpisz tytuł nagrania, aby rozpocząć wyszukiwanie.",
+  "musicbrainzFirst.chooseRecording": "Wybierz właściwe nagranie. Jeśli nie ma oryginalnej wersji, dodaj wykonawcę lub doprecyzuj tytuł.",
+  "musicbrainzFirst.noResults": "Nie znaleziono nagrań. Popraw tytuł, dodaj wykonawcę lub wklej link Spotify poniżej i uzupełnij dane ręcznie.",
+  "musicbrainzFirst.findingSpotify": "Szukam linku Spotify do wybranego nagrania…",
+  "musicbrainzFirst.chooseSpotify": "To nagranie ma kilka linków Spotify. Sprawdź odsłuch i wybierz właściwy link.",
+  "musicbrainzFirst.linkFound": "Znaleziono link Spotify przypisany do tego nagrania w MusicBrainz. Sprawdź odsłuch i przejdź dalej.",
+  "musicbrainzFirst.noSpotify": "Zachowano tytuł, wykonawcę i dostępny rok. Nie znaleziono linku Spotify — znajdź go w Spotify lub wklej poniżej.",
+  "musicbrainzFirst.linksUnavailable": "Dane wybranego nagrania zostały zachowane. Nie udało się pobrać linków Spotify — wklej link poniżej lub spróbuj ponownie.",
+  "musicbrainzFirst.suggestedSpotify": "Proponowany link Spotify — sprawdź odsłuch, zanim go wybierzesz. Może prowadzić do innej wersji nagrania.",
+  "musicbrainzFirst.musicbrainzLinks": "Linki przypisane do wybranego nagrania w MusicBrainz.",
+  "musicbrainzFirst.spotifyChoices": "Wybierz link Spotify",
+  "musicbrainzFirst.spotifyOption": "Link Spotify {{number}}",
+  "musicbrainzFirst.otherSpotify": "Inne propozycje ({{count}})",
+  "musicbrainzFirst.listen": "Odsłuchaj",
+  "musicbrainzFirst.previewCandidate": "Odsłuch propozycji — zaznacz jej link, aby użyć go na karcie.",
+  "musicbrainzFirst.listenBrainzSource": "Propozycje: ListenBrainz",
+  "musicbrainzFirst.haveSpotifyLink": "Mam link Spotify / znajdź w Spotify",
+  "musicbrainzFirst.selectedRecording": "Dane wybranego nagrania"
+}

@@ -17,6 +17,7 @@ import CardThemeSelect from './CardThemeSelect';
 import { spotifyId, validateSong, type GameMode, type Song, type Theme } from './model';
 import {
   findRecordingSuggestions,
+  loadRecordingSpotifyLinks,
   loadSpotifyTrackDetails,
   spotifySearchUrl,
   type RecordingSuggestion,
@@ -64,13 +65,27 @@ export function draftWithSpotifySource(
   return next;
 }
 
-export function draftForRecording(draft: SongDraft, recording: RecordingSuggestion): SongDraft {
+export function draftForRecording(
+  draft: SongDraft,
+  recording: RecordingSuggestion,
+  clearSource = false,
+): SongDraft {
   return {
     ...draft,
+    spotify: clearSource ? '' : draft.spotify,
     title: recording.title,
     artist: recording.artist,
     year: recording.year ? String(recording.year) : '',
   };
+}
+
+/** A late recording lookup must never replace a pasted or previously selected source. */
+export function draftWithRecordingSpotifyLink(
+  draft: SongDraft,
+  spotify: string,
+  sourceAtStart: string,
+): SongDraft {
+  return draft.spotify === sourceAtStart && !draft.spotify.trim() ? { ...draft, spotify } : draft;
 }
 
 /** New cards use Spotify; editing keeps any sources already stored in an older card. */
@@ -111,6 +126,7 @@ export default function SongForm({
   const formId = useId();
   const pageRef = useRef<HTMLFormElement>(null);
   const sourceRef = useRef<HTMLInputElement>(null);
+  const spotifyRef = useRef<HTMLInputElement>(null);
   const [step, setStep] = useState<'source' | 'details'>(song ? 'details' : 'source');
   const [gameMode, setGameMode] = useState<GameMode>(song ? song.gameMode || 'music' : defaultMode);
   const [draft, setDraft] = useState<SongDraft>({
@@ -125,9 +141,20 @@ export default function SongForm({
   draftRef.current = draft;
   const revisions = useRef({ title: 0, artist: 0, year: 0 });
   const suggestedFields = useRef<SuggestedFields>({});
+  const recordingChoice = useRef('');
   const operation = useRef<{ revision: number; controller?: AbortController }>({ revision: 0 });
   const [search, setSearch] = useState('');
-  const [busy, setBusy] = useState<'title' | 'year' | null>(null);
+  const [recordingSearch, setRecordingSearch] = useState({
+    title: song?.title || '',
+    artist: song?.artist || '',
+  });
+  const [spotifyEntryOpen, setSpotifyEntryOpen] = useState(false);
+  const [recordingLinks, setRecordingLinks] = useState<string[]>([]);
+  const [previewTrackId, setPreviewTrackId] = useState('');
+  const [recordingLinkSource, setRecordingLinkSource] = useState<'musicbrainz' | 'listenbrainz'>(
+    'musicbrainz',
+  );
+  const [busy, setBusy] = useState<'title' | 'year' | 'search' | 'links' | null>(null);
   const [suggestions, setSuggestions] = useState<RecordingSuggestion[]>([]);
   const [selectedRecording, setSelectedRecording] = useState('');
   const [lookupMessage, setLookupMessage] = useState('');
@@ -140,6 +167,15 @@ export default function SongForm({
   }
 
   useEffect(() => () => invalidate(), []);
+  useEffect(() => {
+    if (
+      step === 'source' &&
+      spotifyEntryOpen &&
+      error &&
+      error !== t('musicbrainzFirst.enterTitle')
+    )
+      spotifyRef.current?.focus({ preventScroll: true });
+  }, [step, spotifyEntryOpen, error]);
   useEffect(() => {
     const form = pageRef.current;
     if (!form) return;
@@ -166,12 +202,15 @@ export default function SongForm({
     if (field === 'spotify') {
       invalidate();
       setBusy(null);
-      setSuggestions([]);
-      setSelectedRecording('');
       setLookupMessage('');
       setLookupError('');
-      next = draftWithSpotifySource(draftRef.current, value, suggestedFields.current);
-      suggestedFields.current = {};
+      setPreviewTrackId('');
+      if (!recordingChoice.current) {
+        setSuggestions([]);
+        setSelectedRecording('');
+        next = draftWithSpotifySource(draftRef.current, value, suggestedFields.current);
+        suggestedFields.current = {};
+      }
     } else if (field === 'title' || field === 'artist' || field === 'year') {
       revisions.current[field]++;
       setSelectedRecording('');
@@ -183,6 +222,17 @@ export default function SongForm({
     setError('');
   }
 
+  function updateRecordingSearch(field: 'title' | 'artist', value: string) {
+    invalidate();
+    setBusy(null);
+    setRecordingSearch((previous) => ({ ...previous, [field]: value }));
+    setSuggestions([]);
+    setRecordingLinks([]);
+    setLookupMessage('');
+    setLookupError('');
+    setError('');
+  }
+
   let trackId = '';
   try {
     if (draft.spotify.trim()) trackId = spotifyId(draft.spotify);
@@ -190,7 +240,7 @@ export default function SongForm({
     // Keep the input editable. Validation errors appear when loading or saving.
   }
 
-  function startOperation(kind: 'title' | 'year') {
+  function startOperation(kind: 'title' | 'year' | 'search' | 'links') {
     invalidate();
     const revision = operation.current.revision;
     const controller = new AbortController();
@@ -255,7 +305,8 @@ export default function SongForm({
     const raw = draftRef.current.spotify.trim();
     if (!raw && !song?.sources.youtube) {
       setError(t('songForm.spotifyRequired'));
-      sourceRef.current?.focus();
+      setSpotifyEntryOpen(true);
+      spotifyRef.current?.focus();
       return;
     }
     if (raw) {
@@ -263,7 +314,8 @@ export default function SongForm({
         spotifyId(raw);
       } catch {
         setError(t('songForm.useTrackLink'));
-        sourceRef.current?.focus();
+        setSpotifyEntryOpen(true);
+        spotifyRef.current?.focus();
         return;
       }
     }
@@ -273,7 +325,11 @@ export default function SongForm({
     setLookupError('');
     setLookupMessage('');
     setStep('details');
-    if (raw && recordingFields.some((field) => !draftRef.current[field].trim()))
+    if (
+      raw &&
+      !recordingChoice.current &&
+      recordingFields.some((field) => !draftRef.current[field].trim())
+    )
       void loadMetadata(raw);
   }
 
@@ -316,22 +372,185 @@ export default function SongForm({
     }
   }
 
-  function chooseRecording(recording: RecordingSuggestion) {
-    const next = draftForRecording(draftRef.current, recording);
-    suggestedFields.current = { title: next.title, artist: next.artist, year: next.year };
+  async function findSourceRecordings() {
+    if (!recordingSearch.title.trim()) {
+      setError(t('musicbrainzFirst.enterTitle'));
+      sourceRef.current?.focus();
+      return;
+    }
+    const { controller, current } = startOperation('search');
+    setError('');
+    setSuggestions([]);
+    setRecordingLinks([]);
+    try {
+      const found = await findRecordingSuggestions(
+        recordingSearch.title,
+        recordingSearch.artist,
+        controller.signal,
+      );
+      if (!current()) return;
+      setSuggestions(found);
+      setLookupMessage(
+        found.length ? 'musicbrainzFirst.chooseRecording' : 'musicbrainzFirst.noResults',
+      );
+      if (!found.length) setSpotifyEntryOpen(true);
+    } catch (error) {
+      if (current()) {
+        setLookupError((error as Error).message);
+        setSpotifyEntryOpen(true);
+      }
+    } finally {
+      if (current()) setBusy(null);
+    }
+  }
+
+  async function chooseRecording(recording: RecordingSuggestion) {
+    invalidate();
+    setBusy(null);
+    const next = draftForRecording(
+      draftRef.current,
+      recording,
+      step === 'source' && recordingChoice.current !== recording.id,
+    );
+    recordingChoice.current = recording.id;
+    suggestedFields.current = {};
     revisions.current.title++;
     revisions.current.artist++;
     revisions.current.year++;
     draftRef.current = next;
     setDraft(next);
     setSelectedRecording(recording.id);
+    if (step === 'source') setRecordingSearch({ title: recording.title, artist: recording.artist });
     setLookupMessage(
       recording.year ? 'metadataAutofill.selected' : 'metadataAutofill.selectedNoYear',
     );
     setError('');
+    setLookupError('');
+    if (step !== 'source') return;
+    setRecordingLinks([]);
+    setPreviewTrackId('');
+    const sourceAtStart = next.spotify;
+    const { controller, current } = startOperation('links');
+    try {
+      const { links, source } = await loadRecordingSpotifyLinks(recording.id, controller.signal);
+      if (!current()) return;
+      setRecordingLinks(links);
+      setRecordingLinkSource(source);
+      setPreviewTrackId(links[0] ? spotifyId(links[0]) : '');
+      if (links.length === 1 && source === 'musicbrainz') {
+        const before = draftRef.current;
+        const withLink = draftWithRecordingSpotifyLink(before, links[0], sourceAtStart);
+        if (withLink !== before) {
+          draftRef.current = withLink;
+          setDraft(withLink);
+        }
+      }
+      setLookupMessage(
+        links.length && source === 'listenbrainz'
+          ? 'musicbrainzFirst.suggestedSpotify'
+          : links.length > 1
+            ? 'musicbrainzFirst.chooseSpotify'
+            : links.length
+              ? 'musicbrainzFirst.linkFound'
+              : 'musicbrainzFirst.noSpotify',
+      );
+      if (!links.length) setSpotifyEntryOpen(true);
+    } catch (error) {
+      if (current()) {
+        setLookupError((error as Error).message);
+        setLookupMessage('musicbrainzFirst.linksUnavailable');
+        setSpotifyEntryOpen(true);
+      }
+    } finally {
+      if (current()) setBusy(null);
+    }
   }
 
-  const searchQuery = search.trim() || `${draft.artist} ${draft.title}`.trim();
+  const searchQuery =
+    search.trim() ||
+    `${recordingSearch.artist} ${recordingSearch.title}`.trim() ||
+    `${draft.artist} ${draft.title}`.trim();
+  const sourcePreviewId = previewTrackId || trackId;
+  const spotifyChoice = (link: string, index: number) => (
+    <div className="song-spotify-choice" key={link}>
+      <label>
+        <input
+          type="radio"
+          name="recording-spotify-link"
+          value={link}
+          checked={draft.spotify === link}
+          onChange={() => {
+            update('spotify', link);
+            setPreviewTrackId(spotifyId(link));
+          }}
+        />
+        <span>
+          <strong>{t('musicbrainzFirst.spotifyOption', { number: index + 1 })}</strong>
+          <small>{link}</small>
+        </span>
+      </label>
+      <button
+        className="text-button"
+        type="button"
+        aria-pressed={sourcePreviewId === spotifyId(link)}
+        onClick={() => setPreviewTrackId(spotifyId(link))}
+      >
+        {t('musicbrainzFirst.listen')}
+      </button>
+    </div>
+  );
+  const lookupFeedback = (
+    <div className="song-lookup-feedback" aria-live="polite" aria-atomic="true">
+      {(busy === 'year' || busy === 'search' || busy === 'links') && (
+        <p className="song-title-loading hint" role="status">
+          <LoaderCircle size={15} className="spin" aria-hidden="true" />
+          {t(busy === 'links' ? 'musicbrainzFirst.findingSpotify' : 'songForm.lookingUp')}
+        </p>
+      )}
+      {lookupMessage && (
+        <p className="hint" role="status">
+          {t(lookupMessage)}
+        </p>
+      )}
+      {lookupError && (
+        <p className="error" role="alert">
+          {displayTranslation(lookupError)}
+        </p>
+      )}
+    </div>
+  );
+  const recordingResults = suggestions.length > 0 && (
+    <fieldset className="song-recording-results">
+      <legend>{t('songForm.chooseRecording')}</legend>
+      <div className="song-recording-list">
+        {suggestions.map((recording) => (
+          <button
+            key={recording.id}
+            type="button"
+            className="song-recording-choice"
+            aria-pressed={selectedRecording === recording.id}
+            onClick={() => void chooseRecording(recording)}
+          >
+            <span className="song-recording-year">{recording.year || t('songForm.noDate')}</span>
+            <span className="song-recording-description">
+              <strong>{recording.title}</strong>
+              <span>{recording.artist}</span>
+              {recording.disambiguation && <small>{recording.disambiguation}</small>}
+            </span>
+            {selectedRecording === recording.id && <Check size={18} aria-hidden="true" />}
+          </button>
+        ))}
+      </div>
+      <a
+        className="text-button"
+        href="https://musicbrainz.org/"
+        target="_blank"
+        rel="noopener noreferrer"
+      >
+        {t('songForm.dataSource')} <ArrowUpRight size={14} aria-hidden="true" />
+      </a>
+    </fieldset>
+  );
   return (
     <Modal
       title={
@@ -366,11 +585,22 @@ export default function SongForm({
             {step === 'details' && <ArrowLeft size={17} aria-hidden="true" />}
             {t(step === 'source' ? 'app.cancel' : 'songForm.back')}
           </button>
-          <button className="primary" type="submit" form={formId}>
+          <button
+            className="primary"
+            type="submit"
+            form={formId}
+            disabled={step === 'source' && busy !== null}
+          >
             {step === 'source' ? (
-              <>
-                {t('songForm.next')} <ArrowRight size={17} aria-hidden="true" />
-              </>
+              recordingChoice.current || draft.spotify.trim() || song?.sources.youtube ? (
+                <>
+                  {t('songForm.next')} <ArrowRight size={17} aria-hidden="true" />
+                </>
+              ) : (
+                <>
+                  <Search size={17} aria-hidden="true" /> {t('musicbrainzFirst.search')}
+                </>
+              )
             ) : (
               <>
                 <Check size={17} aria-hidden="true" />{' '}
@@ -391,7 +621,13 @@ export default function SongForm({
           onSubmit={(event) => {
             event.preventDefault();
             if (step === 'source') {
-              advance();
+              if (
+                recordingChoice.current ||
+                song?.sources.youtube ||
+                draftRef.current.spotify.trim()
+              )
+                advance();
+              else void findSourceRecordings();
               return;
             }
             try {
@@ -407,28 +643,133 @@ export default function SongForm({
         >
           {step === 'source' ? (
             <>
-              <div className="song-spotify-link">
-                <label htmlFor={spotifyInputId}>{t('songForm.spotifyLink')}</label>
-                <div className="song-source-entry">
-                  <input
-                    id={spotifyInputId}
-                    ref={sourceRef}
-                    aria-invalid={Boolean(error) || undefined}
-                    aria-describedby={error ? `${spotifyInputId}-error` : undefined}
-                    name="spotify"
-                    inputMode="url"
-                    autoFocus={!song}
-                    required={!song?.sources.youtube}
-                    value={draft.spotify}
-                    onChange={(event) => update('spotify', event.target.value)}
-                    placeholder="https://open.spotify.com/track/…"
-                    autoComplete="off"
-                    spellCheck={false}
-                  />
+              <section className="song-recording-search" aria-label={t('musicbrainzFirst.search')}>
+                <p className="hint">{t('musicbrainzFirst.intro')}</p>
+                <div className="form-grid">
+                  <label>
+                    {t('creator.recordingTitle')}
+                    <input
+                      ref={sourceRef}
+                      name="recording-search-title"
+                      autoFocus={!song}
+                      type="search"
+                      maxLength={200}
+                      value={recordingSearch.title}
+                      onChange={(event) => updateRecordingSearch('title', event.target.value)}
+                      placeholder={t('app.forExampleDancingQueen')}
+                      onKeyDown={(event) => {
+                        if (event.key === 'Enter') {
+                          event.preventDefault();
+                          void findSourceRecordings();
+                        }
+                      }}
+                    />
+                  </label>
+                  <label>
+                    {t('musicbrainzFirst.optionalArtist')}
+                    <input
+                      name="recording-search-artist"
+                      type="search"
+                      maxLength={200}
+                      value={recordingSearch.artist}
+                      onChange={(event) => updateRecordingSearch('artist', event.target.value)}
+                      placeholder="ABBA"
+                      onKeyDown={(event) => {
+                        if (event.key === 'Enter') {
+                          event.preventDefault();
+                          void findSourceRecordings();
+                        }
+                      }}
+                    />
+                  </label>
                 </div>
-              </div>
-              <details className="song-spotify-finder">
-                <summary>{t('songForm.needLink')}</summary>
+                <button
+                  type="button"
+                  className="secondary"
+                  disabled={busy !== null || !recordingSearch.title.trim()}
+                  onClick={() => void findSourceRecordings()}
+                >
+                  <Search size={17} aria-hidden="true" /> {t('musicbrainzFirst.search')}
+                </button>
+              </section>
+              {recordingChoice.current && (
+                <div className="song-selected-recording">
+                  <span>{t('musicbrainzFirst.selectedRecording')}</span>
+                  <strong>{draft.title}</strong>
+                  <span>
+                    {draft.artist} · {draft.year || t('songForm.noDate')}
+                  </span>
+                </div>
+              )}
+              {lookupFeedback}
+              {recordingResults}
+              {recordingLinks.length > 0 && (
+                <fieldset className="song-spotify-choices">
+                  <legend>{t('musicbrainzFirst.spotifyChoices')}</legend>
+                  <p className="hint">
+                    {t(
+                      recordingLinkSource === 'listenbrainz'
+                        ? 'musicbrainzFirst.suggestedSpotify'
+                        : 'musicbrainzFirst.musicbrainzLinks',
+                    )}
+                  </p>
+                  {spotifyChoice(recordingLinks[0], 0)}
+                  {recordingLinks.length > 1 && (
+                    <details className="song-other-spotify-links">
+                      <summary>
+                        {t('musicbrainzFirst.otherSpotify', { count: recordingLinks.length - 1 })}
+                      </summary>
+                      <div className="song-other-spotify-list">
+                        {recordingLinks
+                          .slice(1)
+                          .map((link, index) => spotifyChoice(link, index + 1))}
+                      </div>
+                    </details>
+                  )}
+                  {recordingLinkSource === 'listenbrainz' && (
+                    <a
+                      className="text-button"
+                      href="https://listenbrainz.org/"
+                      target="_blank"
+                      rel="noopener noreferrer"
+                    >
+                      {t('musicbrainzFirst.listenBrainzSource')}{' '}
+                      <ArrowUpRight size={14} aria-hidden="true" />
+                    </a>
+                  )}
+                </fieldset>
+              )}
+              <details
+                className="song-spotify-finder song-spotify-entry"
+                open={spotifyEntryOpen}
+                onToggle={(event) => setSpotifyEntryOpen(event.currentTarget.open)}
+              >
+                <summary>{t('musicbrainzFirst.haveSpotifyLink')}</summary>
+                <div className="song-spotify-link">
+                  <label htmlFor={spotifyInputId}>{t('songForm.spotifyLink')}</label>
+                  <div className="song-source-entry">
+                    <input
+                      id={spotifyInputId}
+                      ref={spotifyRef}
+                      aria-invalid={Boolean(error) || undefined}
+                      aria-describedby={error ? `${spotifyInputId}-error` : undefined}
+                      name="spotify"
+                      inputMode="url"
+                      required={!song?.sources.youtube}
+                      value={draft.spotify}
+                      onChange={(event) => update('spotify', event.target.value)}
+                      placeholder="https://open.spotify.com/track/…"
+                      autoComplete="off"
+                      spellCheck={false}
+                      onKeyDown={(event) => {
+                        if (event.key === 'Enter') {
+                          event.preventDefault();
+                          advance();
+                        }
+                      }}
+                    />
+                  </div>
+                </div>
                 <div className="song-search-entry">
                   <label>
                     {t('songForm.searchQuery')}
@@ -452,12 +793,15 @@ export default function SongForm({
                   </a>
                 </div>
               </details>
-              {trackId && (
+              {sourcePreviewId && (
                 <div className="song-spotify-player">
+                  {sourcePreviewId !== trackId && (
+                    <p className="hint">{t('musicbrainzFirst.previewCandidate')}</p>
+                  )}
                   <iframe
-                    key={trackId}
+                    key={sourcePreviewId}
                     title={t('songForm.previewTitle')}
-                    src={`https://open.spotify.com/embed/track/${trackId}`}
+                    src={`https://open.spotify.com/embed/track/${sourcePreviewId}`}
                     width="100%"
                     height="152"
                     allow="autoplay; clipboard-write; encrypted-media; fullscreen; picture-in-picture"
@@ -467,7 +811,7 @@ export default function SongForm({
                   />
                   <a
                     className="text-button"
-                    href={`https://open.spotify.com/track/${trackId}`}
+                    href={`https://open.spotify.com/track/${sourcePreviewId}`}
                     target="_blank"
                     rel="noopener noreferrer"
                   >
@@ -592,64 +936,11 @@ export default function SongForm({
                   <Search size={15} aria-hidden="true" /> {t('metadataAutofill.findDetails')}
                 </button>
               </div>
-              <div className="song-lookup-feedback" aria-live="polite" aria-atomic="true">
-                {busy === 'year' && (
-                  <p className="hint" role="status">
-                    {t('songForm.lookingUp')}
-                  </p>
-                )}
-                {!busy && draft.title.trim() && !draft.artist.trim() && !lookupMessage && (
-                  <p className="hint" role="status">
-                    {t('metadataAutofill.titleSearch')}
-                  </p>
-                )}
-                {lookupMessage && (
-                  <p className="hint" role="status">
-                    {t(lookupMessage)}
-                  </p>
-                )}
-                {lookupError && (
-                  <p className="error" role="alert">
-                    {displayTranslation(lookupError)}
-                  </p>
-                )}
-              </div>
-              {suggestions.length > 0 && (
-                <fieldset className="song-recording-results">
-                  <legend>{t('songForm.chooseRecording')}</legend>
-                  <div className="song-recording-list">
-                    {suggestions.map((recording) => (
-                      <button
-                        key={recording.id}
-                        type="button"
-                        className="song-recording-choice"
-                        aria-pressed={selectedRecording === recording.id}
-                        onClick={() => chooseRecording(recording)}
-                      >
-                        <span className="song-recording-year">
-                          {recording.year || t('songForm.noDate')}
-                        </span>
-                        <span className="song-recording-description">
-                          <strong>{recording.title}</strong>
-                          <span>{recording.artist}</span>
-                          {recording.disambiguation && <small>{recording.disambiguation}</small>}
-                        </span>
-                        {selectedRecording === recording.id && (
-                          <Check size={18} aria-hidden="true" />
-                        )}
-                      </button>
-                    ))}
-                  </div>
-                  <a
-                    className="text-button"
-                    href="https://musicbrainz.org/"
-                    target="_blank"
-                    rel="noopener noreferrer"
-                  >
-                    {t('songForm.dataSource')} <ArrowUpRight size={14} aria-hidden="true" />
-                  </a>
-                </fieldset>
+              {!busy && draft.title.trim() && !draft.artist.trim() && !lookupMessage && (
+                <p className="hint">{t('metadataAutofill.titleSearch')}</p>
               )}
+              {lookupFeedback}
+              {recordingResults}
               <p className="hint">
                 {gameMode === 'music'
                   ? t('app.theYearRefersToThisParticularRecording')
