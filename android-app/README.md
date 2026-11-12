@@ -151,30 +151,41 @@ W **Settings → Secrets and variables → Actions → Secrets** ustaw:
 Publiczne `SPOTIFY_CLIENT_ID` i `ANDROID_SIGNING_CERT_SHA256` umieść osobno w **Variables**. Odcisk może mieć postać 64 znaków szesnastkowych albo zapisu z dwukropkami. Workflow odtwarza magazyn wyłącznie w tymczasowym katalogu runnera, usuwa go po zakończeniu i publikuje tylko APK, sumę kontrolną oraz publiczne metadane podpisu.
 
 ```sh
-./gradlew :app:assembleRelease -PversionName=0.1.0-alpha.2 -PversionCode=100002
+./gradlew :app:assembleRelease -PversionName=0.2.0-alpha.1 -PversionCode=100003
 ```
 
 Do aktualizacji zainstalowanego APK użyj tego samego podpisu i większego `versionCode`. Numer lokalnego buildu powinien być większy od numeru już zainstalowanego wydania, podanego w `BUILD-INFO.txt`.
 
 ## Wydania z GitHub Actions
 
-Workflow [`android-release.yml`](../.github/workflows/android-release.yml) uruchamia tag `android-v<wersja>` albo ręczne **Run workflow**. Publiczny identyfikator Spotify pochodzi ze zmiennej repozytorium `SPOTIFY_CLIENT_ID`, z obsługą istniejącego sekretu Actions jako wartości zapasowej.
+Workflow [`android-release.yml`](../.github/workflows/android-release.yml) korzysta z [`CHANGELOG.md`](CHANGELOG.md) jako źródła opisu zmian dla każdej wersji.
 
-Publikacja wymaga kompletu czterech sekretów podpisu oraz publicznego odcisku certyfikatu. Przed publikacją workflow uruchamia testy i lint, buduje APK, sprawdza zgodność podpisu z `ANDROID_SIGNING_CERT_SHA256` oraz porównuje faktyczny pakiet, `versionName` i `versionCode` z żądaną wersją. Powstaje wydanie **Pre-release** zawierające:
+1. Przenieś gotowe zmiany z `[Unreleased]` do nowej, niepustej sekcji, np. `## [0.1.0-alpha.3] - 2026-11-12`, i wyślij commit do GitHuba.
+2. W Actions wybierz **Publish Android test release → Run workflow**. Pozostaw zaznaczone **dry_run**, aby sprawdzić plan i opis bez budowania APK, sekretów podpisu ani publikacji. Puste **version** wybiera pierwszą sekcję z numerem wersji w changelogu; możesz też podać numer jawnie.
+3. Obejrzyj podsumowanie uruchomienia i artefakt `android-release-<wersja>`, zawierający `RELEASE-NOTES.md` i `RELEASE-PLAN.json`.
+4. Uruchom workflow ponownie z tymi samymi źródłami i wersją, odznaczając **dry_run**, aby zbudować i opublikować APK. Alternatywnie wypchnij tag `android-v<wersja>` wskazujący przygotowany commit — tag uruchamia publikację automatycznie.
+
+Opis wydania zawiera wyłącznie sekcję wybranej wersji oraz odnośnik do porównania z poprzednim opublikowanym wydaniem Androida, również gdy jest ono oznaczone jako **Pre-release**. `[Unreleased]` nie jest publikowane.
+
+Plan powstaje przed przygotowaniem SDK i budowaniem. Brakująca, pusta lub powtórzona sekcja changeloga, wersja nie nowsza od wydanej, błędny `versionCode`, istniejące wydanie albo tag wskazujący inny commit przerywają workflow. Błędy API GitHuba i niepoprawne metadane poprzednich wydań również przerywają przygotowanie. Istniejące wydania nie są nadpisywane; poprawka wymaga nowej wersji. Wszystkie wydania Androida korzystają z jednej grupy concurrency.
+
+Domyślny `versionCode` to większa z wartości: `100000 + numer uruchomienia workflow` oraz najwyższy kod dotychczasowych wydań Androida powiększony o jeden. Opcjonalne **version_code** pozwala podać go ręcznie, ale numer musi być większy od wszystkich dotychczas opublikowanych i nie może przekraczać `2100000000`.
+
+Publikacja wymaga kompletu czterech sekretów podpisu oraz publicznego odcisku `ANDROID_SIGNING_CERT_SHA256`. Publiczny identyfikator Spotify pochodzi ze zmiennej repozytorium `SPOTIFY_CLIENT_ID`, z obsługą istniejącego sekretu Actions jako wartości zapasowej. Workflow uruchamia testy i lint, buduje APK, sprawdza zgodność podpisu oraz porównuje faktyczny pakiet, `versionName` i `versionCode` z planem. Powstaje wydanie **Pre-release** zawierające:
 
 - `hiciarz-android-<wersja>-test.apk`;
 - plik `.apk.sha256` z sumą kontrolną APK;
 - `SIGNING-CERTIFICATE.txt` z publicznymi odciskami certyfikatu;
 - `BUILD-INFO.txt` z numerami wersji i commitem źródeł.
 
-Istniejące wydanie nie jest nadpisywane, a tag wskazujący inny commit przerywa publikację. Poprawka wymaga nowej wersji. Domyślny `versionCode` to `100000 + numer uruchomienia workflow`; ręcznie podany numer musi zachować rosnącą kolejność wydań.
+Artefakt uruchomienia zachowuje również plan i opis wydania. Wydania testowe nie są oznaczane jako **Latest**.
 
 Zwykłe CI może działać bez sekretów, np. w forku: wtedy używa efemerycznego klucza debug i sprawdza, czy APK jest podpisane. Takie artefakty nie są oficjalnym wydaniem. Workflow Releases nie korzysta z tego fallbacku i przerwie publikację przy braku prywatnego podpisu.
 
 Po pobraniu APK i pliku sumy do tego samego katalogu sprawdź integralność na Linuksie:
 
 ```sh
-sha256sum --check hiciarz-android-0.1.0-alpha.1-test.apk.sha256
+sha256sum --check hiciarz-android-0.2.0-alpha.1-test.apk.sha256
 ```
 
 Na macOS odpowiednikiem jest `shasum -a 256 --check …`. Odcisk podpisu można dodatkowo odczytać narzędziem Android SDK `apksigner verify --print-certs <plik.apk>` i porównać z `SIGNING-CERTIFICATE.txt`.

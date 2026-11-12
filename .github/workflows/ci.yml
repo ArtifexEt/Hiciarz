@@ -13,6 +13,17 @@ concurrency:
   cancel-in-progress: true
 
 jobs:
+  release-tooling:
+    name: Android release metadata
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+      - name: Test release versioning and notes
+        run: python3 -m unittest discover -s .github/scripts -p 'test_android_release.py' -v
+      - name: Validate Android changelog
+        run: python3 .github/scripts/android_release.py --check-changelog
+
   web:
     name: Web tests and build
     runs-on: ubuntu-latest
