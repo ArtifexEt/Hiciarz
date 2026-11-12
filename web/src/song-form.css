@@ -1,3 +1,59 @@
+.song-form-progress {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 12px;
+  margin: 0 0 24px;
+  padding: 0;
+  list-style: none;
+}
+.song-form-progress li {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  min-width: 0;
+  padding: 0 0 10px;
+  border-bottom: 2px solid var(--line);
+  color: var(--ink);
+  font-size: 11px;
+  line-height: 1.4;
+}
+.song-form-progress li > span {
+  display: grid;
+  place-items: center;
+  flex: 0 0 24px;
+  height: 24px;
+  border: 1px solid var(--line);
+  border-radius: 50%;
+  font-variant-numeric: tabular-nums;
+}
+.song-form-progress li[aria-current='step'] {
+  border-bottom-color: var(--accent-ink);
+  font-weight: 600;
+}
+.song-form-progress li[aria-current='step'] > span {
+  background: var(--accent);
+  border-color: transparent;
+  color: var(--accent-ink);
+}
+.song-source-summary {
+  margin-bottom: 18px;
+  padding-bottom: 12px;
+  border-bottom: 1px solid var(--line);
+}
+.song-source-summary .hint {
+  margin: 0;
+}
+.song-title-loading {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+.song-form .modal-actions {
+  justify-content: space-between;
+}
+.song-form .modal-actions .primary {
+  flex: 1;
+}
 .song-form .song-spotify-link {
   margin: 0 0 12px;
 }

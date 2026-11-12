@@ -90,7 +90,7 @@ describe('Spotify card drafts', () => {
 });
 
 describe.each<Language>(['pl', 'en'])('Spotify song form in %s', (language) => {
-  it('offers link entry and Spotify search without a YouTube or account input', () => {
+  it('starts a new card with only link entry and preview controls in the first step', () => {
     setLanguage(language);
     const markup = renderToStaticMarkup(<SongForm onSave={noop} onClose={noop} />);
     expect(markup).toContain('name="spotify"');
@@ -99,9 +99,13 @@ describe.each<Language>(['pl', 'en'])('Spotify song form in %s', (language) => {
     expect(markup).not.toContain('accounts.spotify.com');
     expect(markup).not.toMatch(/(?:songForm|app|creator)\.[A-Za-z]/);
     expect(markup).not.toContain('<iframe');
+    for (const field of ['title', 'artist', 'year', 'theme', 'answer'])
+      expect(markup).not.toContain(`name="${field}"`);
+    expect(markup.match(/aria-current="step"/g)).toHaveLength(1);
+    expect(markup).not.toContain('song-recording-results');
   });
 
-  it('previews an existing Spotify source and preserves edit actions', () => {
+  it('opens an existing card directly on metadata and preserves edit actions', () => {
     setLanguage(language);
     const markup = renderToStaticMarkup(
       <SongForm
@@ -112,11 +116,13 @@ describe.each<Language>(['pl', 'en'])('Spotify song form in %s', (language) => {
         onMove={{ down: noop }}
       />,
     );
-    expect(markup).toContain('src="https://open.spotify.com/embed/track/0GjEhVFGZW8afUYGChu3Rr"');
-    expect(markup).toContain('height="152"');
-    expect(markup).toContain('encrypted-media');
-    expect(markup).toContain('allowFullScreen=""');
+    expect(markup).toContain('https://open.spotify.com/track/0GjEhVFGZW8afUYGChu3Rr');
+    expect(markup).not.toContain('<iframe');
+    expect(markup).not.toContain('name="spotify"');
     expect(markup).toContain('name="year"');
+    expect(markup).toContain('name="title"');
+    expect(markup).toContain('name="artist"');
+    expect(markup.match(/aria-current="step"/g)).toHaveLength(1);
     expect(markup).toContain('song-extra-options');
     expect(markup).not.toMatch(/(?:songForm|app|creator)\.[A-Za-z]/);
   });
@@ -128,5 +134,17 @@ describe.each<Language>(['pl', 'en'])('Spotify song form in %s', (language) => {
     );
     expect(markup).toContain('checked="" value="music"');
     expect(markup).not.toContain('name="answer"');
+  });
+
+  it('keeps a legacy source editable directly on metadata without requiring a new Spotify link', () => {
+    setLanguage(language);
+    const previous = demoDeck().songs.find(
+      (song) => song.sources.youtube && !song.sources.spotify,
+    )!;
+    const markup = renderToStaticMarkup(<SongForm song={previous} onSave={noop} onClose={noop} />);
+    expect(markup).toContain('name="year"');
+    expect(markup).not.toContain('name="spotify"');
+    expect(markup).not.toContain('<iframe');
+    expect(markup).not.toMatch(/(?:songForm|app|creator)\.[A-Za-z]/);
   });
 });

@@ -1,6 +1,5 @@
 {
   "songForm.spotifyLink": "Spotify track link",
-  "songForm.loadDetails": "Load details",
   "songForm.needLink": "Need a link?",
   "songForm.searchQuery": "Track or artist",
   "songForm.searchPlaceholder": "ABBA Dancing Queen",
@@ -20,5 +19,11 @@
   "songForm.spotifyRequired": "Paste a Spotify track link.",
   "songForm.useTrackLink": "Use the full track link: https://open.spotify.com/track/…",
   "songForm.existingSourceKept": "This card’s saved playback source will be kept.",
-  "songForm.enterArtistForYear": "Spotify provides the title only. Enter the artist to find the correct year."
+  "songForm.enterArtistForYear": "Spotify provides the title only. Enter the artist to find the correct year.",
+  "songForm.progress": "Add a track",
+  "songForm.stepTrack": "Track",
+  "songForm.stepDetails": "Track details",
+  "songForm.next": "Next: track details",
+  "songForm.back": "Back",
+  "songForm.loadingTitle": "Loading the title from Spotify…"
 }

@@ -7,8 +7,8 @@ Hiciarz korzysta z linków do utworów i oficjalnego odtwarzacza Spotify. Tworze
 ## Dodawanie utworu
 
 1. W Spotify wybierz konkretne nagranie i skopiuj jego link przez **Udostępnij → Kopiuj link do utworu**.
-2. W Hiciarzu otwórz **Talie → Utwory → Dodaj utwór** i wklej link.
-3. Sprawdź podgląd nagrania i posłuchaj fragmentu, jeśli jest dostępny. Wybierz **Wczytaj dane**, aby pobrać tytuł, i wpisz wykonawcę. Publiczny podgląd Spotify nie zwraca nazwy wykonawcy.
+2. W Hiciarzu otwórz **Talie → Utwory → Dodaj utwór**. W pierwszym kroku **Utwór** wklej link i sprawdź odsłuch, jeśli jest dostępny.
+3. Wybierz **Dalej: dane utworu**. W drugim kroku uzupełnij wykonawcę i sprawdź pobrany tytuł. Publiczny podgląd Spotify nie zwraca nazwy wykonawcy. **Wstecz** pozwala zmienić link bez utraty ręcznych poprawek.
 4. Wybierz **Znajdź rok w MusicBrainz**, wskaż właściwą wersję i sprawdź datę. Wersja koncertowa lub remix może mieć inny rok niż pierwotne nagranie studyjne.
 5. Zatwierdź dane i dodaj kartę. Dla filmu lub gry uzupełnij także tytuł produkcji.
 
