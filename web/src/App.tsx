@@ -998,32 +998,46 @@ export default function App() {
                   />
                   <span className="deck-count">{trackCount(deck.songs.length)}</span>
                 </div>
-                <button
-                  className="secondary deck-library-toggle"
-                  aria-haspopup="dialog"
-                  onClick={() => setModal('decks')}
-                >
-                  <ListMusic size={18} aria-hidden="true" />
-                  {tr('shell.allDecks')} ({decks.length})
-                </button>
-                <div className="deck-controls" role="group" aria-label={tr('shell.deckMenu')}>
-                  <button className="secondary" onClick={() => void createDeck()}>
-                    <Plus size={18} aria-hidden="true" />
-                    {tr('shell.newDeck')}
-                  </button>
+                <div className="deck-workspace-actions">
                   <button
-                    className="secondary"
-                    onClick={() =>
-                      download(JSON.stringify(deck, null, 2), `${deck.name || 'talia'}.json`)
-                    }
+                    className="secondary deck-library-toggle"
+                    aria-haspopup="dialog"
+                    onClick={() => setModal('decks')}
                   >
-                    <Download size={18} aria-hidden="true" />
-                    {tr('shell.saveDeck')}
+                    <ListMusic size={18} aria-hidden="true" />
+                    <span className="deck-library-label">
+                      {tr('shell.allDecks')} ({decks.length})
+                    </span>
                   </button>
-                  <button className="secondary delete-action" onClick={() => setModal('delete')}>
-                    <Trash2 size={18} aria-hidden="true" />
-                    {tr('shell.deleteDeck')}
-                  </button>
+                  <div className="deck-controls" role="group" aria-label={tr('shell.deckMenu')}>
+                    <button
+                      className="secondary deck-action"
+                      aria-label={tr('shell.newDeck')}
+                      title={tr('shell.newDeck')}
+                      onClick={() => void createDeck()}
+                    >
+                      <Plus size={18} aria-hidden="true" />
+                    </button>
+                    <button
+                      className="secondary deck-action"
+                      aria-label={tr('shell.saveDeck')}
+                      title={tr('shell.saveDeck')}
+                      onClick={() =>
+                        download(JSON.stringify(deck, null, 2), `${deck.name || 'talia'}.json`)
+                      }
+                    >
+                      <Download size={18} aria-hidden="true" />
+                    </button>
+                    <button
+                      className="secondary deck-action delete-action"
+                      aria-label={tr('shell.deleteDeck')}
+                      title={tr('shell.deleteDeck')}
+                      aria-haspopup="dialog"
+                      onClick={() => setModal('delete')}
+                    >
+                      <Trash2 size={18} aria-hidden="true" />
+                    </button>
+                  </div>
                 </div>
               </section>
               <div className="studio-grid" inert={busy} aria-busy={busy}>
