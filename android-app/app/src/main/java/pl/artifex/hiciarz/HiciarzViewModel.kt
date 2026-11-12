@@ -18,7 +18,7 @@ import pl.artifex.hiciarz.data.DeckCodec
 import pl.artifex.hiciarz.data.DeckFormatException
 import pl.artifex.hiciarz.data.DeckRepository
 import pl.artifex.hiciarz.model.*
-import pl.artifex.hiciarz.playback.SpotifyController
+import pl.artifex.hiciarz.playback.PlaybackTransport
 
 class HiciarzViewModel(application: Application) : AndroidViewModel(application) {
     private val prefs = application.getSharedPreferences("hiciarz", 0)
@@ -33,7 +33,7 @@ class HiciarzViewModel(application: Application) : AndroidViewModel(application)
     )
     private val mutableState = MutableStateFlow(AppState(settings = initialSettings, busy = true))
     val state = mutableState.asStateFlow()
-    private var playback: SpotifyController? = null
+    private var playback: PlaybackTransport? = null
     private var playbackJob: Job? = null
     private var clipJob: Job? = null
     private var armClipUri: String? = null
@@ -75,7 +75,7 @@ class HiciarzViewModel(application: Application) : AndroidViewModel(application)
     fun clientId(): String = state.value.settings.clientIdOverride.ifBlank { BuildConfig.SPOTIFY_CLIENT_ID }
 
     /** The Activity releases this reference before destruction, including rotation. */
-    fun attachPlayback(controller: SpotifyController) {
+    fun attachPlayback(controller: PlaybackTransport) {
         playback = controller
         playbackJob?.cancel()
         playbackJob = viewModelScope.launch {
@@ -105,7 +105,7 @@ class HiciarzViewModel(application: Application) : AndroidViewModel(application)
         }
     }
 
-    fun detachPlayback(controller: SpotifyController) {
+    fun detachPlayback(controller: PlaybackTransport) {
         if (playback !== controller) return
         reconnectOnAttach = state.value.playback.connection != ConnectionStatus.DISCONNECTED
         playbackJob?.cancel()
@@ -124,13 +124,12 @@ class HiciarzViewModel(application: Application) : AndroidViewModel(application)
                 playback?.disconnect()
             }
             AppAction.Pause -> { clipJob?.cancel(); clipDeadline = null; armClipUri = null; playback?.pause() }
-            AppAction.Resume -> {
-                val song = if (state.value.tab == AppTab.BINGO) state.value.bingoSong else state.value.currentSong
-                if (song != null && state.value.playback.trackUri != song.spotifyUri) play(song)
+            AppAction.Resume -> resumeCurrentTrack()
+            is AppAction.PlayCard -> {
+                if (state.value.playback.trackUri != action.song.spotifyUri) play(action.song)
                 else {
-                    armClipUri = state.value.playback.trackUri
-                    ownedTrackUri = state.value.playback.trackUri
-                    playback?.resume()
+                    ownedTrackUri = action.song.spotifyUri
+                    resumeCurrentTrack()
                 }
             }
             AppAction.SwitchToPhone -> playback?.switchToPhone()
@@ -236,6 +235,14 @@ class HiciarzViewModel(application: Application) : AndroidViewModel(application)
         ownedTrackUri = song.spotifyUri
         armClipUri = song.spotifyUri
         playback?.play(song.spotifyUri)
+    }
+
+    private fun resumeCurrentTrack() {
+        clipJob?.cancel()
+        clipDeadline = null
+        // Global controls resume Spotify as it is; only our own card gets a clip timer.
+        armClipUri = state.value.playback.trackUri?.takeIf { it == ownedTrackUri }
+        playback?.resume()
     }
 
     private fun startClip(uri: String) {

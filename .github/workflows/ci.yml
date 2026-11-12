@@ -129,7 +129,7 @@ jobs:
           adb shell svc data disable
           ./gradlew --no-daemon :app:connectedDebugAndroidTest \
             -Pandroid.injected.androidTest.leaveApksInstalledAfterRun=true \
-            -Pandroid.testInstrumentationRunnerArguments.class=pl.artifex.hiciarz.NativeFlowTest
+            -Pandroid.testInstrumentationRunnerArguments.package=pl.artifex.hiciarz
           SCRIPT
       - name: Run native flow on AOSP without a Spotify account
         uses: ReactiveCircus/android-emulator-runner@a421e43855164a8197daf9d8d40fe71c6996bb0d # v2.38.0
