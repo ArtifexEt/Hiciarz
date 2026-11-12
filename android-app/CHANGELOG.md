@@ -14,7 +14,7 @@ Zmiany kolejnych wersji aplikacji Android. Opis GitHub Release jest pobierany z 
 - Skaner i Bingo zachowują osobne skórki QR. Przełączanie zakładek i trybów nie przenosi wyglądu jednej karty na drugą; zapis Bingo zachowuje motyw po ponownym uruchomieniu.
 - Powrót z gry bez kart do trwającego skanowania Bingo ponownie przygotowuje aparat i zachowuje pytanie.
 - Pomoc „Zgadnij” opisuje także rozpoznawanie tytułu i wykonawcy oraz krótsze talie.
-- Uaktualniono dokumentację przebiegu Bingo na telefonie i tablecie oraz stan realizacji wcześniejszych uwag.
+- Uaktualniono zrzuty ekranów, dokumentację przebiegu Bingo na telefonie i tablecie oraz stan realizacji wcześniejszych uwag.
 
 ### Weryfikacja
 

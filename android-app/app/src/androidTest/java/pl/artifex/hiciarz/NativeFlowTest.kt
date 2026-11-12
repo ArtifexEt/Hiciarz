@@ -78,7 +78,7 @@ class NativeFlowTest {
         captureNative(compose, "phone-timeline-revealed-pl")
         compose.onNodeWithText("Zmień grę").performScrollTo().performClick()
         compose.onNodeWithText("Rozpocznij od nowa").performScrollTo().assertIsDisplayed()
-        captureNative(compose, "phone-game-options-pl")
+        captureNative(compose, "phone-game-options-pl", scrollTop = false)
         compose.onNodeWithText("Gotowe").performScrollTo().performClick()
 
         compose.onNodeWithText("Skaner").performClick()
@@ -101,7 +101,7 @@ class NativeFlowTest {
         compose.onNodeWithText("Używaj skórki zeskanowanej karty").performScrollTo().performClick()
         compose.onNodeWithText("Skórka domyślna").performScrollTo().performClick()
         compose.onNodeWithText("Zima").performScrollTo().performClick()
-        captureNative(compose, "phone-skins-pl")
+        captureNative(compose, "phone-skins-pl", scrollTop = false)
         InstrumentationRegistry.getInstrumentation().uiAutomation.performGlobalAction(AccessibilityService.GLOBAL_ACTION_BACK)
         compose.waitForIdle()
         compose.onNodeWithText("English").performScrollTo().performClick()
