@@ -11,6 +11,7 @@ export const modalNames = [
   'decks',
   'print-cards',
   'examples',
+  'import',
   'file',
   'help',
   'about',
