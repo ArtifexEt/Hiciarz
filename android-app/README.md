@@ -4,7 +4,7 @@ Natywna aplikacja Kotlin / Jetpack Compose do skanowania drukowanych kart, prowa
 
 W Bingo telefon prowadzącego najpierw losuje kategorię, a dopiero wybranie „Skanuj kartę” uruchamia aparat. Na szerszym ekranie losowanie od razu przygotowuje skaner, a pełne pytanie pozostaje obok aparatu i sterowania odtwarzaniem. Skan rozpoczyna utwór; gracze zaznaczają odpowiedzi na papierowych planszach. „Plansze do pobrania” otwiera generator z wybranym poziomem i językiem. Zasady każdej gry są dostępne pod „Jak grać”.
 
-QR może automatycznie włączyć jedną z dziewięciu skórek. Ustawienia pozwalają wybrać własny wygląd i wyłączyć śledzenie skórki karty. Automatyczna pauza jest domyślnie wyłączona. Na dużym oknie i rozłożonym telefonie nawigacja przechodzi na bok, a niezależne panele uwzględniają zgięcie ekranu. [Porównanie funkcji z PWA](docs/pwa-parity.md) opisuje pełny zakres.
+QR może automatycznie włączyć jedną z dziewięciu skórek. Skaner i Bingo zachowują własny motyw karty podczas przełączania. Ustawienia pozwalają wybrać własny wygląd i wyłączyć śledzenie skórki karty. Automatyczna pauza jest domyślnie wyłączona. Na dużym oknie i rozłożonym telefonie nawigacja przechodzi na bok, a niezależne panele uwzględniają zgięcie ekranu. [Porównanie funkcji z PWA](docs/pwa-parity.md) opisuje pełny zakres.
 
 ## Ekrany aplikacji
 
@@ -155,7 +155,7 @@ W **Settings → Secrets and variables → Actions → Secrets** ustaw:
 Publiczne `SPOTIFY_CLIENT_ID` i `ANDROID_SIGNING_CERT_SHA256` umieść osobno w **Variables**. Odcisk może mieć postać 64 znaków szesnastkowych albo zapisu z dwukropkami. Workflow odtwarza magazyn wyłącznie w tymczasowym katalogu runnera, usuwa go po zakończeniu i publikuje tylko APK, sumę kontrolną oraz publiczne metadane podpisu.
 
 ```sh
-./gradlew :app:assembleRelease -PversionName=0.2.0-alpha.2 -PversionCode=100004
+./gradlew :app:assembleRelease -PversionName=0.2.0-alpha.3 -PversionCode=100005
 ```
 
 Do aktualizacji zainstalowanego APK użyj tego samego podpisu i większego `versionCode`. Numer lokalnego buildu powinien być większy od numeru już zainstalowanego wydania, podanego w `BUILD-INFO.txt`.
@@ -189,7 +189,7 @@ Zwykłe CI może działać bez sekretów, np. w forku: wtedy używa efemeryczneg
 Po pobraniu APK i pliku sumy do tego samego katalogu sprawdź integralność na Linuksie:
 
 ```sh
-sha256sum --check hiciarz-android-0.2.0-alpha.2-test.apk.sha256
+sha256sum --check hiciarz-android-0.2.0-alpha.3-test.apk.sha256
 ```
 
 Na macOS odpowiednikiem jest `shasum -a 256 --check …`. Odcisk podpisu można dodatkowo odczytać narzędziem Android SDK `apksigner verify --print-certs <plik.apk>` i porównać z `SIGNING-CERTIFICATE.txt`.

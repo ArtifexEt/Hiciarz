@@ -11,7 +11,7 @@ Audyt dotyczy ekranów `AppNavigation`, `GameGuide`, `PlaybackSettings`, `BingoG
 | Wybór głośnika Spotify | Pozostaje w Spotify; Android nie ma selektora urządzeń, głośników ani źródeł. |
 | Odtwarzacz YouTube, przeglądarka i parowanie drugiego ekranu | Pozostają w PWA; natywna aplikacja korzysta ze Spotify. |
 | „Jak grać” i instrukcja przygotowania | Dostępne z gry i skanera oraz z ustawień: oś czasu, gry/filmy, Bingo, karty QR i dźwięk. |
-| Podstawowy i zaawansowany poziom Bingo | Zachowane kategorie i przebieg prowadzącego: zasada → skan karty → muzyka. Bez automatycznego losowania utworów i cyfrowej planszy. |
+| Podstawowy i zaawansowany poziom Bingo | Zasada → skan karty → muzyka. Na telefonie osobny krok skanowania; w dwóch panelach pytanie i aparat są obok siebie. Bez losowania utworów i cyfrowej planszy. |
 | Plansze Bingo do druku | Przycisk otwiera generator PDF w PWA, przekazując poziom i język. Gracze nadal zaznaczają odpowiedzi na wydrukach. |
 | Warianty muzyka / gra / film | Karty QR oraz gra bez kart; dla gier i filmów odpowiedzią jest źródło utworu. |
 | Wybór wyglądu i motyw zapisany w QR | Dziewięć motywów kart; ustawienie automatycznego użycia motywu zeskanowanej karty. |
@@ -25,8 +25,8 @@ Audyt dotyczy ekranów `AppNavigation`, `GameGuide`, `PlaybackSettings`, `BingoG
 
 ## Bingo w Androidzie
 
-1. Prowadzący wybiera poziom i losuje kategorię. Aplikacja pokazuje zasadę bez uruchamiania muzyki ani aparatu.
-2. Po wybraniu „Skanuj kartę” prowadzący odczytuje QR drukowanej karty. Wylosowana kategoria zostaje na ekranie, a Spotify odtwarza wskazane nagranie.
+1. Prowadzący wybiera poziom i losuje kategorię. Aplikacja pokazuje zasadę bez uruchamiania muzyki. Na telefonie wybranie „Skanuj kartę” otwiera aparat; w układzie dwóch paneli losowanie przygotowuje aparat obok pełnego pytania.
+2. Prowadzący odczytuje QR drukowanej karty. Wylosowana kategoria zostaje na ekranie, a Spotify odtwarza wskazane nagranie.
 3. Gracze sprawdzają odpowiedzi i zaznaczają trafienia na swoich papierowych planszach. Pełny rząd, kolumna lub przekątna daje Bingo.
 4. Prowadzący zaczyna następną turę od kolejnej kategorii. Ponowne skanowanie tej samej karty jest możliwe, jeśli wynika z decyzji prowadzącego.
 

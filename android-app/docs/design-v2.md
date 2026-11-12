@@ -51,3 +51,11 @@ W tych testach nie uczestniczyło konto Spotify ani fizyczny Fold7. Kontrolę od
 W rzeczywistym układzie dwóch paneli aparat i pełne pytanie są widoczne równocześnie. Kliknięcie losowania lub następnej rundy atomowo ustawia pytanie i uzbraja skaner; po odczycie karta zastępuje aparat, a pełna kategoria nadal pozostaje obok. Telefon zachowuje jawny krok skanowania. Zmiana rozmiaru okna, anulowanie i wznowienie aplikacji nie uruchamiają aparatu przez efekt kompozycji. Callback kamery identyfikuje rundę, aby opóźniony odczyt nie wypełnił kolejnej.
 
 Weryfikacja zmiany: pełny zestaw 24 testów natywnych oraz 3 testy adaptacyjne po korekcie podpisu pauzy przeszły na emulatorze AOSP. Zrzuty tabletu 2560 × 1600 pokazują faktyczny wspólny widok oraz niezmienione pytanie po skanie.
+
+## Dopracowanie obsługi — 0.2.0-alpha.3
+
+Wybór gry, talii i skórki otwiera się od razu w rozwiniętym panelu. Grafika kategorii na ekranie przygotowania Bingo ma 104 dp zamiast 152 dp, dzięki czemu poziom pytań i pobieranie plansz są wyżej. Aparat w układzie dwóch paneli wypełnia dostępną wysokość swojego panelu; telefon zachowuje dotychczasową wysokość podglądu. Pomoc „Zgadnij” obejmuje zwykłe talie muzyczne i krótkie zestawy.
+
+Audyt przejść wykrył dwa błędy stanu. Skaner i Bingo współdzieliły motyw ostatniego QR, a powrót do oczekującego skanowania przez wybór gry nie uzbrajał aparatu. Każda fizyczna karta zachowuje teraz własną skórkę; zmiana talii nie zmienia wyglądu trwającej rundy Bingo. Powrót do tej rundy przywraca aparat bez losowania nowego pytania.
+
+Pełny lokalny zestaw **27/27 testów natywnych** i **29/29 testów JVM** przeszedł. CI potwierdziło również **2/2 próby zoptymalizowanego APK**: pierwszą zgodę Androida na aparat, rzeczywisty odczyt QR z automatyczną skórką Disco oraz ponowne skanowanie po obrocie. Nadal są to testy emulatora, bez autoryzacji świeżego konta Spotify i fizycznego Folda.

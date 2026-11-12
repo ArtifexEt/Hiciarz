@@ -38,11 +38,13 @@ internal fun HelpScreen(topic: HelpTopic, copy: UiCopy, level: BingoLevel, onTop
                     "Tap “Check position”. A correct card stays on your timeline; a wrong card is discarded. Tracks from the same year can be in either order."),
                 copy.t("Zbierz 10 kart. Dla krótszej talii celem są wszystkie dostępne utwory.", "Collect 10 cards. With a smaller deck, collect all available tracks."),
             ))
-            HelpTopic.QUIZ -> HelpArticle(copy.t("Zgadnij grę lub film", "Guess the game or film"), listOf(
-                copy.t("Wybierz talię z gier lub filmów. Nazwa źródła pozostaje ukryta.", "Choose a game or film soundtrack deck. Its source stays hidden."),
-                copy.t("Posłuchaj utworu i powiedz, z jakiej gry lub filmu pochodzi.", "Listen and name the game or film it comes from."),
+            HelpTopic.QUIZ -> HelpArticle(copy.t("Zgadnij", "Guess"), listOf(
+                copy.t("Wybierz talię muzyczną, z gier lub filmów.", "Choose a music, game or film deck."),
+                copy.t("Posłuchaj i podaj tytuł z wykonawcą. W taliach z gier lub filmów odgadujesz grę albo film.",
+                    "Listen and name the title and artist. With game or film decks, name the game or film."),
                 copy.t("Odkryj odpowiedź. Prowadzący zaznacza „Zgadłem” albo „Pomyłka”.", "Reveal the answer. The host marks “Got it” or “Not this time”."),
-                copy.t("Zdobądź 10 punktów; utwory nie powtarzają się w tej rozgrywce.", "Earn 10 points. Tracks do not repeat within the game."),
+                copy.t("Zdobądź 10 punktów lub odgadnij wszystkie utwory krótszej talii. Nagrania się nie powtarzają.",
+                    "Earn 10 points, or guess every track in a smaller deck. Recordings do not repeat."),
             ))
             HelpTopic.BINGO -> HelpArticle("Bingo", listOf(
                 copy.t("Pobierz plansze PDF i przygotuj wydruki dla graczy. Wybierz pasujący poziom pytań.",
@@ -119,7 +121,7 @@ internal fun HelpScreen(topic: HelpTopic, copy: UiCopy, level: BingoLevel, onTop
 
 private fun helpLinks(copy: UiCopy) = listOf(
     HelpTopic.TIMELINE to copy.t("Oś czasu", "Timeline"),
-    HelpTopic.QUIZ to copy.t("Zgadnij grę lub film", "Guess the game or film"),
+    HelpTopic.QUIZ to copy.t("Zgadnij", "Guess"),
     HelpTopic.BINGO to "Bingo",
     HelpTopic.SCAN to copy.t("Drukowane karty", "Printed cards"),
     HelpTopic.AUDIO to copy.t("Spotify i odtwarzanie", "Spotify and playback"),

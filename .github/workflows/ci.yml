@@ -238,6 +238,8 @@ jobs:
           adb shell svc data disable
           adb install -r app/build/outputs/apk/release/app-release.apk
           adb install -r -t app/build/outputs/apk/androidTest/debug/app-debug-androidTest.apk
+          adb shell pm revoke pl.artifex.hiciarz android.permission.CAMERA
+          adb shell pm clear-permission-flags pl.artifex.hiciarz android.permission.CAMERA user-set user-fixed
           timeout 180s adb shell am instrument -w -r \
             pl.artifex.hiciarz.test/pl.artifex.hiciarz.ScannerReleaseSmokeInstrumentation \
             | tee "$artifact_dir/instrumentation.txt"

@@ -106,13 +106,15 @@ fun HiciarzApp(state: AppState, onAction: (AppAction) -> Unit) {
             AppSheet.PLAYBACK -> ModalBottomSheet(onDismissRequest = { sheet = null }) {
                 PlaybackSheet(state, copy, onAction) { help = HelpTopic.AUDIO; sheet = null }
             }
-            AppSheet.DECKS -> ModalBottomSheet(onDismissRequest = { sheet = null }) {
+            AppSheet.DECKS -> ModalBottomSheet(onDismissRequest = { sheet = null },
+                sheetState = rememberModalBottomSheetState(skipPartiallyExpanded = true)) {
                 DeckSelectionSheet(state, copy) {
                     if (it.id != state.activeDeckId) onAction(AppAction.SelectDeck(it.id))
                     sheet = null
                 }
             }
-            AppSheet.SKINS -> ModalBottomSheet(onDismissRequest = { sheet = null }) {
+            AppSheet.SKINS -> ModalBottomSheet(onDismissRequest = { sheet = null },
+                sheetState = rememberModalBottomSheetState(skipPartiallyExpanded = true)) {
                 SkinSelectionSheet(state, copy, onAction)
             }
             AppSheet.LICENSES -> FontLicensesDialog(copy) { sheet = null }
