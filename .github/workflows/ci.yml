@@ -19,8 +19,8 @@ jobs:
     timeout-minutes: 5
     steps:
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
-      - name: Test release versioning and notes
-        run: python3 -m unittest discover -s .github/scripts -p 'test_android_release.py' -v
+      - name: Test release versioning and publishing
+        run: python3 -m unittest discover -s .github/scripts -p 'test_android*.py' -v
       - name: Validate Android changelog
         run: python3 .github/scripts/android_release.py --check-changelog
 
@@ -57,10 +57,7 @@ jobs:
         working-directory: android-app
     env:
       SPOTIFY_CLIENT_ID: ${{ vars.SPOTIFY_CLIENT_ID || secrets.SPOTIFY_CLIENT_ID }}
-      HICIARZ_KEYSTORE_BASE64: ${{ secrets.HICIARZ_KEYSTORE_BASE64 }}
-      HICIARZ_KEYSTORE_PASSWORD: ${{ secrets.HICIARZ_KEYSTORE_PASSWORD }}
-      HICIARZ_KEY_ALIAS: ${{ secrets.HICIARZ_KEY_ALIAS }}
-      HICIARZ_KEY_PASSWORD: ${{ secrets.HICIARZ_KEY_PASSWORD }}
+      HICIARZ_KEYSTORE_FILE: ''
       HICIARZ_PRODUCTION_SIGNING: 'false'
     steps:
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
@@ -74,22 +71,7 @@ jobs:
           cache-read-only: ${{ github.event_name == 'pull_request' }}
       - name: Install Android platform
         run: sdkmanager 'platforms;android-37.0' 'build-tools;37.0.0'
-      - name: Prepare private test signing when available
-        run: |
-          set -euo pipefail
-          if [[ -n "$HICIARZ_KEYSTORE_BASE64" ]]; then
-            if [[ -z "$HICIARZ_KEYSTORE_PASSWORD" || -z "$HICIARZ_KEY_ALIAS" || -z "$HICIARZ_KEY_PASSWORD" ]]; then
-              echo 'The private signing secrets are incomplete.' >&2
-              exit 1
-            fi
-            signing_file="$RUNNER_TEMP/hiciarz-signing.jks"
-            umask 077
-            printf '%s' "$HICIARZ_KEYSTORE_BASE64" | base64 --decode > "$signing_file"
-            echo "HICIARZ_KEYSTORE_FILE=$signing_file" >> "$GITHUB_ENV"
-          else
-            echo 'Private signing is unavailable; this CI build uses an ephemeral Android debug key.'
-          fi
-      - name: Test, lint and build test-signed release APK
+      - name: Test, lint and build with an ephemeral debug key
         run: ./gradlew --no-daemon :app:testDebugUnitTest :app:lintRelease :app:assembleRelease
       - name: Verify that the CI APK is signed
         run: |
@@ -108,9 +90,6 @@ jobs:
             android-app/app/build/reports/
           if-no-files-found: warn
           retention-days: 14
-      - name: Remove temporary private keystore
-        if: always()
-        run: rm -f "$RUNNER_TEMP/hiciarz-signing.jks"
 
   android-ui:
     name: Offline Android UI and screenshots

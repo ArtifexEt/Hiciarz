@@ -2,6 +2,8 @@ node_modules/
 dist/
 .env
 .env.local
+.env.*
+!.env.example
 *.local
 tmp/
 output/
@@ -26,6 +28,7 @@ local.properties
 *.p12
 *.pfx
 /android-app/release-artifacts/
+/android-app/beta-artifacts/
 __pycache__/
 *.py[cod]
 
@@ -39,6 +42,9 @@ __pycache__/
 keystore.properties
 key.properties
 signing.env
+gha-creds-*.json
+*service-account*.json
+*credentials*.json
 
 # Private, local protocol research and device logs
 /research/

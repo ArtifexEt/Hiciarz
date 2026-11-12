@@ -21,22 +21,6 @@ fun signingValue(name: String): String = providers.environmentVariable(name).orN
     ?.takeIf { it.isNotBlank() } ?: error("Missing signing environment variable: $name")
 val spotifyClientId = providers.environmentVariable("SPOTIFY_CLIENT_ID")
     .orElse(providers.gradleProperty("spotifyClientId")).orElse("")
-abstract class BundleDecks @Inject constructor(private val files: FileSystemOperations) : DefaultTask() {
-    @get:InputDirectory @get:PathSensitive(PathSensitivity.RELATIVE)
-    abstract val inputDirectory: DirectoryProperty
-    @get:OutputDirectory abstract val outputDirectory: DirectoryProperty
-
-    @TaskAction fun bundle() {
-        files.sync {
-            from(inputDirectory) { include("*.json"); exclude("._*") }
-            into(outputDirectory.dir("decks"))
-        }
-    }
-}
-val bundledDecks = tasks.register<BundleDecks>("prepareBundledDecks") {
-    inputDirectory.set(rootProject.layout.projectDirectory.dir("../web/examples/playlists"))
-    outputDirectory.set(layout.buildDirectory.dir("generated/bundled-assets"))
-}
 abstract class BundleCardSkins @Inject constructor(private val files: FileSystemOperations) : DefaultTask() {
     @get:InputDirectory @get:PathSensitive(PathSensitivity.RELATIVE)
     abstract val inputDirectory: DirectoryProperty
@@ -96,7 +80,6 @@ android {
     lint { abortOnError = true; checkReleaseBuilds = true }
 }
 androidComponents.onVariants { variant ->
-    variant.sources.assets?.addGeneratedSourceDirectory(bundledDecks, BundleDecks::outputDirectory)
     variant.sources.assets?.addGeneratedSourceDirectory(bundledCardSkins, BundleCardSkins::outputDirectory)
 }
 

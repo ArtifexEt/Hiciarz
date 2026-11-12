@@ -25,8 +25,6 @@ import pl.artifex.hiciarz.model.AppSettings
 import pl.artifex.hiciarz.model.AppState
 import pl.artifex.hiciarz.model.AppTab
 import pl.artifex.hiciarz.model.ConnectionStatus
-import pl.artifex.hiciarz.model.Deck
-import pl.artifex.hiciarz.model.GameMode
 import pl.artifex.hiciarz.model.PlaybackState
 import pl.artifex.hiciarz.model.Song
 import pl.artifex.hiciarz.ui.HiciarzApp
@@ -36,8 +34,8 @@ import pl.artifex.hiciarz.ui.HiciarzApp
 class PlaybackControlsTest {
     @get:Rule val compose = createComposeRule()
     private val actions = mutableListOf<AppAction>()
-    private val scanned = Song("scan-a", "Scanned song", "Artist A", 1984, "2FRnf9qhLbvw8fu4IBXx78")
-    private val external = Song("external-b", "External song", "Artist B", 1976, "0GjEhVFGZW8afUYGChu3Rr")
+    private val scanned = Song("2FRnf9qhLbvw8fu4IBXx78")
+    private val external = Song("0GjEhVFGZW8afUYGChu3Rr")
 
     @Test fun globalPlayInSettingsResumesSpotifyDespiteAnOlderScannedCard() {
         assertGlobalResume(AppTab.SETTINGS)
@@ -52,7 +50,7 @@ class PlaybackControlsTest {
     }
 
     @Test fun unknownCardHasPlaybackOnArtworkAndScanDirectlyBelowIt() {
-        val unknown = Song("unknown", "", "", null, "0000000000000000000000")
+        val unknown = Song("0000000000000000000000")
         val state = mutableStateOf(AppState(
             currentSong = unknown,
             scannerEnabled = false,
@@ -75,21 +73,16 @@ class PlaybackControlsTest {
         compose.runOnIdle { assertEquals(listOf(AppAction.Pause, AppAction.PlayCard(unknown), AppAction.ScanNext), actions) }
     }
 
-    @Test fun legacyRevealedStateCannotExposeCardData() {
-        val answer = "A long game title with an expansion name and a complete edition subtitle"
-        val song = scanned.copy(answer = answer, gameMode = GameMode.GAME)
+    @Test fun scannedRecordingOffersPlaybackWithoutDeckMetadataControls() {
         compose.setContent {
-            HiciarzApp(AppState(currentSong = song, answerRevealed = true,
-                settings = AppSettings(language = "en", hideAnswers = false),
+            HiciarzApp(AppState(currentSong = scanned,
+                settings = AppSettings(language = "en"),
                 playback = PlaybackState(connection = ConnectionStatus.CONNECTED,
-                    isPlaying = true, trackUri = song.spotifyUri))) { actions.add(it) }
+                    isPlaying = true, trackUri = scanned.spotifyUri))) { actions.add(it) }
         }
         compose.onNodeWithContentDescription("Pause").assertIsDisplayed().performClick()
-        compose.onNodeWithText(answer, useUnmergedTree = true).assertDoesNotExist()
-        compose.onNodeWithText(song.title, useUnmergedTree = true).assertDoesNotExist()
-        compose.onNodeWithText(song.artist, useUnmergedTree = true).assertDoesNotExist()
-        compose.onNodeWithText("1984", useUnmergedTree = true).assertDoesNotExist()
         compose.onNodeWithText("Reveal answer").assertDoesNotExist()
+        compose.onNodeWithText("Hide scanned card answers").assertDoesNotExist()
         compose.runOnIdle { assertEquals(listOf(AppAction.Pause), actions) }
     }
 
@@ -141,7 +134,6 @@ class PlaybackControlsTest {
     }
 
     private fun render(tab: AppTab, spotifyTrack: Song) {
-        val deck = Deck("test-deck", "Test deck", listOf(scanned, external))
         val state = AppState(
             tab = tab,
             playback = PlaybackState(
@@ -150,8 +142,6 @@ class PlaybackControlsTest {
                 trackUri = spotifyTrack.spotifyUri,
             ),
             settings = AppSettings(language = "en"),
-            decks = listOf(deck),
-            activeDeckId = deck.id,
             currentSong = scanned,
             scannerEnabled = false,
         )

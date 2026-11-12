@@ -1,14 +1,14 @@
 # Hiciarz na Androida
 
-Plan publikacji w sklepie: [proces wydania w Google Play](docs/google-play-release.md).
+Plan szybkiej bety i późniejszej premiery: [proces wydania w Google Play](docs/google-play-release.md).
 
 Natywna aplikacja Kotlin / Jetpack Compose do skanowania drukowanych kart QR i uruchamiania przypisanej muzyki. Otwiera się na skanerze, a kompaktowe dolne menu zawiera dwie pozycje z ikonami: **Skaner i Opcje**. Spotify odtwarza muzykę w swojej aplikacji, a Hiciarz steruje nim przez oficjalny App Remote SDK. Biblioteka talii, kreator kart i generator PDF są dostępne w [Hiciarzu na GitHub Pages](https://artifexet.github.io/Hiciarz/). W Opcjach znajduje się instrukcja tworzenia nowych kart i [odnośnik do kreatora](https://artifexet.github.io/Hiciarz/?view=editor). [Bingo i plansze do druku](https://artifexet.github.io/Bingo/) mają osobne [repozytorium](https://github.com/ArtifexEt/Bingo).
 
-Skaner i karta zachowują kwadratowe proporcje również na tablecie. Pauza i wznowienie znajdują się na obrazie karty, a pod nią jest przycisk „Skanuj nową”. Odtwarzanie i skórka działają na podstawie QR także dla utworów, których danych aplikacja nie zna. Aplikacja wyświetla wyłącznie rewers karty; nie pokazuje jej tytułu, wykonawcy, roku ani odpowiedzi. Kod odczytuje aparat — nie ma formularza do wklejania kodów ani linków.
+Skaner i karta zachowują kwadratowe proporcje również na tablecie. Pauza i wznowienie znajdują się na obrazie karty, a pod nią jest przycisk „Skanuj nową”. Odtwarzanie i skórka wynikają bezpośrednio z QR. Android nie przechowuje ani nie importuje talii, nie wyszukuje danych utworu w bibliotece i nie odkrywa odpowiedzi. Odpowiedź pozostaje na wydrukowanej karcie. Kod odczytuje aparat — nie ma formularza do wklejania kodów ani linków.
 
 Kod QR może automatycznie włączyć jedną z dziewięciu skórek. Palety i grafiki odpowiadają wersji web i uwzględniają tryb ciemny; rybki mają animowane ozdoby i lampki. W Opcjach można wybrać własny wygląd i wyłączyć śledzenie skórki karty. Automatyczna pauza jest domyślnie wyłączona. Na dużym oknie nawigacja przechodzi na bok, a panele uwzględniają zgięcie ekranu. [Podział funkcji PWA i Androida](docs/pwa-parity.md) opisuje pełny zakres.
 
-Po aktualizacji ze starszej wersji aplikacja uruchamia skaner i pomija zapisane rundy usuniętych trybów. Zachowuje ustawienia, dane talii i skanowanych kart.
+Po aktualizacji ze starszej wersji aplikacja uruchamia skaner i zachowuje ustawienia wyglądu oraz odtwarzania. Dane dawnych talii i rund nie służą już do działania aplikacji.
 
 Zegar i systemowy pasek statusu są ukryte również w panelach opcji i dialogach. Dolna nawigacja systemowa pozostaje dostępna. Android pozwala rozwinąć powiadomienia gestem od góry i może chwilowo odsłonić pasek podczas animacji wskaźnika aparatu.
 
@@ -38,9 +38,9 @@ Zrzuty pochodzą z aplikacji na emulatorze AOSP bez zainstalowanego Spotify. Uk�
 2. Otwórz plik na telefonie i zezwól użytej przeglądarce lub menedżerowi plików na instalację tego APK, jeśli Android o to poprosi.
 3. W zainstalowanym Spotify zaloguj się na konto Premium. Otwórz Hiciarza, wybierz połączenie ze Spotify i zaakceptuj zgodę.
 
-Wymagany jest Android 8.0 / API 26 lub nowszy. Aparat jest potrzebny do skanowania QR. Przygotowanie i import talii JSON/CSV odbywają się w PWA. Wcześniej zapisane talie pozostają na urządzeniu; ich dane nie są pokazywane na ekranie karty.
+Wymagany jest Android 8.0 / API 26 lub nowszy. Aparat jest potrzebny do skanowania QR. Przygotowanie i import talii JSON/CSV odbywają się w PWA. Do Androida nie trzeba wgrywać żadnych plików: wystarczy QR z identyfikatorem utworu Spotify.
 
-Wydania z Releases są podpisane **prywatnym kluczem do testów**, przechowywanym w GitHub Secrets. Klucz i hasła nie trafiają do repozytorium ani do pobieranych artefaktów. Ten sam pakiet i podpis pozwalają instalować kolejne wersje bez usuwania aplikacji. Zmiana podpisu wymaga odinstalowania poprzedniej wersji i usuwa jej dane. Zachowaj pliki JSON / CSV importowanych talii, aby można je było wczytać ponownie.
+Wydania z Releases są podpisane **prywatnym kluczem do testów**, przechowywanym w GitHub Secrets. Klucz i hasła nie trafiają do repozytorium ani do pobieranych artefaktów. Ten sam pakiet i podpis pozwalają instalować kolejne wersje bez usuwania aplikacji. Zmiana podpisu wymaga odinstalowania poprzedniej wersji i usuwa jej ustawienia.
 
 ## Spotify
 
@@ -108,13 +108,15 @@ Ustaw `ANDROID_HOME` na lokalizację Android SDK albo dodaj `sdk.dir=…` do lok
 | Raport testów JUnit | `app/build/reports/tests/testDebugUnitTest/index.html` |
 | Raport lint | `app/build/reports/lint-results-release.html` |
 
-Testy obejmują zgodność kart QR i importu JSON/CSV z kreatorem web, skórki, zachowanie skanera po odtworzeniu procesu oraz migrację danych ze starszych wersji. Nie potwierdzają autoryzacji Spotify na prawdziwym urządzeniu; tę część należy sprawdzić ręcznie.
+Testy obejmują odczyt QR i linków Spotify bez talii, skórki, zachowanie skanera po odtworzeniu procesu oraz ustawienia ze starszych wersji. Nie potwierdzają autoryzacji Spotify na prawdziwym urządzeniu; tę część należy sprawdzić ręcznie.
 
 CI uruchamia też natywne scenariusze Compose na emulatorze AOSP: obsługę wyniku skanowania, ukrycie danych karty także po aktualizacji starszych ustawień, zmianę skórki i języka, pomoc w tworzeniu kart oraz przełączanie między Skanerem i Opcjami. Scenariusze UI przekazują kod przez `ScanCameraCode`; odczyt QR przez aparat sprawdza osobny test zoptymalizowanego APK. Osobny scenariusz zmienia rzeczywiste okno Activity i publikuje pozycję pionowego oraz poziomego zgięcia przez WindowManager, sprawdzając, że panele nie nachodzą na zawias. Obejmuje ekran telefonu 360 dp, zewnętrzny i wewnętrzny ekran Folda, krótki widok poziomy, tryb ciemny i powiększenie tekstu. Zrzuty PNG trafiają do artefaktu `android-native-ui-…` obok raportu testów. Jest to test emulatora, a nie deklaracja sprawdzenia na fizycznym Fold7.
 
 Testy regresji sprawdzają globalne wznawianie Spotify po zmianie zakładki, odtwarzanie wybranej karty oraz poprawną aktualizację stanu przy rozłączeniu i ponownym podłączeniu Spotify. Działają na emulatorze bez konta Spotify.
 
-Grafiki skórek są kopiowane z `../web/public/themes/` podczas budowania. Wcześniej zapisane talie i pakiet przykładów służą do uzupełniania danych skanowanych kart, bez ekranu biblioteki w Androidzie. Opcjonalna zmienna `HICIARZ_BUILD_ROOT` przenosi katalogi wynikowe Gradle na inny dysk; podane wyżej ścieżki dotyczą standardowego buildu bez tej zmiennej.
+Grafiki skórek są kopiowane z `../web/public/themes/` podczas budowania. Android nie pakuje przykładowych talii z `web/examples/playlists/` i nie potrzebuje danych kreatora. Opcjonalna zmienna `HICIARZ_BUILD_ROOT` przenosi katalogi wynikowe Gradle na inny dysk; podane wyżej ścieżki dotyczą standardowego buildu bez tej zmiennej.
+
+Web i Android pozostają w jednym repozytorium. Mają wspólny format QR i grafiki skórek, a wydania Androida sprawdzają wyłącznie wejścia aplikacji. Zmiana kreatora, strony lub talii w części webowej nie wymaga nowego wydania Androida.
 
 ### Podpis i wersja
 
@@ -149,6 +151,54 @@ Publiczne `SPOTIFY_CLIENT_ID` i `ANDROID_SIGNING_CERT_SHA256` umieść osobno w 
 
 Do aktualizacji zainstalowanego APK użyj tego samego podpisu i większego `versionCode`. Numer lokalnego buildu powinien być większy od numeru już zainstalowanego wydania, podanego w `BUILD-INFO.txt`.
 
+## Automatyczna beta w Google Play
+
+Pierwszym torem bety jest **Internal testing**, aby szybko dostarczać aktualizacje zaproszonym testerom. Workflow [`android-beta.yml`](../.github/workflows/android-beta.yml) po udanym zakończeniu **Check web and Android** dla pushu na `main`, w tym po mergu PR, sprawdza, czy zmieniły się wejścia aplikacji. Publikuje AAB tylko przy takiej zmianie. Pull request uruchamia kontrole CI; wydanie pochodzi z dokładnie sprawdzonego commitu `main`. Nieaktualny run jest pomijany przed publikacją.
+
+Porównanie odcisku plików Androida, pakowanych grafik i konfiguracji z aktualnym wydaniem internal obejmuje również zmiany z kilku commitów oraz wcześniejsze nieudane próby. Sam `web/src/`, kreator, talie `web/examples/playlists/`, dokumentacja i testy nie wywołują nowego wydania. Zmiana grafiki z `web/public/themes/` wywołuje je, ponieważ ta grafika trafia do AAB. Szczegółową listę wejść utrzymuje `android_beta.py`.
+
+Tor jest ustawiony na `internal`. Nazwa `beta` w API Google Play oznacza open testing i nie jest zamiennikiem dowolnego testu zamkniętego. Uruchomienie closed testing oraz późniejszą produkcję planujemy osobno.
+
+### Jednorazowe uruchomienie
+
+1. Przygotuj aktywne i zweryfikowane konto Play Console oraz aplikację z pakietem `pl.artifex.hiciarz`.
+2. Wybierz docelowy podpis Play i osobny upload key. Wykonaj pierwszy upload AAB w konsoli, zaakceptuj wymagane umowy i uruchom internal. API wymaga wcześniej skonfigurowanej aplikacji; automat nie tworzy konta ani nie zastępuje pierwszej konfiguracji.
+3. Dodaj SHA-1 **Play App Signing** do konfiguracji Androida w Spotify i sprawdź połączenie aplikacji zainstalowanej przez Play. Podpis upload key służy do wysyłki AAB; użytkownicy otrzymują APK podpisane kluczem Play.
+4. W projekcie Google Cloud włącz Google Play Android Developer API i IAM Service Account Credentials API. Utwórz konto usługi, nadaj mu rolę `roles/iam.serviceAccountTokenCreator` na nim samym dla generowania krótkotrwałego tokena, dodaj jego adres w Play Console i przyznaj dostęp do tej aplikacji oraz uprawnienia odczytu informacji i wydawania na tory testowe. Automat nie potrzebuje uprawnień do produkcji, finansów ani zarządzania użytkownikami. Zapisz JSON konta usługi wyłącznie jako sekret Actions.
+5. W GitHub **Settings → Environments** utwórz `google-play-internal`. W **Deployment branches and tags** wybierz **Selected branches and tags** i dodaj wyłącznie branch `main`. Bez wymaganych reviewers aktualizacje nadal będą automatyczne. Samo wpisanie nazwy środowiska w workflow nie ustawia tej ochrony. Umieść poniższe sekrety wyłącznie w tym środowisku, bez kopii w repozytoryjnych Secrets; publiczne zmienne mogą pozostać na poziomie repozytorium. Sprawdź pierwszy internal na telefonie, a następnie włącz `PLAY_BETA_ENABLED=true`.
+6. W Play Console dodaj listę kont Google testerów oraz adres zgłoszeń. Przekaż testerom link opt-in; muszą otworzyć go na zaproszonym koncie i dołączyć do testu przed instalacją.
+
+Wymagania API i konfiguracja dostępu: [pierwszy upload i Edits API](https://developers.google.com/android-publisher/edits), [konto usługi i autoryzacja](https://developers.google.com/android-publisher/getting_started), [generowanie tokenów w Google auth action](https://github.com/google-github-actions/auth/tree/v3.0.0#inputs-generating-oauth-20-access-tokens).
+
+| Secret środowiska `google-play-internal` | Zawartość |
+| --- | --- |
+| `PLAY_SERVICE_ACCOUNT_JSON` | JSON konta usługi uprawnionego do aplikacji w Play. |
+| `PLAY_UPLOAD_KEYSTORE_BASE64` | Upload keystore zakodowany Base64. |
+| `PLAY_UPLOAD_KEYSTORE_PASSWORD` | Hasło upload keystore. |
+| `PLAY_UPLOAD_KEY_ALIAS` | Alias upload key. |
+| `PLAY_UPLOAD_KEY_PASSWORD` | Hasło upload key. |
+
+| GitHub Variable | Wartość |
+| --- | --- |
+| `PLAY_BETA_ENABLED` | `true` po zakończeniu konfiguracji; wcześniej upload jest jawnie pomijany. |
+| `PLAY_UPLOAD_CERT_SHA256` | Oczekiwany SHA-256 certyfikatu upload key. |
+| `SPOTIFY_CLIENT_ID` | Publiczny Client ID integracji Hiciarza. |
+| `PLAY_VERSION_CODE_FLOOR` | Opcjonalny minimalny kod następnego wydania, jeśli trzeba uwzględnić wcześniej zużyte kody niewidoczne w historii API. |
+
+Sekrety `PLAY_UPLOAD_*` są oddzielne od podpisu testowych APK z GitHub. Nie kopiuj klucza testowego do Play bez wcześniejszej decyzji o docelowym podpisie i migracji instalacji. Prywatne klucze, JSON i hasła nie trafiają do repo ani artefaktów. CI dla PR i pushu używa efemerycznego debug key, bez dostępu do klucza wysyłki Play. Reguła środowiska blokuje udostępnienie nowych sekretów Play workflowom uruchamianym z PR.
+
+### Kolejne aktualizacje
+
+- Po udanym CI na `main` automat porównuje wejścia aplikacji z aktualnym internal. Jeżeli są takie same, raportuje pominięcie wydania. Jeżeli się zmieniły, odczytuje historię Play i wydań GitHub, wybiera wolny, większy `versionCode`, buduje release AAB, sprawdza podpis i przesyła go na internal. Wersja beta, commit i odcisk wejść są zapisane w metadanych wydania.
+- Numer `versionCode` rośnie również przy ponownym rzeczywistym wydaniu. Automaty nie mogą przerwać trwającej publikacji; beta i dotychczasowe wydania APK korzystają ze wspólnej grupy współbieżności.
+- Artefakt `android-app/beta-artifacts/` zachowuje plan, AAB, sumę kontrolną, mapowanie R8 i publiczne metadane podpisu. Potwierdzenie API `PLAY-RECEIPT.json` powstaje dopiero po zatwierdzeniu edycji w Play.
+- Tester może nacisnąć „Aktualizuj” w Google Play lub korzystać z automatycznych aktualizacji sklepu. Sukces workflow oznacza wysłanie wydania do Play, a nie jednoczesną instalację na wszystkich urządzeniach.
+- Błąd uploadu lub zatwierdzenia edycji wymaga sprawdzenia wyniku w Console przed ponownym uruchomieniem; workflow nie powtarza w ciemno operacji publikujących.
+
+W **Actions → Publish Android beta → Run workflow** domyślny `dry_run` przygotowuje podgląd bez podpisywania i wysyłki. Kod wersji z takiego podglądu jest propozycją; rzeczywisty przebieg ustala go po odczycie Play. Ręczne wydanie wymaga gałęzi `main`, wyłączenia `dry_run` oraz włączonej konfiguracji bety.
+
+Internal może obsłużyć do 100 testerów i rozpocząć się przed ukończeniem pełnej karty sklepu. Test 12 osób przez 14 kolejnych dni, wymagany przed wnioskiem o produkcję dla nowych kont osobistych, biegnie dopiero w **closed testing**. Aby szybko rozpocząć ten okres, przygotuj jego deklaracje i rekrutację równolegle z internal. Przy przejściu tester wypisuje się z internal i dołącza do closed. [Zasady torów testowych](https://support.google.com/googleplay/android-developer/answer/9845334?hl=en), [wymagania nowych kont osobistych](https://support.google.com/googleplay/android-developer/answer/14151465?hl=en).
+
 ## Wydania z GitHub Actions
 
 Workflow [`android-release.yml`](../.github/workflows/android-release.yml) korzysta z [`CHANGELOG.md`](CHANGELOG.md) jako źródła opisu zmian dla każdej wersji.
@@ -173,7 +223,7 @@ Publikacja wymaga kompletu czterech sekretów podpisu oraz publicznego odcisku `
 
 Artefakt uruchomienia zachowuje również plan i opis wydania. Wydania testowe nie są oznaczane jako **Latest**.
 
-Zwykłe CI może działać bez sekretów, np. w forku: wtedy używa efemerycznego klucza debug i sprawdza, czy APK jest podpisane. Takie artefakty nie są oficjalnym wydaniem. Workflow Releases nie korzysta z tego fallbacku i przerwie publikację przy braku prywatnego podpisu.
+Zwykłe CI zawsze używa efemerycznego klucza debug i sprawdza, czy APK jest podpisane, również w forku. Takie artefakty nie są oficjalnym wydaniem. Workflow Releases wymaga prywatnego podpisu i przerwie publikację przy jego braku; automat Play korzysta z osobnego upload key ze środowiska `google-play-internal`.
 
 Po pobraniu APK i pliku sumy do tego samego katalogu sprawdź integralność na Linuksie:
 

@@ -5,6 +5,7 @@ import androidx.compose.ui.test.junit4.createEmptyComposeRule
 import androidx.test.core.app.ActivityScenario
 import androidx.test.platform.app.InstrumentationRegistry
 import org.junit.After
+import org.junit.Assert.assertEquals
 import org.junit.Assert.assertTrue
 import org.junit.Before
 import org.junit.Rule
@@ -42,6 +43,8 @@ class PhoneRoundLayoutTest {
         captureNative(compose, "phone-scan-pl", scrollTop = false)
         enterKnownCard()
         val card = compose.onNodeWithTag("playback-card").assertIsDisplayed().getUnclippedBoundsInRoot()
+        assertEquals("QR artwork remains square", (card.right - card.left).value,
+            (card.bottom - card.top).value, 1f)
         val scan = compose.onNodeWithTag("scan-new-card").assertIsDisplayed().getUnclippedBoundsInRoot()
         val navigation = compose.onNodeWithTag("app-bottom-navigation").assertIsDisplayed().getUnclippedBoundsInRoot()
         assertTrue("New scan sits below the card", scan.top >= card.bottom)

@@ -7,9 +7,6 @@ import androidx.test.ext.junit.runners.AndroidJUnit4
 import androidx.test.platform.app.InstrumentationRegistry
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
-import kotlinx.coroutines.flow.first
-import kotlinx.coroutines.runBlocking
-import kotlinx.coroutines.withTimeout
 import org.junit.After
 import org.junit.Assert.*
 import org.junit.Before
@@ -30,16 +27,12 @@ class ScannerViewModelTest {
     @Before fun launch() { prefs.edit().clear().commit(); createModel() }
     @After fun close() { main { store.clear() } }
 
-    @Test fun coldLaunchUsesTheScannerAndLegacyDeckRoutesDoNotOpenTheLibrary() {
-        assertEquals(AppTab.SCAN, state().tab)
-        dispatch(AppAction.SelectTab(AppTab.DECKS))
+    @Test fun coldLaunchUsesTheScannerWithoutLoadingALibrary() {
         assertEquals(AppTab.SCAN, state().tab)
         assertTrue(state().scannerEnabled)
     }
 
-    @Test fun upgradeDiscardsSavedBingoAndCardlessStateWhileKeepingDecksAndSettings() {
-        val savedDeckIds = state().decks.map { it.id }
-        val selectedDeck = state().decks.last().id
+    @Test fun upgradeDiscardsDeckAndGamePreferencesWhileKeepingScannerSettings() {
         prefs.edit().putString("tab", "BINGO")
             .putString("cardlessMode", "BINGO")
             .putString("bingoStage", "PLAYING")
@@ -48,7 +41,8 @@ class ScannerViewModelTest {
             .putString("bingoCurrentScan", "not valid JSON")
             .putString("timeline", "not valid JSON")
             .putString("quiz", "not valid JSON")
-            .putString("activeDeck", selectedDeck)
+            .putString("activeDeck", "old-deck")
+            .putBoolean("hideAnswers", false)
             .putString("language", "en")
             .putString("cardSkin", "mixtape")
             .putBoolean("autoPause", true)
@@ -60,26 +54,37 @@ class ScannerViewModelTest {
         assertEquals(AppTab.SCAN, state().tab)
         assertTrue(state().scannerEnabled)
         assertNull(state().currentSong)
-        assertEquals(savedDeckIds, state().decks.map { it.id })
-        assertEquals(selectedDeck, state().activeDeckId)
         assertEquals("en", state().settings.language)
         assertEquals(CardSkin.MIXTAPE, state().settings.cardSkin)
         assertTrue(state().settings.autoPause)
-        for (key in listOf("tab", "cardlessMode", "bingoStage", "bingoRound", "bingoHistory", "bingoCurrentScan", "timeline", "quiz")) {
+        for (key in listOf("tab", "cardlessMode", "bingoStage", "bingoRound", "bingoHistory", "bingoCurrentScan", "timeline", "quiz", "activeDeck", "hideAnswers")) {
             assertFalse("Removed game state must not survive the upgrade: $key", prefs.contains(key))
+        }
+    }
+
+    @Test fun anObsoleteCorruptLibraryCannotBlockScanning() {
+        val obsolete = java.io.File(application.filesDir, "decks.json")
+        val previous = obsolete.takeIf { it.exists() }?.readBytes()
+        try {
+            obsolete.writeText("not valid JSON")
+            recreate()
+            assertNull(state().message)
+            dispatch(AppAction.ScanCode("spotify:track:0000000000000000000000"))
+            assertEquals("spotify:track:0000000000000000000000", state().playback.trackUri)
+            assertTrue(state().playback.isPlaying)
+            assertEquals("Obsolete data is not loaded or rewritten", "not valid JSON", obsolete.readText())
+        } finally {
+            if (previous == null) obsolete.delete() else obsolete.writeBytes(previous)
         }
     }
 
     @Test fun anUnknownPrintedRecordingUsesItsQrSkinWithoutPlaylistMetadata() {
         val unknown = "0123456789abcdefghijkl"
-        assertTrue(state().decks.flatMap { it.songs }.none { it.spotifyId == unknown })
         dispatch(AppAction.SetCardSkin(CardSkin.VINYL))
         dispatch(AppAction.ScanCode("https://example.org/#2fs$unknown"))
         assertEquals(CardSkin.FISH, state().activeSkin)
         assertEquals(CardSkin.FISH, state().currentSong?.skin)
         assertEquals(unknown, state().currentSong?.spotifyId)
-        assertEquals("", state().currentSong?.title)
-        assertNull(state().currentSong?.year)
         assertEquals("spotify:track:$unknown", state().playback.trackUri)
         assertTrue(state().playback.isPlaying)
     }
@@ -177,7 +182,6 @@ class ScannerViewModelTest {
             model = ViewModelProvider(store, ViewModelProvider.AndroidViewModelFactory.getInstance(application))[HiciarzViewModel::class.java]
             model.attachPlayback(LocalPlayback())
         }
-        runBlocking { withTimeout(10_000) { model.state.first { !it.busy } } }
         instrumentation.waitForIdleSync()
     }
 

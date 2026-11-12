@@ -79,24 +79,6 @@ internal fun GroupDivider() = HorizontalDivider(
 )
 
 @Composable
-internal fun DeckSelector(deck: Deck?, copy: UiCopy, onClick: () -> Unit) {
-    Surface(onClick = onClick, shape = ControlShape, color = MaterialTheme.colorScheme.surface,
-        border = BorderStroke(1.dp, MaterialTheme.colorScheme.outlineVariant)) {
-        Row(Modifier.fillMaxWidth().heightIn(min = 64.dp).padding(horizontal = 16.dp, vertical = 12.dp),
-            verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(12.dp)) {
-            Icon(AppIcons.Decks, null, Modifier.size(22.dp), tint = MaterialTheme.colorScheme.primary)
-            Column(Modifier.weight(1f), verticalArrangement = Arrangement.spacedBy(2.dp)) {
-                Text(deck?.let(copy::deck) ?: copy.t("Wybierz talię", "Choose a deck"), style = MaterialTheme.typography.titleSmall,
-                    maxLines = 2, overflow = TextOverflow.Ellipsis)
-                if (deck != null) Text(songCount(deck.songs.size, copy), style = MaterialTheme.typography.bodySmall,
-                    color = MaterialTheme.colorScheme.onSurfaceVariant)
-            }
-            Icon(AppIcons.Chevron, null, Modifier.size(18.dp))
-        }
-    }
-}
-
-@Composable
 internal fun PlaybackControls(
     playback: PlaybackState,
     settings: AppSettings,
@@ -141,7 +123,7 @@ internal fun PlaybackControls(
     }
 }
 
-/** Transport belongs to the scanned artwork, even when the QR has no answer metadata. */
+/** Playback belongs to the recording decoded from the scanned QR. */
 @Composable
 internal fun CardPlayback(
     playback: PlaybackState,
@@ -149,7 +131,6 @@ internal fun CardPlayback(
     copy: UiCopy,
     onAction: (AppAction) -> Unit,
     modifier: Modifier = Modifier,
-    answerVisible: Boolean = false,
     compact: Boolean = false,
     content: @Composable () -> Unit,
 ) {
@@ -160,9 +141,7 @@ internal fun CardPlayback(
             FilledIconButton(
                 onClick = { onAction(if (playing) AppAction.Pause else AppAction.PlayCard(song)) },
                 enabled = playback.connection == ConnectionStatus.CONNECTED,
-                modifier = Modifier.align(if (answerVisible) Alignment.TopEnd else Alignment.Center)
-                    .padding(if (answerVisible) 4.dp else 0.dp)
-                    .size(if (answerVisible) 48.dp else 64.dp).testTag("card-playback-toggle"),
+                modifier = Modifier.align(Alignment.Center).size(64.dp).testTag("card-playback-toggle"),
                 shape = CircleShape,
                 colors = IconButtonDefaults.filledIconButtonColors(
                     containerColor = MaterialTheme.colorScheme.surface.copy(alpha = .94f),
@@ -173,20 +152,12 @@ internal fun CardPlayback(
             ) {
                 Icon(if (playing) AppIcons.Pause else AppIcons.Play,
                     copy.t(if (playing) "Wstrzymaj" else "Odtwórz", if (playing) "Pause" else "Play"),
-                    Modifier.size(if (answerVisible) 22.dp else 30.dp))
+                    Modifier.size(30.dp))
             }
         }
     }
 }
 
-internal fun songCount(count: Int, copy: UiCopy): String = copy.t(
-    "$count " + when {
-        count == 1 -> "utwór"
-        count % 10 in 2..4 && count % 100 !in 12..14 -> "utwory"
-        else -> "utworów"
-    },
-    "$count " + if (count == 1) "track" else "tracks",
-)
 internal fun formatTime(ms: Long): String = "%d:%02d".format((ms.coerceAtLeast(0) / 1000) / 60, (ms.coerceAtLeast(0) / 1000) % 60)
 
 internal fun Context.activity(): Activity? = when (this) {

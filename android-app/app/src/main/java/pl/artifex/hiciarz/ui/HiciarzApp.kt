@@ -37,7 +37,7 @@ fun HiciarzApp(state: AppState, onAction: (AppAction) -> Unit) {
         var sheet by rememberSaveable { mutableStateOf<AppSheet?>(null) }
         var help by rememberSaveable { mutableStateOf<HelpTopic?>(null) }
         val fold = rememberFoldGeometry()
-        val activeTab = if (state.tab == AppTab.DECKS) AppTab.SCAN else state.tab
+        val activeTab = state.tab
         LaunchedEffect(state.message, copy.language) {
             state.message?.let { snackbar.showSnackbar(copy.message(it)); onAction(AppAction.DismissMessage) }
         }
@@ -78,14 +78,12 @@ fun HiciarzApp(state: AppState, onAction: (AppAction) -> Unit) {
                             else when (activeTab) {
                                 AppTab.SCAN -> ScanScreen(state, copy, onAction,
                                     cameraActive = sheet == null)
-                                AppTab.DECKS -> Unit
                                 AppTab.SETTINGS -> SettingsScreen(state, copy, onAction,
                                     onAudio = { sheet = AppSheet.PLAYBACK },
                                     onSkin = { sheet = AppSheet.SKINS },
                                     onLicenses = { sheet = AppSheet.LICENSES },
                                     onHelp = { help = HelpTopic.ALL })
                             }
-                            if (state.busy) LinearProgressIndicator(Modifier.fillMaxWidth().align(Alignment.TopCenter))
                         }
                     }
                 }
@@ -109,7 +107,6 @@ fun HiciarzApp(state: AppState, onAction: (AppAction) -> Unit) {
 
 private fun tabIcon(tab: AppTab): ImageVector = when (tab) {
     AppTab.SCAN -> AppIcons.Scan
-    AppTab.DECKS -> AppIcons.Decks
     AppTab.SETTINGS -> AppIcons.Settings
 }
 

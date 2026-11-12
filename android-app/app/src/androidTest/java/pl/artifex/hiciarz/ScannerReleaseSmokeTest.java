@@ -87,6 +87,7 @@ public final class ScannerReleaseSmokeTest {
                 () -> containsText("Scan a new card") && containsCardSkin("Disco"));
         assertTrue("Legacy answer visibility must not expose the fixture's metadata",
                 !containsText("Dean Martin") && !containsText("1959") && !containsText("Reveal answer"));
+        assertTrue("The release app must not bundle any decks", target.getAssets().list("decks").length == 0);
         waitUntil("The skin encoded in the actual QR must replace the chosen Classic theme", 10_000,
                 () -> containsCardSkin("Disco"));
 

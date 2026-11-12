@@ -1,8 +1,35 @@
-# Publikacja Hiciarza w Google Play
+# Beta Hiciarza w Google Play
 
 Stan wymagań: 12 listopada 2026. Zakres: natywna aplikacja z `android-app/`, pakiet `pl.artifex.hiciarz`. Podstawowy przebieg to zeskanowanie kodu QR i uruchomienie wskazanego utworu w aplikacji Spotify użytkownika. Android zawiera Skaner i Opcje. Karty przygotowuje się w webowym Hiciarzu. [Bingo i generator plansz](https://artifexet.github.io/Bingo/) mają osobne [repozytorium](https://github.com/ArtifexEt/Bingo).
 
-**Celem publikacji jest udostępnienie skanera QR uruchamiającego muzykę.** Techniczna podstawa Androida i testowe wydania APK już istnieją. Do przygotowania pozostają: wydanie AAB, konfiguracja Play Console, prywatność, materiały sklepu i testy przez Google Play. Warunki integracji Spotify wymagają weryfikacji względem pełnego zakresu skanera; nie ustalono, że publikacja Hiciarza jest niedopuszczalna. Przygotowania techniczne mogą przebiegać równolegle z tą weryfikacją.
+**Bieżący cel to szybka beta przez Internal testing, aktualizowana automatycznie po udanym sprawdzeniu zmian aplikacji na `main`.** Techniczna podstawa Androida i testowe wydania APK już istnieją. Pierwszy etap obejmuje aktywne konto Play, podpisany AAB, instalację przez link testowy i sprawdzenie Spotify na fizycznym telefonie. Konfigurację zamkniętej bety oraz materiały sklepu przygotowujemy równolegle. Warunki integracji Spotify wymagają weryfikacji względem pełnego zakresu skanera; nie ustalono, że publikacja Hiciarza jest niedopuszczalna.
+
+## Najkrótsza droga do testów
+
+| Tor | Cel | Kiedy uruchomić |
+| --- | --- | --- |
+| Internal testing | Szybkie aktualizacje dla maksymalnie 100 testerów zaproszonych przez listę kont Google. | Po przygotowaniu konta, podpisu, AAB i podstawowego odbioru. Nie wymaga oczekiwania 14 dni ani kompletnej karty sklepu. |
+| Closed testing | Szersza beta i zbieranie feedbacku od docelowych użytkowników. | Po ukończeniu konfiguracji aplikacji i deklaracji. Rekrutację 15–20 osób zacząć równolegle z internal. |
+| Open testing / produkcja | Późniejsze publiczne udostępnienie. | Osobny etap; na nowym koncie osobistym open testing wymaga dostępu do produkcji. |
+
+Internal jest najszybszym torem dystrybucji: Google opisuje dostępność nowych buildów w ciągu minut, ale termin pierwszego uruchomienia zależy też od rejestracji konta i konfiguracji integracji. [Konfiguracja torów testowych](https://support.google.com/googleplay/android-developer/answer/9845334?hl=en).
+
+**Wymóg 12 testerów przez 14 kolejnych dni dotyczy późniejszego wniosku o produkcję na nowym koncie osobistym.** Nie trzeba go spełnić przed uruchomieniem bety. Okres liczy się w closed testing, więc po krótkim odbiorze internal uruchomić closed możliwie wcześnie. Tester przenoszony do closed musi najpierw wypisać się z internal i dołączyć do właściwego testu. Aktualizacje w ramach closed mogą być wydawane podczas tego okresu. [Wymagania testów](https://support.google.com/googleplay/android-developer/answer/14151465?hl=en), [przenoszenie testerów](https://support.google.com/googleplay/android-developer/answer/9845334?hl=en).
+
+Aplikacja dostępna wyłącznie w internal jest zwolniona z formularza Data safety. Nie zwalnia to z obowiązujących zasad dotyczących danych i SDK. Audyt oraz politykę przygotować równolegle; formularz Data safety, polityka, karta sklepu i wymagane deklaracje muszą być gotowe przed closed testing. [Zakres Data safety](https://support.google.com/googleplay/android-developer/answer/10787469?hl=en).
+
+## Automatyczne aktualizacje bety
+
+1. Pull request uruchamia istniejący workflow `Check web and Android` z testami i kontrolami aplikacji.
+2. Po mergu lub bezpośrednim pushu na `main`, po sukcesie tego workflow, `android-beta.yml` porównuje odcisk wejść aplikacji z aktualnym wydaniem internal. Jeśli wejścia się zmieniły, przygotowuje wydanie z dokładnie sprawdzonego commitu. Dokumentacja, sam interfejs web i talie nie powodują nowego wydania Androida.
+3. Proces ustala kolejny `versionCode`, buduje i weryfikuje podpisany AAB, a następnie aktualizuje wyłącznie tor `internal`. Numer wersji i commit są zapisane razem z artefaktem.
+4. Automatyczny upload włącza się po jednorazowej konfiguracji konta, pierwszego wydania oraz zmiennej `PLAY_BETA_ENABLED=true`. Brak konfiguracji ma być widoczny w podsumowaniu uruchomienia.
+5. Testerzy dostają wersję przez Google Play. Mogą używać automatycznych aktualizacji sklepu albo nacisnąć „Aktualizuj”; zakończenie workflow nie oznacza natychmiastowego zainstalowania aplikacji na każdym telefonie.
+6. Przed późniejszym przeniesieniem automatu na closed testing ustalić osobno nazwę i zasady tego toru. Tor API `beta` oznacza open testing, dlatego nie należy używać go jako zamiennika dowolnej zamkniętej bety.
+
+Jednorazowa konfiguracja i ograniczenia automatu są opisane w instrukcji Androida. Używamy tego samego pakietu i docelowego podpisu Play również podczas testów, aby następne aktualizacje zachowywały ustawienia użytkowników.
+
+Web i Android pozostają w jednym repo. Android nie korzysta z talii: QR zawiera identyfikator utworu i opcjonalną skórkę. Wspólnymi zasobami pakowanymi do Androida są wybrane grafiki `web/public/themes/`; zmiana tych grafik może wyzwolić betę. Zmiany `web/examples/playlists/` nie są wejściem Androida. Odcisk obejmuje też konfigurację budowania, publiczny Client ID Spotify i oczekiwany certyfikat upload key, dzięki czemu zmiana konfiguracji AAB może uruchomić wydanie bez zmian interfejsu.
 
 ## Gotowe elementy i braki
 
@@ -25,9 +52,9 @@ Od 31 sierpnia 2026 nowe aplikacje mobilne i ich aktualizacje wymagają co najmn
 
 Podstawowy przebieg Hiciarza jest prosty: aparat odczytuje QR, aplikacja rozpoznaje wskazany utwór i zleca jego odtworzenie Spotify. Spotify App Remote służy właśnie do sterowania zewnętrzną aplikacją Spotify, w tym uruchamiania utworów. Sam techniczny mechanizm skanowania nie przesądza, czy cały produkt stanowi grę w rozumieniu warunków usługi. [Spotify Android SDK](https://developer.spotify.com/documentation/android).
 
-Z Androida usunięto tryb Bingo wraz z kategoriami, rundami, pomocą i zapisami tego trybu. Nawigacja zawiera Skaner oraz Opcje. Skaner zachowuje odtwarzanie, skórki i możliwość ukrywania lub odkrywania danych karty, gdy są dostępne lokalnie. Taki zakres należy przedstawić w zgłoszeniu i instrukcji recenzenta.
+Z Androida usunięto Bingo, bibliotekę i import talii, dołączane talie oraz wyszukiwanie i odkrywanie odpowiedzi. Nawigacja zawiera Skaner oraz Opcje. Skaner odczytuje utwór i skórkę bezpośrednio z QR i steruje odtwarzaniem w Spotify. Taki zakres należy przedstawić w zgłoszeniu i instrukcji recenzenta.
 
-Spotify Developer Policy, sekcja III punkt 2, zawiera zapis: „Do not create a game, including trivia quizzes”. Usunięcie Bingo upraszcza produkt, ale nie stanowi samo w sobie potwierdzenia zgodności pozostałych funkcji skanera z warunkami Spotify. Ocena dotyczy faktycznego działania wydania, także ukrywania i odkrywania danych karty. [Spotify Developer Policy](https://developer.spotify.com/policy).
+Spotify Developer Policy, sekcja III punkt 2, zawiera zapis: „Do not create a game, including trivia quizzes”. Usunięcie mechanik gry i talii upraszcza produkt, ale ocena warunków nadal dotyczy faktycznego działania wydania i jego zastosowania. [Spotify Developer Policy](https://developer.spotify.com/policy).
 
 HITSTER jest konkretnym przykładem produktu łączącego fizyczne karty, skan QR i odtwarzanie Spotify. Jego wykonawca potwierdza ten przebieg. Publiczny opis nie wyjaśnia jednak podstawy umownej tej integracji, dlatego nie zakładamy ani specjalnej umowy HITSTER, ani automatycznie takich samych uprawnień Hiciarza. [Opis aplikacji HITSTER autorstwa Q42](https://www.q42.nl/en/work/hitster-app).
 
@@ -37,17 +64,17 @@ Niezależnie sprawdzić dostęp App Remote na świeżych kontach. Dokumentacja o
 
 **Wynik etapu:** ustalony zakres pierwszego AAB, rzetelny opis skanera, Opcji i odtwarzania oraz ocena warunków integracji. Zachowujemy Spotify jako podstawę przygotowań; ewentualną zmianę źródła audio rozważyć dopiero na podstawie konkretnych ustaleń. Konto Play, podpisy, prywatność i budowanie można przygotowywać równolegle.
 
-## Etap 1 Konto i zakres premiery
+## Etap 1 Konto i zakres bety
 
 Odpowiedzialny: właściciel aplikacji.
 
-1. Sprawdzić, czy istnieje już konto Google Play Console, jaki ma typ i czy uzyskało dostęp do produkcji.
+1. Uzyskać dostęp do aktywnego, zweryfikowanego konta Google Play Console i ustalić jego typ. Dostęp do produkcji nie jest warunkiem uruchomienia internal ani closed testing.
 2. W razie zakładania konta wybrać typ zgodny z faktycznym wydawcą, opłacić rejestrację i przejść weryfikację. Opłata jest jednorazowa i wynosi 25 USD; konto osobiste może wymagać także weryfikacji dostępu do urządzenia Android. [Rejestracja Play Console](https://support.google.com/googleplay/android-developer/answer/6112435?hl=en).
 3. Dla organizacji przygotować m.in. dane firmy, stronę i numer D-U-N-S. Google podaje, że uzyskanie numeru może potrwać do 30 dni. Ustalić także, które dane wydawcy będą publiczne. [Informacje wymagane przy rejestracji](https://support.google.com/googleplay/android-developer/answer/13628312?hl=en).
-4. Ustalić nazwę wydawcy, kontakt pomocy i prywatności, kraje, języki, model cenowy i grupę wiekową. Założenie do planowania pierwszego wydania: aplikacja bezpłatna, bez reklam i zakupów, początkowo Polska; właściciel potwierdza te wybory.
+4. Ustalić nazwę wydawcy, kontakt pomocy i prywatności, kraje, języki, model cenowy i grupę wiekową. Założenie do planowania bety: aplikacja bezpłatna, bez reklam i zakupów, początkowo zaproszeni testerzy; właściciel potwierdza te wybory.
 5. Utworzyć aplikację w Play Console i potwierdzić `pl.artifex.hiciarz`. Wybrać aplikację lub grę zgodnie z finalną funkcją, domyślny język polski i planowaną cenę. [Tworzenie aplikacji w Play](https://support.google.com/googleplay/android-developer/answer/9859152?hl=en).
 
-**Wynik etapu:** zweryfikowane konto, utworzona aplikacja i ustalone parametry premiery.
+**Wynik etapu:** zweryfikowane konto, utworzona aplikacja i lista pierwszych testerów z działającym kanałem zgłoszeń.
 
 ## Etap 2 Podpisy i numeracja
 
@@ -59,7 +86,7 @@ Play App Signing rozdziela **upload key**, którym podpisujemy przesyłany AAB, 
 2. Rozstrzygnąć migrację dotychczasowych testowych APK. Przy innym podpisie aplikacja z Play może wymagać odinstalowania wersji GitHub, co usuwa lokalne dane. Jeżeli konieczna jest ciągłość aktualizacji, zaplanować zgodny podpis przed pierwszą dystrybucją; nie przyjmować automatycznie klucza testowego jako docelowego. [Podpisy dla różnych kanałów dystrybucji](https://developer.android.com/guide/app-bundle/faq).
 3. Upload keystore i hasła przechowywać poza repozytorium; w CI wykorzystać osobne środowisko Play i sekrety. Zarchiwizować kopię klucza, publiczne odciski i instrukcję odzyskania dostępu.
 4. Dla wariantu ze Spotify dodać w Spotify Dashboard pakiet `pl.artifex.hiciarz`, redirect `hiciarz://spotify-callback` i SHA-1 certyfikatu lub certyfikatów Play App Signing używanych na wspieranych urządzeniach. Odcisk upload key nie wystarczy. Zachować także odciski używanych wydań testowych. [Konfiguracja Spotify Android](https://developer.spotify.com/documentation/android/tutorials/getting-started).
-5. Wyznaczać `versionCode` z jednego rejestru dla GitHub i wszystkich torów Play. Każdy nowy build przesyłany do Play otrzymuje wolny, większy kod. Promocja już przesłanego AAB między torami zachowuje jego kod. Obecny workflow uwzględnia historię GitHub, więc wymaga rozszerzenia o Play. Domyślny kod z Gradle nie jest źródłem prawdy dla następnego wydania.
+5. Każdy nowy build przesyłany do Play otrzymuje wolny, większy `versionCode`. Automat bety uwzględnia historię Play i testowych wydań GitHub oraz opcjonalny `PLAY_VERSION_CODE_FLOOR`. Dotychczasowy workflow APK odczytuje historię GitHub; jeśli wymagana jest migracja między kanałami, ustalić także zgodną numerację i podpis przed takim wydaniem. Promocja już przesłanego AAB między torami zachowuje jego kod. Domyślny kod z Gradle nie jest źródłem prawdy dla następnego wydania.
 
 **Wynik etapu:** wybrane klucze, sprawdzony plan migracji, konfiguracja usług i numer następnego wydania.
 
@@ -72,7 +99,7 @@ Odpowiedzialni: właściciel aplikacji oraz osoba znająca przepływy danych w k
 | Element | Zachowanie obecnego kodu | Co potwierdzić dla wydawanego AAB |
 | --- | --- | --- |
 | Kamera i QR | CameraX przekazuje klatki do lokalnego skanera ML Kit; brak własnego uploadu obrazu | Scalony manifest, brak zapisu lub wysyłki klatek, zachowanie po odmowie uprawnienia. |
-| Ustawienia i karty | SharedPreferences, dane zeskanowanej karty i prywatne pliki talii; backup wyłączony | Jak użytkownik usuwa dane i co znika przy odinstalowaniu. |
+| Ustawienia i skaner | Ustawienia wyglądu i odtwarzania oraz stan skanera; backup wyłączony; bez bazy talii i odpowiedzi | Jak użytkownik usuwa dane i co znika przy odinstalowaniu. |
 | ML Kit | `com.google.mlkit:barcode-scanning:17.3.0`, model dołączony do aplikacji | Dane diagnostyczne, identyfikatory instalacji i cele przetwarzania w tej wersji SDK. |
 | Spotify | URI utworu i stan odtwarzania przez App Remote; brak konta Hiciarza | Autoryzacja, SDK i przepływy do Spotify, jeśli integracja pozostaje. |
 | Usługi zewnętrzne | Generator w przeglądarce, GitHub Issues, strona Spotify | Kiedy użytkownik opuszcza aplikację i jakie obowiązują wtedy zasady. |
@@ -86,19 +113,19 @@ ML Kit opisuje zbieranie danych urządzenia i aplikacji, identyfikatorów instal
 2. Wypełnić Data safety po sprawdzeniu scalonego manifestu i zależności wydania. Rozróżnić dostęp lokalny, zbieranie, udostępnianie, wymagane i opcjonalne dane. Dla ML Kit sprawdzić kategorie diagnostyki oraz identyfikatorów według definicji formularza. Deklaracje muszą uwzględniać SDK i zgadzać się z polityką. [Przewodnik formularza Data safety](https://support.google.com/googleplay/android-developer/answer/10787469?hl=en).
 3. W App content uzupełnić reklamy, odbiorców, rating treści, dostęp do aplikacji i pozostałe deklaracje wyświetlane przez Console. Odpowiedzi oprzeć na finalnej wersji: także zewnętrznej muzyce, możliwych treściach explicit i sposobie korzystania ze skanera. Nie przypisywać samodzielnie ratingu PEGI ani kategorii dziecięcej. [Przygotowanie aplikacji do oceny](https://support.google.com/googleplay/android-developer/answer/9859455?hl=en).
 4. Obecnie nie ma rejestracji konta Hiciarza. Jeżeli do premiery zostanie dodana, ponownie sprawdzić wymagania usuwania kont i danych. Samo połączenie ze Spotify wymaga odrębnego opisania, a nie deklarowania własnego systemu kont.
-5. Sprawdzić prawa do nazwy, grafik, fontów i dołączanych talii. Do pakietu trafiają JSON z `web/examples/playlists/` oraz grafiki motywów. Zachować informacje o licencjach i usunąć materiały, których dystrybucji nie można uzasadnić.
+5. Sprawdzić prawa do nazwy, grafik i fontów. Do Androida trafiają wybrane grafiki motywów, bez JSON z `web/examples/playlists/`. Zachować informacje o licencjach i usunąć materiały, których dystrybucji nie można uzasadnić.
 
 **Wynik etapu:** działająca polityka w sieci i aplikacji, uzgodnione formularze oraz lista wykorzystanych materiałów i licencji.
 
 ## Etap 4 Powtarzalne wydanie AAB
 
-Odpowiedzialny: osoba przygotowująca wydanie. Poniższy proces należy wdrożyć; istniejący workflow testowych APK nie realizuje publikacji w Play.
+Odpowiedzialny: osoba przygotowująca wydanie. Proces realizuje `android-beta.yml` po jednorazowej konfiguracji Play opisanej w instrukcji Androida; workflow testowych APK pozostaje osobnym kanałem.
 
 ### Budowanie
 
-Przygotować osobny workflow, np. `android-play-release.yml`, uruchamiany ręcznie z wersją i commitem. Najpierw ma generować artefakty do sprawdzenia. Pierwsze przesłanie AAB wykonać ręcznie w Console; automatyzację uploadu do toru internal można dodać po sprawdzeniu tego procesu.
+Workflow `android-beta.yml` uruchamia się po udanym CI dla `main` i porównuje wejścia aplikacji przed budowaniem. Ręczny `dry_run` generuje podgląd planu; rzeczywisty upload włącza `PLAY_BETA_ENABLED=true`. Pierwsze przesłanie AAB wykonać ręcznie w Console i sprawdzić instalację przed włączeniem automatu.
 
-Wymagane środowisko: JDK 17, Gradle Wrapper z repo i Android SDK zgodne z projektem. Pakowane talie i grafiki pochodzą również z `web/`, dlatego checkout musi obejmować te zasoby.
+Wymagane środowisko: JDK 17, Gradle Wrapper z repo i Android SDK zgodne z projektem. Pakowane grafiki pochodzą z `web/public/themes/`, dlatego checkout musi obejmować te zasoby. Talie i kod aplikacji webowej nie są potrzebne do budowania Androida.
 
 Komendy dla obecnego wariantu ze Spotify, uruchamiane z katalogu `android-app/`. Przygotowanie AAB może przebiegać równolegle z oceną warunków integracji; wysłanie do publicznej dystrybucji wymaga zamknięcia odpowiednich punktów gotowości. Wartości klucza i hasła należy wcześniej wprowadzić przez bezpieczne środowisko lokalne lub CI:
 
@@ -141,9 +168,11 @@ Przyszły workflow ma przerywać pracę przy brakującym kluczu, błędnym odcis
 
 **Wynik etapu:** zweryfikowany AAB, raporty i metryka tego samego commitu.
 
-## Etap 5 Karta sklepu i dostęp recenzenta
+## Etap 5 Przygotowania do closed testing: karta sklepu i dostęp recenzenta
 
 Odpowiedzialni: właściciel produktu i osoba przygotowująca materiały.
+
+Materiały można kończyć podczas pierwszych testów internal. Komplet jest potrzebny przed uruchomieniem closed testing; nie blokować pierwszego internal wyłącznie dopracowywaniem materiałów promocyjnych.
 
 | Materiał | Zakres do przygotowania |
 | --- | --- |
@@ -160,20 +189,22 @@ Parametry tekstu: [konfiguracja karty sklepu](https://support.google.com/googlep
 
 Materiały pokazują natywny skaner, uruchamianie utworu i Opcje. Bingo jest osobną aplikacją pod `https://artifexet.github.io/Bingo/`. Kreator talii, PDF i funkcje dostępne wyłącznie w PWA należy opisać jako otwierane w przeglądarce. Wymagania Spotify podać zgodnie z rzeczywistym działaniem wersji. Opis i grafiki nie mogą sugerować oficjalnego partnerstwa bez podstawy.
 
-W App access przygotować krótką instrukcję po angielsku: przykładowe QR udostępnione bez logowania, skanowanie, odsłuch, pauza lub wznowienie, odkrycie danych karty i ponowne skanowanie. Dołączyć wszystkie potrzebne zasoby i legalny, powtarzalny dostęp do funkcji zależnych od kont lub członkostwa. Nie zakładać, że recenzent ma prywatne Spotify Premium, wcześniejszą zgodę integracji lub wydrukowaną talię. Własne konto Hiciarza nie istnieje, ale odtwarzanie jest funkcją ograniczoną dostępem do zewnętrznej usługi. [Dostęp do aplikacji podczas oceny](https://support.google.com/googleplay/android-developer/answer/9859455?hl=en).
+W App access przygotować krótką instrukcję po angielsku: przykładowe QR udostępnione bez logowania, skanowanie, odsłuch, pauza lub wznowienie i ponowne skanowanie. Dołączyć wszystkie potrzebne zasoby i legalny, powtarzalny dostęp do funkcji zależnych od kont lub członkostwa. Nie zakładać, że recenzent ma prywatne Spotify Premium, wcześniejszą zgodę integracji lub wydrukowane karty. Własne konto Hiciarza nie istnieje, ale odtwarzanie jest funkcją ograniczoną dostępem do zewnętrznej usługi. [Dostęp do aplikacji podczas oceny](https://support.google.com/googleplay/android-developer/answer/9859455?hl=en).
 
 **Wynik etapu:** komplet materiałów oraz scenariusz, który osoba spoza projektu może wykonać bez kontaktu z autorem.
 
-## Etap 6 Testy przez Google Play
+## Etap 6 Uruchomienie i odbiór bety
 
-Najpierw przesłać AAB do **Internal testing** i zainstalować go ze sklepu na fizycznym telefonie. Instalacja lokalnego APK nie sprawdza certyfikatu, pakowania ani dostarczania przez Play.
+Najpierw przesłać pierwszy AAB do **Internal testing** ręcznie, skonfigurować Play App Signing i dodać SHA-1 podpisu Play do Spotify. Dodać listę pierwszych testerów oraz kanał zgłoszeń i przygotować link opt-in. Tester otwiera link na zaproszonym koncie Google, dołącza do testu i instaluje aplikację ze sklepu. Instalacja lokalnego APK nie sprawdza certyfikatu, pakowania ani dostarczania przez Play.
+
+Po tym odbiorze skonfigurować automat aktualizacji internal. Sprawdzić drugi build z większym kodem wersji i instalację aktualizacji zachowującą ustawienia. Testowa aktualizacja ma pochodzić z commitu, którego kontrole CI zakończyły się sukcesem.
 
 | Scenariusz | Kryterium odbioru |
 | --- | --- |
 | Czysta instalacja | Start bez wcześniejszych danych i konfiguracji deweloperskiej. |
 | Aparat | Udzielenie, odmowa i ponowne udzielenie zgody; czytelna ścieżka dalszego działania. |
 | Karty QR | Poprawna karta, nieznany utwór, błędny QR, kolejny skan, latarka i zoom. |
-| Obsługa skanera | Odsłuch, pauza, odkrycie danych karty, kolejny skan i przełączanie Skaner–Opcje. |
+| Obsługa skanera | Odsłuch bez talii, pauza, kolejny skan i przełączanie Skaner–Opcje. |
 | Odtwarzanie | Nowy uprawniony użytkownik spoza dotychczasowych kont testowych; utrata połączenia i powrót. |
 | Spotify, jeżeli pozostaje | Instalacja z Play, właściwy certyfikat, świeża zgoda, brak Spotify, brak Premium i odmowa autoryzacji. |
 | Cykl aplikacji | Tło, blokada ekranu, utrata procesu i odtworzenie stanu. |
@@ -184,13 +215,15 @@ Najpierw przesłać AAB do **Internal testing** i zainstalować go ze sklepu na 
 
 Uruchomić i ocenić Pre-launch report. Automatyczny raport uzupełnia testy ręczne, szczególnie tam, gdzie wymagane są kamera, QR i zewnętrzna aplikacja do muzyki. Zachować urządzenia, wersję AAB, wyniki i usunięte usterki.
 
-Następnie przejść do **Closed testing**. Dla osobistego konta utworzonego po 13 listopada 2023 wymagane jest co najmniej **12 testerów zapisanych nieprzerwanie przez 14 dni** przed złożeniem wniosku o dostęp do produkcji. Nie zastępuje tego test internal. Zorganizować realne użycie i feedback; samo spełnienie licznika nie oznacza automatycznej zgody Google. Dla innych kont sprawdzić wymagania widoczne w Console. [Wymagania testów dla kont osobistych](https://support.google.com/googleplay/android-developer/answer/14151465?hl=en).
+Równolegle kończyć konfigurację **Closed testing**, aby możliwie szybko rozpocząć szerszą betę. Dla osobistego konta utworzonego po 13 listopada 2023 wymagane jest co najmniej **12 testerów zapisanych nieprzerwanie przez 14 dni** przed późniejszym złożeniem wniosku o dostęp do produkcji. Nie jest to okres oczekiwania na start closed i nie zastępuje go internal. Zorganizować realne użycie i feedback; samo spełnienie licznika nie oznacza automatycznej zgody Google. [Wymagania testów dla kont osobistych](https://support.google.com/googleplay/android-developer/answer/14151465?hl=en).
 
-Praktycznie warto zrekrutować 15–20 osób, aby rezygnacja jednej nie zablokowała minimum. Prowadzić prosty rejestr zgłoszeń i poprawek, a po wymaganym okresie złożyć wniosek o produkcję z opisem testów.
+Praktycznie warto zrekrutować 15–20 osób, aby rezygnacja jednej nie zablokowała minimum. Prowadzić rejestr wersji, urządzeń, zgłoszeń i poprawek. Wniosek o produkcję pozostaje późniejszą decyzją; można kontynuować betę po zakończeniu wymaganego okresu.
 
-**Wynik etapu:** testy bez błędów blokujących główną funkcję i dostęp do produkcji przyznany przez Play.
+**Wynik etapu:** działający link do bety, udane instalacje przez zaproszonych testerów, sprawdzone skanowanie i Spotify oraz potwierdzona aktualizacja z automatu. Dostęp do produkcji nie jest kryterium ukończenia tego etapu.
 
-## Etap 7 Pierwsza publikacja
+## Późniejszy etap: pierwsza publikacja produkcyjna
+
+Poniższe kroki dotyczą przyszłej premiery publicznej i nie blokują uruchomienia internal ani closed beta.
 
 1. Sprawdzić końcową listę gotowości poniżej, kraje i urządzenia objęte premierą.
 2. Promować sprawdzony AAB z testów do produkcji. Jeżeli trzeba zmienić kod, zbudować nową wersję z większym `versionCode` i ponowić odpowiednie testy.
@@ -215,12 +248,32 @@ Po zmianie SDK, kont, telemetrii lub odtwarzania ponownie sprawdzić Data safety
 | Równolegle | Konto Play, weryfikacja, kontakt i zakres krajów | Właściciel konta | Można zacząć od razu. |
 | Równolegle | Audyt danych, materiałów i projekt polityki | Właściciel + programista | Finalizacja dla rzeczywistego zakresu AAB. |
 | 2 | Podpisy, numeracja i workflow AAB | Programista + wydawca | Przed pierwszym uploadem. |
-| 3 | Link do polityki, poprawki produktu i materiały sklepu | Programista + właściciel | Finalny zakres funkcji. |
-| 4 | Internal, urządzenia, certyfikat i 16 KB | Testerzy + programista | Gotowy AAB. |
-| 5 | Closed testing i wniosek o produkcję | Wydawca + testerzy | Ukończona konfiguracja; wymagania zależne od konta. |
-| 6 | Ocena Google, premiera i kontrola instalacji | Wydawca | Spełnione wszystkie kryteria. |
+| 3 | Pierwszy internal: instalacja, certyfikat Play, Spotify i 16 KB | Testerzy + programista | Gotowy AAB i aktywne konto. |
+| 4 | Automat po udanym CI na main i odbiór aktualizacji | Programista + wydawca | Pierwszy internal, uprawnienia API i skonfigurowany upload key. |
+| Równolegle | Link do polityki, deklaracje i materiały sklepu | Programista + właściciel | Finalny zakres funkcji; wymagane przed closed. |
+| 5 | Closed testing, rekrutacja i feedback | Wydawca + testerzy | Ukończona konfiguracja; osobna lista i link opt-in. |
+| Później | Wniosek o produkcję, ocena Google i premiera | Wydawca | Osobna decyzja po testach. |
 
-Dla nowego konta osobistego harmonogram musi zawierać co najmniej 14 dni ciągłego udziału wymaganej grupy, czas weryfikacji i ocenę Google. Przygotowania oprzeć na obecnym skanerze i integracji Spotify. Przed potwierdzeniem daty publicznej premiery zamknąć testy, deklaracje oraz ocenę warunków integracji dla funkcji zawartych w AAB.
+Pierwszy internal uruchomić po przygotowaniu konta, podpisanego AAB i podstawowym odbiorze, bez oczekiwania na zakończenie 14 dni. Ten okres ma znaczenie dopiero dla późniejszego wniosku produkcyjnego na nowym koncie osobistym i biegnie w closed testing. Weryfikacja nowego konta, pierwsza konfiguracja Play i odbiór Spotify są zależnościami terminu startu; czas samego uploadu nie określa całego harmonogramu.
+
+### Lista gotowości do szybkiej bety internal
+
+- [ ] Aktywne, zweryfikowane konto Play i utworzona aplikacja `pl.artifex.hiciarz`.
+- [ ] Ustalony zakres skanera i warunki korzystania z integracji.
+- [ ] Podpisany AAB z właściwym pakietem i wolnym kodem wersji; testy i lint przechodzą.
+- [ ] Pierwszy upload i podpis Play skonfigurowane; właściwy SHA-1 wpisany w Spotify.
+- [ ] Testerzy mają link opt-in i dostęp do instalacji na swoich kontach Google.
+- [ ] Co najmniej dwie osoby spoza dotychczasowej konfiguracji deweloperskiej potwierdziły instalację, skan QR i odtwarzanie.
+- [ ] Działa kanał zgłoszeń z numerem wersji, modelem telefonu i krokami odtworzenia problemu.
+- [ ] Automat po udanym CI na main publikuje wyłącznie internal przy zmianie wejść aplikacji; zachowuje artefakt oraz metadane.
+- [ ] Kolejna aktualizacja przez Play zachowuje ustawienia i poprawnie uruchamia skaner.
+
+### Dodatkowo przed closed beta
+
+- [ ] Ukończona karta sklepu, polityka prywatności, Data safety i pozostałe wymagane deklaracje.
+- [ ] Zasoby i dostęp recenzenta są powtarzalne dla osoby spoza projektu.
+- [ ] Lista i link do closed są gotowe; testerzy wypisali się z internal przed dołączeniem do closed.
+- [ ] Rozpoczęto zbieranie feedbacku i, jeśli planowana jest późniejsza produkcja na nowym koncie osobistym, ciągły udział wymaganej grupy przez 14 dni.
 
 ### Lista gotowości do produkcji
 
@@ -237,4 +290,4 @@ Dla nowego konta osobistego harmonogram musi zawierać co najmniej 14 dni ciąg�
 - [ ] Zachowano artefakty, mapowanie, certyfikaty publiczne i wyniki odbioru wydania.
 - [ ] Ustalono kraje, moment publikacji i osobę reagującą na błędy po premierze.
 
-Proces jest ukończony, gdy Hiciarz ma publiczną stronę Google Play, instaluje się na wspieranym urządzeniu ze zwykłego konta i poprawnie uruchamia muzykę po skanie QR. Opcje, skórki i wyświetlanie danych karty również muszą przejść odpowiednie testy.
+**Bieżący cel jest ukończony**, gdy zaproszeni testerzy instalują Hiciarza przez Google Play, skanują QR i uruchamiają muzykę, a kolejny sprawdzony merge dostarcza aktualizację internal przez automat. Publiczna premiera pozostaje osobnym etapem.

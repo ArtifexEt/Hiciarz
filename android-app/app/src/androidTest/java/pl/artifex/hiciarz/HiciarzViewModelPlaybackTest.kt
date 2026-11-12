@@ -8,9 +8,6 @@ import androidx.test.ext.junit.runners.AndroidJUnit4
 import androidx.test.platform.app.InstrumentationRegistry
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
-import kotlinx.coroutines.flow.first
-import kotlinx.coroutines.runBlocking
-import kotlinx.coroutines.withTimeout
 import org.junit.After
 import org.junit.Assert.assertEquals
 import org.junit.Assert.assertFalse
@@ -79,21 +76,16 @@ class HiciarzViewModelPlaybackTest {
         assertEquals(12_345L, snapshot().playback.positionMs)
     }
 
-    @Test fun reselectingTheActiveDeckPreservesTheScannedCardAndPlayback() {
+    @Test fun switchingSettingsPreservesTheScannedRecordingAndPlayback() {
         dispatch(AppAction.ScanCode(SCANNED_URI))
-        dispatch(AppAction.RevealAnswer)
         val before = snapshot()
-        val deckId = requireNotNull(before.activeDeckId)
         main { player.commands.clear() }
-        dispatch(AppAction.SelectDeck(deckId))
+        dispatch(AppAction.SelectTab(AppTab.SETTINGS))
+        dispatch(AppAction.SelectTab(AppTab.SCAN))
         val after = snapshot()
         assertEquals(before.currentSong, after.currentSong)
-        assertEquals(before.answerRevealed, after.answerRevealed)
         assertEquals(before.playback, after.playback)
-        assertTrue("Reselecting a deck must not stop playback", player.commands.isEmpty())
-        main { store.clear() }
-        createModel()
-        assertEquals(deckId, snapshot().activeDeckId)
+        assertTrue("Navigation must not interrupt playback", player.commands.isEmpty())
     }
 
     @Test fun globallyResumingMusicChosenInSpotifyDoesNotApplyTheCardClipTimer() {
@@ -123,11 +115,7 @@ class HiciarzViewModelPlaybackTest {
             model = provider[HiciarzViewModel::class.java]
             model.attachPlayback(player)
         }
-        runBlocking {
-            withTimeout(10_000) { model.state.first { !it.busy } }
-        }
         instrumentation.waitForIdleSync()
-        assertTrue("The test must load the bundled decks", snapshot().decks.isNotEmpty())
     }
 
     private fun dispatch(action: AppAction) = main { model.dispatch(action) }

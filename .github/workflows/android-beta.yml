@@ -1,0 +1,208 @@
+name: Publish Android beta
+run-name: Android internal beta · ${{ github.event_name == 'workflow_dispatch' && inputs.dry_run && 'preview' || 'publish' }}
+
+on:
+  workflow_run:
+    workflows: ['Check web and Android']
+    types: [completed]
+    branches: [main]
+  workflow_dispatch:
+    inputs:
+      dry_run:
+        description: 'Podgląd planu bez podpisywania, budowania i połączenia z Google Play'
+        required: false
+        default: true
+        type: boolean
+
+permissions:
+  contents: read
+  actions: read
+
+concurrency:
+  group: android-releases
+  cancel-in-progress: false
+
+jobs:
+  beta:
+    name: Prepare or publish internal beta
+    if: >-
+      (github.event_name == 'workflow_dispatch' && github.ref == 'refs/heads/main') ||
+      (github.event_name == 'workflow_run' &&
+       github.event.workflow_run.conclusion == 'success' &&
+       github.event.workflow_run.event == 'push' &&
+       github.event.workflow_run.head_branch == 'main' &&
+       github.event.workflow_run.head_repository.full_name == github.repository)
+    runs-on: ubuntu-latest
+    environment: google-play-internal
+    timeout-minutes: 40
+    env:
+      PLAY_BETA_ENABLED: ${{ vars.PLAY_BETA_ENABLED }}
+      PLAY_VERSION_CODE_FLOOR: ${{ vars.PLAY_VERSION_CODE_FLOOR }}
+      PLAY_UPLOAD_CERT_SHA256: ${{ vars.PLAY_UPLOAD_CERT_SHA256 }}
+      SOURCE_SHA: ${{ github.event.workflow_run.head_sha || github.sha }}
+      GH_TOKEN: ${{ github.token }}
+    steps:
+      - name: Select beta mode
+        id: mode
+        env:
+          MANUAL_PREVIEW: ${{ github.event_name == 'workflow_dispatch' && inputs.dry_run }}
+        run: |
+          set -euo pipefail
+          if [[ "$MANUAL_PREVIEW" == true ]]; then
+            printf 'active=true\ndry_run=true\n' >> "$GITHUB_OUTPUT"
+          elif [[ "$PLAY_BETA_ENABLED" == true ]]; then
+            printf 'active=true\ndry_run=false\n' >> "$GITHUB_OUTPUT"
+          else
+            printf 'active=false\ndry_run=false\n' >> "$GITHUB_OUTPUT"
+            printf '### Android beta skipped\n\nPLAY_BETA_ENABLED is not true. No authentication, build, or upload was attempted. Run a manual dry run to preview the setup.\n' >> "$GITHUB_STEP_SUMMARY"
+          fi
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        if: steps.mode.outputs.active == 'true'
+        with:
+          ref: ${{ env.SOURCE_SHA }}
+          fetch-depth: 0
+          persist-credentials: false
+      - name: Test Android release tooling
+        if: steps.mode.outputs.active == 'true'
+        run: python3 -m unittest discover -s .github/scripts -p 'test_android*.py' -v
+      - name: Prepare preview without Play access
+        if: steps.mode.outputs.active == 'true' && steps.mode.outputs.dry_run == 'true'
+        env:
+          SPOTIFY_CLIENT_ID: ${{ vars.SPOTIFY_CLIENT_ID }}
+        run: python3 .github/scripts/android_beta.py preview
+      - name: Authenticate to read Play versions
+        if: steps.mode.outputs.active == 'true' && steps.mode.outputs.dry_run == 'false'
+        id: plan_auth
+        uses: google-github-actions/auth@7c6bc770dae815cd3e89ee6cdf493a5fab2cc093 # v3.0.0
+        with:
+          credentials_json: ${{ secrets.PLAY_SERVICE_ACCOUNT_JSON }}
+          token_format: access_token
+          access_token_scopes: https://www.googleapis.com/auth/androidpublisher
+          create_credentials_file: false
+          export_environment_variables: false
+      - name: Prepare live version plan
+        if: steps.mode.outputs.active == 'true' && steps.mode.outputs.dry_run == 'false'
+        id: version
+        env:
+          PLAY_ACCESS_TOKEN: ${{ steps.plan_auth.outputs.access_token }}
+          SPOTIFY_CLIENT_ID: ${{ vars.SPOTIFY_CLIENT_ID || secrets.SPOTIFY_CLIENT_ID }}
+        run: python3 .github/scripts/android_beta.py prepare
+      - uses: actions/setup-java@77dd5b2ce225ea11469928ac317850245a74ae78 # v6.2.0
+        if: steps.version.outputs.publish == 'true'
+        with:
+          distribution: temurin
+          java-version: 17
+      - uses: android-actions/setup-android@be39fa834029ff78f1a44aa3bb0819b8fc2bd8fd # v4.0.4
+        if: steps.version.outputs.publish == 'true'
+      - uses: gradle/actions/setup-gradle@8da46b539cd8fe6ab27ca75128919a18d757604c # v6.4.1
+        if: steps.version.outputs.publish == 'true'
+      - name: Install Android platform
+        if: steps.version.outputs.publish == 'true'
+        run: sdkmanager 'platforms;android-37.0' 'build-tools;37.0.0'
+      - name: Prepare Play upload signing
+        if: steps.version.outputs.publish == 'true'
+        env:
+          PLAY_UPLOAD_KEYSTORE_BASE64: ${{ secrets.PLAY_UPLOAD_KEYSTORE_BASE64 }}
+          PLAY_UPLOAD_KEYSTORE_PASSWORD: ${{ secrets.PLAY_UPLOAD_KEYSTORE_PASSWORD }}
+          PLAY_UPLOAD_KEY_ALIAS: ${{ secrets.PLAY_UPLOAD_KEY_ALIAS }}
+          PLAY_UPLOAD_KEY_PASSWORD: ${{ secrets.PLAY_UPLOAD_KEY_PASSWORD }}
+          PLAY_UPLOAD_CERT_SHA256: ${{ vars.PLAY_UPLOAD_CERT_SHA256 }}
+        run: |
+          set -euo pipefail
+          if [[ -z "$PLAY_UPLOAD_KEYSTORE_BASE64" || -z "$PLAY_UPLOAD_KEYSTORE_PASSWORD" ||
+                -z "$PLAY_UPLOAD_KEY_ALIAS" || -z "$PLAY_UPLOAD_KEY_PASSWORD" ]]; then
+            echo 'Configure all four PLAY_UPLOAD signing secrets before building a Play beta.' >&2
+            exit 1
+          fi
+          digest="$(printf '%s' "$PLAY_UPLOAD_CERT_SHA256" | tr -d '[:space:]:' | tr '[:upper:]' '[:lower:]')"
+          if [[ ! "$digest" =~ ^[a-f0-9]{64}$ ]]; then
+            echo 'Configure the public PLAY_UPLOAD_CERT_SHA256 variable.' >&2
+            exit 1
+          fi
+          umask 077
+          signing_file="$RUNNER_TEMP/hiciarz-play-upload.jks"
+          printf '%s' "$PLAY_UPLOAD_KEYSTORE_BASE64" | base64 --decode > "$signing_file"
+          printf 'HICIARZ_KEYSTORE_FILE=%s\n' "$signing_file" >> "$GITHUB_ENV"
+      - name: Test, lint and build signed AAB
+        if: steps.version.outputs.publish == 'true'
+        working-directory: android-app
+        env:
+          HICIARZ_PRODUCTION_SIGNING: 'true'
+          HICIARZ_KEYSTORE_PASSWORD: ${{ secrets.PLAY_UPLOAD_KEYSTORE_PASSWORD }}
+          HICIARZ_KEY_ALIAS: ${{ secrets.PLAY_UPLOAD_KEY_ALIAS }}
+          HICIARZ_KEY_PASSWORD: ${{ secrets.PLAY_UPLOAD_KEY_PASSWORD }}
+          SPOTIFY_CLIENT_ID: ${{ vars.SPOTIFY_CLIENT_ID || secrets.SPOTIFY_CLIENT_ID }}
+          BETA_VERSION: ${{ steps.version.outputs.name }}
+          BETA_VERSION_CODE: ${{ steps.version.outputs.code }}
+        run: |
+          set -euo pipefail
+          if [[ ! "$SPOTIFY_CLIENT_ID" =~ ^[A-Fa-f0-9]{32}$ ]]; then
+            echo 'Configure SPOTIFY_CLIENT_ID before building the beta.' >&2
+            exit 1
+          fi
+          ./gradlew --no-daemon :app:testDebugUnitTest :app:lintRelease :app:bundleRelease \
+            -PversionName="$BETA_VERSION" -PversionCode="$BETA_VERSION_CODE"
+      - name: Verify AAB signature and preserve build metadata
+        if: steps.version.outputs.publish == 'true'
+        working-directory: android-app
+        env:
+          PLAY_UPLOAD_CERT_SHA256: ${{ vars.PLAY_UPLOAD_CERT_SHA256 }}
+          BETA_VERSION: ${{ steps.version.outputs.name }}
+          BETA_VERSION_CODE: ${{ steps.version.outputs.code }}
+        run: |
+          set -euo pipefail
+          aab="beta-artifacts/hiciarz-android-${BETA_VERSION}.aab"
+          cp app/build/outputs/bundle/release/app-release.aab "$aab"
+          test -s app/build/outputs/mapping/release/mapping.txt
+          cp app/build/outputs/mapping/release/mapping.txt beta-artifacts/mapping.txt
+          jarsigner -J-Duser.language=en -J-Duser.country=US -verify -verbose -certs "$aab" > beta-artifacts/SIGNATURE-VERIFICATION.txt
+          if ! grep --fixed-strings --quiet 'jar verified.' beta-artifacts/SIGNATURE-VERIFICATION.txt; then
+            echo 'The AAB does not have a verified JAR signature.' >&2
+            exit 1
+          fi
+          keytool -J-Duser.language=en -J-Duser.country=US -printcert -jarfile "$aab" > beta-artifacts/SIGNING-CERTIFICATE.txt
+          expected="$(printf '%s' "$PLAY_UPLOAD_CERT_SHA256" | tr -d '[:space:]:' | tr '[:upper:]' '[:lower:]')"
+          actual="$(sed -n 's/^[[:space:]]*SHA256:[[:space:]]*//p' beta-artifacts/SIGNING-CERTIFICATE.txt | tr -d '[:space:]:' | tr '[:upper:]' '[:lower:]')"
+          if [[ "$actual" != "$expected" ]]; then
+            echo 'The AAB certificate does not match PLAY_UPLOAD_CERT_SHA256.' >&2
+            exit 1
+          fi
+          {
+            printf 'applicationId=pl.artifex.hiciarz\nversionName=%s\nversionCode=%s\n' "$BETA_VERSION" "$BETA_VERSION_CODE"
+            printf 'commit=%s\nsigning=play-upload\ntrack=internal\n' "$SOURCE_SHA"
+          } > beta-artifacts/BUILD-INFO.txt
+          (cd beta-artifacts && sha256sum "hiciarz-android-${BETA_VERSION}.aab" > "hiciarz-android-${BETA_VERSION}.aab.sha256")
+      - name: Refresh access token for upload
+        if: steps.version.outputs.publish == 'true'
+        id: upload_auth
+        uses: google-github-actions/auth@7c6bc770dae815cd3e89ee6cdf493a5fab2cc093 # v3.0.0
+        with:
+          credentials_json: ${{ secrets.PLAY_SERVICE_ACCOUNT_JSON }}
+          token_format: access_token
+          access_token_scopes: https://www.googleapis.com/auth/androidpublisher
+          create_credentials_file: false
+          export_environment_variables: false
+      - name: Upload and commit internal beta
+        if: steps.version.outputs.publish == 'true'
+        env:
+          PLAY_ACCESS_TOKEN: ${{ steps.upload_auth.outputs.access_token }}
+          BETA_VERSION: ${{ steps.version.outputs.name }}
+          SPOTIFY_CLIENT_ID: ${{ vars.SPOTIFY_CLIENT_ID || secrets.SPOTIFY_CLIENT_ID }}
+        run: |
+          set -euo pipefail
+          python3 .github/scripts/android_beta.py publish \
+            --bundle "android-app/beta-artifacts/hiciarz-android-${BETA_VERSION}.aab" \
+            --mapping android-app/beta-artifacts/mapping.txt
+      - name: Keep beta plan, AAB, mapping and reports
+        if: always() && steps.mode.outputs.active == 'true'
+        uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7.0.2
+        with:
+          name: android-beta-${{ github.run_number }}-${{ github.run_attempt }}
+          path: |
+            android-app/beta-artifacts/
+            android-app/app/build/reports/
+          if-no-files-found: warn
+          retention-days: 30
+      - name: Remove temporary Play upload keystore
+        if: always()
+        run: rm -f "$RUNNER_TEMP/hiciarz-play-upload.jks"

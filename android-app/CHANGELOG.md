@@ -7,6 +7,8 @@ Zmiany kolejnych wersji aplikacji Android. Opis GitHub Release jest pobierany z 
 - Uproszczono aplikację do skanowania kart i sterowania Spotify. Usunięto odkrywanie danych karty, ustawienie ukrywania odpowiedzi, zasady gry oraz ręczne wklejanie kodów i linków.
 - Pomoc opisuje tworzenie nowych kart i prowadzi do Hiciarza oraz kreatora na GitHub Pages.
 - Dolne menu ma kompaktowy układ dwóch pozycji z ikonami skanera i opcji; na dużym ekranie nawigacja pozostaje z boku.
+- Android działa bez talii: usunięto dołączane przykłady, import i przechowywanie talii oraz wyszukiwanie i odkrywanie odpowiedzi. Skaner odczytuje utwór Spotify i skórkę bezpośrednio z QR.
+- Przygotowano automatyczne wydania Internal testing po udanym CI na `main`, tylko gdy zmienią się wejścia aplikacji. Jednorazowa konfiguracja aktywnego konta Play, podpisu i dostępu API jest opisana w instrukcji Androida.
 
 ## [0.2.0-alpha.7] - 2026-11-12
 

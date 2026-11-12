@@ -51,7 +51,7 @@ internal fun ScanScreen(state: AppState, copy: UiCopy, onAction: (AppAction) -> 
         } else {
             Column(Modifier.fillMaxWidth(), verticalArrangement = Arrangement.spacedBy(12.dp)) {
                 CardPlayback(state.playback, song, copy, onAction) {
-                    ScannedTicket(song, state.activeSkin, copy)
+                    ScannedTicket(state.activeSkin, copy)
                 }
             }
         }
@@ -79,15 +79,15 @@ internal fun ScanScreen(state: AppState, copy: UiCopy, onAction: (AppAction) -> 
     })
 }
 
+/** The printed QR supplies the recording and artwork; no deck metadata is loaded. */
 @Composable
-internal fun ScannedTicket(song: Song, skin: CardSkin, copy: UiCopy) {
-    // A scan only selects the artwork and track. Legacy answer preferences never expose metadata.
-    YearTicket(
-        skin = skin, year = "", eyebrow = "", cardId = song.id, playbackOverlay = true,
-        modifier = Modifier.semantics(mergeDescendants = true) {
+internal fun ScannedTicket(skin: CardSkin, copy: UiCopy) {
+    Box(Modifier.fillMaxWidth().aspectRatio(1f).clip(RoundedCornerShape(10.dp))
+        .semantics(mergeDescendants = true) {
             stateDescription = copy.t("Skórka: ${copy.skin(skin)}", "Skin: ${copy.skin(skin)}")
-        },
-    )
+        }) {
+        SkinPattern(skin, Modifier.matchParentSize(), subdued = true)
+    }
 }
 
 @Composable

@@ -19,7 +19,7 @@ internal enum class HelpTopic {
 
     companion object {
         fun forState(state: AppState): HelpTopic = when (state.tab) {
-            AppTab.SCAN, AppTab.DECKS -> SCAN
+            AppTab.SCAN -> SCAN
             else -> ALL
         }
     }

@@ -6,19 +6,7 @@ internal class UiCopy(val language: String) {
     fun t(pl: String, en: String) = if (language == "en") en else pl
     fun tab(tab: AppTab) = when (tab) {
         AppTab.SCAN -> t("Skaner", "Scan")
-        AppTab.DECKS -> t("Talie", "Decks")
         AppTab.SETTINGS -> t("Opcje", "Settings")
-    }
-    fun mode(mode: GameMode) = when (mode) {
-        GameMode.CLASSIC -> t("Muzyka", "Music")
-        GameMode.GAME -> t("Zgadnij grę", "Guess the game")
-        GameMode.MOVIE -> t("Zgadnij film", "Guess the film")
-    }
-    fun deck(deck: Deck) = if (!deck.bundled) deck.name else when {
-        deck.id.contains("symphonic") -> t("Gry — symfonicznie", "Games — symphonic")
-        deck.id.contains("original") -> t("Muzyka z gier", "Game soundtracks")
-        deck.id.contains("christmas") -> t("Świąteczne przeboje", "Christmas hits")
-        else -> deck.name
     }
     fun message(code: String): String = when (code) {
         "spotify_not_installed" -> t("Zainstaluj Spotify i zaloguj się na swoje konto.", "Install Spotify and sign in to your account.")
@@ -39,11 +27,6 @@ internal class UiCopy(val language: String) {
         "camera_permission_required" -> t("Zezwól na dostęp do aparatu, aby skanować karty.", "Allow camera access to scan cards.")
         "camera_unavailable" -> t("Aparat jest niedostępny. Zamknij inną aplikację używającą aparatu i spróbuj ponownie.", "The camera isn't available. Close another app using it and try again.")
         "camera_scan_failed" -> t("Nie udało się odczytać obrazu z aparatu. Spróbuj ponownie.", "Couldn't read the camera image. Try again.")
-        "deck_imported" -> t("Talia dodana", "Deck added")
-        "deck_deleted" -> t("Talia usunięta", "Deck deleted")
-        "invalid_deck", "import_failed" -> t("Nie udało się odczytać talii. Wybierz plik JSON lub CSV z Hiciarza.", "Couldn't read the deck. Choose a JSON or CSV file from Hiciarz.")
-        "empty_deck", "no_deck", "choose_deck" -> t("Najpierw wybierz talię z utworami Spotify.", "Choose a deck with Spotify tracks first.")
-        "import_too_large" -> t("Plik jest za duży. Wybierz mniejszą talię JSON lub CSV.", "This file is too large. Choose a smaller JSON or CSV deck.")
         "invalid_client_id" -> t("Nieprawidłowe ustawienia połączenia.", "The connection settings are invalid.")
         else -> t("Nie udało się wykonać tej czynności. Spróbuj ponownie.", "That action could not be completed. Try again.")
     }

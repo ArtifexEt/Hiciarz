@@ -74,7 +74,7 @@ class AppSkinThemeTest {
     }
 
     @Test fun followingAnUnknownQrSkinRecolorsTheAppAndCanReturnToTheDefault() {
-        val unknown = Song("unknown-card", "", "", null, "0000000000000000000000", skin = CardSkin.FISH)
+        val unknown = Song("0000000000000000000000", skin = CardSkin.FISH)
         val state = mutableStateOf(AppState(currentSong = unknown, scannedSkin = CardSkin.FISH,
             scannerEnabled = false,
             settings = AppSettings(language = "en", cardSkin = CardSkin.WINTER, followCardSkin = true)))
