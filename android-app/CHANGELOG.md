@@ -4,6 +4,8 @@ Zmiany kolejnych wersji aplikacji Android. Opis GitHub Release jest pobierany z 
 
 ## [Unreleased]
 
+## [0.2.0-alpha.6] - 2026-11-12
+
 - Usunięto tryb Bingo z Androida: ekran, losowanie kategorii, rundy, opcje i pomoc. Nawigacja zawiera Skaner i Opcje, a Bingo ma osobną aplikację webową w repozytorium ArtifexEt/Bingo.
 - Aktualizacja pomija stary zapis trybów gry i uruchamia skaner, zachowując talie, ustawienia i skórki kart.
 
