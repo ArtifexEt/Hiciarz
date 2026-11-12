@@ -12,6 +12,8 @@ plugins {
     id("org.jetbrains.kotlin.plugin.compose")
 }
 
+apply(from = rootProject.file("gradle/spotify-app-remote.gradle.kts"))
+
 val suppliedSigningFile = providers.environmentVariable("HICIARZ_KEYSTORE_FILE").orNull?.takeIf { it.isNotBlank() }
 val productionSigning = providers.environmentVariable("HICIARZ_PRODUCTION_SIGNING").orElse("false").get().toBooleanStrict()
 require(!productionSigning || suppliedSigningFile != null) { "Production builds require a private signing keystore." }
@@ -96,7 +98,7 @@ dependencies {
     implementation("com.google.mlkit:barcode-scanning:17.3.0")
     implementation("org.jetbrains.kotlinx:kotlinx-coroutines-android:1.10.2")
     implementation("com.google.code.gson:gson:2.13.2")
-    implementation(files("libs/spotify-app-remote-release-0.8.0.aar"))
+    implementation(files(tasks.named("downloadSpotifyAppRemote")))
     debugImplementation("androidx.compose.ui:ui-tooling")
     testImplementation("junit:junit:4.13.2")
     testImplementation("org.json:json:20250517")

@@ -20,6 +20,7 @@ local.properties
 *.aab
 *.apks
 *.hprof
+*.aar
 *.jks
 *.keystore
 *.p12

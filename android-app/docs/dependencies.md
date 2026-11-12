@@ -1,0 +1,15 @@
+# Biblioteki Androida
+
+Gradle pobiera standardowe zależności z Google Maven i Maven Central.
+
+## Spotify App Remote SDK 0.8.0
+
+Spotify udostępnia App Remote jako AAR, bez oficjalnego repozytorium Maven. Zadanie `downloadSpotifyAppRemote` pobiera bibliotekę automatycznie z przypiętego commita oficjalnego repozytorium i sprawdza SHA-256 przed użyciem. Konfiguracja znajduje się w [`../gradle/spotify-app-remote.gradle.kts`](../gradle/spotify-app-remote.gradle.kts).
+
+- Źródło: [spotify/android-sdk](https://github.com/spotify/android-sdk).
+- Commit: `5aa4d62465f61a0677081ae9a3108177d0365fc3`.
+- SHA-256: `b5a6dd880eaf01f63a871cba9ef7af77c341f8a94ffc8fdf2e9021f9a9d4c198`.
+
+Pobrany AAR trafia do `GRADLE_USER_HOME/caches/hiciarz/spotify-app-remote/` (domyślnie w `~/.gradle/`). Polecenie `clean` nie usuwa tej kopii. Pierwszy build wymaga internetu. Kolejne mogą korzystać z `--offline`, jeśli biblioteka i pozostałe zależności są już pobrane. Uszkodzony plik jest odrzucany na podstawie sumy kontrolnej. Pliki AAR nie trafiają do Git.
+
+Korzystanie z biblioteki podlega [Spotify Developer Terms](https://developer.spotify.com/terms). Biblioteka nie zawiera Client Secret ani danych konta.

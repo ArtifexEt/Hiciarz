@@ -75,6 +75,8 @@ Dotychczasowe próby potwierdziły sterowanie odtwarzaniem na testowanych kontac
 
 Wymagane są JDK 17 i Android SDK. Gradle Wrapper wybiera właściwą wersję Gradle. Nie trzeba instalować Gradle globalnie ani budować web przed Androidem.
 
+Biblioteki są pobierane automatycznie przez Gradle. Spotify App Remote pochodzi z oficjalnego repozytorium Spotify, z przypiętym commitem i sprawdzaniem SHA-256; szczegóły opisano w [zależnościach Androida](docs/dependencies.md).
+
 ```sh
 sdkmanager 'platforms;android-37.0' 'build-tools;37.0.0'
 ./gradlew :app:testDebugUnitTest :app:lintRelease :app:assembleRelease
