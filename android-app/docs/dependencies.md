@@ -41,7 +41,7 @@ wyłącznie uzasadnione nowe sumy. Używaj wrappera projektu, aby zachować zgod
 format pliku:
 
 ```sh
-./gradlew --write-verification-metadata sha256 testDebugUnitTest lint assembleRelease assembleDebug assembleDebugAndroidTest
+./gradlew --write-verification-metadata sha256 testDebugUnitTest lintRelease assembleRelease assembleDebug assembleDebugAndroidTest
 ```
 
 Po przeglądzie uruchom te same zadania bez `--write-verification-metadata`,
@@ -50,5 +50,10 @@ wariant `--offline`. Zmiany zależne od systemu operacyjnego trzeba sprawdzić
 na systemach używanych w CI. Nowy zestaw zadań lub konfiguracji może wymagać
 uzupełnienia bazy. Regenerowanie pliku nie może być sposobem na pominięcie
 nieoczekiwanego błędu integralności.
+
+Sprawdź również świeży cache metadanych Gradle: istniejący cache deskryptorów
+może ukryć pobieranie nadrzędnych POM-ów i BOM-ów. W CI obowiązuje także
+`:app:lintRelease`, a test kamery buduje APK testów z parametrem
+`-PhiciarzTestRunner=pl.artifex.hiciarz.ScannerReleaseSmokeInstrumentation`.
 
 Szczegóły i ograniczenia: [dokumentacja Gradle](https://docs.gradle.org/current/userguide/securing_dependencies.html).
