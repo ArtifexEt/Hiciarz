@@ -48,4 +48,13 @@ internal object AppIcons {
     val Folder = stroke("Folder", "M3 6V4a1 1 0 0 1 1-1h5l2 3h9a1 1 0 0 1 1 1v12a1 1 0 0 1-1 1H4a1 1 0 0 1-1-1V6z")
     val Delete = stroke("Delete", "M3 6h18M9 3h6M6 6l1 15h10l1-15M10 10v7M14 10v7")
     val Info = stroke("Info", "M21 12a9 9 0 1 1-18 0a9 9 0 0 1 18 0M12 11v6M12 7v.1")
+
+    val Game = stroke("Game", "M5 5h10a2 2 0 0 1 2 2v12H5a2 2 0 0 1-2-2V7a2 2 0 0 1 2-2M7 3h12a2 2 0 0 1 2 2v12M7 9h6M10 8v6M8 17h4")
+    val Back = stroke("Back", "M19 12H5M10 5l-7 7 7 7")
+    val Help = stroke("Help", "M21 12a9 9 0 1 1-18 0a9 9 0 0 1 18 0M9.5 8.5a2.5 2.5 0 1 1 4 2c-1.5 1-1.5 1.5-1.5 3M12 17v.1")
+    val Speaker = stroke("Speaker", "M3 9h4l5-4v14l-5-4H3zM16 8a6 6 0 0 1 0 8M19 5a10 10 0 0 1 0 14")
+    val Timeline = stroke("Timeline", "M3 12h18M5 5h4v5H5zM11 14h4v5h-4zM17 5h4v5h-4z")
+    val Palette = stroke("Palette", "M12 3a9 9 0 1 0 0 18h1a2 2 0 0 0 1.5-3.3a1.5 1.5 0 0 1 1.2-2.4H18a3 3 0 0 0 3-3.1A9 9 0 0 0 12 3M7 11v.1M9 7v.1M14 7v.1M17 11v.1")
+    val Flash = stroke("Flash", "M13 2L4 14h7l-1 8 10-13h-7l1-7")
+    val Trophy = stroke("Trophy", "M7 3h10v6a5 5 0 0 1-10 0V3M7 5H3v3a4 4 0 0 0 4 4M17 5h4v3a4 4 0 0 1-4 4M12 14v6M8 21h8")
 }

@@ -57,13 +57,18 @@ import PlaybackSettings from './PlaybackSettings';
 import AppInstall, { ConnectionNotice } from './AppInstall';
 import {
   parseAppView,
+  parseEntryModal,
+  parseBingoLevel,
   keepScannerPairing,
   urlForView,
+  urlForModal,
+  urlForBingoLevel,
   navigationState,
   readNavigationState,
   type AppView,
   type AppModal,
 } from './navigation';
+import type { BingoLevel } from './bingo';
 import FishFestivities from './FishFestivities';
 import SpotifyAccount from './SpotifyAccount';
 import SpotifyLoginNotice from './SpotifyLoginNotice';
@@ -514,6 +519,7 @@ export default function App() {
   const [draggingImage, setDraggingImage] = useState(false);
   const [backgroundBusy, setBackgroundBusy] = useState(false);
   const [bingoOpened, setBingoOpened] = useState(false);
+  const [bingoLevel, setBingoLevel] = useState<BingoLevel>(() => parseBingoLevel(location.href));
   const updateAvailable = useSyncExternalStore(subscribeToUpdates, updateIsReady);
   const [updating, setUpdating] = useState(false);
   const [decks, setDecks] = useState<Deck[]>([]),
@@ -524,7 +530,7 @@ export default function App() {
   useEffect(() => {
     if (mode === 'bingo') setBingoOpened(true);
   }, [mode]);
-  const [modal, setModal] = useState<AppModal>(null),
+  const [modal, setModal] = useState<AppModal>(() => parseEntryModal(location.href)),
     [editSong, setEditSong] = useState<Song>(),
     [filter, setFilter] = useState(''),
     [selected, setSelected] = useState<Set<string>>(new Set()),
@@ -1182,11 +1188,12 @@ export default function App() {
       return;
     }
     const target = parseAppView(location.href);
-    const candidate = readNavigationState(event.state).modal;
+    const candidate = readNavigationState(event.state).modal ?? parseEntryModal(location.href);
     const nextModal = availableModal(candidate, target);
     if (nextModal !== candidate)
       history.replaceState(navigationState(history.state, target, nextModal), '', location.href);
     setModal(nextModal);
+    if (target === 'bingo') setBingoLevel(parseBingoLevel(location.href));
     if (target !== mode) void changeMode(target, false);
   };
   useEffect(() => {
@@ -1194,7 +1201,7 @@ export default function App() {
     history.replaceState(
       navigationState(history.state, mode, activeModal),
       '',
-      urlForView(location.href, mode),
+      urlForModal(location.href, mode, activeModal),
     );
     historyReady.current = true;
   }, [mode]);
@@ -1206,7 +1213,7 @@ export default function App() {
       history[method](
         navigationState(history.state, mode, modal),
         '',
-        urlForView(location.href, mode),
+        urlForModal(location.href, mode, modal),
       );
     } else if (activeModal) history.back();
   }, [modal, mode]);
@@ -1338,6 +1345,11 @@ export default function App() {
               <Suspense fallback={<p className="hint">{tr('app.preparingBingo')}</p>}>
                 <BingoGame
                   onScanner={() => changeMode('scanner')}
+                  level={bingoLevel}
+                  onLevelChange={(level) => {
+                    setBingoLevel(level);
+                    history.replaceState(history.state, '', urlForBingoLevel(location.href, level));
+                  }}
                   sheet={modal === 'bingo-help' ? 'help' : modal === 'bingo-print' ? 'print' : null}
                   onSheetChange={(sheet) =>
                     setModal(
@@ -2665,7 +2677,15 @@ export default function App() {
               <select
                 aria-label={tr('app.language')}
                 value={language}
-                onChange={(event) => setLanguage(event.target.value as Language)}
+                onChange={(event) => {
+                  const nextLanguage = event.target.value as Language;
+                  setLanguage(nextLanguage);
+                  const url = new URL(location.href);
+                  if (url.searchParams.has('lang')) {
+                    url.searchParams.set('lang', nextLanguage);
+                    history.replaceState(history.state, '', url.href);
+                  }
+                }}
               >
                 {Object.entries(languageNames).map(([value, name]) => (
                   <option key={value} value={value}>

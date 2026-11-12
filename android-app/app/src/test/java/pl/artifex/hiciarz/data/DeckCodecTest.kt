@@ -6,12 +6,37 @@ import org.junit.Assert.assertEquals
 import org.junit.Assert.assertThrows
 import org.junit.Test
 import pl.artifex.hiciarz.model.Deck
+import pl.artifex.hiciarz.model.CardSkin
 import pl.artifex.hiciarz.model.GameMode
 import pl.artifex.hiciarz.model.Song
 
 class DeckCodecTest {
     private val christmas = "2FRnf9qhLbvw8fu4IBXx78"
     private val dancingQueen = "0GjEhVFGZW8afUYGChu3Rr"
+
+    @Test
+    fun `all nine printed skins survive compact and legacy cards including minimal movie ambiguity`() {
+        CardSkin.entries.forEach { skin ->
+            val compact = DeckCodec.readCard("https://example.org/#2${skin.code}s${christmas}m")
+            assertEquals(skin, compact.skin)
+            assertEquals(GameMode.MOVIE, compact.gameMode)
+            val legacy = DeckCodec.readCard(legacyCard(JSONObject().put("spotify", christmas), "game", skin.id))
+            assertEquals(skin, legacy.skin)
+            assertEquals(GameMode.GAME, legacy.gameMode)
+        }
+        assertEquals(CardSkin.CLASSIC, DeckCodec.readCard(
+            legacyCard(JSONObject().put("spotify", christmas), skin = "future-skin"),
+        ).skin)
+    }
+
+    @Test
+    fun `portable deck keeps both the deck skin and individual card overrides`() {
+        val deck = Deck("skins", "Skin collection", listOf(
+            Song("one", "One", "Artist", 1984, christmas, skin = CardSkin.FISH),
+            Song("two", "Two", "Artist", 1976, dancingQueen),
+        ), skin = CardSkin.VINYL)
+        assertEquals(deck, DeckCodec.parse(DeckCodec.encode(deck), "skins.json"))
+    }
 
     @Test
     fun `reads compact cards printed by the web creator including both sources and game suffixes`() {
@@ -32,9 +57,9 @@ class DeckCodecTest {
         val movie = DeckCodec.readCard("https://example.org/#2fs${christmas}m")
         val game = DeckCodec.readCard("https://example.org/#2fs${christmas}yE8gmARGvPlIg")
 
-        assertEquals(ScannedCard(christmas, GameMode.CLASSIC), normal)
-        assertEquals(ScannedCard(christmas, GameMode.MOVIE), movie)
-        assertEquals(ScannedCard(christmas, GameMode.GAME), game)
+        assertEquals(ScannedCard(christmas, GameMode.CLASSIC, CardSkin.FISH), normal)
+        assertEquals(ScannedCard(christmas, GameMode.MOVIE, CardSkin.FISH), movie)
+        assertEquals(ScannedCard(christmas, GameMode.GAME, CardSkin.FISH), game)
         assertEquals(3, setOf(normal, movie, game).size)
         assertEquals(listOf(christmas), listOf(normal, movie, game).map { it.spotifyId }.distinct())
     }
@@ -52,7 +77,7 @@ class DeckCodecTest {
         )) {
             val code = legacyCard(JSONObject().put("spotify", "spotify:track:$christmas"), rawMode)
 
-            assertEquals(rawMode, ScannedCard(christmas, expected), DeckCodec.readCard(code))
+            assertEquals(rawMode, ScannedCard(christmas, expected, CardSkin.FISH), DeckCodec.readCard(code))
             assertEquals(christmas, DeckCodec.readCode(code))
         }
     }
@@ -87,7 +112,7 @@ class DeckCodecTest {
             "eyJ2IjoxLCJpZCI6ImthcnRhLcW8w7PFgsSHLfCfjq4iLCJ0aGVtZSI6Im1peHRhcGUiLCJnYW1lTW9kZSI6ImdhbWUiLCJzb3VyY2VzIjp7InNwb3RpZnkiOiJzcG90aWZ5OnRyYWNrOjJGUm5mOXFoTGJ2dzhmdTRJQlh4NzgiLCJ5b3V0dWJlIjoiRThnbUFSR3ZQbEkifX0"
 
         assertEquals(christmas, DeckCodec.readCode(code))
-        assertEquals(ScannedCard(christmas, GameMode.GAME), DeckCodec.readCard(code))
+        assertEquals(ScannedCard(christmas, GameMode.GAME, CardSkin.MIXTAPE), DeckCodec.readCard(code))
     }
 
     @Test
@@ -289,8 +314,8 @@ class DeckCodecTest {
     private fun jsonDeck(vararg songs: JSONObject) = JSONObject().put("version", 1)
         .put("id", "deck").put("name", "Playlist").put("songs", JSONArray(songs.toList()))
 
-    private fun legacyCard(sources: JSONObject, gameMode: String? = null): String {
-        val card = JSONObject().put("v", 1).put("id", "old-card").put("theme", "fish")
+    private fun legacyCard(sources: JSONObject, gameMode: String? = null, skin: String = "fish"): String {
+        val card = JSONObject().put("v", 1).put("id", "old-card").put("theme", skin)
             .put("sources", sources)
         gameMode?.let { card.put("gameMode", it) }
         val json = card.toString()

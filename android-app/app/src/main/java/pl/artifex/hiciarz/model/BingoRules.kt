@@ -7,9 +7,4 @@ object BingoRules {
         BingoLevel.EXPERT -> listOf(QuestionType.TITLE, QuestionType.YEAR, QuestionType.ARTIST,
             QuestionType.DECADE, QuestionType.YEAR_WITHIN_THREE)
     }
-
-    fun remaining(deck: Deck, history: List<Song>): List<Song> {
-        val seen = history.mapTo(HashSet()) { it.spotifyId }
-        return deck.songs.filterNot { it.spotifyId in seen }
-    }
 }

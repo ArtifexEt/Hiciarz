@@ -27,13 +27,16 @@ export default function BingoGame({
   onScanner,
   sheet,
   onSheetChange,
+  level,
+  onLevelChange,
 }: {
   onScanner: () => void;
   sheet: BingoSheet;
   onSheetChange: (sheet: BingoSheet) => void;
+  level: BingoLevel;
+  onLevelChange: (level: BingoLevel) => void;
 }) {
   useTranslation();
-  const [level, setLevel] = useState<BingoLevel>('beginner');
   const [selected, setSelected] = useState<number>();
   const [draws, setDraws] = useState(0);
   const [count, setCount] = useState(4);
@@ -100,13 +103,14 @@ export default function BingoGame({
             <CircleHelp size={21} aria-hidden="true" />
           </button>
           <button
-            className="bingo-tool"
+            className="bingo-tool bingo-boards-entry"
             type="button"
             aria-label={t('components.BingoGame.printableBoards')}
             aria-haspopup="dialog"
             onClick={() => onSheetChange('print')}
           >
             <Printer size={21} aria-hidden="true" />
+            <span>{t('bingoApp.boards')}</span>
           </button>
         </div>
       </header>
@@ -121,7 +125,7 @@ export default function BingoGame({
                 value={value}
                 checked={level === value}
                 onChange={() => {
-                  setLevel(value as BingoLevel);
+                  onLevelChange(value as BingoLevel);
                   setSelected(undefined);
                   setDraws(0);
                 }}

@@ -11,6 +11,7 @@
 }
 .bingo-heading {
   display: flex;
+  flex-wrap: wrap;
   align-items: center;
   justify-content: space-between;
   gap: 16px;
@@ -40,6 +41,15 @@
 }
 .bingo-tool:hover {
   background: var(--soft);
+}
+.bingo-tool.bingo-boards-entry {
+  display: flex;
+  width: auto;
+  gap: 8px;
+  padding: 0 12px;
+  border-radius: 12px;
+  font-size: 12px;
+  font-weight: 600;
 }
 .bingo-draw-panel {
   display: flex;

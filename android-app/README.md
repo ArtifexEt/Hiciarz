@@ -1,18 +1,43 @@
 # Hiciarz na Androida
 
-Natywna aplikacja Kotlin / Jetpack Compose do skanowania drukowanych kart, grania w Bingo i korzystania z własnych talii. Spotify odtwarza muzykę w swojej aplikacji, a Hiciarz steruje nim przez oficjalny App Remote SDK. Kreator kart i druk PDF pozostają w [`../web/`](../web/).
+Natywna aplikacja Kotlin / Jetpack Compose do skanowania drukowanych kart, prowadzenia Bingo i grania bez kart w Oś czasu lub Zgadnij. Spotify odtwarza muzykę w swojej aplikacji, a Hiciarz steruje nim przez oficjalny App Remote SDK. Kreator kart i generator plansz PDF pozostają w [`../web/`](../web/).
+
+W Bingo telefon prowadzącego najpierw losuje kategorię, a dopiero wybranie „Skanuj kartę” uruchamia aparat. Skan rozpoczyna utwór; gracze zaznaczają odpowiedzi na papierowych planszach. „Plansze do pobrania” otwiera generator z wybranym poziomem i językiem. Zasady każdej gry są dostępne pod „Jak grać”.
+
+QR może automatycznie włączyć jedną z dziewięciu skórek. Ustawienia pozwalają wybrać własny wygląd i wyłączyć śledzenie skórki karty. Automatyczna pauza jest domyślnie wyłączona. Na dużym oknie i rozłożonym telefonie nawigacja przechodzi na bok, a niezależne panele uwzględniają zgięcie ekranu. [Porównanie funkcji z PWA](docs/pwa-parity.md) opisuje pełny zakres.
 
 ## Ekrany aplikacji
 
-Zrzuty z emulatora AOSP pokazują polski interfejs na telefonie i angielski w szerokim oknie. W tym środowisku testowym Spotify nie jest zainstalowane.
+Zrzuty pochodzą z uruchomionej aplikacji na emulatorze AOSP. Karta z rokiem 1959 pokazuje rzeczywisty odczyt QR aparatem w zoptymalizowanym APK oraz automatyczne zastosowanie skórki Disco. W emulatorze Spotify nie jest zainstalowane.
 
-| Skaner · telefon | Talie · telefon |
+| Bingo · telefon prowadzącego | Oś czasu · gra bez kart |
 | --- | --- |
-| <img src="docs/screenshots/phone-scan-pl.png" width="240" alt="Natywny skaner kart z przyciskiem aparatu i dolną nawigacją" /> | <img src="docs/screenshots/phone-decks-pl.png" width="240" alt="Biblioteka talii z importem JSON lub CSV i playlistą z 294 utworami z gier" /> |
+| <img src="docs/screenshots/phone-bingo-playing-pl.png" width="240" alt="Bingo z wylosowaną kategorią, ukrytą kartą oraz odkryciem odpowiedzi i następną rundą" /> | <img src="docs/screenshots/phone-timeline-revealed-pl.png" width="240" alt="Karta utworu, oś z latami i wynik decyzji mieszczą się w widoku gry" /> |
 
-| Bingo · szerokie okno | Ustawienia · szerokie okno |
+| Skaner · aparat | Odczytana karta · gotowy APK |
 | --- | --- |
-| <img src="docs/screenshots/tablet-bingo-en.png" width="480" alt="Dwukolumnowy widok Bingo z wyborem poziomu, pytaniem i odtwarzaniem" /> | <img src="docs/screenshots/tablet-settings-en.png" width="480" alt="Dwukolumnowe ustawienia Spotify, odtwarzania i języka" /> |
+| <img src="docs/screenshots/phone-scan-pl.png" width="240" alt="Natywny skaner QR z powiększeniem, latarką i dolną nawigacją" /> | <img src="docs/screenshots/phone-card-release-en.png" width="240" alt="Karta Dean Martin z rokiem 1959 i skórką Disco odczytaną z QR przez aparat" /> |
+
+| Rozłożony ekran · dwa panele | Tabletop · poziome zgięcie |
+| --- | --- |
+| <img src="docs/screenshots/fold-inner-scanner-pl.png" width="440" alt="Aparat i pytanie Bingo w osobnych panelach po obu stronach pionowego zgięcia" /> | <img src="docs/screenshots/fold-tabletop-scanner-pl.png" width="440" alt="Aparat nad poziomym zgięciem, pytanie i działania poniżej oraz dolna nawigacja" /> |
+
+Układy Folda sprawdzono w emulowanym oknie z pozycją zawiasu przekazywaną przez WindowManager. Nie jest to test na fizycznym Fold7.
+
+<details>
+<summary>Talie, skórki, pomoc i większy tekst</summary>
+
+| Biblioteka talii | Dziewięć skórek |
+| --- | --- |
+| <img src="docs/screenshots/phone-decks-pl.png" width="240" alt="Import JSON i CSV, trzy przykładowe talie i rozpoczęcie gry bez kart" /> | <img src="docs/screenshots/phone-skins-pl.png" width="240" alt="Natywny arkusz dziewięciu skórek z ustawieniem automatycznego odczytu wyglądu z QR" /> |
+
+| Jak grać w Bingo | Tryb ciemny · tekst 135% |
+| --- | --- |
+| <img src="docs/screenshots/phone-help-bingo-pl.png" width="240" alt="Cztery kolejne kroki gry Bingo i link do generatora plansz" /> | <img src="docs/screenshots/phone-settings-large-dark-pl.png" width="240" alt="Powiększone ustawienia w ciemnym motywie z czytelną dolną nawigacją" /> |
+
+[Ekran przygotowania Bingo](docs/screenshots/phone-games-pl.png) · [Arkusz wyboru gry i talii](docs/screenshots/phone-game-options-pl.png)
+
+</details>
 
 ## Instalacja wydania testowego
 
@@ -61,7 +86,7 @@ export SPOTIFY_CLIENT_ID='wstaw_swoj_32_znakowy_client_id'
 ./gradlew :app:assembleRelease
 ```
 
-Alternatywnie Gradle obsługuje `-PspotifyClientId=…`. Zmienna środowiskowa ma pierwszeństwo. W aplikacji można też zmienić Client ID w ustawieniach. **Client Secret nie jest potrzebny i nie należy go dodawać do aplikacji ani repozytorium.**
+Alternatywnie Gradle obsługuje `-PspotifyClientId=…`. Zmienna środowiskowa ma pierwszeństwo. Aplikacja korzysta z identyfikatora dołączonego podczas budowania i nie pokazuje formularza konfiguracji Client ID. **Client Secret nie jest potrzebny i nie należy go dodawać do aplikacji ani repozytorium.**
 
 Instrukcja konfiguracji odpowiada [oficjalnemu przewodnikowi App Remote dla Androida](https://developer.spotify.com/documentation/android/tutorials/getting-started).
 
@@ -90,9 +115,9 @@ Ustaw `ANDROID_HOME` na lokalizację Android SDK albo dodaj `sdk.dir=…` do lok
 | Raport testów JUnit | `app/build/reports/tests/testDebugUnitTest/index.html` |
 | Raport lint | `app/build/reports/lint-results-release.html` |
 
-Testy obejmują zgodność kart QR i importu JSON/CSV z kreatorem web oraz reguły Bingo. Nie potwierdzają autoryzacji Spotify na prawdziwym urządzeniu; tę część należy sprawdzić ręcznie.
+Testy obejmują zgodność kart QR i importu JSON/CSV z kreatorem web, skórki, reguły Bingo, Osi czasu i quizu oraz zachowanie gry po odtworzeniu procesu. Nie potwierdzają autoryzacji Spotify na prawdziwym urządzeniu; tę część należy sprawdzić ręcznie.
 
-CI uruchamia też natywny scenariusz Compose na emulatorze AOSP: wklejenie kodu, odkrycie karty, losowanie Bingo i zmianę języka. Sprawdza widoki telefonu i szerokiego okna, a 11 zrzutów PNG zapisuje w artefakcie `android-native-ui-…` obok raportu testu.
+CI uruchamia też natywne scenariusze Compose na emulatorze AOSP: losowanie pytania Bingo przed skanem, wklejenie kodu, odkrycie karty, Oś czasu, zmianę skórki i języka oraz zasady. Osobny scenariusz zmienia rzeczywiste okno Activity i publikuje pozycję pionowego oraz poziomego zgięcia przez WindowManager, sprawdzając, że panele nie nachodzą na zawias. Obejmuje ekran telefonu 360 dp, zewnętrzny i wewnętrzny ekran Folda, krótki widok poziomy, tryb ciemny i powiększenie tekstu. Zrzuty PNG trafiają do artefaktu `android-native-ui-…` obok raportu testów. Jest to test emulatora, a nie deklaracja sprawdzenia na fizycznym Fold7.
 
 Testy regresji sprawdzają globalne wznawianie Spotify po zmianie zakładki, odtwarzanie wybranej karty oraz zachowanie rundy Bingo przy ponownym wyborze tej samej talii. Działają na emulatorze bez konta Spotify.
 
@@ -126,7 +151,7 @@ W **Settings → Secrets and variables → Actions → Secrets** ustaw:
 Publiczne `SPOTIFY_CLIENT_ID` i `ANDROID_SIGNING_CERT_SHA256` umieść osobno w **Variables**. Odcisk może mieć postać 64 znaków szesnastkowych albo zapisu z dwukropkami. Workflow odtwarza magazyn wyłącznie w tymczasowym katalogu runnera, usuwa go po zakończeniu i publikuje tylko APK, sumę kontrolną oraz publiczne metadane podpisu.
 
 ```sh
-./gradlew :app:assembleRelease -PversionName=0.1.0-alpha.2 -PversionCode=100002
+./gradlew :app:assembleRelease -PversionName=0.2.0-alpha.1 -PversionCode=100003
 ```
 
 Do aktualizacji zainstalowanego APK użyj tego samego podpisu i większego `versionCode`. Numer lokalnego buildu powinien być większy od numeru już zainstalowanego wydania, podanego w `BUILD-INFO.txt`.
@@ -160,7 +185,7 @@ Zwykłe CI może działać bez sekretów, np. w forku: wtedy używa efemeryczneg
 Po pobraniu APK i pliku sumy do tego samego katalogu sprawdź integralność na Linuksie:
 
 ```sh
-sha256sum --check hiciarz-android-0.1.0-alpha.1-test.apk.sha256
+sha256sum --check hiciarz-android-0.2.0-alpha.1-test.apk.sha256
 ```
 
 Na macOS odpowiednikiem jest `shasum -a 256 --check …`. Odcisk podpisu można dodatkowo odczytać narzędziem Android SDK `apksigner verify --print-certs <plik.apk>` i porównać z `SIGNING-CERTIFICATE.txt`.

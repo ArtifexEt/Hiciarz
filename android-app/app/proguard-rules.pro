@@ -11,3 +11,10 @@
 
 # A declaration annotation used by the SDK, with no runtime implementation.
 -dontwarn com.spotify.base.annotations.NotNull
+
+# ML Kit discovers these implementations from AndroidManifest metadata using
+# getDeclaredConstructor(). AGP 9 strict full mode no longer keeps that constructor
+# implicitly when the library's consumer rule only keeps the class itself.
+-keep class * implements com.google.firebase.components.ComponentRegistrar {
+    public <init>();
+}

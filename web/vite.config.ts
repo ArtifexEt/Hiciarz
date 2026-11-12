@@ -1,8 +1,9 @@
-import { defineConfig } from 'vite';
+import { configDefaults, defineConfig } from 'vitest/config';
 import react from '@vitejs/plugin-react';
 import { VitePWA } from 'vite-plugin-pwa';
 const base = process.env.BASE_PATH || '/Hiciarz/';
 export default defineConfig({
+  test: { exclude: [...configDefaults.exclude, '**/._*'] },
   base,
   plugins: [
     react(),
