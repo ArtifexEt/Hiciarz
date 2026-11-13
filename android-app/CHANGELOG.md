@@ -4,6 +4,8 @@ Zmiany kolejnych wersji aplikacji Android. Opis GitHub Release jest pobierany z 
 
 ## [Unreleased]
 
+- Dodano dobrowolne statystyki Google Analytics: zgoda w Opcjach, domyślnie wyłączony pomiar, informacja o prywatności i możliwość cofnięcia zgody. Mierzone są wyłącznie stałe kategorie wyników skanowania i odtwarzania oraz ekrany, bez treści kart i danych Spotify. Konfiguracja właściciela pozostaje poza źródłami.
+
 - Uproszczono aplikację do skanowania kart i sterowania Spotify. Usunięto odkrywanie danych karty, ustawienie ukrywania odpowiedzi, zasady gry oraz ręczne wklejanie kodów i linków.
 - Pomoc opisuje tworzenie nowych kart i prowadzi do Hiciarza oraz kreatora na GitHub Pages.
 - Dolne menu ma kompaktowy układ dwóch pozycji z ikonami skanera i opcji; na dużym ekranie nawigacja pozostaje z boku.

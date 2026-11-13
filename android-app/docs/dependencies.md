@@ -2,6 +2,10 @@
 
 Gradle pobiera standardowe zależności z Google Maven i Maven Central.
 
+## Firebase Analytics
+
+Główny moduł `com.google.firebase:firebase-analytics` jest zarządzany przez przypięty Firebase BoM `34.19.0` (Analytics `23.2.0`), bez dawnych modułów `-ktx`. To najnowsza sprawdzona linia zgodna z Kotlinem 2.2 projektu: biblioteki measurement 23.2.0 mają metadane 2.2.0, podczas gdy Analytics 24.0.0 z BoM 35.2.0 wymaga metadanych 2.4.0. Nie wyłączamy sprawdzania metadanych Kotlin. Sumy nowych artefaktów i metadanych podlegają tej samej ścisłej weryfikacji Gradle co pozostałe zależności. Typowane zadanie generuje cztery oficjalne zasoby klienta z prywatnego środowiska; Google services plugin nie jest potrzebny. [Wersje SDK](https://firebase.google.com/support/release-notes/android), [konfiguracja i zgoda](analytics.md).
+
 ## Poprawka bezpieczeństwa Guava
 
 Constraint `implementation` wymaga co najmniej `com.google.guava:guava:33.7.2-android`

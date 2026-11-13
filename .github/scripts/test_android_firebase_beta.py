@@ -1,4 +1,5 @@
 import copy
+import base64
 import contextlib
 import hashlib
 import io
@@ -23,6 +24,15 @@ APP = "projects/123456789/apps/" + APP_ID
 RELEASE = APP + "/releases/example"
 OPERATION = APP + "/releases/-/operations/example"
 SECTIONS = {"Unreleased": "- Improve scanning.", "0.2.0-alpha.7": "- A previous fix."}
+
+
+def client_config(**changes):
+    value = {"project_info": {"project_number": "123456789", "project_id": "example-project"},
+        "client": [{"client_info": {"mobilesdk_app_id": APP_ID,
+            "android_client_info": {"package_name": beta.PACKAGE}},
+            "api_key": [{"current_key": "AIza" + "a" * 35}]}]}
+    value.update(changes)
+    return base64.b64encode(json.dumps(value).encode()).decode()
 
 
 def event(**changes):
@@ -172,7 +182,8 @@ class ConfigurationTests(unittest.TestCase):
                   "FIREBASE_WORKLOAD_IDENTITY_PROVIDER": "projects/123456789/locations/global/workloadIdentityPools/beta/providers/github",
                   "FIREBASE_SERVICE_ACCOUNT": "publisher@example-project.iam.gserviceaccount.com",
                   "FIREBASE_TESTER_GROUPS": "beta", "SPOTIFY_CLIENT_ID": "a" * 32,
-                  "ANDROID_SIGNING_CERT_SHA256": "b" * 64}
+                  "ANDROID_SIGNING_CERT_SHA256": "b" * 64,
+                  "FIREBASE_ANDROID_CONFIG_BASE64": client_config()}
         beta.validate_config(config)
         for key in config:
             with self.subTest(key=key), self.assertRaises(beta.FirebaseError) as error:
@@ -186,9 +197,9 @@ class ConfigurationTests(unittest.TestCase):
 class FingerprintTests(unittest.TestCase):
     TREE = "100644 blob " + "1" * 40 + "\tandroid-app/app/src/main/AndroidManifest.xml\0"
 
-    def fingerprint(self, tree=None, client="a" * 32, cert="AA:BB", app=APP_ID):
+    def fingerprint(self, tree=None, client="a" * 32, cert="AA:BB", app=APP_ID, firebase=""):
         with mock.patch.object(beta.release, "command_output", return_value=tree or self.TREE):
-            return beta.source_fingerprint(client, cert, app)
+            return beta.source_fingerprint(client, cert, app, firebase)
 
     def test_only_packaged_android_and_selected_theme_inputs_are_included(self):
         first = self.fingerprint()
@@ -209,6 +220,82 @@ class FingerprintTests(unittest.TestCase):
         self.assertNotEqual(first, self.fingerprint(cert="CC:DD"))
         self.assertNotEqual(first, self.fingerprint(app=APP_ID.replace("123456789", "987654321")))
         self.assertRegex(first, r"^[a-f0-9]{64}$")
+
+    def test_only_selected_client_resources_affect_fingerprint_without_exposing_them(self):
+        encoded = client_config()
+        first = self.fingerprint(firebase=encoded)
+        value = json.loads(base64.b64decode(encoded))
+        changed_whitespace = base64.b64encode(json.dumps(value, indent=2).encode()).decode()
+        self.assertEqual(first, self.fingerprint(firebase=changed_whitespace))
+        value["client"][0]["api_key"][0]["current_key"] = "AIza" + "b" * 35
+        changed_key = base64.b64encode(json.dumps(value).encode()).decode()
+        self.assertNotEqual(first, self.fingerprint(firebase=changed_key))
+        self.assertNotEqual(first, self.fingerprint())
+        self.assertNotIn("AIza", first)
+
+
+class ClientConfigurationTests(unittest.TestCase):
+    def test_extracts_only_the_four_packaged_public_fields(self):
+        self.assertEqual(beta.firebase_client_resources(client_config()), {
+            "google_app_id": APP_ID, "google_api_key": "AIza" + "a" * 35,
+            "project_id": "example-project", "gcm_defaultSenderId": "123456789"})
+
+    def test_invalid_base64_json_identity_or_service_account_is_rejected_with_fixed_text(self):
+        cases = ["", "not-base64-private", base64.b64encode(b"not-json-private").decode(),
+            client_config(type="service_account", private_key="private-value"),
+            client_config(project_info={"project_id": "example-project", "project_number": "wrong"}),
+            client_config(client=[])]
+        raw = json.loads(base64.b64decode(client_config()))
+        for path, invalid in (("package", "different.package"), ("app", APP_ID.replace("123456789", "987654321")),
+                              ("key", "private-value")):
+            value = copy.deepcopy(raw)
+            client = value["client"][0]
+            if path == "package": client["client_info"]["android_client_info"]["package_name"] = invalid
+            elif path == "app": client["client_info"]["mobilesdk_app_id"] = invalid
+            else: client["api_key"][0]["current_key"] = invalid
+            cases.append(base64.b64encode(json.dumps(value).encode()).decode())
+        for value in cases:
+            with self.subTest(case=len(value)), self.assertRaises(beta.FirebaseError) as error:
+                beta.firebase_client_resources(value)
+            self.assertNotIn("private-value", str(error.exception))
+            if value:
+                self.assertNotIn(value, str(error.exception))
+
+    def test_duplicate_json_fields_and_matching_clients_fail_closed(self):
+        duplicate = base64.b64encode(b'{"project_info":{},"project_info":{}}').decode()
+        value = json.loads(base64.b64decode(client_config()))
+        value["client"].append(copy.deepcopy(value["client"][0]))
+        for encoded in (duplicate, base64.b64encode(json.dumps(value).encode()).decode()):
+            with self.assertRaises(beta.FirebaseError):
+                beta.firebase_client_resources(encoded)
+
+    def test_decoded_size_is_bounded(self):
+        for encoded in ("a" * 90_001, base64.b64encode(b" " * 65_537).decode()):
+            with self.assertRaises(beta.FirebaseError):
+                beta.firebase_client_resources(encoded)
+
+    def test_builder_checks_its_own_client_config_against_plan_without_google_access(self):
+        encoded = client_config()
+        with tempfile.TemporaryDirectory() as folder, \
+             mock.patch.object(beta.release, "command_output", return_value=FingerprintTests.TREE), \
+             mock.patch.object(beta, "verify_source"), mock.patch.object(beta, "FirebaseAPI") as api:
+            directory = Path(folder)
+            event_file = directory / "event.json"
+            event_file.write_text(json.dumps(event()), encoding="utf-8")
+            fingerprint = beta.source_fingerprint("a" * 32, "b" * 64, APP_ID, encoded)
+            value = plan(fingerprint=fingerprint)
+            (directory / "plan.json").write_text(json.dumps(value), encoding="utf-8")
+            environment = {"GITHUB_EVENT_PATH": str(event_file), "GITHUB_EVENT_NAME": "workflow_run",
+                "GITHUB_REF": "refs/heads/main", "GITHUB_REPOSITORY": REPOSITORY,
+                "FIREBASE_BETA_ENABLED": "true", "SPOTIFY_CLIENT_ID": "a" * 32,
+                "ANDROID_SIGNING_CERT_SHA256": "b" * 64, "FIREBASE_ANDROID_CONFIG_BASE64": encoded}
+            for changed in (False, True):
+                stderr, stdout = io.StringIO(), io.StringIO()
+                with mock.patch.dict(os.environ, {**environment, "SPOTIFY_CLIENT_ID": ("c" if changed else "a") * 32}, clear=True), \
+                     contextlib.redirect_stderr(stderr), contextlib.redirect_stdout(stdout):
+                    self.assertEqual(beta.main(["check-build-config", "--directory", str(directory)]), 1 if changed else 0)
+                self.assertNotIn(encoded, stdout.getvalue() + stderr.getvalue())
+            api.assert_not_called()
 
 
 class StateTests(unittest.TestCase):
@@ -433,8 +520,15 @@ class WorkflowBoundaryTests(unittest.TestCase):
             jobs[name] = text[start:end if end != -1 else len(text)]
         build = jobs["build"]
         self.assertIn("environment: firebase-beta-build", build)
-        for forbidden in ("id-token:", "secrets.HICIARZ_", "secrets.FIREBASE_", "google-github-actions/auth"):
+        for forbidden in ("id-token:", "secrets.HICIARZ_", "secrets.FIREBASE_SERVICE_ACCOUNT",
+                          "secrets.FIREBASE_WORKLOAD_IDENTITY_PROVIDER", "secrets.FIREBASE_PROJECT_ID",
+                          "secrets.FIREBASE_APP_ID", "google-github-actions/auth"):
             self.assertNotIn(forbidden, build)
+        import re
+        self.assertEqual(set(re.findall(r"secrets\.([A-Z0-9_]+)", build)),
+                         {"SPOTIFY_CLIENT_ID", "FIREBASE_ANDROID_CONFIG_BASE64"})
+        self.assertIn("check-build-config", build)
+        self.assertIn("HICIARZ_REQUIRE_FIREBASE_ANALYTICS_CONFIG: 'true'", build)
         self.assertIn("cache-disabled: true", build)
         for name in ("plan", "publish"):
             for forbidden in ("./gradlew", "unittest", "setup-gradle"):

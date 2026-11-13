@@ -7,6 +7,8 @@ version/source metadata from a verified successful publisher.
 """
 
 import argparse
+import base64
+import binascii
 import hashlib
 import http.client
 import io
@@ -147,7 +149,52 @@ def verify_successful_checks(commit, repository):
         raise FirebaseError("The exact main source has no successful full CI run.")
 
 
-def source_fingerprint(client_id, certificate, app_id):
+def firebase_client_resources(encoded):
+    """Extract only public Android client fields; never echo downloaded JSON."""
+    def unique_fields(pairs):
+        result = {}
+        for key, value in pairs:
+            if key in result:
+                raise ValueError()
+            result[key] = value
+        return result
+
+    try:
+        if not isinstance(encoded, str) or not encoded or len(encoded) > 90_000:
+            raise ValueError()
+        raw = base64.b64decode(encoded, validate=True)
+        if len(raw) > 65_536:
+            raise ValueError()
+        value = json.loads(raw.decode("utf-8"), object_pairs_hook=unique_fields)
+        if value.get("type") == "service_account" or "private_key" in value:
+            raise ValueError()
+        project = value["project_info"]
+        number, project_id = project["project_number"], project["project_id"]
+        if not isinstance(number, str) or not re.fullmatch(r"[1-9][0-9]*", number):
+            raise ValueError()
+        if not isinstance(project_id, str) or not re.fullmatch(r"[a-z][a-z0-9-]{4,28}[a-z0-9]", project_id):
+            raise ValueError()
+        clients = [client for client in value["client"]
+                   if client.get("client_info", {}).get("android_client_info", {}).get("package_name") == PACKAGE]
+        if len(clients) != 1:
+            raise ValueError()
+        client = clients[0]
+        app_id = client["client_info"]["mobilesdk_app_id"]
+        if not isinstance(app_id, str) or not re.fullmatch(r"1:" + number + r":android:[a-fA-F0-9]+", app_id):
+            raise ValueError()
+        keys = client["api_key"]
+        if len(keys) != 1 or not isinstance(keys[0]["current_key"], str):
+            raise ValueError()
+        api_key = keys[0]["current_key"]
+        if not re.fullmatch(r"AIza[A-Za-z0-9_-]{35}", api_key):
+            raise ValueError()
+        return {"google_app_id": app_id, "google_api_key": api_key,
+                "project_id": project_id, "gcm_defaultSenderId": number}
+    except (AttributeError, KeyError, TypeError, ValueError, binascii.Error, RecursionError):
+        raise FirebaseError("Configure valid Firebase Android client configuration; values withheld.") from None
+
+
+def source_fingerprint(client_id, certificate, app_id, firebase_config=""):
     tree = release.command_output("git", "ls-tree", "-r", "-z", "--full-tree", "HEAD", "--", *FINGERPRINT_PATHS)
     records = []
     for record in tree.split("\0"):
@@ -165,7 +212,11 @@ def source_fingerprint(client_id, certificate, app_id):
     if not records:
         raise FirebaseError("The Android production source tree is empty.")
     normalized_certificate = re.sub(r"[\s:]", "", certificate).lower()
-    payload = "\0".join(records + [client_id, normalized_certificate, app_id])
+    # Only a combined one-way source fingerprint is retained publicly. No raw
+    # client JSON or standalone configuration digest enters the handoff/state.
+    client_digest = hashlib.sha256(json.dumps(firebase_client_resources(firebase_config),
+        sort_keys=True, separators=(",", ":")).encode()).hexdigest() if firebase_config else "firebase-client-disabled"
+    payload = "\0".join(records + [client_id, normalized_certificate, app_id, client_digest])
     return hashlib.sha256(payload.encode("utf-8")).hexdigest()
 
 
@@ -201,6 +252,9 @@ def validate_config(environment):
     if not re.fullmatch(r"[a-fA-F0-9]{64}", certificate):
         raise FirebaseError("Configure ANDROID_SIGNING_CERT_SHA256 for the private test signing key.")
     tester_groups(environment.get("FIREBASE_TESTER_GROUPS", ""))
+    client = firebase_client_resources(environment.get("FIREBASE_ANDROID_CONFIG_BASE64", ""))
+    if client["google_app_id"] != environment.get("FIREBASE_APP_ID") or client["project_id"] != environment.get("FIREBASE_PROJECT_ID"):
+        raise FirebaseError("The Analytics client must belong to the configured Firebase publishing app.")
 
 
 class NoRedirect(urllib.request.HTTPRedirectHandler):
@@ -547,7 +601,7 @@ def output_values(**values):
 def main(argv=None):
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument("mode", choices=("preview", "check-config", "prepare", "publish", "verify-certificate",
-                                         "receive-plan", "receive-apk", "stage-apk"))
+                                         "receive-plan", "receive-apk", "stage-apk", "check-build-config"))
     parser.add_argument("--apk", type=Path)
     parser.add_argument("--directory", type=Path)
     args = parser.parse_args(argv)
@@ -565,6 +619,17 @@ def main(argv=None):
                                    os.environ.get("GITHUB_REF", ""), os.environ.get("FIREBASE_BETA_ENABLED", ""),
                                    preview=preview, sha=os.environ.get("GITHUB_SHA", ""))
         verify_source(commit, repository, current_main=not preview)
+        if args.mode == "check-build-config":
+            client = firebase_client_resources(os.environ.get("FIREBASE_ANDROID_CONFIG_BASE64", ""))
+            plan = json.loads((directory / "plan.json").read_text(encoding="utf-8"))
+            state = validate_plan(plan, live=True)
+            fingerprint = source_fingerprint(os.environ.get("SPOTIFY_CLIENT_ID", ""),
+                os.environ.get("ANDROID_SIGNING_CERT_SHA256", ""), client["google_app_id"],
+                os.environ.get("FIREBASE_ANDROID_CONFIG_BASE64", ""))
+            if state["commit"] != commit or plan["repository"] != repository or state["fingerprint"] != fingerprint:
+                raise FirebaseError("The build client configuration does not match this run's verified plan.")
+            print("Build client configuration matches the verified plan; no Firebase access was used.")
+            return 0
         if args.mode in ("receive-plan", "receive-apk", "stage-apk"):
             directory.mkdir(parents=True, exist_ok=True)
             if args.mode == "stage-apk":
@@ -598,7 +663,8 @@ def main(argv=None):
             return 0
         fingerprint = source_fingerprint(os.environ.get("SPOTIFY_CLIENT_ID", ""),
                                          os.environ.get("ANDROID_SIGNING_CERT_SHA256", ""),
-                                         os.environ.get("FIREBASE_APP_ID", ""))
+                                         os.environ.get("FIREBASE_APP_ID", ""),
+                                         os.environ.get("FIREBASE_ANDROID_CONFIG_BASE64", ""))
         directory.mkdir(parents=True, exist_ok=True)
         api = FirebaseAPI(os.environ.get("FIREBASE_ACCESS_TOKEN", ""), os.environ.get("FIREBASE_APP_ID", "")) if not preview else None
         if args.mode == "publish":

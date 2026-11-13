@@ -62,6 +62,7 @@ internal fun SettingsScreen(state: AppState, copy: UiCopy, onAction: (AppAction)
                 }
             }
         }
+        AnalyticsSettings(state, copy, onAction)
         SettingGroup(copy.t("Pomoc", "Help")) {
             SettingRow(copy.t("Jak tworzyć karty", "Create cards"), AppIcons.Help, onClick = onHelp)
             GroupDivider()

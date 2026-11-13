@@ -5,6 +5,9 @@ import org.gradle.api.tasks.OutputDirectory
 import org.gradle.api.tasks.PathSensitive
 import org.gradle.api.tasks.PathSensitivity
 import org.gradle.api.tasks.TaskAction
+import org.gradle.api.tasks.UntrackedTask
+import groovy.json.JsonSlurper
+import java.util.Base64
 import javax.inject.Inject
 
 plugins {
@@ -30,6 +33,74 @@ require(configuredSpotifyClientId.isEmpty() || validSpotifyClientId) {
 }
 require(!requireSpotifyConfiguration || validSpotifyClientId) {
     "This distribution build requires your own SPOTIFY_CLIENT_ID; the repository has no default integration."
+}
+
+// Only the four public client fields required by Firebase are packaged. The
+// complete downloaded configuration is never written into the source tree.
+object FirebaseClientConfiguration {
+    fun resources(encoded: String): Map<String, String> {
+        if (encoded.isEmpty()) return emptyMap()
+        try {
+            require(encoded.length <= 90_000)
+            val bytes = Base64.getDecoder().decode(encoded)
+            require(bytes.size <= 65_536)
+            val json = JsonSlurper().parseText(bytes.toString(Charsets.UTF_8)) as Map<*, *>
+            require(json["type"] != "service_account" && !json.containsKey("private_key"))
+            val project = json["project_info"] as Map<*, *>
+            val number = project["project_number"] as String
+            val projectId = project["project_id"] as String
+            require(number.matches(Regex("[1-9][0-9]*")))
+            require(projectId.matches(Regex("[a-z][a-z0-9-]{4,28}[a-z0-9]")))
+            val clients = (json["client"] as List<*>).map { it as Map<*, *> }.filter {
+                val info = it["client_info"] as? Map<*, *>
+                val android = info?.get("android_client_info") as? Map<*, *>
+                android?.get("package_name") == "pl.artifex.hiciarz"
+            }
+            require(clients.size == 1)
+            val client = clients.single()
+            val appId = (client["client_info"] as Map<*, *>)["mobilesdk_app_id"] as String
+            require(appId.matches(Regex("1:$number:android:[a-fA-F0-9]+")))
+            val keys = client["api_key"] as List<*>
+            require(keys.size == 1)
+            val apiKey = (keys.single() as Map<*, *>)["current_key"] as String
+            require(apiKey.matches(Regex("AIza[A-Za-z0-9_-]{35}")))
+            return linkedMapOf("google_app_id" to appId, "google_api_key" to apiKey,
+                "project_id" to projectId, "gcm_defaultSenderId" to number)
+        } catch (_: Exception) {
+            // JSON/parser exceptions can contain fragments of the input.
+            throw GradleException("Invalid Firebase Android client configuration; values withheld.")
+        }
+    }
+}
+
+val firebaseClientEncoded = providers.environmentVariable("FIREBASE_ANDROID_CONFIG_BASE64").orElse("").get()
+val firebaseAnalyticsConfigured = FirebaseClientConfiguration.resources(firebaseClientEncoded).isNotEmpty()
+val requireFirebaseAnalytics = providers.environmentVariable("HICIARZ_REQUIRE_FIREBASE_ANALYTICS_CONFIG")
+    .orElse("false").get().toBooleanStrict()
+require(!requireFirebaseAnalytics || firebaseAnalyticsConfigured) {
+    "This distribution build requires your own Firebase Android client configuration."
+}
+
+@UntrackedTask(because = "Private environment configuration must not enter Gradle state or shared caches.")
+abstract class GenerateFirebaseClientResources : DefaultTask() {
+    @get:OutputDirectory abstract val outputDirectory: DirectoryProperty
+
+    @TaskAction fun generate() {
+        val values = FirebaseClientConfiguration.resources(System.getenv("FIREBASE_ANDROID_CONFIG_BASE64").orEmpty())
+        val output = outputDirectory.file("values/firebase_client.xml").get().asFile
+        output.parentFile.mkdirs()
+        // Rewrite even for an unconfigured clone, so a previous local build
+        // cannot silently donate its client configuration to a later build.
+        val keep = if (values.isEmpty()) "" else " xmlns:tools=\"http://schemas.android.com/tools\" tools:keep=\"" +
+            values.keys.joinToString(",") { "@string/$it" } + "\""
+        output.writeText("<resources$keep>\n" + values.entries.joinToString("\n") {
+            "    <string name=\"${it.key}\" translatable=\"false\">${it.value}</string>"
+        } + "\n</resources>\n")
+    }
+}
+val firebaseClientResources = tasks.register<GenerateFirebaseClientResources>("generateFirebaseClientResources") {
+    outputDirectory.set(layout.buildDirectory.dir("generated/firebase-client-resources"))
+    notCompatibleWithConfigurationCache("Client configuration is supplied only by the current environment.")
 }
 abstract class BundleCardSkins @Inject constructor(private val files: FileSystemOperations) : DefaultTask() {
     @get:InputDirectory @get:PathSensitive(PathSensitivity.RELATIVE)
@@ -63,6 +134,7 @@ android {
         buildConfigField("String", "SPOTIFY_CLIENT_ID", "\"$configuredSpotifyClientId\"")
         buildConfigField("String", "SPOTIFY_REDIRECT_URI", "\"hiciarz://spotify-callback\"")
         buildConfigField("boolean", "TEST_SIGNING", (!productionSigning).toString())
+        buildConfigField("boolean", "FIREBASE_ANALYTICS_CONFIGURED", firebaseAnalyticsConfigured.toString())
     }
     signingConfigs {
         if (suppliedSigningFile != null) create("distribution") {
@@ -91,9 +163,12 @@ android {
 }
 androidComponents.onVariants { variant ->
     variant.sources.assets?.addGeneratedSourceDirectory(bundledCardSkins, BundleCardSkins::outputDirectory)
+    variant.sources.res?.addGeneratedSourceDirectory(firebaseClientResources, GenerateFirebaseClientResources::outputDirectory)
 }
 
 dependencies {
+    implementation(platform("com.google.firebase:firebase-bom:34.19.0"))
+    implementation("com.google.firebase:firebase-analytics")
     constraints {
         implementation("com.google.guava:guava:33.7.2-android") {
             because("Fix CVE-2026-102554 in the transitive Android runtime dependency.")

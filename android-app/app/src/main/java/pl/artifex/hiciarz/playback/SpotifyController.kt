@@ -47,6 +47,8 @@ class SpotifyController internal constructor(
     private var connectScheduled = false
     private var pendingPlayUri: String? = null
     private var pendingResume = false
+    // Bounded to one current command. The callback contains no SDK error or track payload.
+    private var pendingPlaybackFailure: (() -> Unit)? = null
     private var pendingLocalTransfer = false
     private var transferInProgress = false
     private var capabilitiesChecked = false
@@ -78,6 +80,7 @@ class SpotifyController internal constructor(
             transferInProgress = false
             pendingPlayUri = null
             pendingResume = false
+            failPlayback()
             mutableState.value = mutableState.value.copy(error = "device_transfer_failed")
         }
     }
@@ -116,6 +119,7 @@ class SpotifyController internal constructor(
         // Invalidate it before starting a new session, retaining the user's queued action.
         if (remote != null || playerSubscription != null) releaseSession(clearPendingCommands = false)
         if (!spotifyInstalled()) {
+            failPlayback()
             mutableState.value = mutableState.value.copy(
                 connection = ConnectionStatus.DISCONNECTED,
                 spotifyInstalled = false,
@@ -124,6 +128,7 @@ class SpotifyController internal constructor(
             return@onMain
         }
         if (!CLIENT_ID.matches(clientIdProvider().trim())) {
+            failPlayback()
             mutableState.value = mutableState.value.copy(error = "client_id_missing")
             return@onMain
         }
@@ -136,9 +141,15 @@ class SpotifyController internal constructor(
         scheduleVisibleConnection()
     }
 
-    override fun play(uri: String) = onMain {
+    override fun play(uri: String) = queuePlay(uri, null)
+
+    override fun play(uri: String, onFailure: () -> Unit) = queuePlay(uri, onFailure)
+
+    private fun queuePlay(uri: String, onFailure: (() -> Unit)?) = onMain {
         if (closed) return@onMain
+        pendingPlaybackFailure = onFailure
         if (!TRACK_URI.matches(uri)) {
+            failPlayback()
             mutableState.value = mutableState.value.copy(error = "invalid_track")
             return@onMain
         }
@@ -175,8 +186,13 @@ class SpotifyController internal constructor(
         clearPendingPlayback()
     }
 
-    override fun resume() = onMain {
+    override fun resume() = queueResume(null)
+
+    override fun resume(onFailure: () -> Unit) = queueResume(onFailure)
+
+    private fun queueResume(onFailure: (() -> Unit)?) = onMain {
         if (closed) return@onMain
+        pendingPlaybackFailure = onFailure
         pendingPlayUri = null
         pendingResume = true
         if (remote?.isConnected == true) drainPendingCommands() else connect()
@@ -405,6 +421,7 @@ class SpotifyController internal constructor(
                                 transferInProgress = false
                                 pendingPlayUri = null
                                 pendingResume = false
+                                failPlayback()
                                 mutableState.value = mutableState.value.copy(error = errorCode(error, "device_transfer_failed"))
                             }
                         }
@@ -414,6 +431,7 @@ class SpotifyController internal constructor(
                 transferInProgress = false
                 pendingPlayUri = null
                 pendingResume = false
+                failPlayback()
                 mutableState.value = mutableState.value.copy(error = errorCode(it, "device_transfer_failed"))
             }
             return
@@ -423,7 +441,9 @@ class SpotifyController internal constructor(
         if (uri == null && !resume) return
         pendingPlayUri = null
         pendingResume = false
+        val playbackFailure = pendingPlaybackFailure
         if (uri != null && canPlayOnDemand == false) {
+            failPlayback(playbackFailure)
             mutableState.value = mutableState.value.copy(error = "premium_required")
             return
         }
@@ -440,9 +460,9 @@ class SpotifyController internal constructor(
                     }
                 }
             }.setErrorCallback { error ->
-                onMain { commandError(error, appRemote, currentGeneration, command) }
+                onMain { commandError(error, appRemote, currentGeneration, command, playbackFailure) }
             }
-        }.onFailure { commandError(it, appRemote, currentGeneration, command) }
+        }.onFailure { commandError(it, appRemote, currentGeneration, command, playbackFailure) }
     }
 
     private fun commandError(
@@ -450,13 +470,16 @@ class SpotifyController internal constructor(
         appRemote: SpotifyAppRemote,
         currentGeneration: Long,
         command: Long,
+        playbackFailure: (() -> Unit)? = null,
     ) {
         if (!isCurrent(currentGeneration, appRemote) || command != commandGeneration) return
+        failPlayback(playbackFailure)
         if (!appRemote.isConnected) failConnection("spotify_disconnected")
         else mutableState.value = mutableState.value.copy(error = errorCode(error, "playback_failed"))
     }
 
     private fun clearPendingPlayback() {
+        pendingPlaybackFailure = null
         pendingPlayUri = null
         pendingResume = false
         pendingLocalTransfer = false
@@ -466,6 +489,7 @@ class SpotifyController internal constructor(
     }
 
     private fun failConnection(code: String) {
+        failPlayback()
         val disconnected = mutableState.value.copy(
             connection = ConnectionStatus.DISCONNECTED,
             isPlaying = false,
@@ -482,6 +506,7 @@ class SpotifyController internal constructor(
         connectPending = false
         connectScheduled = false
         if (clearPendingCommands) {
+            pendingPlaybackFailure = null
             pendingPlayUri = null
             pendingResume = false
             pendingLocalTransfer = false
@@ -508,6 +533,12 @@ class SpotifyController internal constructor(
 
     private fun isCurrent(currentGeneration: Long, appRemote: SpotifyAppRemote): Boolean =
         !closed && generation == currentGeneration && remote === appRemote
+
+    private fun failPlayback(callback: (() -> Unit)? = pendingPlaybackFailure) {
+        if (callback == null || pendingPlaybackFailure !== callback) return
+        pendingPlaybackFailure = null
+        runCatching { callback() }
+    }
 
     private fun spotifyInstalled(): Boolean =
         runCatching { spotifyInstalledProvider() }.getOrDefault(false)

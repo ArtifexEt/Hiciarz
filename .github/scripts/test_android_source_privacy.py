@@ -35,6 +35,7 @@ class PublicAndroidSourceTests(unittest.TestCase):
         template = ROOT / "android-app" / ".env.example"
         safe_defaults = {
             "HICIARZ_REQUIRE_SPOTIFY_CONFIG": "false",
+            "HICIARZ_REQUIRE_FIREBASE_ANALYTICS_CONFIG": "false",
             "HICIARZ_PRODUCTION_SIGNING": "false",
         }
         variables = set()
@@ -50,6 +51,7 @@ class PublicAndroidSourceTests(unittest.TestCase):
                 self.fail(f"Configuration template contains owner data or unsafe defaults at line {number}; value withheld.")
         required = {
             "SPOTIFY_CLIENT_ID", "FIREBASE_PROJECT_ID", "FIREBASE_APP_ID",
+            "FIREBASE_ANDROID_CONFIG_BASE64", "HICIARZ_REQUIRE_FIREBASE_ANALYTICS_CONFIG",
             "FIREBASE_WORKLOAD_IDENTITY_PROVIDER", "FIREBASE_SERVICE_ACCOUNT",
             "HICIARZ_KEYSTORE_FILE", "HICIARZ_KEYSTORE_PASSWORD",
             "HICIARZ_KEY_ALIAS", "HICIARZ_KEY_PASSWORD",
