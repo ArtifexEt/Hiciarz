@@ -46,6 +46,8 @@ class HiciarzViewModel @JvmOverloads constructor(
     private var standaloneScanSkin: CardSkin? = null
     private var analyticsConnectionPending = false
     private var analyticsPlaybackUri: String? = null
+    private var analyticsPlaybackAttempt = 0L
+    private var analyticsConsentWindow = 0L
 
     init {
         // Retire obsolete routes and deck preferences; scanner settings remain independent.
@@ -63,7 +65,10 @@ class HiciarzViewModel @JvmOverloads constructor(
             analytics.enabled.collect { enabled ->
                 mutableState.update { it.copy(analyticsEnabled = enabled) }
                 if (enabled) recordScreen(state.value.tab)
-                else { analyticsConnectionPending = false; analyticsPlaybackUri = null }
+                else {
+                    analyticsConnectionPending = false; analyticsPlaybackUri = null
+                    ++analyticsConsentWindow; ++analyticsPlaybackAttempt
+                }
             }
         }
         viewModelScope.launch {
@@ -80,7 +85,7 @@ class HiciarzViewModel @JvmOverloads constructor(
         playbackJob?.cancel()
         playbackJob = viewModelScope.launch {
             controller.state.collect { next ->
-                recordPlaybackOutcome(state.value.playback, next)
+                recordPlaybackOutcome(next)
                 mutableState.update { it.copy(playback = next) }
                 if (next.trackUri != null && ownedTrackUri != null && next.trackUri != ownedTrackUri) {
                     // A user selected their own music in Spotify. Never stop it with our old timer.
@@ -101,13 +106,13 @@ class HiciarzViewModel @JvmOverloads constructor(
         if (reconnectOnAttach) {
             reconnectOnAttach = false
             val pending = armClipUri
-            if (analytics.enabled.value) analyticsConnectionPending = true
-            if (pending != null) controller.play(pending) else controller.connect()
+            if (pending != null) sendPlay(controller, pending) else controller.connect()
         }
     }
 
     fun detachPlayback(controller: PlaybackTransport) {
         if (playback !== controller) return
+        ++analyticsPlaybackAttempt
         reconnectOnAttach = controller.state.value.connection != ConnectionStatus.DISCONNECTED
         playbackJob?.cancel()
         playbackJob = null
@@ -121,9 +126,9 @@ class HiciarzViewModel @JvmOverloads constructor(
             is AppAction.SelectTab -> {
                 if (state.value.tab != action.tab) recordScreen(action.tab)
                 mutableState.update {
-                val tab = action.tab
-                it.copy(tab = tab, scannerEnabled = tab == AppTab.SCAN && it.currentSong == null,
-                    scannedSkin = if (tab == AppTab.SCAN) standaloneScanSkin else it.scannedSkin)
+                    val tab = action.tab
+                    it.copy(tab = tab, scannerEnabled = tab == AppTab.SCAN && it.currentSong == null,
+                        scannedSkin = if (tab == AppTab.SCAN) standaloneScanSkin else it.scannedSkin)
                 }
             }
             AppAction.ConnectSpotify -> {
@@ -132,6 +137,7 @@ class HiciarzViewModel @JvmOverloads constructor(
             }
             AppAction.DisconnectSpotify -> {
                 analyticsConnectionPending = false; analyticsPlaybackUri = null
+                ++analyticsPlaybackAttempt
                 reconnectOnAttach = false
                 clipJob?.cancel(); clipDeadline = null; armClipUri = null; ownedTrackUri = null
                 // The explicit action updates the panel immediately, without waiting for collection.
@@ -140,6 +146,7 @@ class HiciarzViewModel @JvmOverloads constructor(
             }
             AppAction.Pause -> {
                 analyticsPlaybackUri = null
+                ++analyticsPlaybackAttempt
                 clipJob?.cancel(); clipDeadline = null; armClipUri = null; playback?.pause()
             }
             AppAction.Resume -> resumeCurrentTrack()
@@ -173,7 +180,10 @@ class HiciarzViewModel @JvmOverloads constructor(
             is AppAction.SetAnalyticsEnabled -> {
                 // Do not rely on observing a transient false in a conflated StateFlow.
                 // A revoke/re-grant cannot revive an operation from the previous consent.
-                if (!action.enabled) { analyticsConnectionPending = false; analyticsPlaybackUri = null }
+                if (!action.enabled) {
+                    analyticsConnectionPending = false; analyticsPlaybackUri = null
+                    ++analyticsConsentWindow; ++analyticsPlaybackAttempt
+                }
                 analytics.setEnabled(action.enabled)
             }
             is AppAction.SetLanguage -> updateSettings(state.value.settings.copy(language = if (action.language == "en") "en" else "pl"))
@@ -219,7 +229,7 @@ class HiciarzViewModel @JvmOverloads constructor(
         armClipUri = song.spotifyUri
         analyticsPlaybackUri = song.spotifyUri.takeIf { analytics.enabled.value }
         beginAnalyticsConnection()
-        playback?.play(song.spotifyUri)
+        playback?.let { sendPlay(it, song.spotifyUri) }
     }
 
     private fun resumeCurrentTrack() {
@@ -229,7 +239,10 @@ class HiciarzViewModel @JvmOverloads constructor(
         armClipUri = state.value.playback.trackUri?.takeIf { it == ownedTrackUri }
         analyticsPlaybackUri = armClipUri.takeIf { analytics.enabled.value }
         beginAnalyticsConnection()
-        playback?.resume()
+        playback?.let { controller ->
+            val failure = playbackFailureCallback(controller)
+            if (failure != null) controller.resume(failure) else controller.resume()
+        }
     }
 
     private fun startClip(uri: String) {
@@ -253,6 +266,7 @@ class HiciarzViewModel @JvmOverloads constructor(
 
     private fun pauseOwned() {
         analyticsPlaybackUri = null
+        ++analyticsPlaybackAttempt
         clipJob?.cancel(); clipDeadline = null; armClipUri = null
         playback?.cancelPendingPlayback()
         if (ownedTrackUri != null && state.value.playback.trackUri == ownedTrackUri) playback?.pause()
@@ -276,13 +290,11 @@ class HiciarzViewModel @JvmOverloads constructor(
     }
 
     /** Only finite outcomes cross the analytics boundary; transport payloads never do. */
-    private fun recordPlaybackOutcome(previous: PlaybackState, next: PlaybackState) {
+    private fun recordPlaybackOutcome(next: PlaybackState) {
         if (!analytics.enabled.value) {
             analyticsConnectionPending = false; analyticsPlaybackUri = null
             return
         }
-        if (next.connection == ConnectionStatus.CONNECTING && previous.connection != ConnectionStatus.CONNECTING)
-            analyticsConnectionPending = true
         if (analyticsConnectionPending && next.connection == ConnectionStatus.CONNECTED) {
             analyticsConnectionPending = false
             record(UsageEvent.SPOTIFY_CONNECTED)
@@ -292,10 +304,28 @@ class HiciarzViewModel @JvmOverloads constructor(
         }
         if (analyticsPlaybackUri != null && next.trackUri == analyticsPlaybackUri && next.isPlaying) {
             analyticsPlaybackUri = null
+            ++analyticsPlaybackAttempt
             record(UsageEvent.PLAYBACK_STARTED)
-        } else if (analyticsPlaybackUri != null && next.error != null && next.error != previous.error) {
-            analyticsPlaybackUri = null
-            record(UsageEvent.PLAYBACK_FAILED)
+        }
+    }
+
+    private fun sendPlay(controller: PlaybackTransport, uri: String) {
+        val failure = playbackFailureCallback(controller)
+        if (failure != null) controller.play(uri, failure) else controller.play(uri)
+    }
+
+    /** A result belongs to one command and consent window, never to a later re-grant. */
+    private fun playbackFailureCallback(controller: PlaybackTransport): (() -> Unit)? {
+        val attempt = ++analyticsPlaybackAttempt
+        val consentWindow = analyticsConsentWindow
+        if (!analytics.enabled.value || analyticsPlaybackUri == null) return null
+        return {
+            if (playback === controller && attempt == analyticsPlaybackAttempt &&
+                consentWindow == analyticsConsentWindow && analytics.enabled.value && analyticsPlaybackUri != null) {
+                analyticsPlaybackUri = null
+                ++analyticsPlaybackAttempt
+                record(UsageEvent.PLAYBACK_FAILED)
+            }
         }
     }
 

@@ -95,7 +95,48 @@ class AnalyticsViewModelTest {
         dispatch(AppAction.ScanCameraCode(URI))
         main { player.fail() }
         repeat(3) { main { player.tick() } }
-        assertEquals(listOf(UsageEvent.SCAN_ACCEPTED, UsageEvent.SPOTIFY_CONNECTION_FAILED, UsageEvent.PLAYBACK_FAILED), analytics.events)
+        assertEquals(3, analytics.events.size)
+        assertEquals(setOf(UsageEvent.SCAN_ACCEPTED, UsageEvent.SPOTIFY_CONNECTION_FAILED, UsageEvent.PLAYBACK_FAILED), analytics.events.toSet())
+    }
+
+    @Test fun repeatedPremiumFailuresCountEachCommandWithoutAnyPlaybackStateChange() {
+        dispatch(AppAction.SetAnalyticsEnabled(true))
+        main { player.repeatPremiumFailure() }
+        val identicalFailureState = player.state.value
+        repeat(2) {
+            if (it > 0) dispatch(AppAction.ScanNext)
+            dispatch(AppAction.ScanCameraCode(URI))
+            assertEquals("The SDK's repeated error leaves StateFlow unchanged", identicalFailureState, player.state.value)
+        }
+        repeat(3) { main { player.tick() } }
+        assertEquals(listOf(UsageEvent.SCAN_ACCEPTED, UsageEvent.PLAYBACK_FAILED,
+            UsageEvent.SCAN_ACCEPTED, UsageEvent.PLAYBACK_FAILED), analytics.events)
+    }
+
+    @Test fun anOldFailureCannotCompleteANewAttemptAfterConsentWasRevokedAndGrantedAgain() {
+        dispatch(AppAction.SetAnalyticsEnabled(true))
+        dispatch(AppAction.ScanCameraCode(URI))
+        lateinit var oldFailure: () -> Unit
+        main { oldFailure = requireNotNull(player.failureCallback) }
+        main {
+            model.dispatch(AppAction.SetAnalyticsEnabled(false))
+            model.dispatch(AppAction.SetAnalyticsEnabled(true))
+        }
+        dispatch(AppAction.ScanNext)
+        dispatch(AppAction.ScanCameraCode(URI))
+        main { oldFailure() }
+        assertEquals(0, analytics.events.count { it == UsageEvent.PLAYBACK_FAILED })
+        main { player.fail() }
+        assertEquals(1, analytics.events.count { it == UsageEvent.PLAYBACK_FAILED })
+    }
+
+    @Test fun grantingConsentWhileAnEarlierConnectionCompletesDoesNotReplayThatOperation() {
+        main {
+            model.dispatch(AppAction.ScanCameraCode(URI))
+            model.dispatch(AppAction.SetAnalyticsEnabled(true))
+            player.complete()
+        }
+        assertTrue("Delayed transport state is not an action from the new consent window", analytics.events.isEmpty())
     }
 
     private fun dispatch(action: AppAction) = main { model.dispatch(action) }
@@ -119,13 +160,33 @@ class AnalyticsViewModelTest {
         private val mutableState = MutableStateFlow(PlaybackState())
         override val state: StateFlow<PlaybackState> = mutableState
         private var requested: String? = null
+        var failureCallback: (() -> Unit)? = null
+        private var premiumFailure = false
         override fun connect() { mutableState.value = mutableState.value.copy(connection = ConnectionStatus.CONNECTING, error = null) }
         override fun play(uri: String) { requested = uri; connect() }
+        override fun play(uri: String, onFailure: () -> Unit) {
+            failureCallback = onFailure
+            if (premiumFailure) {
+                mutableState.value = mutableState.value.copy(error = "premium_required")
+                failureCallback = null
+                onFailure()
+            } else play(uri)
+        }
         fun complete() { mutableState.value = PlaybackState(connection = ConnectionStatus.CONNECTED, trackUri = requested, isPlaying = true) }
         fun tick() { mutableState.value = mutableState.value.copy(positionMs = mutableState.value.positionMs + 500) }
-        fun fail() { mutableState.value = mutableState.value.copy(connection = ConnectionStatus.DISCONNECTED, error = "connection_timeout") }
+        fun fail() {
+            mutableState.value = mutableState.value.copy(connection = ConnectionStatus.DISCONNECTED, error = "connection_timeout")
+            val failure = failureCallback
+            failureCallback = null
+            failure?.invoke()
+        }
+        fun repeatPremiumFailure() {
+            premiumFailure = true
+            mutableState.value = PlaybackState(connection = ConnectionStatus.CONNECTED, error = "premium_required")
+        }
         override fun pause() { mutableState.value = mutableState.value.copy(isPlaying = false) }
         override fun resume() = connect()
+        override fun resume(onFailure: () -> Unit) { failureCallback = onFailure; resume() }
         override fun cancelPendingPlayback() = Unit
         override fun switchToPhone() = Unit
         override fun disconnect() { mutableState.value = PlaybackState() }

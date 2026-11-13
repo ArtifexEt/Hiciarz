@@ -8,9 +8,12 @@ interface PlaybackTransport {
     val state: StateFlow<PlaybackState>
     fun connect()
     fun play(uri: String)
+    /** One payload-free failure callback for this command; cancellations do not report failure. */
+    fun play(uri: String, onFailure: () -> Unit) { play(uri) }
     fun pause()
     fun cancelPendingPlayback()
     fun resume()
+    fun resume(onFailure: () -> Unit) { resume() }
     fun switchToPhone()
     fun disconnect()
 }
