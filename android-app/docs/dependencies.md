@@ -2,6 +2,47 @@
 
 Gradle pobiera standardowe zależności z Google Maven i Maven Central.
 
+## Poprawka bezpieczeństwa Guava
+
+Constraint `implementation` wymaga co najmniej `com.google.guava:guava:33.7.2-android`
+w zależnościach aplikacji. Usuwa znaną podatność CVE-2026-102554 na wyczerpanie
+pamięci podczas deserializacji obiektów Java. Dotychczasowy kod aplikacji nie
+przyjmował takich obiektów, a R8 usuwał wskazane klasy; aktualizacja zabezpiecza
+także przyszłe użycia biblioteki. Narzędzia JVM mają osobny constraint wersji
+`33.7.2-jre`; konfiguracje Androida zachowują wariant `-android`.
+
+Źródło: [advisory opiekunów Guava](https://github.com/google/guava/security/advisories/GHSA-xxph-c9ww-hj94).
+
+## Bouncy Castle w narzędziach budowania
+
+Classpath pluginów i wydzielone konfiguracje narzędzi AGP wymagają co najmniej `1.85` dla `bcprov-jdk18on`,
+`bcpkix-jdk18on` i `bcutil-jdk18on`. Wspólna wersja usuwa błędy walidacji
+Name Constraints i zagnieżdżonych struktur ASN.1 (CVE-2026-8763,
+CVE-2026-13506), zachowując zgodność modułów kryptograficznych. To biblioteki
+narzędzi budowania, a nie zależności aplikacji. Constrainty nie zmieniają
+oddzielnego narzędzia `apksigner` z Android SDK używanego przez publikator.
+Przy aktualizacji AGP sprawdź ponownie wersje i usuń zbędne constrainty,
+gdy plugin sam dostarcza poprawione zależności.
+
+Źródła: [CVE-2026-8763](https://github.com/bcgit/bc-java/wiki/CVE%E2%80%902026%E2%80%908763),
+[CVE-2026-13506](https://github.com/bcgit/bc-java/wiki/CVE%E2%80%902026%E2%80%9013506).
+
+## Pozostałe poprawki narzędzi
+
+Minimalne wersje `org.jdom:jdom2:2.0.6.1` i `org.bitbucket.b_c:jose4j:0.9.6`
+usuwają odpowiednio CVE-2021-33813 i CVE-2024-29371. Jetifier jest obecnie
+wyłączony, a bundletool używa JWS zamiast podatnej obsługi skompresowanych JWE;
+poprawki obejmują również przyszłe użycia tych narzędzi. Publiczne i chronione
+API obu aktualizacji sprawdzono pod kątem zachowania zgodności binarnej.
+
+Wspólny scope constraintów obejmuje także osobne classpathy lint i workerów
+AGP. Nie dodaje zależności: biblioteki otrzymują poprawione wersje tylko tam,
+gdzie były już wymagane. Nie oznacza to dodania Bouncy Castle, JDOM ani jose4j
+do APK. Warianty Guava wybierane są zgodnie ze środowiskiem Android/JVM.
+
+Źródła: [wydanie JDOM](https://github.com/hunterhacker/jdom/releases/tag/JDOM-2.0.6.1),
+[poprawka jose4j](https://bitbucket.org/b_c/jose4j/commits/19a90a64c47bb07c4aa5462f1316d5c293d81fcf).
+
 ## AndroidSVG 1.4
 
 `com.caverock:androidsvg-aar:1.4` renderuje grafiki SVG rewersów. Zadanie `prepareBundledCardSkins` kopiuje źródła z `web/public/themes/` do APK, razem z bitmapą `fish-santa.webp`. Android i PWA korzystają z tych samych plików, dostępnych także bez sieci. Grafiki są ładowane poza głównym wątkiem i przechowywane w pamięci między zmianami ekranów.

@@ -94,6 +94,11 @@ androidComponents.onVariants { variant ->
 }
 
 dependencies {
+    constraints {
+        implementation("com.google.guava:guava:33.7.2-android") {
+            because("Fix CVE-2026-102554 in the transitive Android runtime dependency.")
+        }
+    }
     implementation(platform("androidx.compose:compose-bom:2026.09.00"))
     implementation("androidx.core:core-ktx:1.17.0")
     implementation("androidx.activity:activity-compose:1.13.0")
