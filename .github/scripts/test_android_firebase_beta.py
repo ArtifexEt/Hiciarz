@@ -316,6 +316,134 @@ class VersionTests(unittest.TestCase):
             beta.validate_plan(plan(firebase_releases=None), live=True)
 
 
+class HandoffTests(unittest.TestCase):
+    def archive(self, name="plan.json", data=None, extra=False):
+        buffer = io.BytesIO()
+        with zipfile.ZipFile(buffer, "w") as archive:
+            archive.writestr(name, data or json.dumps(plan()).encode())
+            if extra:
+                archive.writestr("unexpected", "must not extract")
+        return buffer.getvalue()
+
+    def receive(self, raw=None, changes=None, kind="plan", digest=None):
+        raw = self.archive() if raw is None else raw
+        digest = digest or hashlib.sha256(raw).hexdigest()
+        metadata = {"id": 42, "name": f"android-firebase-beta-{kind}-99-1", "expired": False,
+                    "size_in_bytes": len(raw), "digest": "sha256:" + digest, "workflow_run": {"id": 99}}
+        metadata.update(changes or {})
+        with mock.patch.object(beta, "gh_json", return_value=metadata), mock.patch.object(beta, "gh_bytes", return_value=raw):
+            return beta.receive_handoff(REPOSITORY, "42", digest, "99", kind)
+
+    def test_exact_producer_id_digest_and_same_run_are_required_including_failed_job_retries(self):
+        self.assertEqual(json.loads(self.receive()), plan())
+        for changes in ({"id": 43}, {"id": True}, {"expired": True}, {"workflow_run": {"id": 98}},
+                        {"workflow_run": None}, {"size_in_bytes": beta.MAX_STATE_ZIP + 1},
+                        {"name": "android-firebase-beta-plan-98-1"}, {"name": None},
+                        {"name": "android-firebase-beta-unsigned-99-1"}, {"digest": "sha256:" + "0" * 64}):
+            with self.subTest(changes=changes), self.assertRaises(beta.FirebaseError):
+                self.receive(changes=changes)
+        # Reusing an exact artifact from attempt 1 is valid during a failed-job retry.
+        with mock.patch.dict(os.environ, {"GITHUB_RUN_ATTEMPT": "2"}):
+            self.assertEqual(json.loads(self.receive()), plan())
+        with self.assertRaises(beta.FirebaseError):
+            self.receive(digest="0" * 64)
+
+    def test_handoff_does_not_extract_extra_files_traversal_or_oversized_plan(self):
+        for raw in (self.archive(name="../plan.json"), self.archive(extra=True),
+                    self.archive(data=b"x" * 8193), b"invalid archive"):
+            with self.subTest(raw=raw[:20]), self.assertRaises(beta.FirebaseError):
+                self.receive(raw=raw)
+        with self.assertRaises(beta.FirebaseError):
+            beta.receive_handoff(REPOSITORY, "42\n99", "a" * 64, "99", "plan")
+
+    def test_apk_handoff_accepts_only_one_named_binary(self):
+        raw = self.archive(name="unsigned.apk", data=b"public APK")
+        self.assertEqual(self.receive(raw=raw, kind="unsigned"), b"public APK")
+        with self.assertRaises(beta.FirebaseError):
+            self.receive(raw=self.archive(name="unsigned.apk", extra=True), kind="unsigned")
+
+    def test_build_receives_source_bound_plan_without_any_firebase_or_signing_configuration(self):
+        with tempfile.TemporaryDirectory() as folder:
+            base = Path(folder)
+            event_file, output = base / "event.json", base / "output"
+            event_file.write_text(json.dumps(event()), encoding="utf-8")
+            environment = {"GITHUB_EVENT_PATH": str(event_file), "GITHUB_EVENT_NAME": "workflow_run",
+                           "GITHUB_REPOSITORY": REPOSITORY, "GITHUB_REF": "refs/heads/main",
+                           "GITHUB_RUN_ID": "99", "FIREBASE_BETA_ENABLED": "true", "GITHUB_OUTPUT": str(output)}
+            with mock.patch.dict(os.environ, environment, clear=True), mock.patch.object(beta, "verify_source") as source, \
+                 mock.patch.object(beta, "receive_handoff", return_value=json.dumps(plan()).encode()), \
+                 mock.patch.object(beta, "validate_config") as configuration, mock.patch.object(beta, "FirebaseAPI") as api, \
+                 contextlib.redirect_stdout(io.StringIO()):
+                self.assertEqual(beta.main(["receive-plan", "--directory", str(base / "handoff")]), 0)
+            source.assert_called_once_with(COMMIT, REPOSITORY, current_main=True)
+            configuration.assert_not_called()
+            api.assert_not_called()
+            self.assertEqual(json.loads((base / "handoff/plan.json").read_bytes()), plan())
+            self.assertIn("name=" + plan()["state"]["name"], output.read_text())
+            different_source = copy.deepcopy(plan())
+            different_source["state"]["commit"] = "d" * 40
+            with mock.patch.dict(os.environ, environment, clear=True), mock.patch.object(beta, "verify_source"), \
+                 mock.patch.object(beta, "receive_handoff", return_value=json.dumps(different_source).encode()), \
+                 contextlib.redirect_stderr(io.StringIO()):
+                self.assertEqual(beta.main(["receive-plan", "--directory", str(base / "wrong")]), 1)
+            self.assertFalse((base / "wrong/plan.json").exists())
+
+    def test_unsigned_staging_removes_only_signature_entries_and_signing_block(self):
+        with tempfile.TemporaryDirectory() as folder:
+            source, destination = Path(folder) / "input.apk", Path(folder) / "unsigned.apk"
+            fixture_apk(source)
+            with zipfile.ZipFile(source, "a") as archive:
+                for name in ("META-INF/MANIFEST.MF", "META-INF/CERT.SF", "META-INF/CERT.RSA",
+                             "META-INF/OTHER.EC", "META-INF/SIG-OLD", "META-INF/module.kotlin_module"):
+                    archive.writestr(name, name)
+            # ZIP readers accept data outside entries; rebuilding must discard it.
+            with source.open("ab") as output:
+                output.write(b"old signing block marker")
+            beta.stage_unsigned_apk(source, destination)
+            with zipfile.ZipFile(destination) as archive:
+                self.assertEqual(set(archive.namelist()), {"AndroidManifest.xml", "classes.dex", "META-INF/module.kotlin_module"})
+            self.assertNotIn(b"old signing block marker", destination.read_bytes())
+            with self.assertRaises(beta.FirebaseError):
+                beta.stage_unsigned_apk(source, source)
+
+    def test_ambiguous_or_expansion_bomb_apk_is_rejected_before_decompression(self):
+        with tempfile.TemporaryDirectory() as folder:
+            apk = Path(folder) / "input.apk"
+            fixture_apk(apk)
+            with zipfile.ZipFile(apk, "a") as archive:
+                with self.assertWarns(UserWarning):
+                    archive.writestr("classes.dex", "ambiguous")
+            with self.assertRaises(beta.FirebaseError):
+                beta.validate_apk(apk)
+            fixture_apk(apk)
+            with mock.patch.object(beta, "MAX_APK_EXPANDED", 1), self.assertRaises(beta.FirebaseError):
+                beta.validate_apk(apk)
+
+
+class WorkflowBoundaryTests(unittest.TestCase):
+    def test_build_and_privileged_jobs_have_separate_credentials_and_execution(self):
+        workflow = Path(__file__).resolve().parents[1] / "workflows" / "android-firebase-beta.yml"
+        text = workflow.read_text(encoding="utf-8")
+        jobs = {}
+        for name in ("plan", "build", "publish"):
+            start = text.index("\n  " + name + ":\n")
+            end = text.find("\n  ", start + 1)
+            while end != -1 and text[end + 3:end + 4] == " ":
+                end = text.find("\n  ", end + 1)
+            jobs[name] = text[start:end if end != -1 else len(text)]
+        build = jobs["build"]
+        self.assertIn("environment: firebase-beta-build", build)
+        for forbidden in ("id-token:", "secrets.HICIARZ_", "secrets.FIREBASE_", "google-github-actions/auth"):
+            self.assertNotIn(forbidden, build)
+        self.assertIn("cache-disabled: true", build)
+        for name in ("plan", "publish"):
+            for forbidden in ("./gradlew", "unittest", "setup-gradle"):
+                self.assertNotIn(forbidden, jobs[name])
+            self.assertIn("id-token: write", jobs[name])
+        self.assertIn("--ks-pass env:HICIARZ_KEYSTORE_PASSWORD", jobs["publish"])
+        self.assertIn("--key-pass env:HICIARZ_KEY_PASSWORD", jobs["publish"])
+
+
 class ApiTests(unittest.TestCase):
     def response(self, body):
         response = mock.MagicMock()

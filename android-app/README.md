@@ -34,13 +34,13 @@ Zrzuty pochodzą z aplikacji na emulatorze AOSP bez zainstalowanego Spotify. Uk�
 
 ## Instalacja wydania testowego
 
-1. Pobierz `hiciarz-android-…-test.apk` z [GitHub Releases](https://github.com/ArtifexEt/Hiciarz/releases), z wydania oznaczonego **Pre-release**.
+1. Przyjmij zaproszenie do Firebase App Distribution na wskazanym koncie Google i pobierz bieżący APK z wiadomości o becie. [GitHub Releases](https://github.com/ArtifexEt/Hiciarz/releases) zawiera wcześniejsze wersje testowe.
 2. Otwórz plik na telefonie i zezwól użytej przeglądarce lub menedżerowi plików na instalację tego APK, jeśli Android o to poprosi.
 3. W zainstalowanym Spotify zaloguj się na konto Premium. Otwórz Hiciarza, wybierz połączenie ze Spotify i zaakceptuj zgodę.
 
 Wymagany jest Android 8.0 / API 26 lub nowszy. Aparat jest potrzebny do skanowania QR. Przygotowanie i import talii JSON/CSV odbywają się w PWA. Do Androida nie trzeba wgrywać żadnych plików: wystarczy QR z identyfikatorem utworu Spotify.
 
-Wydania z Releases są podpisane **prywatnym kluczem do testów**, przechowywanym w GitHub Secrets. Klucz i hasła nie trafiają do repozytorium ani do pobieranych artefaktów. Ten sam pakiet i podpis pozwalają instalować kolejne wersje bez usuwania aplikacji. Zmiana podpisu wymaga odinstalowania poprzedniej wersji i usuwa jej ustawienia.
+Bety Firebase są podpisane **prywatnym kluczem do testów**, przechowywanym w chronionym środowisku GitHub Secrets. Klucz i hasła nie trafiają do repozytorium ani do pobieranych artefaktów. Ten sam pakiet i podpis pozwalają instalować kolejne wersje bez usuwania aplikacji. Zmiana podpisu wymaga odinstalowania poprzedniej wersji i usuwa jej ustawienia. Po jednorazowej rotacji klucza przy wdrożeniu tego procesu starsze APK GitHub i pierwsza beta Firebase wymagają reinstalacji.
 
 ## Spotify
 
@@ -139,7 +139,7 @@ Własny magazyn podpisu, przechowywany poza śledzonymi plikami, można wskazać
 
 Hasła własnego klucza przekazuj lokalnie lub przez sekrety systemu budowania. Oficjalny workflow korzysta z prywatnego podpisu testowego i nie oznacza APK jako wydania produkcyjnego.
 
-W **Settings → Secrets and variables → Actions → Secrets** ustaw:
+W **Settings → Environments → firebase-beta → Environment secrets** ustaw dane podpisu. Nie przechowuj ich jako Secrets całego repozytorium: osoba z prawem zapisu może odczytać takie sekrety przez własny workflow na gałęzi.
 
 | GitHub Secret | Zawartość |
 | --- | --- |
@@ -149,7 +149,7 @@ W **Settings → Secrets and variables → Actions → Secrets** ustaw:
 | `HICIARZ_KEY_PASSWORD` | Hasło klucza |
 | `SPOTIFY_CLIENT_ID` | Własny Client ID Spotify; mimo publicznego charakteru przechowywany jako Secret, by maskować go w logach. |
 
-Publiczne `ANDROID_SIGNING_CERT_SHA256` umieść osobno w **Variables**. Odcisk może mieć postać 64 znaków szesnastkowych albo zapisu z dwukropkami. Workflow odtwarza magazyn wyłącznie w tymczasowym katalogu runnera, usuwa go po zakończeniu i publikuje tylko APK, sumę kontrolną oraz publiczne metadane podpisu.
+Publiczne `ANDROID_SIGNING_CERT_SHA256` umieść osobno w **Variables**. Odcisk może mieć postać 64 znaków szesnastkowych albo zapisu z dwukropkami. Osobny job podpisania odtwarza magazyn wyłącznie w tymczasowym katalogu runnera i usuwa go po zakończeniu. Zachowaj własną zaszyfrowaną kopię magazynu poza repozytorium i hasło w osobnym, bezpiecznym miejscu. GitHub nie umożliwia odzyskania zapisanej wartości sekretu.
 
 ```sh
 ./gradlew :app:assembleRelease -PversionName=0.2.0-alpha.5 -PversionCode=100007
@@ -165,8 +165,8 @@ Przed włączeniem automatu:
 
 1. Utwórz własny projekt Firebase na Spark, zarejestruj własną aplikację Android i uruchom App Distribution. Utwórz grupę testerów; adresy przechowuj wyłącznie w Firebase. Gemini i Google Analytics można włączyć w projekcie niezależnie od SDK aplikacji. Plan integracji Analytics i przyszłego Hostingu jest w [planie wydania](docs/google-play-release.md).
 2. Skonfiguruj GitHub OIDC/Workload Identity Federation i dedykowane konto usługi. Rola publikacji wymaga tylko `firebaseappdistro.releases.list` i `firebaseappdistro.releases.update`. Nie generuj trwałego klucza JSON. Uprawnienie `roles/iam.workloadIdentityUser` nadaj na tym koncie usługi wyłącznie tożsamości właściwego repo. Warunek dostawcy ma sprawdzać numeryczne ID repo i właściciela, nazwę repo, `refs/heads/main`, środowisko `firebase-beta`, konkretny `workflow_ref` oraz zdarzenia `workflow_run`/`workflow_dispatch`. Nie włączaj płatnego planu jako skutku ubocznego konfiguracji.
-3. W GitHub utwórz środowisko `firebase-beta`, wybierz **Selected branches and tags** i dodaj wyłącznie branch `main`. Bez wymaganych reviewers merge publikuje automatycznie. Sama nazwa środowiska w YAML nie stanowi ochrony.
-4. W Secrets tego środowiska ustaw poniższą konfigurację. Podpis i Client ID mogą korzystać z już istniejących, zaszyfrowanych Secrets repozytorium. GitHub nie umożliwia odczytania ani przeniesienia ich wartości do środowiska; przy nowej konfiguracji umieszczaj je bezpośrednio w środowisku. Nie kopiuj ich do plików workflow ani logów.
+3. W GitHub utwórz środowiska `firebase-beta` oraz `firebase-beta-build`. W obu wybierz **Selected branches and tags** i dodaj wyłącznie branch `main`, bez tagów i obejścia reguł. Bez wymaganych reviewers merge publikuje automatycznie. Sama nazwa środowiska w YAML nie stanowi ochrony. Chroń `main`: wymagany PR, pięć kontroli istniejącego CI, aktualna gałąź i rozwiązane dyskusje; bez force push, kasowania gałęzi i obejścia przez administratora. Zatwierdzenie złośliwego kodu do `main` nadal oznacza zaufanie mu.
+4. W Secrets `firebase-beta` ustaw poniższą konfigurację oraz cztery `HICIARZ_*` i `SPOTIFY_CLIENT_ID` z tabeli podpisu. W `firebase-beta-build` umieść **wyłącznie `SPOTIFY_CLIENT_ID`**, bez kluczy, haseł ani konfiguracji Firebase. Usuń kopie tych sekretów z zakresu całego repozytorium po sprawdzeniu konfiguracji środowisk. Nie kopiuj wartości do plików workflow ani logów.
 
 | Secret środowiska `firebase-beta` | Zawartość |
 | --- | --- |
@@ -182,11 +182,17 @@ Przed włączeniem automatu:
 | `ANDROID_SIGNING_CERT_SHA256` | Oczekiwany certyfikat dotychczasowego klucza testowego. |
 | `FIREBASE_VERSION_CODE_FLOOR` | Opcjonalne minimum kodu wersji, gdy potrzebne jest uwzględnienie niewidocznej historii. |
 
-Wydanie wymaga też pięciu Secrets opisanych przy podpisie: czterech `HICIARZ_*` i `SPOTIFY_CLIENT_ID`. Podpisany build nie używa wspólnego cache Gradle i usuwa plik klucza po zakończeniu. Firebase używa krótkotrwałego tokena, bez pliku poświadczeń w checkoutcie. Rzeczywistych identyfikatorów właściciela nie ma w repo, a klon ani fork nie dziedziczą Secrets/Variables oryginału.
+Planowanie, budowanie i podpisanie z publikacją mają osobne runnery. Gradle, pluginy i testy działają bez OIDC, klucza dystrybucji, jego haseł i dostępu do Firebase. Joby z OIDC nie uruchamiają Gradle ani testów. Wydanie nie używa wspólnego cache Gradle; checkout nie zachowuje tokena GitHub. Firebase używa krótkotrwałego tokena, bez pliku poświadczeń w checkoutcie. Rzeczywistych identyfikatorów właściciela nie ma w repo, a klon ani fork nie dziedziczą Secrets/Variables oryginału.
+
+Między jobami przekazywane są tylko publiczny plan i APK pozbawiony podpisu, z jednodniową retencją. Odbiorca wymaga identyfikatora i SHA-256 artefaktu z joba produkującego, tego samego runu i commitu oraz ściśle określonej zawartości ZIP. Nie pobiera dowolnego artefaktu o pasującej nazwie. APK zawiera publiczny Client ID Spotify; można go odczytać również z zainstalowanej aplikacji. Plik nie zawiera sekretu klienta ani uprawnień administratora.
+
+Sumy bibliotek Maven, pluginów i ich metadanych przypina `gradle/verification-metadata.xml`; zwykły build sprawdza integralność, a CI nie regeneruje sum. Zmiany bazy wymagają przeglądu [zależności](docs/dependencies.md). Dodatkowy ruleset ogranicza aktualizacje `main` do właściciela przez PR. Obowiązek CI pozostaje osobną regułą bez obejścia. Integracje z uprawnieniami administracyjnymi należy odłączyć od repo, jeśli nie są potrzebne — mogłyby zmienić same zabezpieczenia.
 
 Automat sprawdza dokładny commit, zielone pełne CI i aktualny `main`, a numer wersji wybiera powyżej historii Firebase i APK z GitHub. Po potwierdzonym udostępnieniu zapisuje jedynie publiczny marker wersji, commitu i odcisku wejść w artefakcie zaufanego wydania. Nie publikuje konfiguracji Firebase, adresów testerów, odpowiedzi API ani podpisanych linków pobierania. Brak wiarygodnego markera powoduje ponowną publikację zamiast pominięcia wymaganej aktualizacji.
 
 W **Actions → Publish Android Firebase beta → Run workflow** domyślne `dry_run=true` daje podgląd bez dostępu do Firebase, budowania i podpisu. Pierwszą rzeczywistą publikację oraz aktualizację sprawdź na telefonie, w tym Spotify i zachowanie ustawień. Testerzy dostają powiadomienie o wersji i zatwierdzają instalację.
+
+Starszy workflow `android-release.yml` jest wycofany: tagi i ręczny wybór gałęzi nie służą już publikacji podpisanych APK w GitHub Releases. Wyłącz go także w ustawieniach Actions, aby nie uruchamiać starszych wersji workflow z historycznych refów. Historyczne APK pozostają wcześniejszym kanałem testowym. Workflow Google Play pozostaje wyłączony do osobnego wdrożenia; przed włączeniem wymaga takiego samego oddzielenia budowania od podpisu i dostępu wydawniczego.
 
 Dokumentacja: [Firebase REST API](https://firebase.google.com/docs/reference/app-distribution/rest), [GitHub OIDC w Google Cloud](https://cloud.google.com/iam/docs/workload-identity-federation-with-deployment-pipelines), [Google auth action](https://github.com/google-github-actions/auth).
 
