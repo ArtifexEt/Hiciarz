@@ -66,13 +66,6 @@
   min-width: 0;
   margin: 0;
 }
-.home-bingo-link {
-  display: inline-flex;
-  align-items: center;
-  justify-self: start;
-  gap: 6px;
-  min-height: 44px;
-}
 .home-demo-cards {
   display: grid;
   grid-template-columns: minmax(0, 1fr) minmax(0, 1.12fr) minmax(0, 1fr);
@@ -265,5 +258,202 @@
     min-height: 48px;
     margin-top: 8px;
     font-size: 13px;
+  }
+}
+
+/* A single recommendation, separate from the Hiciarz navigation and game. */
+.bingo-promo {
+  grid-column: 1 / -1;
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) 230px;
+  align-items: center;
+  gap: 30px;
+  margin-top: 12px;
+  padding: 34px 42px;
+  overflow: hidden;
+  border: 1px solid #dfd6b8;
+  border-radius: 22px;
+  color: #203b32;
+  background: radial-gradient(ellipse at 100% 0, #fff6d6 0, transparent 68%), #f0ead5;
+}
+.bingo-promo-copy {
+  min-width: 0;
+}
+.bingo-promo-eyebrow {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  margin: 0 0 10px;
+  color: #506452;
+  font-size: 11px;
+  font-weight: 700;
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+}
+.bingo-promo h2 {
+  margin: 0;
+  font-family: 'Barlow Condensed', Noto, sans-serif;
+  font-size: clamp(35px, 4vw, 49px);
+  font-weight: 600;
+  line-height: 1.05;
+  letter-spacing: -0.01em;
+}
+.bingo-promo-description {
+  max-width: 43ch;
+  margin: 12px 0 20px;
+  font-size: 14px;
+  line-height: 1.7;
+}
+.bingo-promo-link {
+  display: inline-flex;
+  align-items: center;
+  gap: 16px;
+  min-height: 46px;
+  padding: 12px 18px;
+  border: 1px solid #203b32;
+  border-radius: 9px;
+  color: #fffbed;
+  background: #203b32;
+  font-size: 13px;
+  font-weight: 700;
+  text-decoration: none;
+  transition: background 0.15s ease;
+}
+.bingo-promo-link:hover {
+  background: #345448;
+}
+.bingo-promo-link:focus-visible {
+  outline: 3px solid #a55b39;
+  outline-offset: 4px;
+}
+.bingo-promo-detail {
+  margin: 12px 0 0;
+  color: #596854;
+  font-size: 11px;
+  line-height: 1.6;
+}
+.bingo-promo-art {
+  position: relative;
+  justify-self: center;
+  width: 188px;
+  padding: 9px 0;
+}
+.bingo-promo-board {
+  position: relative;
+  isolation: isolate;
+  padding: 13px;
+  border: 1px solid #bcb899;
+  border-radius: 13px;
+  background: #fffdf4;
+  box-shadow: 0 10px 16px -13px #203b3280;
+  transform: rotate(6deg);
+}
+.bingo-promo-board::before {
+  position: absolute;
+  z-index: -1;
+  inset: 1px;
+  border: 1px solid #bd8875;
+  border-radius: 13px;
+  background: #e7ac93;
+  transform: rotate(-14deg);
+  content: '';
+}
+.bingo-promo-board-title {
+  display: block;
+  margin: 0 0 9px;
+  font-family: 'Barlow Condensed', Noto, sans-serif;
+  font-size: 29px;
+  font-weight: 600;
+  line-height: 1;
+  letter-spacing: 0.18em;
+  text-align: center;
+}
+.bingo-promo-grid {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 5px;
+}
+.bingo-promo-cell {
+  position: relative;
+  display: grid;
+  place-items: center;
+  aspect-ratio: 1;
+  border-radius: 5px;
+  background: #e7dfbe;
+}
+.bingo-promo-cell:nth-child(3n + 2) {
+  background: #cfdfd2;
+}
+.bingo-promo-cell:nth-child(3n) {
+  background: #f0d3bc;
+}
+.bingo-promo-cell.is-marked {
+  background: #d0d4c8;
+}
+.bingo-promo-cell.is-marked svg {
+  opacity: 0.2;
+}
+.bingo-promo-cell.is-marked::before,
+.bingo-promo-cell.is-marked::after {
+  position: absolute;
+  width: 28px;
+  height: 2px;
+  border-radius: 2px;
+  background: #415348;
+  content: '';
+  transform: rotate(45deg);
+}
+.bingo-promo-cell.is-marked::after {
+  transform: rotate(-45deg);
+}
+.bingo-promo-spark {
+  position: absolute;
+  right: -25px;
+  bottom: -8px;
+  display: grid;
+  place-items: center;
+  width: 52px;
+  height: 52px;
+  border: 4px solid #f0ead5;
+  border-radius: 50%;
+  color: #fffbed;
+  background: #203b32;
+  transform: rotate(-10deg);
+}
+@media (max-width: 600px) {
+  .bingo-promo {
+    grid-template-columns: minmax(0, 1fr);
+    gap: 26px;
+    padding: 28px 24px;
+    border-radius: 17px;
+  }
+  .bingo-promo-art {
+    grid-row: 1;
+    width: 152px;
+  }
+  .bingo-promo-copy {
+    text-align: center;
+  }
+  .bingo-promo-eyebrow {
+    justify-content: center;
+    font-size: 10px;
+  }
+  .bingo-promo-description {
+    margin: 12px auto 18px;
+  }
+  .bingo-promo-link {
+    justify-content: center;
+  }
+  .bingo-promo-board-title {
+    font-size: 25px;
+  }
+  .bingo-promo-cell svg {
+    width: 20px;
+    height: 20px;
+  }
+}
+@media (prefers-reduced-motion: reduce) {
+  .bingo-promo-link {
+    transition: none;
   }
 }

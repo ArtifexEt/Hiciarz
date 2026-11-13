@@ -32,7 +32,7 @@ function mobileButtons(markup: string) {
 afterEach(() => setLanguage('pl'));
 
 describe('persistent app navigation', () => {
-  it('keeps scanner, decks and sound available beside the external Bingo link', () => {
+  it('keeps Hiciarz controls available without promoting Bingo as an app route', () => {
     setLanguage('pl');
     const controls = mobileButtons(render('scanner'));
     expect(controls.map((button) => button.text)).toEqual([
@@ -44,12 +44,11 @@ describe('persistent app navigation', () => {
     expect(controls[0].attributes).toContain('aria-current="page"');
     expect(controls[3].attributes).not.toContain('aria-current=');
     const links = [...render('scanner').matchAll(/<a\b([^>]*)>([\s\S]*?)<\/a>/g)];
-    expect(links).toHaveLength(2);
-    for (const [, attributes, content] of links) {
-      expect(attributes).toContain('href="https://artifexet.github.io/Bingo/?lang=pl"');
-      expect(attributes).toContain('rel="noreferrer"');
-      expect(attributes).not.toContain('aria-current=');
-      expect(content).toContain('Bingo');
+    expect(links).toHaveLength(0);
+    expect(render('scanner')).not.toContain('Bingo');
+    const allControls = buttons(render('scanner')).map((button) => button.text);
+    for (const view of ['home', 'scanner', 'editor', 'player']) {
+      expect(allControls).toContain(t('shell.view.' + view));
     }
   });
 

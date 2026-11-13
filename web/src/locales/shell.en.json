@@ -52,5 +52,10 @@
   "shell.searchCards": "Search cards…",
   "shell.visibleTracks": "Showing {{shown}} of {{total}}",
   "shell.cardCount": "Cards: {{count}}",
-  "shell.bingoLink": "Bingo"
+  "bingoPromo.eyebrow": "You might also like",
+  "bingoPromo.title": "Music Bingo",
+  "bingoPromo.description": "Recognise the music, mark your squares and call Bingo. One more idea for a night together.",
+  "bingoPromo.action": "Explore Bingo",
+  "bingoPromo.newTab": " — opens in a new tab",
+  "bingoPromo.detail": "A separate game · play on your phone or print your board"
 }

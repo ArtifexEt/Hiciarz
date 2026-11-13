@@ -17,7 +17,7 @@
   &nbsp; Przeglądarka · Telefon · PWA · Własne talie · PDF do druku
 </p>
 
-Hiciarz łączy kreator kart, skaner QR i odtwarzacz. Przygotuj listę nagrań, wybierz wygląd i wydrukuj talię. Zeskanuj kod QR, aby posłuchać utworu; na drugiej stronie karty znajdziesz jego dane. Muzyczne [Bingo z planszami do druku](https://artifexet.github.io/Bingo/) jest osobną aplikacją w [repozytorium ArtifexEt/Bingo](https://github.com/ArtifexEt/Bingo).
+Hiciarz łączy kreator kart, skaner QR i odtwarzacz. Przygotuj listę nagrań, wybierz wygląd i wydrukuj talię. Zeskanuj kod QR, aby posłuchać utworu; na drugiej stronie karty znajdziesz jego dane. Na stronie startowej baner „Może spodoba Ci się też” poleca muzyczne [Bingo z planszami do druku](https://artifexet.github.io/Bingo/), które jest osobną aplikacją w [repozytorium ArtifexEt/Bingo](https://github.com/ArtifexEt/Bingo).
 
 **[Spotify: dodawanie utworów i odsłuch](docs/spotify.md)** · **[Format playlist JSON/CSV](docs/playlist-guide.md)** · **[Uruchomienie i publikacja](docs/configuration.md)**
 
@@ -44,7 +44,7 @@ Ekran startowy na komputerze:
     <th>Osobna aplikacja Bingo</th>
   </tr>
   <tr>
-    <td width="50%" align="center"><a href="docs/screenshots/scanner-mobile.png"><img src="docs/screenshots/scanner-mobile.png" alt="Mobilny skaner z odnośnikiem do osobnej aplikacji Bingo w dolnym menu" width="320"></a></td>
+    <td width="50%" align="center"><a href="docs/screenshots/scanner-mobile.png"><img src="docs/screenshots/scanner-mobile.png" alt="Mobilny skaner Hiciarza" width="320"></a></td>
     <td width="50%" align="center"><a href="https://artifexet.github.io/Bingo/">Otwórz Bingo</a><br>Losowanie kategorii, zasady i generator plansz PDF.</td>
   </tr>
   <tr>
