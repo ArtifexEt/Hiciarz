@@ -43,6 +43,9 @@ data class AppState(
     val scannerEnabled: Boolean = true,
     val message: String? = null,
     val scannedSkin: CardSkin? = null,
+    val analyticsConfigured: Boolean = false,
+    val analyticsEnabled: Boolean = false,
+    val analyticsSaveFailed: Boolean = false,
 ) {
     val activeSkin: CardSkin get() = if (settings.followCardSkin) scannedSkin ?: settings.cardSkin else settings.cardSkin
 }
@@ -64,4 +67,5 @@ sealed interface AppAction {
     data class SetAutoPause(val enabled: Boolean) : AppAction
     data class SetCardSkin(val skin: CardSkin) : AppAction
     data class SetFollowCardSkin(val enabled: Boolean) : AppAction
+    data class SetAnalyticsEnabled(val enabled: Boolean) : AppAction
 }

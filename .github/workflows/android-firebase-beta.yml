@@ -82,6 +82,7 @@ jobs:
           FIREBASE_TESTER_GROUPS: ${{ vars.FIREBASE_TESTER_GROUPS }}
           ANDROID_SIGNING_CERT_SHA256: ${{ vars.ANDROID_SIGNING_CERT_SHA256 }}
           SPOTIFY_CLIENT_ID: ${{ secrets.SPOTIFY_CLIENT_ID }}
+          FIREBASE_ANDROID_CONFIG_BASE64: ${{ secrets.FIREBASE_ANDROID_CONFIG_BASE64 }}
         run: python3 .github/scripts/android_firebase_beta.py check-config
       - name: Authenticate to plan Firebase release
         if: steps.mode.outputs.active == 'true' && steps.mode.outputs.dry_run == 'false'
@@ -109,6 +110,7 @@ jobs:
           FIREBASE_VERSION_CODE_FLOOR: ${{ vars.FIREBASE_VERSION_CODE_FLOOR }}
           ANDROID_SIGNING_CERT_SHA256: ${{ vars.ANDROID_SIGNING_CERT_SHA256 }}
           SPOTIFY_CLIENT_ID: ${{ secrets.SPOTIFY_CLIENT_ID }}
+          FIREBASE_ANDROID_CONFIG_BASE64: ${{ secrets.FIREBASE_ANDROID_CONFIG_BASE64 }}
         run: python3 .github/scripts/android_firebase_beta.py prepare
       - name: Hand off only the public source and version plan
         if: steps.version.outputs.publish == 'true'
@@ -128,7 +130,7 @@ jobs:
     needs: plan
     if: needs.plan.outputs.publish == 'true'
     runs-on: ubuntu-latest
-    # This environment contains only the public client ID required by the binary.
+    # This environment contains only public client configuration required by the binary.
     # It must not contain Firebase access, signing keys or signing passwords.
     environment: firebase-beta-build
     timeout-minutes: 40
@@ -158,6 +160,13 @@ jobs:
         run: python3 .github/scripts/android_firebase_beta.py receive-plan
       - name: Test release tooling without publishing access
         run: python3 -m unittest discover -s .github/scripts -p 'test_android*.py' -v
+      - name: Verify public client configuration matches the release plan
+        env:
+          GH_TOKEN: ${{ github.token }}
+          FIREBASE_ANDROID_CONFIG_BASE64: ${{ secrets.FIREBASE_ANDROID_CONFIG_BASE64 }}
+          SPOTIFY_CLIENT_ID: ${{ secrets.SPOTIFY_CLIENT_ID }}
+          ANDROID_SIGNING_CERT_SHA256: ${{ vars.ANDROID_SIGNING_CERT_SHA256 }}
+        run: python3 .github/scripts/android_firebase_beta.py check-build-config
       - uses: actions/setup-java@77dd5b2ce225ea11469928ac317850245a74ae78 # v6.2.0
         with:
           distribution: temurin
@@ -172,7 +181,9 @@ jobs:
         working-directory: android-app
         env:
           HICIARZ_REQUIRE_SPOTIFY_CONFIG: 'true'
+          HICIARZ_REQUIRE_FIREBASE_ANALYTICS_CONFIG: 'true'
           SPOTIFY_CLIENT_ID: ${{ secrets.SPOTIFY_CLIENT_ID }}
+          FIREBASE_ANDROID_CONFIG_BASE64: ${{ secrets.FIREBASE_ANDROID_CONFIG_BASE64 }}
           BETA_VERSION: ${{ steps.version.outputs.name }}
           BETA_VERSION_CODE: ${{ steps.version.outputs.code }}
         run: |
@@ -245,6 +256,7 @@ jobs:
           FIREBASE_TESTER_GROUPS: ${{ vars.FIREBASE_TESTER_GROUPS }}
           ANDROID_SIGNING_CERT_SHA256: ${{ vars.ANDROID_SIGNING_CERT_SHA256 }}
           SPOTIFY_CLIENT_ID: ${{ secrets.SPOTIFY_CLIENT_ID }}
+          FIREBASE_ANDROID_CONFIG_BASE64: ${{ secrets.FIREBASE_ANDROID_CONFIG_BASE64 }}
         run: python3 .github/scripts/android_firebase_beta.py check-config
       - uses: actions/setup-java@77dd5b2ce225ea11469928ac317850245a74ae78 # v6.2.0
         with:
@@ -323,6 +335,7 @@ jobs:
           FIREBASE_TESTER_GROUPS: ${{ vars.FIREBASE_TESTER_GROUPS }}
           ANDROID_SIGNING_CERT_SHA256: ${{ vars.ANDROID_SIGNING_CERT_SHA256 }}
           SPOTIFY_CLIENT_ID: ${{ secrets.SPOTIFY_CLIENT_ID }}
+          FIREBASE_ANDROID_CONFIG_BASE64: ${{ secrets.FIREBASE_ANDROID_CONFIG_BASE64 }}
         run: python3 .github/scripts/android_firebase_beta.py publish --apk "$RUNNER_TEMP/hiciarz-firebase-beta/signed.apk"
       - name: Retain only public version and source state after confirmed distribution
         if: steps.publish.outputs.published == 'true'
