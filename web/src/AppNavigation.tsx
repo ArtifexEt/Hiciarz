@@ -1,6 +1,4 @@
 import {
-  Grid3X3,
-  ArrowUpRight,
   Headphones,
   House,
   Info,
@@ -11,10 +9,9 @@ import {
   Volume2,
 } from 'lucide-react';
 import { useTranslation } from './i18n';
-import { Fragment, type ReactNode } from 'react';
+import type { ReactNode } from 'react';
 import type { AppView } from './navigation';
 import { asset } from './themes';
-import { bingoAppUrl } from './bingo-link';
 
 export default function AppNavigation({
   current,
@@ -37,7 +34,7 @@ export default function AppNavigation({
   onHelp: () => void;
   deckLibrary?: ReactNode;
 }) {
-  const { t, language } = useTranslation();
+  const { t } = useTranslation();
   const routes = [
     ['home', House],
     ['scanner', ScanLine],
@@ -71,11 +68,6 @@ export default function AppNavigation({
               {t('shell.view.' + view)}
             </button>
           ))}
-          <a className="app-nav-button" href={bingoAppUrl(language)} rel="noreferrer">
-            <Grid3X3 size={20} aria-hidden="true" />
-            {t('shell.bingoLink')}
-            <ArrowUpRight size={15} aria-hidden="true" />
-          </a>
         </nav>
         {deckLibrary}
         <div className="app-sidebar-bottom">
@@ -99,22 +91,15 @@ export default function AppNavigation({
         </div>
       </aside>
       <nav className="app-bottom-nav" aria-label={t('shell.navigation')}>
-        {mobileRoutes.map(([view, Icon], index) => (
-          <Fragment key={view}>
-            <button
-              aria-current={current === view && !menuOpen ? 'page' : undefined}
-              onClick={() => onChoose(view)}
-            >
-              <Icon size={22} aria-hidden="true" />
-              <span>{t('shell.view.' + view)}</span>
-            </button>
-            {index === 0 && (
-              <a href={bingoAppUrl(language)} rel="noreferrer">
-                <ArrowUpRight size={22} aria-hidden="true" />
-                <span>{t('shell.bingoLink')}</span>
-              </a>
-            )}
-          </Fragment>
+        {mobileRoutes.map(([view, Icon]) => (
+          <button
+            key={view}
+            aria-current={current === view && !menuOpen ? 'page' : undefined}
+            onClick={() => onChoose(view)}
+          >
+            <Icon size={22} aria-hidden="true" />
+            <span>{t('shell.view.' + view)}</span>
+          </button>
         ))}
         <button aria-expanded={playbackOpen} aria-haspopup="dialog" onClick={onPlayback}>
           <Volume2 size={22} aria-hidden="true" />

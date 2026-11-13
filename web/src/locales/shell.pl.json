@@ -52,5 +52,10 @@
   "shell.searchCards": "Szukaj kart…",
   "shell.visibleTracks": "Wyświetlono {{shown}} z {{total}}",
   "shell.cardCount": "Liczba kart: {{count}}",
-  "shell.bingoLink": "Bingo"
+  "bingoPromo.eyebrow": "Może spodoba Ci się też",
+  "bingoPromo.title": "Muzyczne Bingo",
+  "bingoPromo.description": "Rozpoznawaj muzykę, zaznaczaj pola i złap Bingo. Jeszcze jeden pomysł na wspólny wieczór.",
+  "bingoPromo.action": "Sprawdź Bingo",
+  "bingoPromo.newTab": " — otwiera się w nowej karcie",
+  "bingoPromo.detail": "Osobna gra · plansze na telefonie i do druku"
 }

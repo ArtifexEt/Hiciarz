@@ -1,12 +1,12 @@
-import { t, useTranslation } from './i18n';
+import { t } from './i18n';
 import { useEffect, useState, type CSSProperties } from 'react';
-import { ArrowRight, ArrowUpRight, RotateCcw, ScanLine } from 'lucide-react';
+import { ArrowRight, RotateCcw, ScanLine } from 'lucide-react';
 import { type Deck, type Song, type Theme, cardUrl, defaultPrint, themes } from './model';
 import { frontDesign, frontImage } from './front';
 import { qrImage } from './qr';
 import { themeArt, themeColors } from './themes';
 import FlipCard from './FlipCard';
-import { bingoAppUrl } from './bingo-link';
+import BingoPromo from './BingoPromo';
 import './landing.css';
 
 // The sample illustrates one round; it never changes the user's decks.
@@ -138,7 +138,6 @@ export default function Landing({
   onChoose: (mode: 'editor' | 'scanner' | 'player') => void;
   theme?: Theme;
 }) {
-  const { language } = useTranslation();
   const activeTheme = themes.includes(theme) ? theme : 'classic';
   return (
     <div className="home-landing">
@@ -156,9 +155,7 @@ export default function Landing({
         </button>
       </div>
       <ExampleRound theme={activeTheme} />
-      <a className="home-bingo-link" href={bingoAppUrl(language)} rel="noreferrer">
-        {t('shell.bingoLink')} <ArrowUpRight size={17} aria-hidden="true" />
-      </a>
+      <BingoPromo />
     </div>
   );
 }
