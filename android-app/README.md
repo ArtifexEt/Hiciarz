@@ -193,11 +193,11 @@ Automat sprawdza dokładny commit, zielone pełne CI i aktualny `main`, a numer 
 
 W **Actions → Publish Android Firebase beta → Run workflow** domyślne `dry_run=true` daje podgląd bez dostępu do Firebase, budowania i podpisu. Pierwszą rzeczywistą publikację oraz aktualizację sprawdź na telefonie, w tym Spotify i zachowanie ustawień. Testerzy dostają powiadomienie o wersji i zatwierdzają instalację.
 
-Starszy workflow `android-release.yml` jest wycofany: tagi i ręczny wybór gałęzi nie służą już publikacji podpisanych APK w GitHub Releases. Wyłącz go także w ustawieniach Actions, aby nie uruchamiać starszych wersji workflow z historycznych refów. Historyczne APK pozostają wcześniejszym kanałem testowym. Workflow Google Play pozostaje wyłączony do osobnego wdrożenia; przed włączeniem wymaga takiego samego oddzielenia budowania od podpisu i dostępu wydawniczego.
+Starszy workflow `android-release.yml` jest wycofany. Wyłącz go także w ustawieniach Actions, aby nie uruchamiać starszych wersji workflow z historycznych refów. Historyczne APK pozostają wcześniejszym kanałem testowym. Firebase obsługuje bieżących testerów do czasu odbioru aktualizacji przez Google Play.
 
 Dokumentacja: [Firebase REST API](https://firebase.google.com/docs/reference/app-distribution/rest), [GitHub OIDC w Google Cloud](https://cloud.google.com/iam/docs/workload-identity-federation-with-deployment-pipelines), [Google auth action](https://github.com/google-github-actions/auth).
 
-## Późniejsza automatyczna beta w Google Play
+## Automatyczna beta w Google Play
 
 Pierwszym torem bety jest **Internal testing**, aby szybko dostarczać aktualizacje zaproszonym testerom. Workflow [`android-beta.yml`](../.github/workflows/android-beta.yml) po udanym zakończeniu **Check web and Android** dla pushu na `main`, w tym po mergu PR, sprawdza, czy zmieniły się wejścia aplikacji. Publikuje AAB tylko przy takiej zmianie. Pull request uruchamia kontrole CI; wydanie pochodzi z dokładnie sprawdzonego commitu `main`. Nieaktualny run jest pomijany przed publikacją.
 
@@ -210,33 +210,39 @@ Tor jest ustawiony na `internal`. Nazwa `beta` w API Google Play oznacza open te
 1. Przygotuj aktywne i zweryfikowane konto Play Console oraz aplikację z pakietem `pl.artifex.hiciarz`.
 2. Wybierz docelowy podpis Play i osobny upload key. Wykonaj pierwszy upload AAB w konsoli, zaakceptuj wymagane umowy i uruchom internal. API wymaga wcześniej skonfigurowanej aplikacji; automat nie tworzy konta ani nie zastępuje pierwszej konfiguracji.
 3. Dodaj SHA-1 **Play App Signing** do konfiguracji Androida w Spotify i sprawdź połączenie aplikacji zainstalowanej przez Play. Podpis upload key służy do wysyłki AAB; użytkownicy otrzymują APK podpisane kluczem Play.
-4. W projekcie Google Cloud włącz Google Play Android Developer API i IAM Service Account Credentials API. Utwórz konto usługi, nadaj mu rolę `roles/iam.serviceAccountTokenCreator` na nim samym dla generowania krótkotrwałego tokena, dodaj jego adres w Play Console i przyznaj dostęp do tej aplikacji oraz uprawnienia odczytu informacji i wydawania na tory testowe. Automat nie potrzebuje uprawnień do produkcji, finansów ani zarządzania użytkownikami. Zapisz JSON konta usługi wyłącznie jako sekret Actions.
-5. W GitHub **Settings → Environments** utwórz `google-play-internal`. W **Deployment branches and tags** wybierz **Selected branches and tags** i dodaj wyłącznie branch `main`. Bez wymaganych reviewers aktualizacje nadal będą automatyczne. Samo wpisanie nazwy środowiska w workflow nie ustawia tej ochrony. Umieść poniższe sekrety wyłącznie w tym środowisku, bez kopii w repozytoryjnych Secrets; publiczne zmienne mogą pozostać na poziomie repozytorium. Sprawdź pierwszy internal na telefonie, a następnie włącz `PLAY_BETA_ENABLED=true`.
-6. W Play Console dodaj listę kont Google testerów oraz adres zgłoszeń. Przekaż testerom link opt-in; muszą otworzyć go na zaproszonym koncie i dołączyć do testu przed instalacją.
+4. W projekcie Google Cloud włącz Google Play Android Developer API, Security Token Service i IAM Service Account Credentials API. Utwórz osobne konto usługi Play. Dodaj je w Play Console z dostępem wyłącznie do Hiciarza oraz z uprawnieniami do odczytu informacji i wydawania na tory testowe.
+5. Skonfiguruj dostawcę GitHub OIDC w Workload Identity Federation. Zwiąż tożsamość workflow z kontem usługi przez `roles/iam.workloadIdentityUser`. Ogranicz warunek dostawcy do numerycznych ID repozytorium i właściciela, `refs/heads/main`, środowiska `google-play-internal`, pliku `.github/workflows/android-beta.yml` na `main` oraz zdarzeń `workflow_run` i `workflow_dispatch`. Uwierzytelnianie wykorzystuje krótkotrwały token Android Publisher.
+6. W **Settings → Environments** utwórz `google-play-internal` i `google-play-internal-build`. W obu zezwól na wdrożenia wyłącznie z gałęzi `main`. Do zaszyfrowania AAB między zadaniami przygotuj osobną parę kluczy RSA z certyfikatem X.509 w PEM. Klucz do odszyfrowania, klucz wysyłki i dostęp do Play należą wyłącznie do `google-play-internal`.
+7. W Play Console dodaj listę kont Google testerów oraz adres zgłoszeń. Testerzy otwierają link opt-in na zaproszonym koncie Google. Po sprawdzeniu pierwszej instalacji, skanera i odtwarzania na telefonie ustaw `PLAY_BETA_ENABLED=true`. Sprawdź następną aktualizację przez Play przed przeniesieniem testerów i wyłączeniem automatycznych wydań Firebase.
 
-Wymagania API i konfiguracja dostępu: [pierwszy upload i Edits API](https://developers.google.com/android-publisher/edits), [konto usługi i autoryzacja](https://developers.google.com/android-publisher/getting_started), [generowanie tokenów w Google auth action](https://github.com/google-github-actions/auth/tree/v3.0.0#inputs-generating-oauth-20-access-tokens).
+Wymagania API i konfiguracja dostępu są opisane w dokumentacji Google. [Pierwszy upload i Edits API](https://developers.google.com/android-publisher/edits), [konto usługi i autoryzacja](https://developers.google.com/android-publisher/getting_started), [GitHub OIDC w Google Cloud](https://cloud.google.com/iam/docs/workload-identity-federation-with-deployment-pipelines).
 
 | Secret środowiska `google-play-internal` | Zawartość |
 | --- | --- |
-| `PLAY_SERVICE_ACCOUNT_JSON` | JSON konta usługi uprawnionego do aplikacji w Play. |
+| `PLAY_WORKLOAD_IDENTITY_PROVIDER` | Pełna nazwa dostawcy WIF z numerem projektu Google Cloud. |
+| `PLAY_SERVICE_ACCOUNT` | Adres konta usługi dodanego w Play Console do Hiciarza. |
 | `PLAY_UPLOAD_KEYSTORE_BASE64` | Upload keystore zakodowany Base64. |
 | `PLAY_UPLOAD_KEYSTORE_PASSWORD` | Hasło upload keystore. |
 | `PLAY_UPLOAD_KEY_ALIAS` | Alias upload key. |
 | `PLAY_UPLOAD_KEY_PASSWORD` | Hasło upload key. |
+| `PLAY_HANDOFF_PRIVATE_KEY_BASE64` | Odrębny prywatny klucz RSA w PEM, zakodowany Base64, do odszyfrowania AAB w runnerze publikacji. |
+
+W obu środowiskach ustaw ten sam `PLAY_HANDOFF_CERTIFICATE_BASE64` (publiczny certyfikat PEM zakodowany Base64), `SPOTIFY_CLIENT_ID` oraz opcjonalny `FIREBASE_ANDROID_CONFIG_BASE64`. `google-play-internal-build` używa wyłącznie tych wartości.
 
 | GitHub Variable | Wartość |
 | --- | --- |
-| `PLAY_BETA_ENABLED` | `true` po zakończeniu konfiguracji; wcześniej upload jest jawnie pomijany. |
-| `PLAY_UPLOAD_CERT_SHA256` | Oczekiwany SHA-256 certyfikatu upload key. |
+| `PLAY_BETA_ENABLED` | Zmienna repozytorium. Ustaw `true` po odbiorze pierwszej instalacji z Play. |
+| `PLAY_UPLOAD_CERT_SHA256` | Zmienna repozytorium. Oczekiwany SHA-256 certyfikatu upload key, używany również do sprawdzenia planu w środowisku budowania. |
+| `PLAY_HANDOFF_CERT_SHA256` | Zmienna środowiska `google-play-internal`. SHA-256 certyfikatu szyfrowania AAB liczony z jego formatu DER. |
 | `PLAY_VERSION_CODE_FLOOR` | Opcjonalny minimalny kod następnego wydania, jeśli trzeba uwzględnić wcześniej zużyte kody niewidoczne w historii API. |
 
-Sekrety `PLAY_UPLOAD_*` są oddzielne od podpisu testowych APK z GitHub. Nie kopiuj klucza testowego do Play bez wcześniejszej decyzji o docelowym podpisie i migracji instalacji. Prywatne klucze, JSON i hasła nie trafiają do repo ani artefaktów. CI dla PR i pushu używa efemerycznego debug key, bez dostępu do klucza wysyłki Play. Reguła środowiska blokuje udostępnienie nowych sekretów Play workflowom uruchamianym z PR.
+Sekrety `PLAY_UPLOAD_*` dotyczą odrębnego klucza wysyłki Play. Klucze prywatne, hasła i tokeny przechowuj poza repozytorium i artefaktami. Gradle buduje niepodpisany AAB na osobnym runnerze. GitHub przechowuje wyłącznie zaszyfrowaną paczkę pośrednią. Zadanie publikujące sprawdza jej pochodzenie i integralność, odszyfrowuje ją, podpisuje i uzyskuje token Play.
 
 ### Kolejne aktualizacje
 
 - Po udanym CI na `main` automat porównuje wejścia aplikacji z aktualnym internal. Jeżeli są takie same, raportuje pominięcie wydania. Jeżeli się zmieniły, odczytuje historię Play i wydań GitHub, wybiera wolny, większy `versionCode`, buduje release AAB, sprawdza podpis i przesyła go na internal. Wersja beta, commit i odcisk wejść są zapisane w metadanych wydania.
 - Numer `versionCode` rośnie również przy ponownym rzeczywistym wydaniu. Automaty nie mogą przerwać trwającej publikacji; beta i dotychczasowe wydania APK korzystają ze wspólnej grupy współbieżności.
-- Artefakt `android-app/beta-artifacts/` zachowuje plan, AAB, sumę kontrolną, mapowanie R8 i publiczne metadane podpisu. Potwierdzenie API `PLAY-RECEIPT.json` powstaje dopiero po zatwierdzeniu edycji w Play.
+- Podsumowanie Actions pokazuje wynik, wersję i commit. Potwierdzenie API powstaje po zatwierdzeniu edycji w Play. Zachowaj docelowy AAB i mapowanie w prywatnym archiwum wydawcy.
 - Tester może nacisnąć „Aktualizuj” w Google Play lub korzystać z automatycznych aktualizacji sklepu. Sukces workflow oznacza wysłanie wydania do Play, a nie jednoczesną instalację na wszystkich urządzeniach.
 - Błąd uploadu lub zatwierdzenia edycji wymaga sprawdzenia wyniku w Console przed ponownym uruchomieniem; workflow nie powtarza w ciemno operacji publikujących.
 
