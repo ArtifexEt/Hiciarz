@@ -14,9 +14,10 @@ import json
 import os
 from pathlib import Path
 import re
-import shutil
 import socket
+import subprocess
 import sys
+import tempfile
 import urllib.error
 import urllib.parse
 import urllib.request
@@ -32,6 +33,12 @@ API_ROOT = "https://androidpublisher.googleapis.com"
 MAX_VERSION_CODE = release.MAX_VERSION_CODE
 MAPPING_ENTRY = "BUNDLE-METADATA/com.android.tools.build.obfuscation/proguard.map"
 MAX_BUNDLE = 512 * 1024 * 1024
+OPENSSL_EXECUTABLE = "openssl"
+PUBLIC_CERTIFICATE_SECRET = "PLAY_HANDOFF_CERTIFICATE_BASE64"
+PRIVATE_KEY_SECRET = "PLAY_HANDOFF_PRIVATE_KEY_BASE64"
+PEM_BODY = rb"\r?\n[A-Za-z0-9+/=\r\n]+\r?\n"
+CERTIFICATE_PEM = re.compile(rb"-----BEGIN CERTIFICATE-----" + PEM_BODY + rb"-----END CERTIFICATE-----")
+PRIVATE_KEY_PEM = re.compile(rb"-----BEGIN ((?:RSA )?PRIVATE KEY)-----" + PEM_BODY + rb"-----END \1-----")
 JAR_SIGNATURE_ENTRY = re.compile(r"META-INF/(?:MANIFEST\.MF|[^/]+\.(?:SF|RSA|DSA|EC)|SIG-[^/]+)", re.I)
 FINGERPRINT_PATHS = (
     "android-app/app/src/main", "android-app/app/build.gradle.kts", "android-app/app/proguard-rules.pro",
@@ -338,7 +345,7 @@ def discard_edit(api, edit_id):
     try:
         api.delete(edit_id)
     except BetaError:
-        print(f"Could not discard uncommitted edit {edit_id}; inspect Play Console. No retry was made.", file=sys.stderr)
+        print("Could not discard the uncommitted edit. Inspect Play Console before retrying.", file=sys.stderr)
         return False
     return True
 
@@ -391,6 +398,66 @@ def verify_upload_certificate(text, expected):
         raise BetaError("The signed AAB does not have exactly one matching upload certificate.")
 
 
+def openssl(*arguments):
+    try:
+        result = subprocess.run([OPENSSL_EXECUTABLE, *map(str, arguments)], stdin=subprocess.DEVNULL,
+                                stdout=subprocess.PIPE, stderr=subprocess.DEVNULL, check=True, timeout=120)
+    except (OSError, subprocess.SubprocessError):
+        raise BetaError("OpenSSL could not process the encrypted AAB handoff.") from None
+    return result.stdout
+
+
+def handoff_pem(path, variable, pattern):
+    value = os.environ.get(variable, "")
+    try:
+        if not 1 <= len(value) <= 24_576:
+            raise ValueError()
+        pem = base64.b64decode(value, validate=True).strip()
+        if not pattern.fullmatch(pem):
+            raise ValueError()
+    except (ValueError, binascii.Error):
+        raise BetaError(f"Configure {variable} as the Base64 of one PEM file.") from None
+    path.write_bytes(pem + b"\n")
+    return path
+
+
+def handoff_certificate(folder, expected):
+    certificate = handoff_pem(folder / "recipient.pem", PUBLIC_CERTIFICATE_SECRET, CERTIFICATE_PEM)
+    der = openssl("x509", "-in", certificate, "-outform", "DER")
+    if hashlib.sha256(der).hexdigest() != expected:
+        raise BetaError("The AAB handoff certificate does not match the trusted release plan.")
+    return certificate
+
+
+def seal_bundle(source, destination, expected_certificate):
+    with tempfile.TemporaryDirectory(dir=destination.parent) as folder:
+        temporary = Path(folder)
+        certificate = handoff_certificate(temporary, expected_certificate)
+        encrypted = temporary / "bundle.cms"
+        openssl("cms", "-encrypt", "-binary", "-aes-256-gcm", "-in", source, "-out", encrypted,
+                "-outform", "DER", "-recip", certificate, "-keyopt", "rsa_padding_mode:oaep",
+                "-keyopt", "rsa_oaep_md:sha256", "-keyopt", "rsa_mgf1_md:sha256")
+        if not 1 <= encrypted.stat().st_size <= firebase.MAX_SEALED_PLAY_BUNDLE:
+            raise BetaError("The encrypted Play bundle exceeds the handoff size limit.")
+        encrypted.replace(destination)
+
+
+def unseal_bundle(sealed, destination, expected_certificate):
+    if not 1 <= len(sealed) <= firebase.MAX_SEALED_PLAY_BUNDLE:
+        raise BetaError("The encrypted Play bundle exceeds the handoff size limit.")
+    with tempfile.TemporaryDirectory(dir=destination.parent) as folder:
+        temporary = Path(folder)
+        certificate = handoff_certificate(temporary, expected_certificate)
+        private_key = handoff_pem(temporary / "recipient-key.pem", PRIVATE_KEY_SECRET, PRIVATE_KEY_PEM)
+        encrypted = temporary / "bundle.cms"
+        encrypted.write_bytes(sealed)
+        unsigned = temporary / "unsigned.aab"
+        openssl("cms", "-decrypt", "-binary", "-inform", "DER", "-in", encrypted, "-out", unsigned,
+                "-recip", certificate, "-inkey", private_key, "-passin", "pass:")
+        validate_bundle(unsigned, unsigned=True)
+        unsigned.replace(destination)
+
+
 def publish(api, plan, bundle, mapping, *, check_source):
     code = validate_plan(plan, publish=True)
     digest = validate_bundle(bundle, mapping)
@@ -427,11 +494,11 @@ def publish(api, plan, bundle, mapping, *, check_source):
                                 query={"changesInReviewBehavior": "ERROR_IF_IN_REVIEW"})
         if committed.get("id") != edit_id:
             raise PlayError("Google Play did not confirm the committed edit ID.")
-        return {"package": PACKAGE, "track": TRACK, "status": "committed", "editId": edit_id,
+        return {"package": PACKAGE, "track": TRACK, "status": "committed",
                 "versionCode": code, "versionName": plan["name"], "commit": plan["commit"], "sha256": digest}
     except (BetaError, OSError) as error:
         if commit_attempted:
-            raise BetaError(f"{error} Commit was attempted for edit {edit_id}. "
+            raise BetaError(f"{error} A commit was attempted for the internal release. "
                             "Inspect Play Console before another run; the edit was retained and no retry was made.") from None
         if not discard_attempted:
             discard_edit(api, edit_id)
@@ -490,12 +557,22 @@ def configured_fingerprint(*, preview=False):
     return source_fingerprint(spotify, certificate, analytics)
 
 
+def configured_handoff_certificate():
+    fingerprint = normalize_certificate(os.environ.get("PLAY_HANDOFF_CERT_SHA256", ""))
+    if not re.fullmatch(r"[a-f0-9]{64}", fingerprint):
+        raise BetaError("Configure PLAY_HANDOFF_CERT_SHA256 for the dedicated AAB handoff certificate.")
+    return fingerprint
+
+
 def checked_plan(directory, repository, commit):
     plan = json.loads((directory / "RELEASE-PLAN.json").read_text(encoding="utf-8"))
     validate_plan(plan, publish=True)
     if (plan.get("commit") != commit or plan.get("repository") != repository or plan.get("skip") is not False
             or str(plan.get("runNumber")) != os.environ.get("GITHUB_RUN_NUMBER")):
         raise BetaError("The plan does not match the current release run and source commit.")
+    fingerprint = plan.get("handoffCertificateSha256")
+    if not isinstance(fingerprint, str) or not re.fullmatch(r"[a-f0-9]{64}", fingerprint):
+        raise BetaError("The trusted Play release plan is missing its AAB handoff certificate fingerprint.")
     return plan
 
 
@@ -530,6 +607,7 @@ def main(argv=None):
             verify_successful_checks(commit, repository)
         if args.mode == "check-source":
             configured_fingerprint()
+            configured_handoff_certificate()
             return 0
         if args.mode == "receive-plan":
             args.output_dir.mkdir(parents=True, exist_ok=True)
@@ -537,16 +615,17 @@ def main(argv=None):
             checked_plan(args.output_dir, repository, commit)
             return 0
         if args.mode in ("stage-bundle", "receive-bundle"):
-            checked_plan(args.output_dir, repository, commit)
-            handoff = args.output_dir / "unsigned.aab"
+            plan = checked_plan(args.output_dir, repository, commit)
+            certificate = plan["handoffCertificateSha256"]
             if args.mode == "stage-bundle":
                 if args.bundle is None or args.mapping is None:
                     raise BetaError("Staging requires the unsigned AAB and its R8 mapping.")
                 validate_bundle(args.bundle, args.mapping, unsigned=True)
-                shutil.copyfile(args.bundle, handoff)
+                seal_bundle(args.bundle, args.output_dir / "bundle.cms", certificate)
             else:
-                handoff.write_bytes(receive_handoff(repository, "unsigned"))
-                validate_bundle(handoff, unsigned=True)
+                if certificate != configured_handoff_certificate():
+                    raise BetaError("The AAB handoff certificate changed after the release was planned.")
+                unseal_bundle(receive_handoff(repository, "sealed"), args.output_dir / "unsigned.aab", certificate)
             return 0
         fingerprint = configured_fingerprint(preview=args.mode == "preview")
         if args.mode == "check-build-config":
@@ -571,17 +650,20 @@ def main(argv=None):
             else:
                 append_summary(f"Committed `{plan['name']}` (`{plan['code']}`) to **internal testing**. "
                                "Play processing or review may delay tester availability.")
-                print(f"Google Play confirmed internal edit {receipt['editId']} for versionCode {plan['code']}.")
+                print(f"Google Play confirmed the internal release for versionCode {plan['code']}.")
         else:
             sections = release.parse_changelog(args.changelog.read_text(encoding="utf-8"))
             floor_input = os.environ.get("PLAY_VERSION_CODE_FLOOR", "").strip()
             floor = version_code(floor_input, "PLAY_VERSION_CODE_FLOOR") if floor_input else 0
-            snapshot = play_snapshot(PlayAPI(os.environ.get("PLAY_ACCESS_TOKEN", ""))) if args.mode == "prepare" else None
+            handoff_certificate = configured_handoff_certificate() if args.mode == "prepare" else None
+            snapshot = play_snapshot(PlayAPI(os.environ.get("PLAY_ACCESS_TOKEN", ""))) if handoff_certificate else None
             plan = make_plan(sections, repository=repository, commit=commit,
                              run_number=int(os.environ.get("GITHUB_RUN_NUMBER", "1")),
                              fingerprint=fingerprint, github_max=github_max_code(repository),
                              play_max=snapshot["maximum"] if snapshot else None,
                              previous_fingerprint=snapshot["fingerprint"] if snapshot else None, floor=floor)
+            if handoff_certificate:
+                plan["handoffCertificateSha256"] = handoff_certificate
             write_plan(plan, args.output_dir)
             print(f"Prepared {'provisional' if plan['provisional'] else 'live'} internal beta plan: {plan['name']} ({plan['code']}).")
         return 0

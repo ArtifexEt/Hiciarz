@@ -39,6 +39,7 @@ MAX_CERTIFICATE_OUTPUT = 64 * 1024
 MAX_APK = 512 * 1024 * 1024
 MAX_APK_EXPANDED = 1024 * 1024 * 1024
 MAX_BUILD_ZIP = MAX_APK + 1024 * 1024
+MAX_SEALED_PLAY_BUNDLE = MAX_APK + 1024 * 1024
 STATE_KEYS = {"schema", "package", "name", "code", "commit", "fingerprint"}
 FINGERPRINT_PATHS = (
     "android-app/app/src/main", "android-app/app/build.gradle.kts", "android-app/app/proguard-rules.pro",
@@ -493,12 +494,18 @@ def receive_handoff(repository, artifact_id, digest, run_id, kind, *, channel="f
     Never search by name or extract an archive into the checkout. A failed-job
     retry may legitimately reuse an artifact from an earlier attempt of this run.
     """
+    handoffs = {
+        ("firebase", "plan"): ("plan.json", MAX_HANDOFF_PLAN, MAX_STATE_ZIP),
+        ("firebase", "unsigned"): ("unsigned.apk", MAX_APK, MAX_BUILD_ZIP),
+        ("play", "plan"): ("RELEASE-PLAN.json", MAX_HANDOFF_PLAN, MAX_STATE_ZIP),
+        ("play", "sealed"): ("bundle.cms", MAX_SEALED_PLAY_BUNDLE, MAX_SEALED_PLAY_BUNDLE + 1024 * 1024),
+    }
     if (not re.fullmatch(r"[1-9][0-9]*", str(artifact_id))
             or not re.fullmatch(r"[1-9][0-9]*", str(run_id))
             or not isinstance(digest, str) or not re.fullmatch(r"[a-f0-9]{64}", digest)
-            or kind not in ("plan", "unsigned") or channel not in ("firebase", "play")):
+            or (channel, kind) not in handoffs):
         raise FirebaseError("Invalid same-run artifact handoff.")
-    maximum = MAX_STATE_ZIP if kind == "plan" else MAX_BUILD_ZIP
+    filename, expanded, maximum = handoffs[(channel, kind)]
     metadata = gh_json(repository, f"actions/artifacts/{artifact_id}")
     size = metadata.get("size_in_bytes")
     name = metadata.get("name")
@@ -514,9 +521,6 @@ def receive_handoff(repository, artifact_id, digest, run_id, kind, *, channel="f
     raw = gh_bytes(repository, f"actions/artifacts/{artifact_id}/zip", limit=maximum)
     if hashlib.sha256(raw).hexdigest() != digest:
         raise FirebaseError("The handoff archive digest does not match its producing job.")
-    filename, expanded = ("plan.json", MAX_HANDOFF_PLAN) if kind == "plan" else ("unsigned.apk", MAX_APK)
-    if channel == "play":
-        filename = "RELEASE-PLAN.json" if kind == "plan" else "unsigned.aab"
     try:
         with zipfile.ZipFile(io.BytesIO(raw)) as archive:
             entries = archive.infolist()

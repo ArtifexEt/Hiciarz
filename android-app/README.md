@@ -212,7 +212,7 @@ Tor jest ustawiony na `internal`. Nazwa `beta` w API Google Play oznacza open te
 3. Dodaj SHA-1 **Play App Signing** do konfiguracji Androida w Spotify i sprawdź połączenie aplikacji zainstalowanej przez Play. Podpis upload key służy do wysyłki AAB; użytkownicy otrzymują APK podpisane kluczem Play.
 4. W projekcie Google Cloud włącz Google Play Android Developer API, Security Token Service i IAM Service Account Credentials API. Utwórz osobne konto usługi Play. Dodaj je w Play Console z dostępem wyłącznie do Hiciarza oraz z uprawnieniami do odczytu informacji i wydawania na tory testowe.
 5. Skonfiguruj dostawcę GitHub OIDC w Workload Identity Federation. Zwiąż tożsamość workflow z kontem usługi przez `roles/iam.workloadIdentityUser`. Ogranicz warunek dostawcy do numerycznych ID repozytorium i właściciela, `refs/heads/main`, środowiska `google-play-internal`, pliku `.github/workflows/android-beta.yml` na `main` oraz zdarzeń `workflow_run` i `workflow_dispatch`. Uwierzytelnianie wykorzystuje krótkotrwały token Android Publisher.
-6. W **Settings → Environments** utwórz `google-play-internal` i `google-play-internal-build`. W obu zezwól na wdrożenia wyłącznie z gałęzi `main`. Ustaw odpowiednie sekrety i zmienne według tabel poniżej. Klucz wysyłki i dostęp do Play należą wyłącznie do `google-play-internal`.
+6. W **Settings → Environments** utwórz `google-play-internal` i `google-play-internal-build`. W obu zezwól na wdrożenia wyłącznie z gałęzi `main`. Do zaszyfrowania AAB między zadaniami przygotuj osobną parę kluczy RSA z certyfikatem X.509 w PEM. Klucz do odszyfrowania, klucz wysyłki i dostęp do Play należą wyłącznie do `google-play-internal`.
 7. W Play Console dodaj listę kont Google testerów oraz adres zgłoszeń. Testerzy otwierają link opt-in na zaproszonym koncie Google. Po sprawdzeniu pierwszej instalacji, skanera i odtwarzania na telefonie ustaw `PLAY_BETA_ENABLED=true`. Sprawdź następną aktualizację przez Play przed przeniesieniem testerów i wyłączeniem automatycznych wydań Firebase.
 
 Wymagania API i konfiguracja dostępu są opisane w dokumentacji Google. [Pierwszy upload i Edits API](https://developers.google.com/android-publisher/edits), [konto usługi i autoryzacja](https://developers.google.com/android-publisher/getting_started), [GitHub OIDC w Google Cloud](https://cloud.google.com/iam/docs/workload-identity-federation-with-deployment-pipelines).
@@ -225,16 +225,18 @@ Wymagania API i konfiguracja dostępu są opisane w dokumentacji Google. [Pierws
 | `PLAY_UPLOAD_KEYSTORE_PASSWORD` | Hasło upload keystore. |
 | `PLAY_UPLOAD_KEY_ALIAS` | Alias upload key. |
 | `PLAY_UPLOAD_KEY_PASSWORD` | Hasło upload key. |
+| `PLAY_HANDOFF_PRIVATE_KEY_BASE64` | Odrębny prywatny klucz RSA w PEM, zakodowany Base64, do odszyfrowania AAB w runnerze publikacji. |
 
-`SPOTIFY_CLIENT_ID` oraz opcjonalny `FIREBASE_ANDROID_CONFIG_BASE64` muszą mieć zgodne wartości w obu środowiskach. Są to dane konfiguracji klienta pakowane do aplikacji. Środowisko `google-play-internal-build` używa wyłącznie tych dwóch sekretów.
+W obu środowiskach ustaw ten sam `PLAY_HANDOFF_CERTIFICATE_BASE64` (publiczny certyfikat PEM zakodowany Base64), `SPOTIFY_CLIENT_ID` oraz opcjonalny `FIREBASE_ANDROID_CONFIG_BASE64`. `google-play-internal-build` używa wyłącznie tych wartości.
 
 | GitHub Variable | Wartość |
 | --- | --- |
 | `PLAY_BETA_ENABLED` | Zmienna repozytorium. Ustaw `true` po odbiorze pierwszej instalacji z Play. |
 | `PLAY_UPLOAD_CERT_SHA256` | Zmienna repozytorium. Oczekiwany SHA-256 certyfikatu upload key, używany również do sprawdzenia planu w środowisku budowania. |
+| `PLAY_HANDOFF_CERT_SHA256` | Zmienna środowiska `google-play-internal`. SHA-256 certyfikatu szyfrowania AAB liczony z jego formatu DER. |
 | `PLAY_VERSION_CODE_FLOOR` | Opcjonalny minimalny kod następnego wydania, jeśli trzeba uwzględnić wcześniej zużyte kody niewidoczne w historii API. |
 
-Sekrety `PLAY_UPLOAD_*` dotyczą odrębnego klucza wysyłki Play. Klucze, hasła i tokeny przechowuj poza repozytorium i artefaktami. Gradle buduje niepodpisany AAB na osobnym runnerze. Zadanie publikujące sprawdza pochodzenie i integralność AAB, podpisuje go i uzyskuje token Play.
+Sekrety `PLAY_UPLOAD_*` dotyczą odrębnego klucza wysyłki Play. Klucze prywatne, hasła i tokeny przechowuj poza repozytorium i artefaktami. Gradle buduje niepodpisany AAB na osobnym runnerze. GitHub przechowuje wyłącznie zaszyfrowaną paczkę pośrednią. Zadanie publikujące sprawdza jej pochodzenie i integralność, odszyfrowuje ją, podpisuje i uzyskuje token Play.
 
 ### Kolejne aktualizacje
 

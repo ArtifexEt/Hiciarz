@@ -6,6 +6,7 @@ import io
 import json
 import os
 from pathlib import Path
+import shutil
 import tempfile
 import unittest
 from unittest import mock
@@ -20,6 +21,7 @@ COMMIT = "a" * 40
 FINGERPRINT = "b" * 64
 OTHER_FINGERPRINT = "c" * 64
 SECTIONS = {"Unreleased": "- A pending scanner fix.", "0.2.0-alpha.7": "- Previous change."}
+TEST_OPENSSL = shutil.which(os.environ.get("HICIARZ_TEST_OPENSSL", "openssl"))
 
 
 def plan(**kwargs):
@@ -315,6 +317,7 @@ class PublishTests(unittest.TestCase):
         receipt = self.publish()
         self.assertEqual(receipt["status"], "committed")
         self.assertEqual(receipt["sha256"], self.digest)
+        self.assertNotIn("editId", receipt)
         self.assertEqual(self.source_check.call_count, 2)
         calls = self.api.request.call_args_list
         self.assertEqual([(call.args[0], call.args[1]) for call in calls],
@@ -326,8 +329,9 @@ class PublishTests(unittest.TestCase):
     def test_uncertain_commit_is_not_retried_or_deleted(self):
         self.api.request.side_effect = [{"versionCode": 100_051, "sha256": self.digest},
                                         beta.internal_payload(self.plan), beta.PlayError("No confirmed response")]
-        with self.assertRaisesRegex(beta.BetaError, "Inspect Play Console before another run"):
+        with self.assertRaisesRegex(beta.BetaError, "Inspect Play Console before another run") as failure:
             self.publish()
+        self.assertNotIn("edit-1", str(failure.exception))
         self.assertEqual(self.api.request.call_count, 3)
         self.api.delete.assert_not_called()
 
@@ -410,19 +414,57 @@ class HandoffTests(unittest.TestCase):
     def test_only_the_exact_same_run_play_bundle_is_accepted(self):
         buffer = io.BytesIO()
         with zipfile.ZipFile(buffer, "w") as archive:
-            archive.writestr("unsigned.aab", b"test AAB")
+            archive.writestr("bundle.cms", b"test CMS")
         payload = buffer.getvalue()
         digest = hashlib.sha256(payload).hexdigest()
-        metadata = {"id": 42, "name": "android-play-beta-unsigned-99-1", "expired": False,
+        metadata = {"id": 42, "name": "android-play-beta-sealed-99-1", "expired": False,
                     "size_in_bytes": len(payload), "digest": "sha256:" + digest, "workflow_run": {"id": 99}}
         with mock.patch.dict(os.environ, {"HANDOFF_ARTIFACT_ID": "42", "HANDOFF_ARTIFACT_DIGEST": digest,
                                           "GITHUB_RUN_ID": "99"}), \
              mock.patch.object(beta.firebase, "gh_json", return_value=metadata), \
              mock.patch.object(beta.firebase, "gh_bytes", return_value=payload):
-            self.assertEqual(beta.receive_handoff(REPOSITORY, "unsigned"), b"test AAB")
+            self.assertEqual(beta.receive_handoff(REPOSITORY, "sealed"), b"test CMS")
+            with self.assertRaisesRegex(beta.firebase.FirebaseError, "Invalid same-run"):
+                beta.receive_handoff(REPOSITORY, "unsigned")
             metadata["name"] = "android-firebase-beta-unsigned-99-1"
             with self.assertRaisesRegex(beta.firebase.FirebaseError, "does not match this run"):
-                beta.receive_handoff(REPOSITORY, "unsigned")
+                beta.receive_handoff(REPOSITORY, "sealed")
+
+    @unittest.skipUnless(TEST_OPENSSL, "OpenSSL is required to exercise the encrypted AAB handoff")
+    def test_real_cms_handoff_encrypts_round_trip_and_authenticates_the_aab(self):
+        with tempfile.TemporaryDirectory() as directory, mock.patch.object(beta, "OPENSSL_EXECUTABLE", TEST_OPENSSL):
+            folder = Path(directory)
+            certificate, key = folder / "certificate.pem", folder / "synthetic-key.pem"
+            beta.openssl("req", "-x509", "-newkey", "rsa:2048", "-noenc", "-batch", "-days", "1",
+                         "-subj", "/CN=Synthetic Play handoff", "-keyout", key, "-out", certificate)
+            fingerprint = hashlib.sha256(beta.openssl("x509", "-in", certificate, "-outform", "DER")).hexdigest()
+            source, artifact, restored = (folder / name for name in ("build.aab", "bundle.cms", "restored.aab"))
+            sentinel = b"synthetic-client-configuration"
+            with zipfile.ZipFile(source, "w") as archive:
+                archive.writestr("BundleConfig.pb", b"test bundle config")
+                archive.writestr("base/manifest/AndroidManifest.xml", b"test manifest")
+                archive.writestr("base/dex/classes.dex", sentinel)
+                archive.writestr(beta.MAPPING_ENTRY, b"test mapping")
+            credentials = {beta.PUBLIC_CERTIFICATE_SECRET: base64.b64encode(certificate.read_bytes()).decode(),
+                           beta.PRIVATE_KEY_SECRET: base64.b64encode(key.read_bytes()).decode()}
+            with mock.patch.dict(os.environ, credentials):
+                with self.assertRaisesRegex(beta.BetaError, "certificate does not match"):
+                    beta.seal_bundle(source, artifact, "0" * 64)
+                self.assertFalse(artifact.exists())
+                beta.seal_bundle(source, artifact, fingerprint)
+                sealed = artifact.read_bytes()
+                self.assertNotIn(sentinel, sealed)
+                self.assertFalse(zipfile.is_zipfile(artifact))
+                envelope = beta.openssl("cms", "-cmsout", "-print", "-inform", "DER", "-in", artifact)
+                for scheme in (b"authEnvelopedData", b"rsaesOaep", b"aes-256-gcm", b"sha256"):
+                    self.assertIn(scheme.lower(), envelope.lower())
+                beta.unseal_bundle(sealed, restored, fingerprint)
+                self.assertEqual(source.read_bytes(), restored.read_bytes())
+                restored.unlink()
+                tampered = sealed[:-1] + bytes([sealed[-1] ^ 1])
+                with self.assertRaisesRegex(beta.BetaError, "OpenSSL could not process"):
+                    beta.unseal_bundle(tampered, restored, fingerprint)
+                self.assertFalse(restored.exists())
 
 
 class PreviewTests(unittest.TestCase):

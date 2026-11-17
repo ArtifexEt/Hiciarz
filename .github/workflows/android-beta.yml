@@ -47,6 +47,7 @@ jobs:
       PLAY_BETA_ENABLED: ${{ vars.PLAY_BETA_ENABLED }}
       PLAY_VERSION_CODE_FLOOR: ${{ vars.PLAY_VERSION_CODE_FLOOR }}
       PLAY_UPLOAD_CERT_SHA256: ${{ vars.PLAY_UPLOAD_CERT_SHA256 }}
+      PLAY_HANDOFF_CERT_SHA256: ${{ vars.PLAY_HANDOFF_CERT_SHA256 }}
     outputs:
       publish: ${{ steps.version.outputs.publish }}
       plan_artifact_id: ${{ steps.plan_artifact.outputs.artifact-id }}
@@ -173,7 +174,9 @@ jobs:
           ./gradlew --no-daemon --no-build-cache --no-configuration-cache \
             :app:testDebugUnitTest :app:lintRelease :app:bundleRelease \
             -PversionName="$BETA_VERSION" -PversionCode="$BETA_VERSION_CODE"
-      - name: Verify and stage only the unsigned AAB
+      - name: Verify and encrypt the unsigned AAB
+        env:
+          PLAY_HANDOFF_CERTIFICATE_BASE64: ${{ secrets.PLAY_HANDOFF_CERTIFICATE_BASE64 }}
         run: |
           set -euo pipefail
           shopt -s nullglob
@@ -184,12 +187,12 @@ jobs:
           fi
           python3 .github/scripts/android_beta.py stage-bundle --output-dir "$RUNNER_TEMP/hiciarz-play-beta" \
             --bundle "${bundles[0]}" --mapping android-app/app/build/outputs/mapping/release/mapping.txt
-      - name: Hand off the unsigned AAB
+      - name: Hand off only the encrypted AAB
         id: bundle_artifact
         uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7.0.2
         with:
-          name: android-play-beta-unsigned-${{ github.run_id }}-${{ github.run_attempt }}
-          path: ${{ runner.temp }}/hiciarz-play-beta/unsigned.aab
+          name: android-play-beta-sealed-${{ github.run_id }}-${{ github.run_attempt }}
+          path: ${{ runner.temp }}/hiciarz-play-beta/bundle.cms
           if-no-files-found: error
           retention-days: 1
 
@@ -207,6 +210,7 @@ jobs:
     env:
       PLAY_BETA_ENABLED: ${{ vars.PLAY_BETA_ENABLED }}
       PLAY_UPLOAD_CERT_SHA256: ${{ vars.PLAY_UPLOAD_CERT_SHA256 }}
+      PLAY_HANDOFF_CERT_SHA256: ${{ vars.PLAY_HANDOFF_CERT_SHA256 }}
     steps:
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
         with:
@@ -218,11 +222,13 @@ jobs:
           HANDOFF_ARTIFACT_ID: ${{ needs.plan.outputs.plan_artifact_id }}
           HANDOFF_ARTIFACT_DIGEST: ${{ needs.plan.outputs.plan_artifact_digest }}
         run: python3 .github/scripts/android_beta.py receive-plan --output-dir "$RUNNER_TEMP/hiciarz-play-beta"
-      - name: Verify the exact same-run unsigned AAB
+      - name: Verify and decrypt the exact same-run AAB
         env:
           GH_TOKEN: ${{ github.token }}
           HANDOFF_ARTIFACT_ID: ${{ needs.build.outputs.bundle_artifact_id }}
           HANDOFF_ARTIFACT_DIGEST: ${{ needs.build.outputs.bundle_artifact_digest }}
+          PLAY_HANDOFF_CERTIFICATE_BASE64: ${{ secrets.PLAY_HANDOFF_CERTIFICATE_BASE64 }}
+          PLAY_HANDOFF_PRIVATE_KEY_BASE64: ${{ secrets.PLAY_HANDOFF_PRIVATE_KEY_BASE64 }}
         run: python3 .github/scripts/android_beta.py receive-bundle --output-dir "$RUNNER_TEMP/hiciarz-play-beta"
       - name: Recheck release source and configuration before signing
         env:
