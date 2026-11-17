@@ -34,6 +34,7 @@ STATE_ARTIFACT = "android-firebase-beta-state"
 API_ROOT = "https://firebaseappdistribution.googleapis.com"
 MAX_JSON = 2 * 1024 * 1024
 MAX_STATE_ZIP = 32 * 1024
+MAX_HANDOFF_PLAN = 8 * 1024
 MAX_CERTIFICATE_OUTPUT = 64 * 1024
 MAX_APK = 512 * 1024 * 1024
 MAX_APK_EXPANDED = 1024 * 1024 * 1024
@@ -486,7 +487,7 @@ def validate_plan(plan, *, live=False):
     return plan["state"]
 
 
-def receive_handoff(repository, artifact_id, digest, run_id, kind):
+def receive_handoff(repository, artifact_id, digest, run_id, kind, *, channel="firebase"):
     """Read one immutable artifact selected by the producing job's ID/digest outputs.
 
     Never search by name or extract an archive into the checkout. A failed-job
@@ -495,7 +496,7 @@ def receive_handoff(repository, artifact_id, digest, run_id, kind):
     if (not re.fullmatch(r"[1-9][0-9]*", str(artifact_id))
             or not re.fullmatch(r"[1-9][0-9]*", str(run_id))
             or not isinstance(digest, str) or not re.fullmatch(r"[a-f0-9]{64}", digest)
-            or kind not in ("plan", "unsigned")):
+            or kind not in ("plan", "unsigned") or channel not in ("firebase", "play")):
         raise FirebaseError("Invalid same-run artifact handoff.")
     maximum = MAX_STATE_ZIP if kind == "plan" else MAX_BUILD_ZIP
     metadata = gh_json(repository, f"actions/artifacts/{artifact_id}")
@@ -507,13 +508,15 @@ def receive_handoff(repository, artifact_id, digest, run_id, kind):
             or metadata.get("digest") != "sha256:" + digest
             or not isinstance(workflow_run, dict) or type(workflow_run.get("id")) is not int
             or workflow_run["id"] != int(run_id) or not isinstance(name, str)
-            or not re.fullmatch(r"android-firebase-beta-" + kind + "-" + str(run_id) + r"-[1-9][0-9]*",
+            or not re.fullmatch(r"android-" + channel + "-beta-" + kind + "-" + str(run_id) + r"-[1-9][0-9]*",
                                 name)):
         raise FirebaseError("The artifact does not match this run and its producing job.")
     raw = gh_bytes(repository, f"actions/artifacts/{artifact_id}/zip", limit=maximum)
     if hashlib.sha256(raw).hexdigest() != digest:
         raise FirebaseError("The handoff archive digest does not match its producing job.")
-    filename, expanded = ("plan.json", 8192) if kind == "plan" else ("unsigned.apk", MAX_APK)
+    filename, expanded = ("plan.json", MAX_HANDOFF_PLAN) if kind == "plan" else ("unsigned.apk", MAX_APK)
+    if channel == "play":
+        filename = "RELEASE-PLAN.json" if kind == "plan" else "unsigned.aab"
     try:
         with zipfile.ZipFile(io.BytesIO(raw)) as archive:
             entries = archive.infolist()

@@ -1,3 +1,4 @@
+import base64
 import contextlib
 import copy
 import hashlib
@@ -123,9 +124,9 @@ class FingerprintTests(unittest.TestCase):
     TREE = ("100644 blob " + "1" * 40 + "\tandroid-app/app/src/main/AndroidManifest.xml\0"
             "100644 blob " + "2" * 40 + "\tweb/public/themes/disco.svg\0")
 
-    def fingerprint(self, tree=None, client="1234", certificate="AA:BB"):
+    def fingerprint(self, tree=None, client="1234", certificate="AA:BB", analytics=""):
         with mock.patch.object(beta.release, "command_output", return_value=tree or self.TREE):
-            return beta.source_fingerprint(client, certificate)
+            return beta.source_fingerprint(client, certificate, analytics)
 
     def test_fingerprint_covers_full_tracked_content_and_public_build_configuration(self):
         first = self.fingerprint()
@@ -141,11 +142,33 @@ class FingerprintTests(unittest.TestCase):
         self.assertEqual(self.fingerprint(), self.fingerprint(tree=self.TREE + web_only))
         self.assertNotEqual(self.fingerprint(), self.fingerprint(tree=self.TREE + packaged))
 
+    def test_play_fingerprint_changes_only_with_packaged_analytics_configuration(self):
+        config = {"project_info": {"project_number": "123", "project_id": "sample-release"}, "client": [
+            {"client_info": {"mobilesdk_app_id": "1:123:android:123abc",
+                             "android_client_info": {"package_name": beta.PACKAGE}},
+             "api_key": [{"current_key": "AIza" + "a" * 35}]}]}
+
+        def encode():
+            return base64.b64encode(json.dumps(config).encode()).decode()
+
+        first = self.fingerprint(analytics=encode())
+        self.assertNotEqual(first, self.fingerprint())
+        config["project_info"]["storage_bucket"] = "irrelevant"
+        self.assertEqual(first, self.fingerprint(analytics=encode()))
+        config["client"][0]["api_key"][0]["current_key"] = "AIza" + "b" * 35
+        self.assertNotEqual(first, self.fingerprint(analytics=encode()))
+
     def test_latest_completed_internal_release_is_the_baseline(self):
         tracks = {"tracks": [{"track": "internal", "releases": [
-            internal_release(100_001, FINGERPRINT), internal_release(100_050, OTHER_FINGERPRINT),
-            internal_release(100_100, FINGERPRINT, status="draft")]}]}
+            internal_release(100_001, FINGERPRINT), internal_release(100_050, OTHER_FINGERPRINT)]}]}
         self.assertEqual(beta.current_internal_fingerprint(tracks), OTHER_FINGERPRINT)
+
+    def test_existing_internal_draft_or_in_progress_release_blocks_publishing(self):
+        for status in ("draft", "inProgress", "halted"):
+            tracks = {"tracks": [{"track": "internal", "releases": [
+                internal_release(100_020, FINGERPRINT), internal_release(100_021, status=status)]}]}
+            with self.subTest(status=status), self.assertRaisesRegex(beta.BetaError, "pending internal testing release"):
+                beta.current_internal_fingerprint(tracks)
 
     def test_no_marker_bootstraps_and_wrong_track_requires_manual_setup(self):
         self.assertIsNone(beta.current_internal_fingerprint({"tracks": [{"track": "internal", "releases": [internal_release(1)]}]}))
@@ -164,12 +187,15 @@ class FingerprintTests(unittest.TestCase):
                 self.assertIsNone(beta.current_internal_fingerprint(tracks))
         with self.assertRaisesRegex(beta.BetaError, "first release"):
             beta.current_internal_fingerprint({"tracks": [{"track": "production"}]})
+        with self.assertRaisesRegex(beta.BetaError, "first internal release"):
+            beta.current_internal_fingerprint({"tracks": [{"track": "internal", "releases": [
+                internal_release(100_020, status="draft")]}]})
 
 
 class PlanTests(unittest.TestCase):
     def test_beta_base_and_human_notes_come_from_changelog_without_machine_metadata(self):
         prepared = plan()
-        self.assertEqual(prepared["name"], "0.2.0-beta.25")
+        self.assertEqual(prepared["name"], "0.2.0-beta.51")
         self.assertEqual(prepared["code"], 100_051)
         self.assertIn("pending scanner fix", prepared["releaseNotes"][0]["text"])
         self.assertNotIn(FINGERPRINT, prepared["releaseNotes"][0]["text"])
@@ -185,6 +211,22 @@ class PlanTests(unittest.TestCase):
         self.assertTrue(plan(previous_fingerprint=FINGERPRINT)["skip"])
         self.assertFalse(plan(previous_fingerprint=OTHER_FINGERPRINT)["skip"])
 
+    def test_first_automated_release_follows_manual_beta_code_and_name(self):
+        prepared = plan(run_number=1, github_max=100_009, play_max=100_020)
+        self.assertEqual(prepared["name"], "0.2.0-beta.21")
+        self.assertEqual(prepared["code"], 100_021)
+
+    def test_live_plan_handoff_remains_bounded_with_a_long_changelog(self):
+        prepared = plan()
+        prepared["notes"] = "- Zmiany w aplikacji.\n" * 10_000
+        with tempfile.TemporaryDirectory() as directory:
+            destination = Path(directory)
+            beta.write_plan(prepared, destination)
+            encoded = (destination / "RELEASE-PLAN.json").read_bytes()
+            self.assertLessEqual(len(encoded), beta.firebase.MAX_HANDOFF_PLAN)
+            self.assertNotIn("notes", json.loads(encoded))
+            self.assertEqual(json.loads(encoded)["releaseNotes"], prepared["releaseNotes"])
+
     def test_payload_can_only_complete_internal_and_uses_string_version_code(self):
         prepared = plan()
         payload = beta.internal_payload(prepared)
@@ -192,7 +234,7 @@ class PlanTests(unittest.TestCase):
         self.assertEqual(payload["releases"][0]["status"], "completed")
         self.assertEqual(payload["releases"][0]["versionCodes"], ["100051"])
         self.assertEqual(payload["releases"][0]["name"], beta.fingerprint_release_name(FINGERPRINT))
-        self.assertEqual(prepared["name"], "0.2.0-beta.25")
+        self.assertEqual(prepared["name"], "0.2.0-beta.51")
         for key, value in (("track", "production"), ("track", "beta"), ("package", "other.app"),
                            ("code", 0), ("provisional", True)):
             invalid = copy.deepcopy(prepared)
@@ -345,6 +387,42 @@ class PublishTests(unittest.TestCase):
         with self.assertRaisesRegex(beta.BetaError, "mapping does not match"):
             self.publish()
         self.api.insert.assert_not_called()
+
+    def test_builder_handoff_rejects_existing_signatures(self):
+        self.assertEqual(beta.validate_bundle(self.bundle, self.mapping, unsigned=True), self.digest)
+        with zipfile.ZipFile(self.bundle, "a") as archive:
+            archive.writestr("META-INF/DEBUG.RSA", b"test signature")
+        with self.assertRaisesRegex(beta.BetaError, "must be unsigned"):
+            beta.validate_bundle(self.bundle, unsigned=True)
+
+
+class SigningTests(unittest.TestCase):
+    def test_requires_one_matching_upload_certificate(self):
+        expected = "a1" * 32
+        certificate_line = "\t SHA256: " + ":".join(["A1"] * 32)
+        beta.verify_upload_certificate(certificate_line, expected)
+        for text in ("", certificate_line + "\n" + certificate_line, certificate_line.replace("A1", "A2")):
+            with self.subTest(text=text), self.assertRaisesRegex(beta.BetaError, "one matching upload certificate"):
+                beta.verify_upload_certificate(text, expected)
+
+
+class HandoffTests(unittest.TestCase):
+    def test_only_the_exact_same_run_play_bundle_is_accepted(self):
+        buffer = io.BytesIO()
+        with zipfile.ZipFile(buffer, "w") as archive:
+            archive.writestr("unsigned.aab", b"test AAB")
+        payload = buffer.getvalue()
+        digest = hashlib.sha256(payload).hexdigest()
+        metadata = {"id": 42, "name": "android-play-beta-unsigned-99-1", "expired": False,
+                    "size_in_bytes": len(payload), "digest": "sha256:" + digest, "workflow_run": {"id": 99}}
+        with mock.patch.dict(os.environ, {"HANDOFF_ARTIFACT_ID": "42", "HANDOFF_ARTIFACT_DIGEST": digest,
+                                          "GITHUB_RUN_ID": "99"}), \
+             mock.patch.object(beta.firebase, "gh_json", return_value=metadata), \
+             mock.patch.object(beta.firebase, "gh_bytes", return_value=payload):
+            self.assertEqual(beta.receive_handoff(REPOSITORY, "unsigned"), b"test AAB")
+            metadata["name"] = "android-firebase-beta-unsigned-99-1"
+            with self.assertRaisesRegex(beta.firebase.FirebaseError, "does not match this run"):
+                beta.receive_handoff(REPOSITORY, "unsigned")
 
 
 class PreviewTests(unittest.TestCase):

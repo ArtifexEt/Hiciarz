@@ -18,6 +18,7 @@ import pl.artifex.hiciarz.model.AppState
 
 @Composable
 internal fun AnalyticsSettings(state: AppState, copy: UiCopy, onAction: (AppAction) -> Unit) {
+    val context = LocalContext.current
     var privacyOpen by rememberSaveable { mutableStateOf(false) }
     var consentRequested by rememberSaveable { mutableStateOf(false) }
     SettingGroup(copy.t("Prywatność", "Privacy")) {
@@ -52,6 +53,11 @@ internal fun AnalyticsSettings(state: AppState, copy: UiCopy, onAction: (AppActi
         SettingRow(copy.t("Prywatność i dane", "Privacy and data"), AppIcons.Info,
             detail = copy.t("Co mierzymy i jak cofnąć zgodę", "What we measure and how to withdraw consent")) {
             privacyOpen = true
+        }
+        GroupDivider()
+        SettingRow(copy.t("Polityka prywatności Hiciarza", "Hiciarz privacy policy"), AppIcons.Link) {
+            val language = copy.t("pl", "en")
+            openUrl(context, "https://artifexet.github.io/Hiciarz/privacy.html#$language")
         }
     }
     if (privacyOpen || consentRequested) AnalyticsPrivacyDialog(copy,

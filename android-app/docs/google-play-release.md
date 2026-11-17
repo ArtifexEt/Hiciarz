@@ -1,8 +1,8 @@
 # Plan bety Hiciarza: Firebase i Google Play
 
-Stan wymagań: 12 listopada 2026. Zakres: natywna aplikacja z `android-app/`, pakiet `pl.artifex.hiciarz`. Podstawowy przebieg to zeskanowanie kodu QR i uruchomienie wskazanego utworu w aplikacji Spotify użytkownika. Android zawiera Skaner i Opcje. Karty przygotowuje się w webowym Hiciarzu. [Bingo i generator plansz](https://artifexet.github.io/Bingo/) mają osobne [repozytorium](https://github.com/ArtifexEt/Bingo).
+Stan wymagań na 17 listopada 2026 r. Dokument dotyczy natywnej aplikacji z `android-app/` o pakiecie `pl.artifex.hiciarz`. Użytkownik skanuje kod QR i uruchamia wskazany utwór w aplikacji Spotify. Android zawiera Skaner i Opcje. Karty przygotowuje się w webowym Hiciarzu. [Bingo i generator plansz](https://artifexet.github.io/Bingo/) mają osobne [repozytorium](https://github.com/ArtifexEt/Bingo).
 
-**Bieżący cel to beta przez Firebase App Distribution, aktualizowana automatycznie po udanym sprawdzeniu zmian aplikacji na `main`.** Dostęp do Play wymaga wyjaśnienia, więc pierwszy kanał testów opieramy na podpisanym APK. Projekt Firebase został utworzony na bezpłatnym planie Spark z Gemini w konsoli i nowym kontem Google Analytics; wymagane warunki zostały zaakceptowane za zgodą właściciela. Aplikacja Android, App Distribution i prywatna grupa testerów są skonfigurowane. Automat Firebase jest zaimplementowany z uwierzytelnieniem OIDC; kolejnym wdrażanym etapem jest dobrowolna analityka Androida, opisana w sekcji 3 i osobnej instrukcji Analytics. Kryteria odbioru są opisane poniżej. Zachowany plan Google Play dotyczy późniejszego kanału dystrybucji.
+**Celem jest przeniesienie kolejnych bet na tor Internal testing w Google Play.** Konsola wymaga potwierdzenia własności konta dewelopera przez właściciela. Po przywróceniu konta wykonaj pierwszy upload AAB w Play Console, sprawdź instalację oraz Spotify i uruchom automat. Firebase App Distribution obsługuje testerów w okresie przejściowym. [Weryfikacja istniejącego konta Play](https://support.google.com/googleplay/android-developer/answer/14177239?hl=pl).
 
 Warunki integracji Spotify wymagają weryfikacji względem pełnego zakresu skanera; nie ustalono, że publikacja Hiciarza jest niedopuszczalna. Odbiór Spotify na fizycznym telefonie pozostaje konieczny w każdym kanale.
 
@@ -44,9 +44,9 @@ Implementacja obejmuje SDK zarządzany przez Firebase BoM, leniwą inicjalizacj�
 
 Hosting może udostępnić politykę, pomoc i stronę bety, a następnie opcjonalnie istniejący frontend Vite. To osobny etap, bez automatycznej migracji obecnej strony GitHub Pages i bez dodawania AI. Dla hostowania webu w katalogu głównym zbudować `web/dist` z `BASE_PATH=/` zamiast obecnego `/Hiciarz/`; sprawdzić PWA, ścieżki zasobów, linki kart i przekierowania. Najpierw wdrożyć kanał preview, po odbiorze stronę live. Dostęp do publikacji utrzymywać w prywatnym środowisku GitHub ograniczonym do zaufanej gałęzi; nie nadawać go kodowi PR. Osobno ocenić analitykę webu i jego zgodę — zgoda w Androidzie jej nie zastępuje. [Firebase Hosting](https://firebase.google.com/docs/hosting), [preview i integracja GitHub](https://firebase.google.com/docs/hosting/github-integration).
 
-## Późniejsza ścieżka Google Play
+## Przejście na Google Play
 
-Poniższe etapy i listy gotowości dotyczą przyszłej bety oraz publikacji przez Play. Ich wykonanie wymaga aktywnego konta Play; nie są warunkiem uruchomienia podpisanych APK w Firebase App Distribution.
+Publikacja w Play wymaga aktywnego konta i jednorazowej konfiguracji w Konsoli Play. Wymagania pierwszej bety wewnętrznej i późniejszej publikacji są opisane poniżej.
 
 ## Najkrótsza droga do testów w Google Play
 
@@ -81,11 +81,11 @@ Web i Android pozostają w jednym repo. Android nie korzysta z talii: QR zawiera
 | --- | --- | --- |
 | Android | Kotlin i Jetpack Compose, `minSdk=26`, `targetSdk=37` | Sprawdzić gotowy AAB w Play i zachowanie na obsługiwanych wersjach Androida. |
 | Pakiet | `pl.artifex.hiciarz` | Potwierdzić docelową nazwę pakietu przed pierwszym uploadem. |
-| Wydania | Firebase publikuje APK po CI; starsze wydania GitHub są wycofane | Przed uruchomieniem AAB w Play oddzielić build od podpisu i uprawnień publikacji. |
-| Podpis | Obsługa prywatnego keystore; release lokalny ma fallback do debug key | W procesie Play wymusić podpis produkcyjny i zweryfikować certyfikat AAB. |
+| Wydania | Workflow Play oddziela budowanie AAB od podpisu i publikacji z tokenem OIDC | Zweryfikować pierwszą aktualizację z Play przed przełączeniem testerów. |
+| Podpis | Gradle może przygotować niepodpisany AAB do osobnego podpisania | Wybrać klucz aplikacji w Play App Signing, zweryfikować certyfikat klucza wysyłki i zarejestrować SHA-1 podpisu aplikacji w Spotify. |
 | Jakość | Testy jednostkowe, lint, testy UI i skanera release w CI | Dodać odbiór instalacji z Play na rzeczywistym urządzeniu. |
 | Odtwarzanie | Skan QR uruchamia utwór przez Spotify App Remote; potrzebne Spotify i Premium | Sprawdzić podpis Play i nowego użytkownika oraz warunki integracji dla pełnego zakresu aplikacji. |
-| Prywatność | Kamera przetwarzana lokalnie; ML Kit w zależnościach | Audyt SDK, publiczna polityka oraz link w aplikacji, Data safety. |
+| Prywatność | Kamera działa lokalnie. Aplikacja korzysta z ML Kit i może zawierać dobrowolną analitykę. | Sprawdzić działanie publicznej polityki pod docelowym URL i wypełnić Data safety przed closed testing. |
 | Karta sklepu | Zrzuty Androida są w `docs/screenshots/` | Wybrać aktualne zrzuty, przygotować ikonę, grafikę i opisy. |
 
 Podstawa w repo: [konfiguracja aplikacji](../app/build.gradle.kts), [manifest](../app/src/main/AndroidManifest.xml), [testy CI](../../.github/workflows/ci.yml), [wydania APK](../../.github/workflows/android-release.yml), [instrukcja Androida](../README.md).
@@ -153,7 +153,7 @@ ML Kit opisuje zbieranie danych urządzenia i aplikacji, identyfikatorów instal
 
 ### Polityka i formularze
 
-1. Opublikować politykę prywatności pod stałym, publicznym adresem HTTPS, dostępnym bez logowania, np. w ramach strony projektu. Ma wskazywać Hiciarza lub wydawcę, kontakt, przepływy danych i SDK, cele, retencję oraz usuwanie danych. Dodać link „Polityka prywatności” w Opcjach Androida i w Play Console. Google wymaga takiej polityki również od aplikacji bez danych wrażliwych; adres nie może prowadzić do PDF. [Polityka User Data](https://support.google.com/googleplay/android-developer/answer/10144311?hl=en).
+1. Wdrożyć [politykę w wersji PL i EN](../../web/public/privacy.html) przez GitHub Pages i sprawdzić, czy [docelowy adres](https://artifexet.github.io/Hiciarz/privacy.html) działa bez logowania. Aplikacja otwiera tę stronę z Opcji → Prywatność. Właściciel potwierdza dane wydawcy i kanał do spraw prywatności przed uzupełnieniem karty sklepu. Jeżeli AAB ma włączoną konfigurację Analytics, potwierdzić również retencję projektu. [Polityka User Data](https://support.google.com/googleplay/android-developer/answer/10144311?hl=en).
 2. Wypełnić Data safety po sprawdzeniu scalonego manifestu i zależności wydania. Rozróżnić dostęp lokalny, zbieranie, udostępnianie, wymagane i opcjonalne dane. Dla ML Kit sprawdzić kategorie diagnostyki oraz identyfikatorów według definicji formularza. Deklaracje muszą uwzględniać SDK i zgadzać się z polityką. [Przewodnik formularza Data safety](https://support.google.com/googleplay/android-developer/answer/10787469?hl=en).
 3. W App content uzupełnić reklamy, odbiorców, rating treści, dostęp do aplikacji i pozostałe deklaracje wyświetlane przez Console. Odpowiedzi oprzeć na finalnej wersji: także zewnętrznej muzyce, możliwych treściach explicit i sposobie korzystania ze skanera. Nie przypisywać samodzielnie ratingu PEGI ani kategorii dziecięcej. [Przygotowanie aplikacji do oceny](https://support.google.com/googleplay/android-developer/answer/9859455?hl=en).
 4. Obecnie nie ma rejestracji konta Hiciarza. Jeżeli do premiery zostanie dodana, ponownie sprawdzić wymagania usuwania kont i danych. Samo połączenie ze Spotify wymaga odrębnego opisania, a nie deklarowania własnego systemu kont.
@@ -171,26 +171,21 @@ Workflow `android-beta.yml` uruchamia się po udanym CI dla `main` i porównuje 
 
 Wymagane środowisko: JDK 17, Gradle Wrapper z repo i Android SDK zgodne z projektem. Pakowane grafiki pochodzą z `web/public/themes/`, dlatego checkout musi obejmować te zasoby. Talie i kod aplikacji webowej nie są potrzebne do budowania Androida.
 
-Komendy dla obecnego wariantu ze Spotify, uruchamiane z katalogu `android-app/`. Przygotowanie AAB może przebiegać równolegle z oceną warunków integracji; wysłanie do publicznej dystrybucji wymaga zamknięcia odpowiednich punktów gotowości. Wartości klucza i hasła należy wcześniej wprowadzić przez bezpieczne środowisko lokalne lub CI:
+Z katalogu `android-app/` zbudować AAB w powłoce, która ma identyfikator Spotify, nazwę i kod wersji.
 
 ```sh
 set -eu
-: "${HICIARZ_KEYSTORE_FILE:?Ustaw ścieżkę do upload keystore poza repo}"
-: "${HICIARZ_KEYSTORE_PASSWORD:?Ustaw hasło keystore w bezpiecznym środowisku}"
-: "${HICIARZ_KEY_ALIAS:?Ustaw alias upload key}"
-: "${HICIARZ_KEY_PASSWORD:?Ustaw hasło klucza w bezpiecznym środowisku}"
 : "${SPOTIFY_CLIENT_ID:?Ustaw Client ID integracji}"
 : "${PLAY_VERSION_NAME:?Ustaw nazwę wersji}"
 : "${PLAY_VERSION_CODE:?Ustaw kolejny wolny kod wersji}"
-test -f "$HICIARZ_KEYSTORE_FILE"
 
 sdkmanager 'platforms;android-37.0' 'build-tools;37.0.0'
-HICIARZ_PRODUCTION_SIGNING=true ./gradlew --no-daemon \
+HICIARZ_UNSIGNED_RELEASE=true ./gradlew --no-daemon --no-build-cache --no-configuration-cache \
   :app:testDebugUnitTest :app:lintRelease :app:bundleRelease \
   -PversionName="$PLAY_VERSION_NAME" -PversionCode="$PLAY_VERSION_CODE"
 ```
 
-Po zmianie odtwarzania zaktualizować także zależności, wymagane zmienne i powyższą komendę. Nie stosować pustego Client ID jako sposobu wyłączenia Spotify w publikowanym produkcie.
+Podpisać gotowy AAB w osobnym procesie z kluczem wysyłki Play. Pobrać hasła z prywatnego magazynu poświadczeń i przekazać je do `jarsigner` przez `-storepass:env` i `-keypass:env`. Porównać certyfikat podpisanego AAB z lokalnym certyfikatem klucza wysyłki. Po rejestracji klucza sprawdzić ten sam odcisk w Play Console.
 
 ### Kontrola artefaktów
 
@@ -222,14 +217,26 @@ Materiały można kończyć podczas pierwszych testów internal. Komplet jest po
 | --- | --- |
 | Nazwa | Propozycja: `Hiciarz`; limit 30 znaków. |
 | Krótki opis | Do 80 znaków; punkt wyjścia: „Skanuj kody QR i uruchamiaj wskazane utwory w Spotify”. |
-| Pełny opis | Do 4000 znaków; wyjaśnić kody QR, skanowanie, wymagania odtwarzania i przygotowanie materiałów w przeglądarce. |
+| Pełny opis | Propozycja poniżej. Limit 4000 znaków. |
 | Ikona sklepu | 512 × 512 px, PNG 32 bit, maksymalnie 1024 KB. |
 | Grafika promocyjna | 1024 × 500 px, JPEG lub PNG 24 bit bez przezroczystości. |
-| Zrzuty | Przygotować 4–6 aktualnych zrzutów Androida, np. 1080 × 1920; minimalny wymóg publikacji to dwa. Dodać odpowiednie ujęcia tabletu, jeśli jest objęty wydaniem. |
+| Zrzuty | Przygotować 4–6 aktualnych zrzutów Androida, np. 1080 × 1920. Minimalny wymóg publikacji to dwa. Obecne zrzuty telefonu w proporcji 1080 × 2400 przekraczają limit 2:1, więc potrzebne są nowe ujęcia. Dodać odpowiednie ujęcia tabletu, jeśli jest objęty wydaniem. |
 | Pomoc | Działający adres email, strona projektu, URL polityki prywatności. |
 | Informacje o wydaniu | Krótki opis faktycznych funkcji i zmian z changeloga. |
 
 Parametry tekstu: [konfiguracja karty sklepu](https://support.google.com/googleplay/android-developer/answer/9859152?hl=en). Parametry grafik i zrzutów: [materiały podglądowe Google Play](https://support.google.com/googleplay/android-developer/answer/9866151?hl=en).
+
+**Opis PL**
+
+Hiciarz skanuje kody QR prowadzące do utworów. Skieruj aparat na kod, aby uruchomić wskazany utwór w Spotify. Na ekranie skanera możesz wstrzymać i wznowić odtwarzanie oraz zeskanować kolejny kod.
+
+Karty z kodami możesz przygotować w webowym Hiciarzu. Do skanowania potrzebny jest dostęp do aparatu. Odtwarzanie wymaga aplikacji Spotify i zalogowanego konta Spotify Premium.
+
+**Opis EN**
+
+Hiciarz scans QR codes linked to songs. Point your camera at a code to play the linked song in Spotify. Use the scanner screen to pause, resume or scan another code.
+
+You can create cards with QR codes in Hiciarz on the web. Scanning requires camera access. Playback requires the Spotify app and a signed-in Spotify Premium account.
 
 Materiały pokazują natywny skaner, uruchamianie utworu i Opcje. Bingo jest osobną aplikacją pod `https://artifexet.github.io/Bingo/`. Kreator talii, PDF i funkcje dostępne wyłącznie w PWA należy opisać jako otwierane w przeglądarce. Wymagania Spotify podać zgodnie z rzeczywistym działaniem wersji. Opis i grafiki nie mogą sugerować oficjalnego partnerstwa bez podstawy.
 
@@ -241,7 +248,7 @@ W App access przygotować krótką instrukcję po angielsku: przykładowe QR udo
 
 Najpierw przesłać pierwszy AAB do **Internal testing** ręcznie, skonfigurować Play App Signing i dodać SHA-1 podpisu Play do Spotify. Dodać listę pierwszych testerów oraz kanał zgłoszeń i przygotować link opt-in. Tester otwiera link na zaproszonym koncie Google, dołącza do testu i instaluje aplikację ze sklepu. Instalacja lokalnego APK nie sprawdza certyfikatu, pakowania ani dostarczania przez Play.
 
-Po tym odbiorze skonfigurować automat aktualizacji internal. Sprawdzić drugi build z większym kodem wersji i instalację aktualizacji zachowującą ustawienia. Testowa aktualizacja ma pochodzić z commitu, którego kontrole CI zakończyły się sukcesem.
+Po tym odbiorze skonfigurować automat aktualizacji internal. Sprawdzić drugi build z większym kodem wersji i instalację aktualizacji zachowującą ustawienia. Testowa aktualizacja ma pochodzić z commitu, którego kontrole CI zakończyły się sukcesem. Po odbiorze przekazać testerom dostęp do Play i wyłączyć automatyczną dystrybucję kolejnych bet przez Firebase.
 
 | Scenariusz | Kryterium odbioru |
 | --- | --- |

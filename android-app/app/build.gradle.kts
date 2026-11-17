@@ -19,14 +19,18 @@ apply(from = rootProject.file("gradle/spotify-app-remote.gradle.kts"))
 
 val suppliedSigningFile = providers.environmentVariable("HICIARZ_KEYSTORE_FILE").orNull?.takeIf { it.isNotBlank() }
 val productionSigning = providers.environmentVariable("HICIARZ_PRODUCTION_SIGNING").orElse("false").get().toBooleanStrict()
+val unsignedRelease = providers.environmentVariable("HICIARZ_UNSIGNED_RELEASE").orElse("false").get().toBooleanStrict()
 require(!productionSigning || suppliedSigningFile != null) { "Production builds require a private signing keystore." }
+require(!unsignedRelease || (!productionSigning && suppliedSigningFile == null)) {
+    "The isolated release build cannot use a signing keystore."
+}
 fun signingValue(name: String): String = providers.environmentVariable(name).orNull
     ?.takeIf { it.isNotBlank() } ?: error("Missing signing environment variable: $name")
 val spotifyClientId = providers.environmentVariable("SPOTIFY_CLIENT_ID")
     .orElse(providers.gradleProperty("spotifyClientId")).orElse("")
 val configuredSpotifyClientId = spotifyClientId.get().trim()
 val validSpotifyClientId = configuredSpotifyClientId.matches(Regex("[A-Fa-f0-9]{32}"))
-val requireSpotifyConfiguration = productionSigning || providers.environmentVariable("HICIARZ_REQUIRE_SPOTIFY_CONFIG")
+val requireSpotifyConfiguration = unsignedRelease || productionSigning || providers.environmentVariable("HICIARZ_REQUIRE_SPOTIFY_CONFIG")
     .orElse("false").get().toBooleanStrict()
 require(configuredSpotifyClientId.isEmpty() || validSpotifyClientId) {
     "Set your own 32-character Spotify Client ID through SPOTIFY_CLIENT_ID or -PspotifyClientId."
@@ -147,7 +151,12 @@ android {
     buildTypes {
         debug { signingConfig = signingConfigs.findByName("distribution") ?: signingConfigs.getByName("debug") }
         release {
-            signingConfig = signingConfigs.findByName("distribution") ?: signingConfigs.getByName("debug")
+            if (unsignedRelease) {
+                signingConfig = null
+                buildConfigField("boolean", "TEST_SIGNING", "false")
+            } else {
+                signingConfig = signingConfigs.findByName("distribution") ?: signingConfigs.getByName("debug")
+            }
             isMinifyEnabled = true
             isShrinkResources = true
             proguardFiles(getDefaultProguardFile("proguard-android-optimize.txt"), "proguard-rules.pro")
