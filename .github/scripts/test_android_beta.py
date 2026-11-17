@@ -411,6 +411,11 @@ class SigningTests(unittest.TestCase):
 
 
 class HandoffTests(unittest.TestCase):
+    def test_handoff_and_upload_certificates_must_be_separate(self):
+        with mock.patch.dict(os.environ, {"PLAY_HANDOFF_CERT_SHA256": FINGERPRINT, "PLAY_UPLOAD_CERT_SHA256": FINGERPRINT}):
+            with self.assertRaisesRegex(beta.BetaError, "dedicated handoff certificate"):
+                beta.configured_handoff_certificate()
+
     def test_only_the_exact_same_run_play_bundle_is_accepted(self):
         buffer = io.BytesIO()
         with zipfile.ZipFile(buffer, "w") as archive:
@@ -448,10 +453,11 @@ class HandoffTests(unittest.TestCase):
             credentials = {beta.PUBLIC_CERTIFICATE_SECRET: base64.b64encode(certificate.read_bytes()).decode(),
                            beta.PRIVATE_KEY_SECRET: base64.b64encode(key.read_bytes()).decode()}
             with mock.patch.dict(os.environ, credentials):
-                with self.assertRaisesRegex(beta.BetaError, "certificate does not match"):
-                    beta.seal_bundle(source, artifact, "0" * 64)
-                self.assertFalse(artifact.exists())
-                beta.seal_bundle(source, artifact, fingerprint)
+                with mock.patch.dict(os.environ, {beta.PRIVATE_KEY_SECRET: ""}):
+                    with self.assertRaisesRegex(beta.BetaError, "certificate does not match"):
+                        beta.seal_bundle(source, artifact, "0" * 64)
+                    self.assertFalse(artifact.exists())
+                    beta.seal_bundle(source, artifact, fingerprint)
                 sealed = artifact.read_bytes()
                 self.assertNotIn(sentinel, sealed)
                 self.assertFalse(zipfile.is_zipfile(artifact))

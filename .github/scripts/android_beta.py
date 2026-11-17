@@ -561,6 +561,8 @@ def configured_handoff_certificate():
     fingerprint = normalize_certificate(os.environ.get("PLAY_HANDOFF_CERT_SHA256", ""))
     if not re.fullmatch(r"[a-f0-9]{64}", fingerprint):
         raise BetaError("Configure PLAY_HANDOFF_CERT_SHA256 for the dedicated AAB handoff certificate.")
+    if fingerprint == normalize_certificate(os.environ.get("PLAY_UPLOAD_CERT_SHA256", "")):
+        raise BetaError("Use a dedicated handoff certificate separate from the Play upload certificate.")
     return fingerprint
 
 
@@ -656,7 +658,7 @@ def main(argv=None):
             floor_input = os.environ.get("PLAY_VERSION_CODE_FLOOR", "").strip()
             floor = version_code(floor_input, "PLAY_VERSION_CODE_FLOOR") if floor_input else 0
             handoff_certificate = configured_handoff_certificate() if args.mode == "prepare" else None
-            snapshot = play_snapshot(PlayAPI(os.environ.get("PLAY_ACCESS_TOKEN", ""))) if handoff_certificate else None
+            snapshot = play_snapshot(PlayAPI(os.environ.get("PLAY_ACCESS_TOKEN", ""))) if args.mode == "prepare" else None
             plan = make_plan(sections, repository=repository, commit=commit,
                              run_number=int(os.environ.get("GITHUB_RUN_NUMBER", "1")),
                              fingerprint=fingerprint, github_max=github_max_code(repository),
